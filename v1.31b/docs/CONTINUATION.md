@@ -8,7 +8,7 @@ It replaces the numbered per-session continuation notes, which are gone. Everyth
 
 ## WHERE THIS STANDS TODAY — read this before anything else
 
-    python v1.31b/build.py --sw=/GD     compile and link; writes build/VTMAIN.MAP
+    python v1.31b/build.py --sw=/GS     compile and link; writes build/VTMAIN.MAP
 
     python v1.31b/verify.py     2 byte-identical, 24 identical but for fixups, 0 mismatched
     python v1.31b/asmcheck.py   PLAYMOD OK, SOUNDDEV OK
@@ -449,6 +449,21 @@ Two smaller things fell out of the same dump. **Banner lines 1 and 4 had two `#1
 
 ---
 
+## `00-map.md` WAS CORRUPTED AND HAS BEEN REPAIRED — and the cause is still unknown
+
+Repaired 19 Aug 2026 (`3c313c0`). Recorded here because **the cause was never found, so another document could be damaged the same way.** If a doc in this tree suddenly reads as mostly blank lines, this is what happened and `v1.31b/repair_map.py` documents how it was undone.
+
+Two independent corruptions, and separating them is what made the repair provable:
+
+* **22 double-encoded characters** — 17 em dashes, two `ó`, two `á`, one `©` — each read as cp1252 and re-written as UTF-8. Every one reverses exactly. It is why some rows of the segment table showed a mangled dash and others did not.
+* **A variable run of blank lines after every line** — 9,759 blank of 10,736. It *looks* like a uniform multiplication, because the head of the file is a clean 16 and 32, and **it is not**: table rows elsewhere sat 16, 5, 12, 7, 4, 9, 1 and 2 apart for what must all have been adjacency. No arithmetic inverts it.
+
+What did work is narrower and worth remembering as a technique: **within a run of consecutive PROSE lines the padding is constant** — 70 of the 71 such runs have gaps that are exact multiples of the run's own minimum, quotient 1 to 3 — so `gap // m` recovers the original spacing there. Tables, fenced blocks and indented code need no multiplier at all, because markdown forbids a blank line inside a table and the rest read as one block. 340 gaps came from a clean multiplier, 616 from structure, and 21 lone prose adjacencies from punctuation, all 21 checked by hand.
+
+**The repair is provable rather than tasteful**: all 978 non-blank lines identical in content and order, and all 39,773 non-whitespace characters identical, after the 22 character fixes. Only blank lines moved.
+
+---
+
 ## WHERE THINGS LIVE — the tree moved, so check this before trusting a path
 
 Everything used to sit under `D:\source\psycho`. It is now its own repository:
@@ -468,7 +483,7 @@ Everything used to sit under `D:\source\psycho`. It is now its own repository:
         *.py                          the measures; run them from the git root
       v1.39b/                         the VangeliSTracker 1.39b source release. Tracked.
 
-Two habits that will save you. **Run every script from the git root** — `python v1.31b/verify.py`, not `cd v1.31b` — because each one computes `ROOT` as its own grandparent. And **do not pass `--sw=/GS` through Git Bash**, which rewrites the switch into a Windows path and then silently compiles nothing; use PowerShell when an argument starts with a slash.
+Two habits that will save you. **Run every script from the git root** — `python v1.31b/verify.py`, not `cd v1.31b` — because each one computes `ROOT` as its own grandparent. And **mind what Git Bash does to an argument starting with a slash**: MSYS rewrites `/GS` into a Windows path and the build then silently compiles nothing, reporting `0 unit(s) compiled`. Prefix the command with `MSYS_NO_PATHCONV=1`, or run it from PowerShell. Two other traps in the same family cost time on 19 Aug 2026: a `\\` inside a quoted heredoc reaches Python as a single backslash, so build any escape you need with `chr(92)` rather than writing it literally; and `gh api` with a leading-slash path gets rewritten the same way, so call it from Python's `subprocess` or use `gh issue`/`gh label` subcommands instead.
 
 The old psycho tree is still there and still holds the Psycho Neurosis demo work, which is a different job — see the last section of this file.
 
@@ -483,6 +498,8 @@ The old psycho tree is still there and still holds the Psycho Neurosis demo work
 **THIS WORK IS NOW TRACKED, AND IT MOVED.** It used to live in `D:\source\psycho\demovt` and be excluded from source control pending a licence check. It is now its own repository at **`D:\source\VangeliSTracker`** — the user's decision — and essentially all of it is committed: our source, the docs, the measures, the harness, the 1.39b reference release, and **`v1.31b/ref/vt1.31b.bin`, the reference image itself.** Tracking the target alongside the measurements is deliberate: a checkout that cannot measure itself is not much use, and every figure in this file is a claim about that exact file.
 
 The only thing ignored is **`build/`**, DOSBox's scratch area, all of which `build.py` regenerates.
+
+**THIS TREE IS NOW SOURCE MATERIAL FOR A SECOND EFFORT, AND THAT EFFORT MUST NOT EDIT IT.** A reverse-engineering knowledge base is being built from what was learnt here; its map is [The Pascal RE knowledge base](https://github.com/sweetlilmre/PsychoNeurosis/issues/1). Its governing rule is **copy and adjust, never refactor the originals** -- the scripts and docs in this tree stay exactly as they are, and anything generic gets COPIED into the knowledge base and adapted there. So if a session arrives wanting to make `verify.py` or `build.py` generic, that is explicitly out of scope here. Refactoring these to consume the generic tier is a later, separate effort.
 
 **`.gitattributes` disables line-ending conversion outright** rather than negotiating it. The sources are 1990s DOS files staged into a DOSBox build and `v1.39b/` is someone else's shipped archive; in a project whose entire premise is that the bytes match, git rewriting a CRLF is not a convenience. If you add a file type, add it there too.
 
@@ -544,6 +561,7 @@ So there is now **no measured evidence that the original's compiler differs from
     python v1.31b/linkcmp.py             EVERY linked segment -- the VARIABLE half
     python v1.31b/linkcmp.py -v VTCFG    ...one unit, every operand
     python v1.31b/build.py --keep        do NOT erase the .TPUs (see below)
+    python v1.31b/repair_map.py          the 00-map.md repair -- ALREADY APPLIED, refuses to re-run
 
 **THE SEVEN MEASURES AND THEIR BLIND SPOTS ARE TABULATED AT THE TOP OF THIS FILE.** Read
 that table before running any of them: each one is blind to something the next one catches,
