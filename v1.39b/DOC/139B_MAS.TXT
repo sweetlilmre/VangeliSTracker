@@ -1,0 +1,77 @@
+                 NOVEDADES DEL VT 1.39 Beta 18
+                 ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+   Bueno, esta es una lista r pida de los cambios que ha sufrido el VT
+desde la £ltima version (1.2b).
+
+*   Soporte para GUS (Gravis UltraSound). De hecho, esta versi¢n s¢lo soporta
+esta tarjeta. Echa un vistazo tambi‚n a la nueva seccion VT-GUS del fichero
+VT.CFG.
+
+*   Nuevo modo de v¡deo: ahora la pantalla tiene 90x63 en modo texto, por lo
+que tenemos much m s sitio para poner chorradas. :) Usa las teclas del cursor
+con Control para ajustar horizontalmente la posici¢n de la pantalla si la que
+tiene por defecto no te va bien con el monitor.
+
+*   Soporte a los S3M ampliamente mejorado. Ahora casi suena tan bien como el
+STMIK; de hecho, el PANIC.S3M y el WATER.S3M (dentro de FISHTRO.EXE) suenan
+mejor que con el STMIK 0.9 que han extra¡do
+por ah¡. :-) Pero tadav¡a faltan algunos detalles por cubrir.
+
+*   El men£ decorativo finalmente ha desaparecido. Tal vez alg£n d¡a vuelva a ver
+la luz.
+
+*   Hay un rat¢n para juguetear con ‚l. No es que haga nada, pero si lo mueves al
+ritmo de la m£sica te puedes distraer un rato. Se podr¡a decir que es un sustituto
+funcional del menu que mencionaba antes, igual que lo son unos controles dibujados
+al lado de los VU-metros. :-)
+
+*   El formato de nombres ha cambiado, como supongo que habr s notado ya...
+
+   Esta versi¢n beta tambi‚n tiene algunas funcines deshabilitadas, despu‚s de
+haberlas roto mientras introduc¡a las nuevas:
+
+*   Soporte a otras tarjetas de sonido, aparte de la GUS.
+
+*   Osciloscopio: no funciona en la GUS.
+
+*   El filtro de Loudness, y que tampoco funciona con la GUS.
+
+*   No te cortes a la hora de a¤adir cosas a esta lista si las ves. Pero, por
+favor, d¡melas a m¡ tambi‚n si no quieres que siga pensando que funcionan.
+
+   A todos los que esperaban mayores mejoras despu‚s de todo este tiempo: esto
+es lo que pasa cuando uno se dedica a perder el tiempo con tonter¡as como demos
+y el trabajo y la Universidad y todo eso. Mensaje especial a los que tengan una
+PAS: enviadme una buena referencia sobre la tarjeta, algo m s £til que esa
+basura del PASDK, y el VT podr  finalmente sonar a trav‚s de la PAS.
+
+   A todos los usuarios de tarjetas Sound Blaster, DAC's, etc... deseo
+pedirles disculpas por esta versi¢n. En futuras versiones volver n a ser
+soportadas sus tarjetas.
+
+   Agradecimientos a las personas que han contribuido especialmente a esta versi¢n
+(adem s de la gente que ya est  en el DOC): Oscar G. por dejarme una PAS16 que
+todav¡a no he utilizado; Marcos Sagrado, Javier Olmo y Paco Carrascosa (¨qui‚n
+sino?) por dar ideas en general, y en concreto por ayudar con el betatesting
+del soporte GUS.
+
+   Y, como es constumbre, saludos a algunos locos de las demos:
+
+   Future Crew, Dust, Surprise! Productions, Silents, Avalanche, Cascada,
+<odeNation, Pentagon, Xography, Irresistible Works, Access Denied, VLA,
+Postumum, Axxelerator Logics, EMF, Toxic Zombies, Phantom, Virtual
+Visions, Extreme, Imphobia, iCE, The Emulator Institute, DeaD Memory,
+British Knights, Synergy Design, Darkzone, Onyx, Epical, Sonic, Renaissance,
+Digital Infinitry, y todos los que se merecen un saludo y no est n en la lista
+(cuando has escrito una lista de saludos sabes que por mucho que te esfuerces
+no conseguir s evitar que se te olvide alguno).
+
+   Y, por supuesto, a los creadores del estupendo Visual Player, la m s
+encarnizada competencia y una de las mejores ayudas que hemos tenido.
+
+    Saludos, y que aproveche,
+
+                                 VangeliSTeam
+                              2 de Enero de 1993
+   

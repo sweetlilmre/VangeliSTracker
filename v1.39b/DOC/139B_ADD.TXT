@@ -1,0 +1,70 @@
+                NEW FEATURES OF VT 1.39 Beta 18
+                컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
+
+
+
+   Ok, this is a quick-and-dirty list of the things that have changed
+since the last release of the VT (1.2b).
+
+*   GUS (Gravis UltraSound) support. In fact, the only card supported in this
+version. See also the new VT-GUS section of the configuration file VT.CFG
+
+*   New video mode: now the screen turns into a 90x63 text mode that gives a
+much bigger playfield to fill up with uninteresting things. :) Use Ctrl+Arrow Key
+(left or right) to adjust the horizontal screen position if the default doesn't
+fit well with your monitor.
+
+*   Vastly improved S3M support. Now it sounds almost as good as STMIK; in fact,
+it will play PANIC.S3M and WATER.S3M (inside FISHTRO.EXE) much better than the ripped STMIK 0.9. :-) Some details
+still missing, tough.
+
+*   The decorating menu has finally disappeared. Maybe some day it will see the
+light again.
+
+*   There's a mouse you can play with. It doesn't do anything, but you may move
+it with the rythm of the music and have some fun. It's basically a functional
+substitute of the previously mentioned menu, as are some sliders drawn next
+to the VU-meters. :-)
+
+*   Naming convention. You may have noticed it already...
+
+   This beta version also has some features disabled, after breaking them by
+introducing the new ones:
+
+*   Oscilloscope: it won't work with GUS.
+
+*   Loudness filter doesn't work with GUS either.
+
+*   Feel free to add things to this list as you see them. But please tell me
+about it, else I will keep thinking that it works.
+
+   To everybody who expected more improvements after all this time: this is
+what happens when you lose your time doing other stupid things like demos
+and job and university and all that stuff. Special message to PAS owners:
+give me a good reference about the card, not all that unusable stuff from
+MediaVision that forms the PASDK, and PAS support will no doubt be added.
+
+   Special thanks to some people that have contributed to this version and
+are not mentioned in the DOC: Oscar G. for lending a still unused PAS16;
+Marcos Sagrado, Javier Olmo and Paco Carrascosa (who else?) for GUS
+betatesting and general ideas.
+
+   And, as usual, the greetings to some demo dudes:
+
+   Future Crew, Dust, Surprise! Productions, Silents, Avalanche, Cascada,
+<odeNation, Pentagon, Xography, Irresistible Works, Access Denied, VLA,
+Postumum, Axxelerator Logics, EMF, Toxic Zombies, Phantom, Virtual
+Visions, Extreme, Imphobia, iCE, The Emulator Institute, DeaD Memory,
+British Knights, Synergy Design, Darkzone, Onyx, Epical, Sonic, Renaissance,
+Digital Infinitry, and all who deserve a greeting and are not here (when you
+have written a greetings list you know you always forget someone no matter
+how hard you try not to).
+
+   And, of course, the makers of the wonderful Visual Player, the best
+competence and the best help we've got so far.
+
+    Greets, and enjoy it!
+
+                                 VangeliSTeam
+                             January the 2nd, 1993
+

@@ -1,0 +1,32 @@
+# This is a byte-exact reconstruction project. Git must not rewrite anything.
+#
+# The sources are 1990s DOS files staged into a DOSBox build, and the release
+# in v1.39b/ is someone else's shipped archive. In both cases the bytes on disk
+# ARE the artefact, so line-ending and encoding conversion is disabled outright
+# rather than negotiated. `-text` means: never convert on checkin or checkout.
+
+# --- everything, by default: leave the bytes alone ------------------------
+* -text
+
+# --- but let git diff the ones worth diffing ------------------------------
+# `diff` without `text` gives readable diffs while still never converting EOLs.
+*.md    -text diff
+*.py    -text diff
+*.PAS   -text diff
+*.ASM   -text diff
+*.INC   -text diff
+*.pas   -text diff
+*.asm   -text diff
+*.inc   -text diff
+*.TXT   -text diff
+*.CFG   -text diff
+*.BAT   -text diff
+*.conf  -text diff
+
+# --- genuinely binary: never try -----------------------------------------
+*.EXE   binary
+*.TPU   binary
+*.OBJ   binary
+*.TP    binary
+*.VTO   binary
+*.bin   binary

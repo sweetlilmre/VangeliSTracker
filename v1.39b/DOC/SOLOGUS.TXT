@@ -1,0 +1,28 @@
+  RAZONES PARA DISTRIBUIR UNA VERSION QUE SOLO FUNCIONA EN GUS
+  ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+   Ante todo, mis m s sinceras disculpas por el estado en que se encuentra
+el VangeliSTracker. Quiero expresar que el hecho de que esta versi¢n
+s¢lo funcione por GUS es PURAMENTE ACCIDENTAL. Hay dos razones para ello:
+
+*    Primera, que deseo que el VangeliSTracker utilice esa
+     maravillosa tarjeta. He de reconocer que Advanced Gravis es la £nica empresa que
+     se ha interesado en mi trabajo, y eso es algo que pienso agradecer de todas las
+     maneras posibles. El resto de fabricantes de tarjetas me han hecho caso omiso o,
+     como el caso de una MUY importante, me han enviado a hacer pu¤etas (bueno, me
+     dijeron que primero me pusiera a programar para Windows, lo que es lo mismo).
+
+*    Segundo, que el c¢digo fuente del programa se me ha ido de las manos, y
+     est  demasiado lleno de bugs como para intentar arreglarlo. Mejor que eso, voy
+     a volver a escribirlo desde el principio. El mayor problema consisti¢ en la
+     distinta filosof¡a de programaci¢n de la GUS, que me oblig¢ a meter demasiadas
+     chapuzas en el c¢digo, y eso hace que los bugs se multipliquen. Dado que no
+     tengo mucho tiempo libre, y que quiero meterme con la reescritura del programa,
+     no me voy a molestar m s intentando que esta versi¢n salga completa.
+
+   En fin, como de costumbre, se admiten (se piden encarnecidamente) cr¡ticas,
+sugerencias, ayudas, etc...)
+
+   Salutaciones,
+                              JCAB/Iguana/VangeliSTeam
+

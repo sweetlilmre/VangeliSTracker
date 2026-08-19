@@ -1,0 +1,27 @@
+               REASONS TO HAVE A GUS-ONLY VERSION
+               컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴
+
+   First, I would like to apologize for the actual state of the VangeliSTracker.
+I would like to state clearly that the fact that this version is only working
+with GUS is PURELY ACCIDENTAL. There are two reasons for that:
+
+*    First, I want to have the VangeliSTracker to work with that wonderful sound
+     card. I must admit that Advanced Gravis is the only manufacturer that has shown
+     interest in my work , and that's something I'm eager to thank in every possible
+     way. The rest of sound card makers have shown none or, as is the case of a VERY
+     important one, they have told me to go to hell (well, actually they told me to
+     go coding for Windows, which is more or less the same).
+
+*    Second, the source code of the program has gone out of hands, and it's too
+     full of bugs to try to fix it. Better than that, I'm gonna rewrite the whole
+     thing from scratch. The biggest trouble was the different programming philosophy
+     of the GUS, that made me put too many shitty pieces of code, and that makes bugs
+     multiply. As I don't have too much free time, and I wont to get to the rewrite,
+     I'll not try to release this version complete.
+
+   Well, as usual, criticism, suggestions, help, etc... is admitted (very badly
+wanted).
+
+   Salutaciones,
+                              JCAB/Iguana/VangeliSTeam
+

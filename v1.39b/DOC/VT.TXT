@@ -1,0 +1,729 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@banner.txt
+-
+
+    ¨Qu‚ es VangeliSTeam?
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTeam es un grupo de personas que participan, tanto cont¡nua
+como espor dicamente en la programaci¢n, presentaci¢n y mantenimiento del
+programa VangeliSTracker.
+
+    Las razones para que se haya decidido a la creaci¢n de este grupo son
+las siguientes:
+
+*     Proceder a una amplia difusi¢n de los m‚todos, formatos, rutinas,
+      etc. de hacer m£sica digitalizada, tanto a nivel de usuario como a
+      nivel de programaci¢n.
+
+*     Conseguir gente capacitada para ayudar a mantener el VangeliSTracker.
+
+*     Aprender todos un poco, que nunca viene mal. ;-)
+
+    Para ello, el programa se distribuir  en versi¢n ejecutable y en
+versi¢n fuente, siendo ambas puestas al dominio p£blico (public domain,
+freeware, etc). No obstante, es deseo expreso de VangeliSTeam hacer constar
+que este software es propiedad sometida a copyright (C).
+
+    Cualquier persona que quiera puede hacer sus propias modificaciones al
+programa, as¡ como usarlos para sus propios prop¢sitos e incluirlos en sus
+propios programas, siempre que indique claramente la procedencia de los
+mismos. Se considera suficiente cualquiera de las siguientes opciones:
+
+*     Si usas los fuentes en tus propios programas, poner en un sitio
+      visible algo c¢mo: "Portions (C) VangeliSTeam" o "Usa el sistema de
+      sonido del VangeliSTracker vX.X" o algo similar.
+
+*     Si incluyes el VangeliSTracker ¡ntegro en un programa tuyo, deber s
+      inclu¡r, al menos, la versi¢n ejecutable ¡ntegra.
+
+    En todo caso, se ruega encarecidamente que cualquier modificaci¢n que
+se haga del programa o de alguna de sus rutinas se comunique a una de las
+personas de contacto especificadas m s abajo, para su inclusi¢n en la versi¢n
+oficial del programa.
+
+-
+
+    ¨Qui‚n es VangeliSTeam?
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTeam somos todos. :-)
+
+    Pero, yendo a lo pr ctico, se podr¡a decir que VangeliSTeam est  compuesto
+por todas aquellas personas que participan de forma m s o menos activa en la
+programaci¢n, dise¤o, etc... del VangeliSTracker.
+
+    Hasta la creaci¢n de esta primera versi¢n, s¢lo hay una persona realmente
+activa (Juan Carlos Ar‚valo, ese soy yo ;-), y varias personas interesadas en
+serlo o trabajando en el programa. Yo no pienso
+andar encima de nadie dici‚ndole a todo el mundo lo que tiene que hacer. M s
+bien al contrario, espero que se is los dem s los que me dig is lo que quer‚is
+hacer, y dedicarme tan s¢lo a procurar que est‚n en contacto las personas que trabajen
+en una misma  rea.
+
+    Si quieres hablar, discutir, proponer, enviar, recibir, etc. acerca del
+VangeliSTracker o del VangeliSTeam, por favor, no dudes en contactar con las
+siguientes personas:
+
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                     PERSONAS DE CONTACTO                     º
+@Contacts.txt
+
+-
+
+    Con fecha de hoy, VangeliSTeam se ha beneficiado, o se est  beneficiando, del
+trabajo de las siguientes personas:
+
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                        COLABORADORES                         º
+ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+º                           ³                                  º
+º  - Juan Carlos Ar‚valo    ³ Originador de todo el tinglado.  º
+º                           ³ Cuerpo del programa. Estructura  º
+º                           ³ general. Primeras versiones.     º
+º                           ³                                  º
+º  - Luis Crespo            ³ Antecesor del programa (JAMP).   º
+º                           ³ Rutinas de DMA. Informaci¢n sobreº
+º                           ³ Sound Blaster.                   º
+º                           ³                                  º
+º  - F‚lix Sanz             ³ Creaci¢n de los DOCs de usuario. º
+º                           ³                                  º
+º  - Alejandro L¢pez        ³ Idea original de la mezcla de    º
+º                           ³ canales en est‚reo.              º
+º                           ³                                  º
+º  - H‚ctor Mart¡nez        ³ Rutinas FFT. (no introducidas    º
+º                           ³ todav¡a).                        º
+º                           ³ Idea original del sistema de     º
+º                           ³ manejo de los 4 canales.         º
+º                           ³                                  º
+º  - David L¢pez            ³ Informaci¢n sobre SB-Pro est‚reo.º
+º                           ³                                  º
+º  - Angel Trigo            ³ Informaci¢n sobre SB-Pro est‚reo.º
+º                           ³                                  º
+º  - Jos‚ Ruiz              ³ Est  creando la versi¢n para     º
+º                           ³ OS/2 (OS/2 de verdad ;-)         º
+º                           ³                                  º
+º  - Manuel Petit           ³ Est  adaptando un driver de      º
+º                           ³ rat¢n.                           º
+º                           ³                                  º
+º  - Carlos Fern ndez       ³ Realizada una modificaci¢n en    º
+º                           ³ el swapping, para que funcione   º
+º                           ³ con CD-ROMS.                     º
+º                           ³                                  º
+º  - N‚stor Matas           ³ Traducci¢n del manual al Ingl‚s. º
+º                           ³                                  º
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+    Gracias a Carlos Jim‚nez por poseer una SB Pro 2.0, y prestarla para
+experimentar.
+
+    Gracias a Javier Olmo, por ser poseedor de una SB 16 y prestarla para
+experimentar.
+
+    Gracias a Michael Fulbright, por adaptar un driver de SB para OS/2, y
+por hacerlo de una forma totalmente accesible desde una sesi¢n de DOS.
+
+    Gracias a Steve Haehnichen por hacer un driver de SB para el UNIX BSD,
+en el cual se pudo basar Michael Fulbright para hacer el suyo.
+
+    Gracias a Francisco Carrascosa por ser tan plasta (ojal  fueran todos tan
+plastas como t£ ;-D
+
+-
+
+    Gracias a Antonio Ropero, por ser poseedor de una Covox Sound Master II,
+y soportar estoicamente que no le haga el driver de DMA. En la pr¢xima versi¢n,
+puedo prometer y prometo... O;-)
+
+    Gracias a la gente de Future Crew por hacer m£sicas y demos tan geniales.
+
+    As¡mismo, deseamos dar las gracias a todas aquellas personas que,
+directa o indirectamente, hayan contribuido a la consecuci¢n de todo esto.
+
+    Gracias:
+
+@ThankYou.Txt
+
+    gracias a toda la plantilla de Anyware S.A. por soportar las pruebas 
+realizadas en su parque de ordenadores, as¡ como a todos aquellos que se 
+me ha olvidado inclu¡r en esta
+lista (ya se sabe: son todos los que est n, pero no est n todos los que son).
+
+
+    Requerimientos del sistema.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+*     Ordenador compatible PC, con procesador 286 o superior.
+*     En caso de usar OS/2, se requiere el driver de Michael Fulbright.
+*     Tarjeta Gr fica VGA o EGA.
+*     Alrededor de 230 Kb libre + longitud del m¢dulo.
+      Unos 140 Kb + m¢dulo en caso de usar el ShellVT.
+*     Un driver de EMS, en caso de que se quiera usar para el swapping.
+*     1 ¢ 2 puertos paralelo, si se utiliza DAC. O una tarjeta Covox Sound
+      Master II, Intersound MDO o similar.
+*     Cualquier versi¢n de SoundBlaster, si se requiere.
+*     Tarjeta de sonido AdLib o compatible, si se requiere.
+
+    Para que sirva para algo, se necesitan ficheros de m£sica en formato .MOD,
+.WOW, .OKT, .STM, .S3M o .669.
+
+    Evidentemente si se quiere utilizar alg£n dispositivo (DAC,
+SoundBlaster, etc...) es necesario tenerlo conectado al PC.
+
+    Pero, ¨Que es el DAC?
+
+    Exactamente no es DAC, sino una "construcci¢n" en la que se puede
+utilizar un DAC o resistencias, que conectado al puerto paralelo es capaz
+de reproducir sonido digital a trav‚s de un amplificador. M s adelante, bajo
+el ep¡grafe "Construcci¢n de un DAC casero", se encuentra un esquema y
+descripci¢n para quien quiera constru¡rse uno. La calidad de sonido que
+proporciona es similar a la de cualquier tarjeta comercial, pero sin el ruido
+de bus caracter¡stico de la Sound Blaster o la Covox SM II (o sea, mejor).
+
+
+    Caracter¡sticas actuales del programa.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Con fecha de hoy (ver al final ;-), el programa parece cumplir con
+las siguientes especificaciones:
+
+-
+      MODULOS
+
+*     Es capaz de hacer sonar m¢dulos con el formato del programa
+      SoundTracker y/o NoiseTracker (y compatibles) de Amiga (.MOD). Acepta
+      m¢dulos de 15 voces y de 31 con sus dos marcas("M.K." y "FLT4").
+      Tambi‚n acepta m¢dulos en formato .WOW (del programa Grave) .MOD (los
+      m¢dulos de 6 y 8 pistas del Triton FasTracker), Oktalizer (de Amiga),
+      Scream Tracker 2.x, Scream Tracker 3.0 y Composer 669 (PC).
+      No acepta m¢dulos con el formato JMPlayer, 670, Octamed o StarTrekker
+      (Amiga)... todav¡a.
+
+*     Implementa un subconjunto de las posibilidades musicales
+      del programa Protracker de Amiga, que permiten que pr cticamente
+      cualquier m¢dulo en ese formato suene de forma completamente aceptable
+      (al menos, todos los que se han probado lo hacen). Si encuentras un
+      m¢dulo que no suena bien, nos lo comunicas (con m¢dulo incluido, claro),
+      y haremos todo lo posible por remediarlo.
+ 
+
+      DISPOSITIVOS DE SONIDO
+
+*     Es capaz de hacer sonar los m¢dulos por los siguientes dispositivos
+      de sonido: El altavoz del PC (patata, patata, patata :-), Cualquier
+      DAC disponible en el mapa de puertos de E/S (incluyendo tarjetas como
+      Covox, Intersound-MDO, DACs caseros en el puerto paralelo, etc.),
+      Sound Blaster o compatibles y AdLib o compatibles (no todos) y la tarjeta
+      Visha, desarrollada en la Escuela Superior de Telecomunicaci¢n de Madrid.
+      Adem s,
+      y para su funcionamiento en una ventana de OS/2 2.0, puede usar el driver
+      de Michael Fulbright.
+
+*     Para sonido est‚reo, permite usar la Sound Blaster Pro, Sound Blaster 16 ASP, 
+      dos DACs o un DAC y la SoundBlaster
+      en modo mono. Adem s, implementa dos formas distintas de mezclado que
+      mejoran la calidad del sonido est‚reo, sobre todo si se escucha con
+      auriculares.
+
+*     Para hacer sonar la Sound Blaster se proporcionan dos m‚todos: con
+      DMA y sin DMA, este £ltimo con un par metro especial (ver la secci¢n
+      encabezada "Sound Blaster".
+
+*     Tambi‚n implementa varios tipos de filtros digitales por software.
+
+
+      PANTALLA
+
+*     Para utilizar el programa necesitar s una terjeta de v¡deo VGA o
+      compatible. Tambi‚n funciona con EGA, pero no lo har  en versiones
+      futuras.
+
+*     Ventanas con: Informaci¢n sobre el m¢dulo, descripci¢n de los cuatro
+      canales en tiempo real, lista de samples, osciloscopio, men£, partitura
+      (a dos tama¤os) y cr‚ditos.
+
+-
+
+      FUNCIONAMIENTO
+
+*     El programa no funciona en modo interactivo... todav¡a. O sea, que
+      permite usarlo como usar¡as el comando COPY del DOS, y poco m s.
+
+*     El programa permite las siguientes opciones mientras se est  escuchando
+      la m£sica: Salir al prompt del DOS (la m£sica se sigue oyendo), activar
+      y dasactivar cualquiera de los canales de sonido, avanzar y
+      retroceder por la partitura, cambiar la frecuencia de muestreo, subir y
+      bajar el volumen de la m£sica, cambiar los filtros.
+
+*     En el fichero de configuraci¢n se le puede definir un programa para
+      ejecutar en vez del shell al DOS.
+
+*     Si se sube la frecuencia de muestreo por encima de las posibilidades del
+      programa, el programa la reduce autom ticamente (fall-back).
+
+*     Al pasar de una canci¢n a otra, permite hacerlo bajando el volumen
+      suavemente (fade-out)
+
+*     El programa usa swapping a EMS (si est  disponible) y a disco. Aunque no
+      lo usa mucho todav¡a.
+
+*     El programa usa lo que quede libre en la zona de UMBs, siempre que estos
+      sean compatibles con el MS-DOS 5.0.
+
+
+    Caracter¡sticas indeseables conocidas.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Como todo el mundo sabe, nadie (ni nada) es perfecto. El VangeliSTracker
+tampoco lo es, y por lo tanto tiene algunos fallos, tanto conocidos como
+desconocidos. A continuaci¢n, se relacionan todos los fallos que se le conocen.
+Si ves que falta alguno, no dejes de comunicarlo para a¤adirlo a la lista (o
+arreglarlo directamente. ;-)
+
+*     A veces, puede dar problemas el Shell al DOS. Cuestiones de pila. El uso
+      de pila se ha reducido hasta unos 150 bytes, pero podr¡a llegar a dar
+      problemas, sobre todo si se fuerza la frecuencia de muestreo por encima
+      de las posibilidades de la m quina.
+
+*     A veces, el programa no funciona cuando se tienen cargados drivers de
+       rea local (Ethernet o similar).
+
+*     Si se tiene cargado alg£n manejador de memoria que use el modo virtual
+      del 386 (estilo QEMM386, EMM386, 386Max, etc.) el programa se ralentiza.
+      Si no se usa con DMA, funciona bien pero sin permitir frecuencias de
+      muestreo grandes. Si se usa DMA en una m quina no r pida (386SX es una
+      m quina no r pida), y se usa otra tarjeta que no sea SB 16, el programa
+      reverbera un poco (no mucho: la m£sica se oye bien, pero con alg£n .MOD 
+      puede llegar a ser molesto, sobre todo con instrumentos de tono agudo).
+
+*     Usando multitaskers (OS/2 2.0, Windows, Desqview, etc) el programa puede
+      funcionar (no siempre), pero s¢lo en modo DMA y haciendo cantidad de
+      g rgaras (una fuerte reberveraci¢n). En todos ellos funciona siempre el
+      driver "File", que vuelca la salida de sonido al fichero SBDSP$.
+
+-
+
+*     Al salir al shell del DOS, el programa habr  ocupado una cantidad de
+      memoria alrededor de 230 Kb m s lo que ocupe el m¢dulo. Si se requiere
+      menos, usar ShellVT.
+
+*     La bajada autom tica de frecuencia, a veces, se pasa un poco de largo o
+      se queda corta. Es que es dif¡cil que la m quina lo haga
+      perfectamente. :-(
+
+*     El programa reconoce los m¢dulos con instrumentos de m s de 64 Kb de
+      tama¤o, pero trunca los instrumentos a 64 Kb.
+
+*     El driver de la AdLib suena a muy bajo volumen, y con mucho ruido. En
+      algunas tarjetas de sonido suena con un pitido muy fuerte,
+      pero en una Sound Blaster y en una AdLib, desde luego, no suena el
+      pitido. :-)
+
+*     Si se utiliza el driver de OS/2 (File), lo que se ve en pantalla no tiene
+      nada que ver con lo que suena. Falta de sincronizaci¢n... Adem s, no
+      responde bien a las teclas. Se recomienda el uso del programa OS2VT.EXE
+
+*     La parte de swapping todav¡a no est  muy probada.
+
+
+    Caracter¡sticas futuras del programa.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTracker es un programa que est  empezando. Por ahora, tan s¢lo
+funciona y poco m s, pero se pretende que crezca hasta abarcar posibilidades
+como:
+
+*     Soporte para m s formatos de canciones.
+
+*     Soporte para otros dispositivos de sonido (SB 16 en modo de 16 bits,
+      Pro Audio Spectrum, Pro Audio 16, Disney SS, Covox en modo DMA, etc).
+      Si alguien hace el driver o nos presta una de esas tarjetas, le
+      estaremos eternamente agradecidos.
+
+*     Aumentar las posibilidades del programa con: edici¢n y composici¢n de
+      m£sica, edici¢n y tratamiento de sonidos digitalizados e instrumentos,
+      soporte para MIDI, as¡ como todo lo que se nos pueda ocurrir.
+
+    Recuerda que todo esto no ser  posible sin tu colaboraci¢n. Necesitamos
+ideas, beta-testers, cr¡ticas y mano de obra ;-).
+
+-
+
+    Pr¢xima versi¢n. (2.X)
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Para la versi¢n 2.0a del VT se espera implementar lo siguiente:
+
+*     Modo interactivo simple (elegir el m¢dulo de un men£, etc).
+
+*     M s ventanitas: 10 osciloscopios (uno por canal), barras de volumen
+      reales, Analizador de espectro, analizador de instrumentos, shell al
+      DOS en una ventanita (s¡, s¡, no es broma. Si quieres saber qu‚ aspecto
+      tendr , pulsa F9).
+
+*     Soporte para rat¢n.
+
+
+    Opciones de la l¡nea de comandos.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    La sintaxis para la ejecuci¢n del programa la puedes ver ejecutando VT
+sin ning£n par metro. Puedes grabarla en un fichero, redireccionando la
+salida: 'VT > VTOPT.TXT'.
+
+    La sintaxis de ShellVT y OS2VT es la misma.
+
+
+    Ficheros de opciones (.VTO)
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    A partir de esta versi¢n, se pueden especificar par metros en ficheros
+ASCII, con la misma sintaxis que en la l¡nea de comandos. Se usan poni‚ndoles
+un signo de arroba (@) delante. Por ejemplo:
+
+    VT @UNREAL.VTO
+
+    Para m s informaci¢n, m¡rate los ficheros .VTO que vienen como ejemplo.
+
+
+    Fichero de configuraci¢n.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    El VT tiene un fichero de configuraci¢n, llamado VT.CFG, que contiene
+una serie de opciones que modifican el funcionamiento del programa. El fichero
+es ASCII, y puede ser modificado con cualquier editor o programa de proceso
+de textos. Si quieres saber que opciones tienes, exam¡nalo y l‚ete los comentarios
+que all¡ vienen.
+
+    Por defecto, lo carga del directorio donde se encontraba el VT.EXE y, si no
+lo encuentra, en el directorio actual.
+
+    El Programa SHELLVT.EXE leer  el fichero VT.CFG y, a continuaci¢n, el SHELLVT.CFG,
+donde se podr n redefinir todos los par metros que se deseen.
+
+-
+
+    Interfaz. Pantalla del VT.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    La pantalla que aparece, en modo texto, tiene el siguiente aspecto:
+
+@Screen.Txt
+
+    donde cada una de las partes es la siguiente:
+
+*     Posici¢n  :  Es el lugar en el que se encuentra actualmente la
+      canci¢n. Indica adem s la longitud total del m¢dulo.
+
+*     Patr¢n  :  Indica el patr¢n que est  tocando, y el n£mero total de
+      ‚stos. Normalmente en un m¢dulo hay un numero menor de patrones que los
+      que realmente dura el tema, esto se consigue repitiendo alguno de estos.
+
+-
+
+*     Nota  :  Indica la nota que est  reproduciendo en ese momento, el
+      orden se refiere al relativo dentro del patr¢n que se muestra en ese
+      momento. Adem s, indica el tama¤o del patr¢n.
+
+*     Tempo  :  Es el tempo que actualmente tiene la melod¡a, pero dentro
+      de esta puede cambiar si el autor lo dispuso as¡.
+
+*     M¢dulo  :  Es la melod¡a que se escucha en ese momento, el t¡tulo
+      que le dio el autor.
+
+*     Fichero  :  Es el nombre del fichero que contiene la canci¢n.
+
+*     Volumen  :  Es el volumen del sonido.
+
+*     Mem. libre  :  valores internos, que se muestran por motivos de
+      depuraci¢n.
+
+*     Frec. Salida  :  Indica la frecuencia de salida de la m£sica, en Hertzios.
+
+*     (1)  :  Este  rea est  reservada para indicar el instrumento que
+      suena por cada uno de los cuatro canales visibles. A la izquierda,
+      aparece, el n£mero de canal al que corresponde.
+
+*     frec  :  Indica cada nota, en frecuencia, que se reproduce por
+      canal y el instrumento elegido en el patr¢n.
+
+*     vl  :  Es el volumen al que se reproduce ese instrumento.
+
+*     len  :  Es la longitud en bytes de la digitalizaci¢n del
+      instrumento que suena en ese momento.
+
+*     (2)  :  Es el  rea reservada para mostrar los v£metros de volumen
+      para cada uno de los canales visibles.
+
+*     (7)  :  Aqu¡ se indica si el canal est  activo (ON) o no (OFF),
+      para cada uno de los cuatro canales visibles por separado.
+
+*     (3)  :  Aqu¡ se muestran los instrumentos que tiene el m¢dulo,
+      indicando su nombre. Cuando se selecciona la visualizaci¢n del
+      osciloscopio, sustituye a esta lista de instrumentos.
+
+*     (4)  :  Se muestra las notas que ya han sido tocadas en el patr¢n para
+      los canales visibles.
+
+*     (5)  :  Indica la nota que se escucha en este mismo momento para
+      los canales visibles.
+
+*     (6)  :  Son las pr¢ximas notas que sonar n del patr¢n para
+      los canales visibles.
+
+-
+
+    Teclas utilizadas.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Aqu¡ se indican las teclas que se pueden utilizar y una breve
+descripci¢n de las mismas.
+
+*     P gina Arriba y P gina Abajo  :  Se mueve al anterior o siguiente
+      patr¢n del modulo, pero posicion ndose en la misma nota de este, no al
+      principio como ocurre en otros programas.
+
+*     Inicio y Fin  :  Sirve como la anterior, pero posicion ndose al principio
+      del patr¢n.
+
+*     Izquierda y derecha  :  Desplazan la ventana de canales visibles hacia
+      el lado correspondiente. Esto se ha hecho as¡ para poder ver los hasta
+      ocho canales posibles con el formato antiguo de pantalla, que estaba
+      pensado para 4 voces.
+
+*     1 - 0  :  Activa o desactiva el canal correspondiente ('0' es el 10).
+
+*     F5  :  Muestra la partitura en tama¤o extendido. S¢lo se mantiene la
+      parte superior de la pantalla, mientras en el resto s¢lo se ven las notas
+      de la partitura.
+
+*     F6  :  Muestra la partitura en modo reducido, tal y como se ven en la
+      pantalla del apartado anterior.
+
+*     F7  :  Osciloscopio, se ver  de forma gr fica la onda anal¢gica que
+      se est  reproduciendo en este momento, aparece en el lugar destinado a
+      los instrumentos, apartado (3).
+
+*     F8  :  Cr‚ditos. Se muestra una relaci¢n de las personas que han participado
+      en la creaci¢n del programa.
+
+*     R y T  :  Disminuye o aumenta la frecuencia de salida del m¢dulo. Si
+      se utiliza como dispositivo el altavoz, en frecuencias muy bajas se
+      notar  una distorsi¢n apreciable. Si se usa Sound Blaster por DMA,
+      La frecuencia vendr  limitada internamente por la propia tarjeta, de
+      manera que si se intenta subir del l¡mite, el programa no te dejar .
+
+*     F y G  :  Modifican el filtro correspondiente para las posiciones de ON
+      y OFF respectivamente.
+
+*     L  :  Activa o desactiva el filtro potenciador de bajos. S¢lo funciona
+      en modo mono, y no con el dispositivo "File".
+
+*     W y E  :  Modifican el tempo de la canci¢n.
+
+*     + y -  :  Controla el volumen general de la melod¡a.
+
+*     B  :  Cambia el aspecto de los vu-metros.
+
+*     D  :  Se sale moment neamente al Sistema Operativo.
+      Para volver al VT es necesario escribir la palabra EXIT.
+
+*     N  :  Salta al siguiente m¢dulo. Hace un fade-out, si est  permitido en el
+      fichero de configuraci¢n.
+
+*     S  :  Salta al siguiente m¢dulo inmediatamente.
+
+*     ESC  :  Para la ejecuci¢n del m¢dulo y finaliza el programa,
+      sali‚ndose de forma normal al sistema operativo.
+
+-
+
+    Observaciones Generales.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Si se indica como m¢dulo un fichero que no tenga el formato
+adecuado, el VT no lo har  sonar, y pasar  al siguiente m¢dulo.
+
+    Cuando se ejecuta un shell dentro del VT, este no pasar  al
+siguiente m¢dulo hasta que se abandone el shell.
+
+
+    Sound Blaster.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    La forma de usar la tarjeta Sound Blaster merece una menci¢n especial.
+Existen dos m‚todos de hacer sonar m¢dulos por la tarjeta Sound
+Blaster. Uno es el que usan programas como el ModPlay, el Whacker
+Tracker o el JAMP. Esta consiste en enviar entre 6000 y 44000 muestras
+(numeritos) por segundo a la tarjeta. ­­A mano!! El otro consiste en
+usar la posibilidad del DMA, que la SB soporta. El primero tiene la
+ventaja de que permite alcanzar frecuencias de muestreo todo lo grandes
+que se quieran, mayores de las que permite el DMA de las Sound Blaster 1.5.
+Usar el DMA permite
+que se oigan los m¢dulos en m quinas lentas (286 a 8 o 12 MHz), y que
+permite usar el programa bajo un multitasker como Desqview o Windows (aunque, hoy
+por hoy, no suena bien bajo multitasker, salvo en OS/2 con el driver).
+
+    Lo realmente especial del VT es el primer m‚todo: el que no usa DMA.
+No deber¡a ser mucho problema:
+‚se es el £nico m‚todo de hacer sonar el altavoz :-( del PC o el DAC
+gen‚rico. Lo malo es que la Sound Blaster no est  constru¡da para
+funcionar as¡, y, por lo tanto, es m s dif¡cil, y cuando lo consigues,
+va m s lento (no permite frecuencias de muestreo muy grandes).
+
+    El VT utiliza un m‚todo un tanto especial para acelerar el
+funcionamiento de la tarjeta en este modo. Para ello, hay que usar
+la variable SbSplTimeout, y experimentar d ndole valores hasta que
+funcione aceptablemente bien. Un valor muy alto, (como 50, por ejemplo)
+hace que la SB funcione como con cualquier otro programa (lenta). Un
+valor muy bajo, (1, p. ej.) acelera la SB pero no se oye :-(.
+Por poner un ejemplo, en un 386-25 sin cache, y con una SB 2.0, el
+valor adecuado est  entre el 4 y el 5, dependiendo si se usa la SB mono o el
+est‚reo DAC-SB.
+
+-
+
+    Construcci¢n de un DAC casero.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Necesitar s:
+
+*     Un conector macho D-25.
+*     Un poco de cable de nueve hilos.
+*     Una placa de inserci¢n, una placa de bakelita, un cart¢n o lo que
+      vayas a usar de soporte para el circuito.
+*     9 resistencias de 10K del 1%.
+*     9 resistencias de 20K del 1%.
+*     Un condensador cer mico de 100nF.
+*     Un condensador cer mico de 10nF.
+*     Un cable apantallado.
+*     Un jack RCA o normal, seg£n c¢mo sea la entrada del amplificador
+      que vayas a usar.
+
+    Las resistencias deben ser del 1% para evitar que haga ruido. Si no
+encuentras de 10K y 20K, que sean valores parecidos, y, sobre todo, que sean
+una el doble de la otra.
+
+    La parte de los condensadores puede no ser necesaria. Pru‚balo.
+
+@dac.txt
+
+    Este circuito, extra¡do de la documentaci¢n del Visual Player 1.1 es una
+mejora del que ven¡a con el ModPlay de Mark J.Cox, de modo que agradecemos a
+Mark J.Cox su dise¤o original y al equipo del Visual Player su mejora y su
+permiso para utilizarlo.
+
+-
+
+    Funcionamiento bajo OS/2.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    El Programa VT.EXE (usando el dispositivo File) y el OS2VT.EXE funcionan
+bajo OS/2 a trav‚s del driver de Sound Blaster contenido en el fichero
+SBOS2V09.*. Dicho fichero puede encontrarse en las BBSs indicadas m s abajo.
+
+    El driver incluye fuentes, y unas cuantas utilidades para grabar y
+reproducir samples bajo OS/2, y tambi‚n un tocador de MODs.
+
+
+    El programa ShellVT.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Junto con los programas VT.EXE y OS2VT.EXE, se encuentra tambi‚n el SHELLVT.EXE.
+Se trata de una versi¢n de VT a la que se ha quitado todo el interfaz gr fico, y cuyo
+funcionamiento es id‚ntico al de VT.EXE si se pulsa la tecla "D" nada m s iniciar su
+funcionamiento. La ventaja principal de este programa es funcionar como tarea de fondo
+bajo DOS, con unos requerimientos de memoria muy inferiores al VT.
+
+
+    Nuevas versiones.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Todas las nuevas versiones del VT, podr n recogerse en muchas BBSs de Espa¤a, pero,
+en especial, se podr n encontrar en:
+
+@BBSs.txt
+
+    Los nombres de los ficheros ser n los siguientes:
+
+    Ejecutables: VTEXExxx.*
+    Fuentes:     VTSRCxxx.*
+
+    donde "xxx" indica la versi¢n, pero sin el punto. Por ejemplo, los ejecutables
+de la versi¢n 1.2b tendr n de nombre: VTEXE12B.*
+
+-
+
+    Donaciones.
+    ÄÄÄÄÄÄÄÄÄÄÄ
+
+    En un principio, no pensaba hacer ninguna menci¢n a este tema, pero, tras
+ciertas conversaciones, me han convencido de que lo haga.
+
+    Este programa ha sido donado al dominio p£blico por unas razones que se
+comentan al principio de este manual. Como tal programa de dominio p£blico, no
+se requiere pago de ning£n tipo para utilizarlo. Esto, me parece que ha quedado
+claro.
+
+    Pero, si por alguna causa, hubiera alguna persona que le gustara tanto el
+programa que, a£n conociendo el p rrafo anterior, no pudiera resistir un impulso
+de hacer una donaci¢n (en dinero o especies) a aquellos que lo hemos hecho, en
+fin, que puede hacerlo
+(al fin y al cabo, a nadie le amarga un dulce) envi ndola a la siguiente
+direcci¢n:
+
+@Address.Txt
+
+    En todo caso, se procurar  emplear todas las donaciones en temas relacionados
+con el VT. Y siempre se agradecer n en este VT.DOC las donaciones de tarjetas,
+drivers e informaci¢n que, directamente, permitan la mejora del programa.
+
+    Si alguien no puede encontrar los fuentes y le gustar¡a que se los
+envi ramos por correo, que nos mande un sobre ya franqueado y un disquete
+(preferible de 3 1/2).
+
+
+    Recordatorio final.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Puede que seamos un poco pesados, pero recuerda los siguientes puntos
+importantes:
+
+*     No queremos dinero. S¢lo el cr‚dito que nuestro trabajo (creemos) merece.
+
+*     Ese precio es muy barato, no dejes de pagarlo, por favor. ;-)
+
+*     Distribuye este programa por todas partes. Queremos que lo conozcan en
+      los cinco (esta vez lo dije bien ;-) continentes.
+
+*     Si quieres, puedes y/o te apetece participar en el programa, no dudes
+      en comunicarlo. No olvides que los fuentes tambi‚n se dan al dominio
+      p£blico.
+
+    Muchas gracias a todos por vuestra colaboraci¢n. :ú)
+
+    Saludos, y que aproveche,
+
+                                 VangeliSTeam
+                              31 de Marzo de 1993
+

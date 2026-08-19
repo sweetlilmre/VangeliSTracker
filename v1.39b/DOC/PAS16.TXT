@@ -1,0 +1,33 @@
+    Concurso de Media Vision.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    En el n£mero de Marzo de la revista Dr. Dobbs para programadores viene un
+art¡culo bastante interesante acerca de sonido para PC. No voy a poner aqu¡ el
+art¡culo (eso ser¡a ilegal), pero puedo contaros que en una cajita gris viene un
+texto en el que se dice que los se¤ores de Media Vision (los que hacen las tarjetas
+Pro Audio Spectrum) organizan un concurso de programas de sonido. Parece muy
+interesante: La fecha l¡mite de entrega es el 15 de Julio (bastante holgado).
+
+    Hay dos pegas que le encuentro al concurso:
+
+*     Un requisito indispensable es que los programas suenen a 16 bits por la
+      Pro Audio 16. Para ello, habr¡a que hacerle el driver, probarlo, etc...
+*     La gesti¢n del concurso va por Compuserve. No tengo la m s remota idea de
+      c¢mo funciona eso. Lo £nico que s‚ (me han dicho) es que sale caro.
+      Los de MediaVision dicen que han creado una conferencia especial para el
+      concurso "GO PAS16CONTEST", y que all¡ est  el "Entry Kit".
+
+    Pido ayuda oficialmente a todo aqu‚l que me la pueda prestar de alguna forma
+u otra. Ya sea por sus conocimiento de la PAS 16, porque tenga una y la ofrezca
+para probar el programa, porque tenga acceso a COMPUSERVE o porque quiera
+ayudar a adecentar todav¡a m s el programa para la ocasi¢n.
+
+    Sinceramente, creo que hay posibilidad de llevarse alg£n premio, aunque s¢lo
+sea uno de los 50 de consolaci¢n.
+
+    Los premios son: $5000, $2000 y $1000 para los tres primeros y $100 en
+especie para los 50 siguientes.
+
+    No s‚ qu‚ forma habr¡a de repartir el premio en caso de que salga. No me
+gustar¡a que a nadie le quede mal sabor de boca despu‚s. Si alguien tiene
+alguna sugerencia, que lo diga.

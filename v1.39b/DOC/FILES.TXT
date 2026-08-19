@@ -1,0 +1,2 @@
+        VTEXE12B.*  (164 kB) Versi¢n s¢lo ejecutable.
+        VTEXE12A.*  (425 kB) Fuentes del programa.

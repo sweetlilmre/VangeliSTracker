@@ -1,0 +1,685 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@banner.txt
+-
+
+    What is VangeliSTeam?
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTeam is a group of people participating, continiously or
+sporadicly in programming, design and manteniance of VangeliSTracker program.
+
+    The reasons for us to create this group are the next ones :          
+
+*     Widely spread the methods, formats, routines and so, of making
+      digital music, in both user and programmer level.
+
+*     Joining qualified people that help us in the developement of 
+      VangeliSTracker program.
+
+*     Learn something (Everybody). ;-)
+
+    To make that possible the program will be distributed in running and
+source code, being both of them public domain or freeware. However, is
+an express desire of VangeliSTeam to make you know that this piece of 
+software is under the protection of Copyright laws.
+
+    Anyone who wants it, can make his own modifications to the program,
+use it for his own purpouses and include the routines in his own programs 
+always that you clearly remark the procedence of them. Any of this
+options is considered as enough:
+
+*     If you use  the  sources in  your own programs, you  must  write
+      somewhere where it  can be  seen, something  like : "Portions (C)
+      VangeliSTeam" or "Using sound system of  VangeliSTracker vX.X" or
+      something alike.
+
+*     If you include the whole VangeliSTracker in a program of your own,
+      you must include the whole running version.
+
+    Anyway, you are encouraged to inform us of any modification made to
+the program or any of its routines, in order to include them in the next
+official release.
+
+-
+
+    Who is VangeliSTeam?
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTeam is everybody. :-)
+
+    Well, actually, VangeliSTeam is made of all those persons participating,
+in one or other way, in programming, design and so, of VangeliSTracker.
+
+    Until this release, there is just one really active person (Juan
+Carlos Ar‚valo, that's me ;-), and some other people interested or working in
+the program. I am NOT going to tell anybody what to do. What I hope is that 
+you tell me what do you want to do, and I just will try to put togeter 
+everyone working in the same area.
+
+    If you want to discuss, propose, send, receive or just talk about
+VangeliSTracker or VangeliSTeam, please, do not hesitate and contact one
+of the persons shown below:
+
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                        CONTACT POINTS                        º
+@Contacts.txt
+
+-
+
+    Up to date, VangeliSTeam is taking advantage of the work of this other
+people:
+
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                         COLABORATORS                         º
+ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+º                           ³                                  º
+º  - Juan Carlos Ar‚valo    ³ Father of the creature. Program'sº
+º                           ³ body and general structure.      º
+º                           ³ First releases.                  º
+º                           ³                                  º
+º  - Luis Crespo            ³ Program's predecessor (JAMP).    º
+º                           ³ DMA routines. Sound Blaster Info.º
+º                           ³                                  º
+º  - F‚lix Sanz             ³ User DOCs.                       º
+º                           ³                                  º
+º  - Alejandro L¢pez        ³ Original stereo channel mixing   º
+º                           ³ idea.                            º
+º                           ³                                  º
+º  - H‚ctor Mart¡nez        ³ FFT routines. (not implemented   º
+º                           ³ yet).                            º
+º                           ³ Original four channel handling   º
+º                           ³ system idea.                     º
+º                           ³                                  º
+º  - David L¢pez            ³ SB-Pro stereo information.       º
+º                           ³                                  º
+º  - Angel Trigo            ³ SB-Pro stereo information.       º
+º                           ³                                  º
+º  - Jos‚ Ruiz              ³ Now working on OS/2 version      º
+º                           ³ (True OS/2 ;-)                   º
+º                           ³                                  º
+º  - Manuel Petit           ³ Now fitting a mouse driver.      º
+º                           ³                                  º
+º  - Carlos Fern ndez       ³ Made a modification in the       º
+º                           ³ swapping system, to make it work º
+º                           ³ on CD-ROMS.                      º
+º                           ³                                  º
+º  - N‚stor Matas           ³ Translation of this manual into  º
+º                           ³ English.                         º
+º                           ³                                  º
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+    Thanks goes to Carlos Jim‚nez for owning a SB Pro 2.0, and lending it for
+some experiments (just testing... :-).
+
+    Thanks goes to Javier Olmo, for being the owner of a SB 16 and lending it   
+for testing.
+
+    Thanks goes to Michael Fulbright, for adapting a SB driver for OS/2, and
+for making it accesible from a DOS session.                           
+
+    Thanks goes to Steve Haehnichen for making a SB driver for UNIX BSD, in
+which Michael Fulbright based his own driver.
+
+    Thanks goes to Francisco Carrascosa for being so tiresome (wish everybody
+was that way ;-D
+
+-
+
+    Thanks goes to Antonio Ropero, for owning a Covox Sound Master II, and
+stoically stand not having the DMA driver. In the next release I promise, I
+swear that ...  O;-)
+
+    Thanks also to the Future Crew people, for making such good music and
+demos.
+
+    Likewise, we wish to thank all those people that, in one or other way,
+had contributed to this.
+
+    Thank you:
+
+@ThankYou.Txt
+
+    Also thanks to the whole staff of Anyware S.A. for standing the testing 
+made in their computers, and thanks to all the people I forgot to mention in 
+the list. :-(
+
+
+    System requierements.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+*     PC computer or compatible, with 286 processor or higher.
+*     When using OS/2, Michael Fulbright driver requiered.
+*     VGA or EGA graphics card.
+*     Around 230 Kb free RAM + module lenght.
+      Around 140 Kb in case you use ShellVT.
+*     An EMS driver, in case of using swapping.
+*     1 or 2 paralell ports, when using DAC. 
+*     One of this cards, if requiered by the user:
+*        Covox Sound Master II card, Intersound MDO or similar.
+*        Any version of SoundBlaster card.
+*        AdLib sound card or compatible.
+
+    To make it work, you will need some music files in one of .MOD, .WOW,
+.OKT, .STM, .S3M or .669 formats.
+
+    Connect your device to the computer !!!!!! :-)
+
+    ...yes, but, what is the DAC?
+
+    A DAC (Digital to Analog Converter), is a built of DAC chips or resistors
+that, connected to the parallel port, is able to playback digital sounds
+through an amplifier. Later on, under the title of "How to build a homemade
+DAC", you will find a diagram and some directions on building one. The sound
+quality provided by one of this gadgets is similar to that found in any
+commercial cards, but avoiding the peculiar bus noise of Sound Blaster or
+Covox SM II cards (so it's better).
+
+
+    Actual program features.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Up to date (see the date at the end ;-), the program seems to have this
+features:
+
+-
+      MODULES
+
+*     Is able to play modules in Amiga's SoundTracker and NoiseTracker 
+      (and compatibles) programs format (.MOD). It handles 15 and 31
+      voices modules with both marks "M.K." and "FLT4". It can play also,
+      .WOW format modules (Grave Program), 6 and 8 channel .MOD (from
+      Triton Fast Tracker), .OKT (Amiga's Oktalizer), Scream Tracker 2.x,
+      Scream Tracker 3.0 and Composer 669 (PC).
+      It still does not
+      handle JMPlayer, 670, Amiga's Oktamed nor StarTrekker formats.
+
+*     It implements a subset of Amiga's Prototracker program, musical 
+      capabilities, which allows almost every module to be played in an
+      adequate way (All the modules tested did). If you find any module
+      that can't be played or sounds bad, contact us (sending the module, of
+      course) and we will do whatever is posible to fix the problem.
+ 
+
+      SOUND DEVICES
+
+*     Is able to play modules in various sound devices :   
+*        PC Speaker (Ouch! Not widely recomended :-).
+*        Any availabe DAC in the I/O port map (including cards like Covox,
+         Intersound-MDO, homemade DACs in paralell port, and so).
+*        Sound Blaster or compatible and AdLib or compatible (not always).
+*        Visha speech card.
+*        Apart, for woking under OS/2, Michael Fulbright's driver can be used.
+
+*     For stereo sound, it allows the use of Sound Blaster Pro, Sound
+      Blaster 16 ASP, two DACs or one DAC and SoundBlaster in mono mode. 
+      Also, it implements two different ways of channel mixinf that 
+      enhances the stereo sound quality, especially when using headphones.
+
+*     To play sounds in Sound Blaster card there are two methods: using DMA
+      or not using DMA.
+
+*     Also implements several kinds of software-made digital filters.
+
+
+      THE SCREEN  
+
+*     To use VangeliSTracker you will need a VGA or compatible video card.
+      It works with EGA too, but it won't in future versions.
+
+*     The windows contain: Module information, real time four channel
+      description, sample list, oscilloscope, menu, track (music sheet,
+      two sizes) and credits.
+
+-
+
+      WORKING        
+
+*     The program does not works in interactive mode... yet. That means that
+      you can use it just as you would use a DOS line command.
+
+*     The program can perform some actions while playing music : Shell to DOS
+      ( the music will continue playing ), activate or desactivate any of
+      the sound channels, fast forward and rewind the song, change the
+      sampling rate, rise or lower the music volume or change the filters.
+
+*     In the config file you can define a program to execute instead of  
+      COMMAND.COM when shelling.         
+
+*     If you rise the sampling rate over the program capabilities, it will
+      automatically reduce it downto an adequate level (fall-back).
+
+*     When jumping from one song to the next, a fade-out option is available.
+
+*     The program uses EMS swapping (if available) and disk swapping.
+
+*     The program will use the free UMB area, if any, if it's MS-DOS 5.0
+      compatible.
+
+
+    Undesirable, known features.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    As everybody knows, no one (and nothing) is perfect. VangeliSTracker is
+not an exception to the rule and so, it has some known and unknown bugs.
+Here is a relation of all the known bugs. If you find any other, have no
+doubt about telling us, in order to attach it to the list or simply fix it.
+ ;-)
+
+*     Sometimes, you may find DOS Shell problems. A matter of stack. The
+      stack use has been reduced down to 150 bytes, but it could give 
+      problems when forcing the sampling rate over the machine capabilities.
+
+*     Sometimes, the program does not work when local area network drivers are
+      present (Ethernet or similar).
+
+*     If you have any memory handler loaded in memory that uses 386 virtual 
+      mode (like QEMM386, EMM386, 386Max, and so) the program will slow down.
+      If you don't use DMA, it will work properly but it won't be able to 
+      handle very high sampling rates. If you use DMA in a non fast machine 
+      (386-25Mhz is a non fast machine), and you are using a sound card 
+      different from SB 16, the program will reverberate a little bit (not 
+      much: the music will be heard all right, but it can be kind of annoying 
+      with some .MODs, especially if they contain high pitch instruments).
+
+*     When using multitaskers (OS/2 2.0, Windows, Desqview, and so) the 
+      program may work (not always), but just in DMA mode and gargling a lot
+      (a strong reberveration). In all of them, the "File" driver always
+      work, dumping the sound output to the file SBDSP$.
+
+-
+
+*     When Shelling to DOS, the program will use an ammount of RAM of
+      230 Kb plus the module lenght. To save memory, use ShellVT.
+
+*     The automatic fall-back, sometimes, goes over or do not reach the
+      desired value. Is very difficult to get the machine to do this
+      accurately. :-(
+
+*     The program recognizes modules with instruments bigger than 64 Kb, but
+      it will truncate them to 64 Kb.
+
+*     The Adlib driver sounds at a very low volume, and too noisy. In some
+      sound cards you will notice a strong wishtling, but is not the case
+      of Sound Blaster nor AdLib. :-)
+
+*     If you use the OS/2 driver (File), what you will get on the screen  
+      will have nothing to do with what you hear. Lack of sincronism... 
+      The keyboard won't work properly either. In this case, we recommend
+      you the use of OS2VT.EXE .
+
+*     The memory swapping is not widely tested yet.
+
+
+    Future features in the program.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VangeliSTracker is a beginner. By now it just works and nothing else but
+we pretend to make it grow to reaching goals like:
+
+*     Support for more module formats (670, Oktamed, StarTrekker and so).
+
+*     Support for other sound devices (SBPro 3.0 in 16 bits mode, Pro Audio 
+      Spectrum, Disney SS, Covox in DMA mode, and so). If someone make the
+      driver or lend us one of this cards, we will be ethernally grateful.
+
+*     Increase the program posibilities with: song edition and composition,
+      digital sound and instrument edition and processing, MIDI support,
+      as well as everything we can machinate.
+
+    Remember: all of this won't be possible without your colaboration. We 
+need ideas, beta-testers, critcs and labour ;-).
+
+-
+
+    Next release. (2.X)
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    In next version 2.0a of VT we hope to implement :
+
+*     Simple interactive mode (choose a module within a menu...).
+
+*     More windows: 10 oscilloscopes (one per channel), real volume bars,
+      Spectrum analizer, instrument analizer, DOS shell in a window
+      (yeah, yeah, ain't no joke. If you want to see how it will look like,
+      press F9).
+
+*     Mouse support.
+
+
+    Command line options.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VT sintax can be seen by running the program without parameters. You can 
+save it in a file, rerouting the output if you want: 'VT > VTOPT.TXT'.
+
+    The syntax of ShellVT and OS2VT is exactly the same.
+
+
+    Option switch files (.VTO)
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    You can specify parameters in ASCII files, using the same syntax as in
+the command line. They are used preceding the file name with an at-sign (@).
+For example:
+
+    VT @UNREAL.VTO
+
+    For more information, look into the example .VTO files included.
+
+
+    Config file.
+    ÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VT has a configuration file, called VT.CFG. This file contains some
+options that modifies the internal working of the program. The file is ASCII,
+so it can be modified with any editor o word processing software. If you
+want to know the available options, please feel free to examine it, and
+read the comments inside it.
+
+    By default, the config file will be loaded from the VT.EXE directory
+but if the search fails, VT will look for it in the current directory.
+
+    SHELLVT.EXE program will read VT.CFG file and then, SHELLVT.CFG, where
+you can redefine every single parameter.
+
+-
+
+    Interface. VT Screen.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    The screen is in text mode, and presents this aspect:
+
+@Screen.Txt
+
+    Where each part is:
+
+*     Position  :  Is the actual position within the song. It also shows the
+      total lenght of the module.
+
+*     Pattern  :  Shows the pattern currently being played, and the total
+      number of them. Normally there is less patterns than positions in a 
+      module, that is possible becouse some of them are repeated.
+
+-
+
+*     Note  :  Shows the note currently being played, the ordinal number
+      is refered to the actual pattern. Also, it shows the size of the pattern.
+
+*     Tempo  :  Is the actual tempo of the melody, but it can change 
+      if the author used the appropiate command.
+
+*     Module :  Is the song loaded and playing, shows the title or name
+      that the author gave to the theme.
+
+*     File  :  Is the file name containig the song.
+
+*     Free mem.  :  Internal values, shown just for debuggin reasons.
+
+*     Outp. freq.  :  Shows the music output rate, in Hertzs.
+
+*     (1)  :  This area shows the instrument being used by each one of the
+      four visible channels. At left hand you can see the channel number.
+
+*     frec  :  Shows the pitch of each note being played by each visible 
+      channel.
+
+*     vl  :  Is the playback volume of this particular instrument.
+
+*     len  :  Is the lenght in bytes of the digitized instrument.
+
+*     (2)  :  This area shows the volume vumeters for each visible channel.
+
+*     (7)  :  Channel Status zone. It shows if the corresponding channel
+      is ON or OFF.
+
+*     (3)  :  Module instrument list. Name and number. This part of the
+      screen will be overlayed when selecting oscilloscope window. 
+
+*     (4)  :  Shows the notes that have just being played in the pattern
+      para the visible channels.
+
+*     (5)  :  Shows the note being currently played for the visible channels.
+
+*     (6)  :  Shows the notes to be played next in the pattern for the
+      visible channels.
+
+-
+
+    The keyboard.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    This is a relation of the keys you may use and a brief description of 
+them.
+
+*     Page Up and Page Down  :  It moves to the preceding or to the next
+      pattern in the module, but positioning in the same note number, not at
+      the beginning of the pattern, as other programs do.
+
+*     Home and End  :  Like PgUp & PgDn, but positioning at the beginning
+      of the pattern.
+
+*     Left and Right arrows  :  Left or right scrolling of the visible channels.
+      This has been made this way to be able to see up to 10 channels
+      respecting the old screen format, made to handle just 4 voices.
+
+*     1 - 0  :  Activates or desactivates the corresponding channel ('0'
+      means 10).
+
+*     F5  :  Shows the track in large size. You will only see the track
+      and the four or five first lines of the original screen.
+
+*     F6  :  Returns to regular size track mode.
+
+*     F7  :  Oscilloscope, show a graphic of the analog waveform currently 
+      being played. It ovelays instrument list in zone (3).
+
+*     F8  :  Credits. Shows the list of the people that have took part in the
+      creation of the program.
+
+*     R and T  :  Lower or rises the output rate of the module. When using
+      PC speaker device, at low rates you will notice some distortion. If
+      you use Sound Blaster with DMA, the rate will be limited internally by 
+      the card, so if you try to go over the limit, the program won't let
+      you do that.
+
+*     F and G  :  Activates, desactivates the filter. ON and OFF .
+
+*     L  :  Switches the bass enhancing filter. Only works in mono devices,
+      and not with the "File" device.
+
+*     W and E  :  Increases and decreases the song's tempo.
+
+*     + and -  :  Main volume control.
+
+*     B  :  Changes the vu-meter aspect.
+
+*     D  :  DOS Shell. To return to VT, enter EXIT at the DOS prompt.
+
+*     N  :  Jumps to next module if any. Fades-out, if this feature is
+      enabled in the config file.
+
+*     S  :  Fast jump to next module.
+
+*     ESC  :  Stops playing the module and quit the program, returning to
+      the operating system.
+
+-
+
+    General Remarks.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    If you try to play a non valid format file, VT will just flash and skip it.
+
+    When shelling from VT, no jump to the next module will be made until
+exiting the shell and returning to the program.
+
+
+    Sound Blaster.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    The way Sound Blaster card works deserves a special mention. There are 
+two methods of playing modules through Sound Blaster card. One is the way 
+used by programs like ModPlay, Whacker Tracker or JAMP. This method consist 
+of sending between 6000 and 44000 samples (numbers) per second to the card
+Hand made!!. The other uses SB DMA support. The former has the advantage of
+reaching as-high-as-we-want sampling rates, higher than those allowed by 
+Sound Blaster 1.5 DMA. The latter, instead, allow us to play modules in
+slow machines (286 a 8 o 12 MHz), and run the program under multitaskers
+like Desqview or Windows (although, by now, it does not sound well under
+multitasker programs, only under OS/2 using the driver).
+
+    What is really special about VT is the handling of the first method: 
+not using DMA. It shouldn't be a real problem : In fact, that is the only
+way to make the PC speaker say something :-( or to get the DAC working.
+But the problem is that Sound Blaster wasn't build to work this way and,
+so, it is harder to find the way, and when you finally get something it
+goes turtle step (and does not allow very hihg sampling rates).
+
+    VT uses a special method to speed up the card under this mode. To make 
+it possible, we use the variable SbSplTimeout. Give different values to it
+till you find the right one. A very high value, (like 50, for example) make
+the SB to work like it would do with any other program (slowly). A very low
+value, (1, for example) speeds up SB card, but you may not hear anything
+:-(. Let's give an example, in a 386-25 non cache computer, and using SB 2.0,
+the right value will be between 3 and 4, depending on which SB mode you are
+using: mono or DAC-SB stereo.
+
+-
+
+    How to build a homemade DAC.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    You'll need:
+
+*     A D-25 pin male connector.
+*     Nine wire cable.
+*     A base for the circuit. A bakelite plaque, a cardboard ...
+*     9 10K resistors, 1% tollerance.
+*     9 20K resistors, 1% tollerance.
+*     One 100nF ceramic capacitor.
+*     One 10nF ceramic capacitor.
+*     One shielded cable.
+*     One RCA or normal jack, depending on the amplifier you use.
+
+    The resistors must be 1% tollerance, to avoid noise. If you can't find
+10K and 20K, buy similar values, but one must be two times the other.
+
+    The capacitors may not be nedeed, but it will sound better with them. 
+
+@dac.txt
+
+    This circuit, extracted from Visual Player 1.1 documents, is an
+enhancement of that contained in Mark J.Cox's ModPlay, so we thank Mark J.Cox 
+for his original design and also to the Visual Player team for the enhancement
+and the permission to use it.
+
+-
+
+    Working under OS/2.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    VT.EXE program (using File device) and OS2VT.EXE program work under
+OS/2 through the Sound Blaster driver contained in SBOS2V09.*. 
+This file can be found at the BBSs stated below.
+
+    The file includes the driver souce code, and some other playing and
+recording utilities under OS/2, and a MOD player.
+
+
+    ShellVT Program.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    Along with VT.EXE and OS2VT.EXE, you'll find SHELLVT.EXE. It's a VT
+version whose graphic interface has been removed, but working exactly the
+same as if you run VT.EXE and the you press 'D' key. The main advantage of 
+this program is that it works like a background job under DOS, with lower
+memory requierements than VT.EXE.
+
+
+    New releases.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    You can find find any new version in many Spanish BBSs, but, firstly
+in:
+
+@BBSs.txt
+
+    The file names used will be the following:
+
+    Exe files   :     VTEXExxx.*
+    Source files:     VTSRCxxx.*
+
+    where "xxx" stands for the version number. For example, the exe files
+of 1.2b version will be named as : VTEXE12B.*
+
+-
+
+    Donations.
+    ÄÄÄÄÄÄÄÄÄÄ
+
+    At first, I was not going to mention this matter, but after a few
+conversations with my colleages, I decided to do it.
+
+    This program has been donated to public domain by the reasons explained
+at the beginning of this DOC. As a public domain program, you are not
+requiered to pay any registration fee. I think this point is clear enough.
+
+    But if, for any reason, you like so much this program that you can't
+help yourself giving a donation (money or hardware) to those who made this  
+possible, well, you are free to do it. You can send any donations to:
+
+@Address.Txt
+
+    Anyway, we will try to use any donation in developing VT. We will also
+mention in this DOC any card donation, driver donation or useful information,
+that may help us to enhance the program.
+
+    If someone can't find the source code and would like to take a look 
+at them, send us a self adressed, already posted (or send the stamps or
+the money) envelope and one diskette (3 1/2 if possible).
+
+
+    Final remarks.
+    ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+    We can seem to be a bit tiresome, but, please, remember this important
+points:
+
+*     We do NOT want any money. Just the credit our job deserves.
+
+*     Is a very cheap price, a real bargain. Please pay it. ;-)
+
+*     Please, spread this program everywhere. We want it to be known all
+      along the five (I got it right this time ;-) continents.
+
+*     If you want, can or would like to participate in the project, have
+      no doubt about telling us. Don't forget that the sources are given 
+      to public domain too.
+
+    Thank you everybody for your colaboration. :ú)
+
+    Greets, and enjoy it!
+
+                                 VangeliSTeam
+                             March the 31st, 1993
+

@@ -1,0 +1,78 @@
+seg    bytes   release unit   prefix    windows
+--------------------------------------------------------------
+12ba   5968    PLAYMOD.TPU    -          16.1%
+
+1a17   4303    SOUNDDEV.TPU   +0015      44.3%
+
+11bb   4080    VTCFG.TPU      +0022      40.4%
+
+154d   3920    MODLOADE.TPU   +001b      55.4%
+               STMLOADE.TPU   -           5.6%
+
+109c   3296    VTCMD.TPU      -          42.1%
+               CMDLINE.TPU    -           5.7%
+
+165a   3216    SONGELEM.TPU   +00cc      65.1%
+               SONGUNIT.TPU   +000b       5.6%
+
+17cf   2832    HEAPS.TPU      +00d5      50.6%
+               SWAPSTRE.TPU   +0006      10.6%
+               SWAPMANA.TPU   +0006       8.6%
+
+1723   2752    GUS.TPU        +01b8      28.1%
+
+14b9   2224    SONGUNIT.TPU   +005d      38.6%
+               HEAPS.TPU      +000b       5.2%
+
+142f   2176    MODCOMMA.TPU   +0008      49.4%
+               MODLOADE.TPU   -           8.1%
+               STMLOADE.TPU   -           6.3%
+
+19a0   1905    SOUNDBLA.TPU   +007a      16.6%
+
+1000   1621    VTSTRCON.TPU   +0005      13.9%
+
+193a   1617    DEVSB.TPU      +000a      25.1%
+               SOUNDDEV.TPU   -           8.4%
+
+116e   1232    CMDLINE.TPU    +000a      59.5%
+               VTCMD.TPU      +000a       6.5%
+               SWAPSTRE.TPU   +000a       5.6%
+
+1b24   768     HARDWARE.TPU   +0300      83.7%
+
+1065   491     DEVGUS.TPU     +0005       5.8%
+
+1b54   432     VTSPECIA.TPU   +008c      44.3%
+
+1084   384     DEVGUS.TPU     +0006      14.9%
+               DEVSB.TPU      +0006       6.4%
+
+1880   240     UMBUNIT.TPU    +00f0      65.5%
+               HEAPS.TPU      +0008       6.9%
+               SONGUNIT.TPU   +0006       5.2%
+
+1650   160     SONGUTIL.TPU   +002a      71.1%
+
+1931   159     VTGLOBAL.TPU   +0090      13.2%
+               MOUSE.TPU      +0007       5.3%
+               DEVSB.TPU      +0006       5.3%
+
+1544   144     FILTERS.TPU    +0081      79.4%
+               SOUNDDEV.TPU   +0005       5.9%
+               KBD.TPU        +0005       5.9%
+
+1642   144     ASCIIZ.TPU     +0090     100.0%
+               OUTPUT43.TPU   +0008       5.9%
+               VTPLAY.TPU     +0004       5.9%
+
+164b   80      UNKLOADE.TPU   +000a      16.7%
+               HEAPS.TPU      +0008       5.6%
+               VTCFG.TPU      +0004       5.6%
+
+116a   64      FILEUTIL.TPU   +000b      42.9%
+               BIOSVIDE.TPU   +0009       7.1%
+               OKTLOADE.TPU   +0008       7.1%
+
+14b7   32      -- nothing scores above 5%
+188f   32      -- nothing scores above 5%
