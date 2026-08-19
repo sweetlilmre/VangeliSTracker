@@ -34,7 +34,7 @@ def images():
     oh = struct.unpack_from('<H', o, 8)[0] * 16
     u = (ROOT / 'build/VTMAIN.EXE').read_bytes()
     uh = struct.unpack_from('<H', u, 8)[0] * 16
-    mp = (ROOT / 'build' / 'VTMAIN.MAP').read_text(errors='replace')
+    mp = (ROOT / 'build' / 'VTMAIN.MAP').read_text(encoding='ascii', errors='replace')
     m = re.search(r'^\s*([0-9A-F]+)H\s+([0-9A-F]+)H\s+([0-9A-F]+)H\s+DEMOVT\s+CODE',
                   mp, re.M)
     n = int(m.group(3), 16)

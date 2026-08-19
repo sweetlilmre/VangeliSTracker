@@ -62,7 +62,7 @@ def load():
     u = (ROOT / 'build/VTMAIN.EXE').read_bytes()
     uh = struct.unpack_from('<H', u, 8)[0] * 16
     ours = {}
-    for line in (ROOT / 'build' / 'VTMAIN.MAP').read_text(errors='replace').splitlines():
+    for line in (ROOT / 'build' / 'VTMAIN.MAP').read_text(encoding='ascii', errors='replace').splitlines():
         m = re.match(r'\s*([0-9A-F]+)H\s+[0-9A-F]+H\s+([0-9A-F]+)H\s+(\S+)\s+CODE\s*$', line)
         if m:
             ours[m.group(3)] = (uh + int(m.group(1), 16), int(m.group(2), 16))

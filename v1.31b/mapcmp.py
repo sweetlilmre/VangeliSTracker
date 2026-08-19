@@ -58,7 +58,7 @@ def orig_lengths():
 
 def map_lengths(path):
     out = {}
-    for line in path.read_text(errors='replace').splitlines():
+    for line in path.read_text(encoding='ascii', errors='replace').splitlines():
         m = re.match(r'\s*([0-9A-F]+)H\s+([0-9A-F]+)H\s+([0-9A-F]+)H\s+(\S+)\s+CODE\s*$',
                      line)
         if m:

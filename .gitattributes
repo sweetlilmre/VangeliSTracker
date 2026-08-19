@@ -8,9 +8,14 @@
 # --- everything, by default: leave the bytes alone ------------------------
 * -text
 
-# --- but let git diff the ones worth diffing ------------------------------
-# `diff` without `text` gives readable diffs while still never converting EOLs.
-*.md    -text diff
+# --- DOCUMENTS ARE LF -----------------------------------------------------
+# Markdown is not read by any DOS tool, so it has no reason to carry CRLF.
+# `text eol=lf` normalises it on the way in and checks it out LF everywhere,
+# which is the one place in this repo where letting git convert is correct.
+*.md    text eol=lf
+
+# --- but let git diff the DOS files, without ever converting them ---------
+# `diff` without `text` gives readable diffs while still never touching EOLs.
 *.py    -text diff
 *.PAS   -text diff
 *.ASM   -text diff

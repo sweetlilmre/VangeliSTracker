@@ -15,7 +15,8 @@ DATA = {0x1caa: 'constants only, no code'}
 
 # what verify.py reports, parsed from its own output
 out = subprocess.run([sys.executable, 'v1.31b/verify.py'],
-                     capture_output=True, text=True, cwd=str(ROOT)).stdout
+                     capture_output=True, text=True,
+                     encoding='utf-8', cwd=str(ROOT)).stdout
 done, partial = {}, {}
 for line in out.splitlines():
     m = re.match(r'^(\w+)\s+([0-9a-f]{4})\s+(\d+)\s+(.*)$', line)
@@ -58,7 +59,8 @@ PROGRAM_SEG = 0x1000
 prog = untouched.pop(PROGRAM_SEG, None)
 if prog is not None:
     out2 = subprocess.run([sys.executable, 'v1.31b/progcmp.py'],
-                          capture_output=True, text=True, cwd=str(ROOT)).stdout
+                          capture_output=True, text=True,
+                     encoding='utf-8', cwd=str(ROOT)).stdout
     m = re.search(r'agrees for the first (\d+) byte', out2)
     n = int(m.group(1)) if m else 0
     print("THE PROGRAM: 1000, %d bytes in the segment -- %d verified by progcmp.py"

@@ -59,7 +59,8 @@ MODULES = {
 def fixups(obj):
     """{module offset: length} from the .OBJ's own FIXUPP records."""
     out = subprocess.run([sys.executable, str(HERE / "omf.py"), str(obj), "-v"],
-                         capture_output=True, text=True, cwd=str(ROOT)).stdout
+                         capture_output=True, text=True,
+                       encoding="utf-8", cwd=str(ROOT)).stdout
     return {int(m.group(1), 16): int(m.group(2))
             for m in re.finditer(r"^\s*\+([0-9a-f]{4})\s+(\d+) byte", out, re.M)}
 

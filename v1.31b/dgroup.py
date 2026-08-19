@@ -44,7 +44,7 @@ def orig_image():
 
 
 def our_image():
-    mp = (ROOT / 'build' / 'VTMAIN.MAP').read_text(errors='replace')
+    mp = (ROOT / 'build' / 'VTMAIN.MAP').read_text(encoding='ascii', errors='replace')
     m = re.search(r'^\s*([0-9A-F]+)H\s+[0-9A-F]+H\s+[0-9A-F]+H\s+DATA\s+DATA\s*$',
                   mp, re.M)
     if not m:
