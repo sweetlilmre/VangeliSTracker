@@ -1,6 +1,6 @@
 # ref/ — the measurement target
 
-`vt1.31b.bin` is the file every comparison in this tree runs against, and **it is not in git.** See the root `.gitignore` and `../refpath.py`.
+`vt1.31b.bin` is the file every comparison in this tree runs against, and **it is tracked** — the measurement target belongs with the measurements, and a checkout that cannot measure itself is not much use. Every script resolves the path through `../refpath.py`.
 
 ## What it is
 
@@ -14,9 +14,11 @@
 
 ## Recreating it
 
+It is in git, so a checkout already has it. To rebuild it from the shipped file anyway:
+
     python tools/unlzexe.py <path to NEUROSIS.008> v1.31b/ref/vt1.31b.bin
 
-Or point `VT_REFIMG` at a copy you keep elsewhere; every script resolves the path through `refpath.py`, so there is one place to change.
+Or point `VT_REFIMG` at a copy you keep elsewhere; `refpath.py` honours it, so there is one place to change.
 
 ## What it cannot tell you
 
