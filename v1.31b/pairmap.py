@@ -9,6 +9,8 @@ import re
 import struct
 import pathlib
 
+import refpath
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REL = ROOT / 'v1.39b'
 
@@ -46,7 +48,6 @@ for f in srcs:
 
 # a literal shared by many sources says little; weight the rare ones
 from collections import Counter
-import refpath
 freq = Counter()
 for s in lits.values():
     freq.update(s)
