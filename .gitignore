@@ -18,3 +18,7 @@ venv/
 *.swp
 Thumbs.db
 desktop.ini
+
+# The kit's machine-specific answers: real local paths, so never committed.
+# kit.toml holds the relative ones and IS committed.
+kit.local.toml
