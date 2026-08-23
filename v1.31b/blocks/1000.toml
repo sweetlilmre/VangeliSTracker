@@ -1,0 +1,87 @@
+# The program's own segment, block by block, against the LINKED image.
+#
+# GENERATED from v1.31b/progcmp.py by parsing it, when that script turned
+# out to be a blockcmp case rather than a fourth compare tool (psycho #45).
+# It reported blocks with shifts -- blockcmp's shape -- differing only in
+# which image it read and which rule it forgave by.
+
+segment = 0x1000          # the program's own code segment
+length  = 1616            # its whole extent, 1065 - 1000 in paragraphs
+unit    = 'VTMAIN.EXE'    # the LINKED image, not a .TPU
+strip_header = true       # so the segment starts at the load image's start
+at      = 0x0000          # and its position is therefore known, not searched
+window  = 200             # progcmp searched +/-200, narrower than a
+                          # half-written unit needs because this segment is
+                          # whole
+
+# A LINKED image has no pending zeros: the linker already ran. Its two known
+# fixup classes are a segment word a fixed number of paragraphs off, and a
+# DGROUP variable offset.
+rule          = 'linked'
+varbase       = 0x0C70        # the initialised/uninitialised boundary
+segment_delta = -7            # our segments load 7 paragraph(s) low
+
+# The program's routines, from the header of VTMAIN.PAS. A block ENDS where
+# the next one's literals begin, not at its prologue -- the trap this
+# project records twice. progcmp stated only each start; the ends are that
+# arithmetic, with the last block running to the segment's end.
+
+[[block]]
+name = 'the four banner constants'
+from = 0x0000
+to   = 0x00F8
+
+[[block]]
+name = 'ShowBanner'
+from = 0x00F8
+to   = 0x016B
+
+[[block]]
+name = 'TimerChain'
+from = 0x016B
+to   = 0x0171
+
+[[block]]
+name = 'PollDriver'
+from = 0x0171
+to   = 0x01A5
+
+[[block]]
+name = 'TimerHandler'
+from = 0x01A5
+to   = 0x01BD
+
+[[block]]
+name = 'HookTimer'
+from = 0x01BD
+to   = 0x020A
+
+[[block]]
+name = 'UnhookTimer'
+from = 0x020A
+to   = 0x024C
+
+[[block]]
+name = 'Dispatch'
+from = 0x024C
+to   = 0x02B5
+
+[[block]]
+name = 'PlayModule'
+from = 0x02B5
+to   = 0x0405
+
+[[block]]
+name = 'the usage text'
+from = 0x0405
+to   = 0x04B3
+
+[[block]]
+name = 'the init chain'
+from = 0x04B3
+to   = 0x04E0
+
+[[block]]
+name = 'the body'
+from = 0x04E0
+to   = 0x0650
