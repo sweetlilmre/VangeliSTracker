@@ -1,0 +1,27 @@
+# The {$L} object modules, and where each lands in its segment.
+#
+# GENERATED from v1.31b/asmcheck.py's MODULES table when that tool merged into
+# the kit's objcheck (psycho issue #33). The four numbers per module are what
+# the two differed in.
+#
+#   segment   where the unit's code sits in the original image
+#   length    the segment's length
+#   from      where the object module lands inside it
+#   to        the first byte past the module; the tail beyond is linker
+#             padding and is checked to be zero rather than compared
+
+# Where the real sources are, so a stale build is refused rather than measured.
+sources  = "v1.31b/src"
+rewrites = ["tp6_far"]
+
+[module.PLAYMOD]
+segment = 0x12BA
+length  = 5968
+from    = 0x148F
+to      = 0x1746
+
+[module.SOUNDDEV]
+segment = 0x1A17
+length  = 4303
+from    = 0x0746
+to      = 0x10C4

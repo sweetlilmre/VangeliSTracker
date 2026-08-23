@@ -1,0 +1,149 @@
+# The linked image's segment layout, and what counts as a DGROUP address.
+#
+# GENERATED from v1.31b/linkcmp.py by parsing it, when that tool merged
+# into the kit's linkcmp (psycho issue #33). Thirty-one addresses retyped
+# by hand is thirty-one chances to compare two different units.
+
+image = "VTMAIN.EXE"      # our linked image, in the build directory
+map   = "VTMAIN.MAP"      # and its map, which says where each unit landed
+
+# The initialised/uninitialised DGROUP boundary. A differing operand above
+# it on both sides is a VARIABLE address -- the thing being measured. Below
+# it is the initialised half, which is measured exactly elsewhere, so a
+# difference there is a regression.
+varbase  = 0x0C70
+# The original's DGROUP size, so an operand past it is not an address.
+datalen  = 0x4690
+# A plausible misplacement. Beyond this the two words are not the same
+# variable in two places, they are unrelated numbers.
+maxdelta = 8192
+
+# Not ours to compare: the runtime library's own units.
+skip = ['DOS', 'OBJECTS', 'SYSTEM']
+
+# The ORIGINAL's segment layout. Ours is read from the .MAP; the original
+# has no map, so it is declared. Each entry's extent is the NEXT entry's
+# address minus its own, so the last entry is a bound and names no unit.
+[[segment]]
+at   = 0x1000
+unit = 'DEMOVT'
+
+[[segment]]
+at   = 0x1065
+unit = 'VTSILENC'
+
+[[segment]]
+at   = 0x1084
+unit = 'DEVGUS'
+
+[[segment]]
+at   = 0x109C
+unit = 'VTCMD'
+
+[[segment]]
+at   = 0x116A
+unit = 'FILEUTIL'
+
+[[segment]]
+at   = 0x116E
+unit = 'CMDLINE'
+
+[[segment]]
+at   = 0x11BB
+unit = 'VTCFG'
+
+[[segment]]
+at   = 0x12BA
+unit = 'PLAYMOD'
+
+[[segment]]
+at   = 0x142F
+unit = 'MODCOMMANDS'
+
+[[segment]]
+at   = 0x14B7
+unit = 'VTCTRL'
+
+[[segment]]
+at   = 0x14B9
+unit = 'SONGUNIT'
+
+[[segment]]
+at   = 0x1544
+unit = 'FILTERS'
+
+[[segment]]
+at   = 0x154D
+unit = 'MODLOADER'
+
+[[segment]]
+at   = 0x1642
+unit = 'ASCIIZ'
+
+[[segment]]
+at   = 0x164B
+unit = 'UNKLOADER'
+
+[[segment]]
+at   = 0x1650
+unit = 'VTNOTES'
+
+[[segment]]
+at   = 0x165A
+unit = 'SONGELEMENTS'
+
+[[segment]]
+at   = 0x1723
+unit = 'GUS'
+
+[[segment]]
+at   = 0x17CF
+unit = 'HEAPS'
+
+[[segment]]
+at   = 0x1880
+unit = 'VTDOSMEM'
+
+[[segment]]
+at   = 0x188F
+unit = 'VTDOSRSZ'
+
+[[segment]]
+at   = 0x1891
+unit = 'OBJECTS'
+
+[[segment]]
+at   = 0x1931
+unit = 'VTSHELL'
+
+[[segment]]
+at   = 0x193A
+unit = 'DEVSB'
+
+[[segment]]
+at   = 0x19A0
+unit = 'SOUNDBLASTER'
+
+[[segment]]
+at   = 0x1A17
+unit = 'SOUNDDEVICES'
+
+[[segment]]
+at   = 0x1B24
+unit = 'HARDWARE'
+
+[[segment]]
+at   = 0x1B54
+unit = 'VTRESID'
+
+[[segment]]
+at   = 0x1B6F
+unit = 'DOS'
+
+[[segment]]
+at   = 0x1BA1
+unit = 'SYSTEM'
+
+[[segment]]
+at   = 0x1CAA
+# no unit: this entry only bounds the one above it

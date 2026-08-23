@@ -1,0 +1,121 @@
+# Every compiled unit, and the original segment it rebuilds.
+#
+# GENERATED from v1.31b/verify.py's UNITS table by parsing it, when the four
+# compare tools became one engine and several instruments (psycho #33).
+#
+# `length` is the ORIGINAL's code length. Where a segment is padded up to a
+# paragraph the figure is the code only, so a unit may legitimately compile
+# SHORTER and only the overlap is compared.
+
+sources  = "v1.31b/src"
+rewrites = ["tp6_far"]
+
+[unit.ASCIIZ]
+segment = 0x1642
+length  = 144
+
+[unit.CMDLINE]
+segment = 0x116E
+length  = 1232
+
+[unit.DEVGUS]
+segment = 0x1084
+length  = 376
+
+[unit.DEVSB]
+segment = 0x193A
+length  = 1617
+
+[unit.FILEUTIL]
+segment = 0x116A
+length  = 59
+
+[unit.FILTERS]
+segment = 0x1544
+length  = 144
+
+[unit.GUS]
+segment = 0x1723
+length  = 2741
+
+[unit.HARDWARE]
+segment = 0x1B24
+length  = 765
+
+[unit.HEAPS]
+segment = 0x17CF
+length  = 2832
+
+[unit.MODCOMMA]
+segment = 0x142F
+length  = 2176
+
+[unit.MODLOADE]
+segment = 0x154D
+length  = 3920
+
+[unit.PLAYMOD]
+segment = 0x12BA
+length  = 5968
+# links a {$L} object module, so the zero rule cannot
+# measure it -- objcheck.py reads the relocations instead.
+object  = "PLAYMOD.OBJ"
+
+[unit.SONGELEM]
+segment = 0x165A
+length  = 3216
+
+[unit.SONGUNIT]
+segment = 0x14B9
+length  = 2224
+
+[unit.SOUNDBLA]
+segment = 0x19A0
+length  = 1898
+
+[unit.SOUNDDEV]
+segment = 0x1A17
+length  = 4303
+# links a {$L} object module, so the zero rule cannot
+# measure it -- objcheck.py reads the relocations instead.
+object  = "SOUNDDEV.OBJ"
+
+[unit.UNKLOADE]
+segment = 0x164B
+length  = 77
+
+[unit.VTCFG]
+segment = 0x11BB
+length  = 4080
+
+[unit.VTCMD]
+segment = 0x109C
+length  = 3296
+
+[unit.VTCTRL]
+segment = 0x14B7
+length  = 25
+
+[unit.VTDOSMEM]
+segment = 0x1880
+length  = 237
+
+[unit.VTDOSRSZ]
+segment = 0x188F
+length  = 29
+
+[unit.VTNOTES]
+segment = 0x1650
+length  = 149
+
+[unit.VTRESID]
+segment = 0x1B54
+length  = 432
+
+[unit.VTSHELL]
+segment = 0x1931
+length  = 138
+
+[unit.VTSILENC]
+segment = 0x1065
+length  = 489
