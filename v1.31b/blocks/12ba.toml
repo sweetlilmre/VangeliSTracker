@@ -1,0 +1,194 @@
+# The block list for segment 12ba, and the facts the comparison needs.
+# GENERATED from v1.31b/blocks.py by parsing it, when the five per-segment
+# scripts became one tool -- psycho issue #34. The five differed only in
+# these values.
+#
+# The labels here have had a leading `hex..hex ` stripped: blocks.py baked
+# each block's address into its NAME because its output had no address
+# column, and this tool prints one. Cosmetic, and verified as such --
+# the per-block numbers were compared before and after.
+#
+# Read by the kit's blockcmp: one block is one routine, first byte to the
+# next routine's first byte, and `transcribed = false` marks a placeholder
+# that is expected not to agree yet.
+
+segment = 0x12BA
+length  = 5968
+unit    = 'PLAYMOD.TPU'
+# blocks.py searched range(-64, 64), NOT the 2400 the half-written
+# segments use, and the narrow window is correct here: 12ba is FINISHED,
+# so no block is displaced by a placeholder above it. A wide window on a
+# finished segment is actively wrong -- the search ranks fewest REAL
+# differences first, so it prefers a distant position scoring zero real
+# against a run of zeros over the true position scoring three. Measured
+# while merging these five scripts: a 2400 window moved one block to
+# shift +1373 with 171 pending instead of +0 with 3 real.
+window  = 64
+
+[[block]]
+name        = 'NullProcedure'
+from        = 0x0000
+to          = 0x0007
+transcribed = true
+
+[[block]]
+name        = 'UnCanal'
+from        = 0x0007
+to          = 0x0187
+transcribed = true
+
+[[block]]
+name        = 'AdvanceEventRow'
+from        = 0x0187
+to          = 0x0202
+transcribed = true
+
+[[block]]
+name        = 'SetEvent'
+from        = 0x0202
+to          = 0x0275
+transcribed = true
+
+[[block]]
+name        = 'PostEvent'
+from        = 0x0275
+to          = 0x02EA
+transcribed = true
+
+[[block]]
+name        = 'FlushEventRow'
+from        = 0x02EA
+to          = 0x03CC
+transcribed = true
+
+[[block]]
+name        = 'SetGusVoiceCtl'
+from        = 0x03CC
+to          = 0x0664
+transcribed = true
+
+[[block]]
+name        = 'MyMove'
+from        = 0x0664
+to          = 0x0693
+transcribed = true
+
+[[block]]
+name        = 'NextPattern'
+from        = 0x0693
+to          = 0x0B29
+transcribed = true
+
+[[block]]
+name        = 'MixTick'
+from        = 0x0B29
+to          = 0x0C4E
+transcribed = true
+
+[[block]]
+name        = 'SeqTick'
+from        = 0x0C4E
+to          = 0x1008
+transcribed = true
+
+[[block]]
+name        = 'ProcessTickEntry'
+from        = 0x1008
+to          = 0x1049
+transcribed = true
+
+[[block]]
+name        = 'IdleGiver'
+from        = 0x1049
+to          = 0x105D
+transcribed = true
+
+[[block]]
+name        = 'BufferGiver'
+from        = 0x105D
+to          = 0x10A1
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: copy'
+from        = 0x10A1
+to          = 0x10D7
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: pos'
+from        = 0x10D7
+to          = 0x10F9
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: range'
+from        = 0x10F9
+to          = 0x116F
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: prime'
+from        = 0x116F
+to          = 0x11D6
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: chans'
+from        = 0x11D6
+to          = 0x1224
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: buffers'
+from        = 0x1224
+to          = 0x129F
+transcribed = true
+
+[[block]]
+name        = 'PlayStart: go'
+from        = 0x129F
+to          = 0x132F
+transcribed = true
+
+[[block]]
+name        = 'ChangeSamplingRate: ask'
+from        = 0x132F
+to          = 0x1366
+transcribed = true
+
+[[block]]
+name        = 'ChangeSamplingRate: apply'
+from        = 0x1366
+to          = 0x13D7
+transcribed = true
+
+[[block]]
+name        = 'PlayStop'
+from        = 0x13D7
+to          = 0x141E
+transcribed = true
+
+[[block]]
+name        = 'initialisation'
+from        = 0x141E
+to          = 0x148F
+transcribed = true
+
+[[block]]
+name        = 'asm DumpRaw'
+from        = 0x148F
+to          = 0x1555
+transcribed = true
+
+[[block]]
+name        = 'asm EmptyRaw'
+from        = 0x1555
+to          = 0x1600
+transcribed = true
+
+[[block]]
+name        = 'asm DumpInstrument'
+from        = 0x1600
+to          = 0x1746
+transcribed = true

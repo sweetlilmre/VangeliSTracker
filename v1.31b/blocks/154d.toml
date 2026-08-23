@@ -1,0 +1,47 @@
+# The block list for segment 154d, and the facts the comparison needs.
+# GENERATED from v1.31b/block154d.py by parsing it, when the five per-segment
+# scripts became one tool -- psycho issue #34. The five differed only in
+# these values.
+#
+# Read by the kit's blockcmp: one block is one routine, first byte to the
+# next routine's first byte, and `transcribed = false` marks a placeholder
+# that is expected not to agree yet.
+
+segment = 0x154D
+length  = 3920
+unit    = 'MODLOADE.TPU'
+# How far either side of the nominal offset to search. It has to cover
+# the ACCUMULATED shortfall of every placeholder above a block, which
+# for a half-written unit is most of the segment: 600 was too small and
+# reported a wrong shift with a plausible-looking difference count.
+window  = 2400
+
+[[block]]
+name        = 'ProcessPatterns'
+from        = 0x0000
+to          = 0x04E2
+transcribed = true
+
+[[block]]
+name        = 'ProcessInstruments'
+from        = 0x04E2
+to          = 0x09D7
+transcribed = true
+
+[[block]]
+name        = 'LoadMod'
+from        = 0x09D7
+to          = 0x0B72
+transcribed = true
+
+[[block]]
+name        = 'LoadMod15'
+from        = 0x0B72
+to          = 0x0BF2
+transcribed = true
+
+[[block]]
+name        = 'LoadModFileFormat'
+from        = 0x0BF2
+to          = 0x0F50
+transcribed = true

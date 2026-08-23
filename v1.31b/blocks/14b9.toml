@@ -1,0 +1,113 @@
+# The block list for segment 14b9, and the facts the comparison needs.
+# GENERATED from v1.31b/block14b9.py by parsing it, when the five per-segment
+# scripts became one tool -- psycho issue #34. The five differed only in
+# these values.
+#
+# Read by the kit's blockcmp: one block is one routine, first byte to the
+# next routine's first byte, and `transcribed = false` marks a placeholder
+# that is expected not to agree yet.
+
+segment = 0x14B9
+length  = 2224
+unit    = 'SONGUNIT.TPU'
+# How far either side of the nominal offset to search. It has to cover
+# the ACCUMULATED shortfall of every placeholder above a block, which
+# for a half-written unit is most of the segment: 600 was too small and
+# reported a wrong shift with a plausible-looking difference count.
+window  = 2400
+
+[[block]]
+name        = 'Init'
+from        = 0x0000
+to          = 0x002B
+transcribed = true
+
+[[block]]
+name        = 'Done'
+from        = 0x002B
+to          = 0x004F
+transcribed = true
+
+[[block]]
+name        = 'Load'
+from        = 0x004F
+to          = 0x0100
+transcribed = true
+
+[[block]]
+name        = 'LoadFName'
+from        = 0x0100
+to          = 0x02C2
+transcribed = true
+
+[[block]]
+name        = 'GetInsidePath'
+from        = 0x02C2
+to          = 0x02F5
+transcribed = true
+
+[[block]]
+name        = 'SetInsidePath'
+from        = 0x02F5
+to          = 0x0352
+transcribed = true
+
+[[block]]
+name        = 'GetInstrument'
+from        = 0x0352
+to          = 0x0404
+transcribed = true
+
+[[block]]
+name        = 'GetTrack'
+from        = 0x0404
+to          = 0x04B6
+transcribed = true
+
+[[block]]
+name        = 'GetPattern'
+from        = 0x04B6
+to          = 0x0575
+transcribed = true
+
+[[block]]
+name        = 'GetPatternSeq'
+from        = 0x0575
+to          = 0x059F
+transcribed = true
+
+[[block]]
+name        = 'GetPatternSequence'
+from        = 0x059F
+to          = 0x05D3
+transcribed = true
+
+[[block]]
+name        = 'GetPatternTempo'
+from        = 0x05D3
+to          = 0x0607
+transcribed = true
+
+[[block]]
+name        = 'GetNote'
+from        = 0x0607
+to          = 0x0687
+transcribed = true
+
+[[block]]
+name        = 'Free'
+from        = 0x0687
+to          = 0x072F
+transcribed = true
+
+[[block]]
+name        = 'InitValues'
+from        = 0x072F
+to          = 0x0897
+transcribed = true
+
+[[block]]
+name        = 'Empty'
+from        = 0x0897
+to          = 0x08B0
+transcribed = true

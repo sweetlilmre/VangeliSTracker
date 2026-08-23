@@ -1,0 +1,119 @@
+# The block list for segment 193a, and the facts the comparison needs.
+# GENERATED from v1.31b/block193a.py by parsing it, when the five per-segment
+# scripts became one tool -- psycho issue #34. The five differed only in
+# these values.
+#
+# Read by the kit's blockcmp: one block is one routine, first byte to the
+# next routine's first byte, and `transcribed = false` marks a placeholder
+# that is expected not to agree yet.
+
+segment = 0x193A
+length  = 1617
+unit    = 'DEVSB.TPU'
+# How far either side of the nominal offset to search. It has to cover
+# the ACCUMULATED shortfall of every placeholder above a block, which
+# for a half-written unit is most of the segment: 600 was too small and
+# reported a wrong shift with a plausible-looking difference count.
+window  = 2400
+
+[[block]]
+name        = 'Names x4'
+from        = 0x0000
+to          = 0x0014
+transcribed = true
+
+[[block]]
+name        = 'SetVars'
+from        = 0x0014
+to          = 0x002B
+transcribed = true
+
+[[block]]
+name        = 'DevPoll'
+from        = 0x002B
+to          = 0x0030
+transcribed = true
+
+[[block]]
+name        = 'DMAIrq'
+from        = 0x0030
+to          = 0x007F
+transcribed = true
+
+[[block]]
+name        = 'DMASBGetRealFreq'
+from        = 0x007F
+to          = 0x013C
+transcribed = true
+
+[[block]]
+name        = 'DMASBProGetRealFreq'
+from        = 0x013C
+to          = 0x0206
+transcribed = true
+
+[[block]]
+name        = 'DMASBCalcTimerData'
+from        = 0x0206
+to          = 0x02C2
+transcribed = true
+
+[[block]]
+name        = 'SbMonoDetect'
+from        = 0x02C2
+to          = 0x02E7
+transcribed = true
+
+[[block]]
+name        = 'SbStereoDetect'
+from        = 0x02E7
+to          = 0x031F
+transcribed = true
+
+[[block]]
+name        = 'DMASBInit'
+from        = 0x031F
+to          = 0x03C5
+transcribed = true
+
+[[block]]
+name        = 'DMASBMonoInit'
+from        = 0x03C5
+to          = 0x03E1
+transcribed = true
+
+[[block]]
+name        = 'DMASBSterInit'
+from        = 0x03E1
+to          = 0x03FD
+transcribed = true
+
+[[block]]
+name        = 'DMASBMixInit'
+from        = 0x03FD
+to          = 0x0419
+transcribed = true
+
+[[block]]
+name        = 'DMASBMix2Init'
+from        = 0x0419
+to          = 0x0435
+transcribed = true
+
+[[block]]
+name        = 'DMASBChgHz'
+from        = 0x0435
+to          = 0x0442
+transcribed = true
+
+[[block]]
+name        = 'DMASBEnd'
+from        = 0x0442
+to          = 0x048A
+transcribed = true
+
+[[block]]
+name        = 'init section'
+from        = 0x048A
+to          = 0x0651
+transcribed = true

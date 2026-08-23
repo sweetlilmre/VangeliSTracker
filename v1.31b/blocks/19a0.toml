@@ -1,0 +1,155 @@
+# The block list for segment 19a0, and the facts the comparison needs.
+# GENERATED from v1.31b/block19a0.py by parsing it, when the five per-segment
+# scripts became one tool -- psycho issue #34. The five differed only in
+# these values.
+#
+# Read by the kit's blockcmp: one block is one routine, first byte to the
+# next routine's first byte, and `transcribed = false` marks a placeholder
+# that is expected not to agree yet.
+
+segment = 0x19A0
+length  = 1905
+unit    = 'SOUNDBLA.TPU'
+# How far either side of the nominal offset to search. It has to cover
+# the ACCUMULATED shortfall of every placeholder above a block, which
+# for a half-written unit is most of the segment: 600 was too small and
+# reported a wrong shift with a plausible-looking difference count.
+window  = 2400
+
+[[block]]
+name        = 'SbReset'
+from        = 0x0000
+to          = 0x005B
+transcribed = true
+
+[[block]]
+name        = 'SbWriteLoop'
+from        = 0x005B
+to          = 0x0077
+transcribed = true
+
+[[block]]
+name        = 'SbWriteByte'
+from        = 0x0077
+to          = 0x009B
+transcribed = true
+
+[[block]]
+name        = 'SbReadLoop'
+from        = 0x009B
+to          = 0x00BB
+transcribed = true
+
+[[block]]
+name        = 'SbReadByte'
+from        = 0x00BB
+to          = 0x00CE
+transcribed = true
+
+[[block]]
+name        = 'SbWriteMixerReg'
+from        = 0x00CE
+to          = 0x00E5
+transcribed = true
+
+[[block]]
+name        = 'SbReadMixerReg'
+from        = 0x00E5
+to          = 0x00F9
+transcribed = true
+
+[[block]]
+name        = 'SbRegDetect'
+from        = 0x00F9
+to          = 0x0257
+transcribed = true
+
+[[block]]
+name        = 'SbRegInit'
+from        = 0x0257
+to          = 0x0298
+transcribed = true
+
+[[block]]
+name        = 'SbGetDSPVersion'
+from        = 0x029C
+to          = 0x038F
+transcribed = true
+
+[[block]]
+name        = 'SbGetCopyrightString'
+from        = 0x038F
+to          = 0x0422
+transcribed = true
+
+[[block]]
+name        = 'SbSetTimeConst'
+from        = 0x0422
+to          = 0x048F
+transcribed = true
+
+[[block]]
+name        = 'SbUpdateTimeConst'
+from        = 0x048F
+to          = 0x04A5
+transcribed = true
+
+[[block]]
+name        = 'SbStartSampleLS'
+from        = 0x04A5
+to          = 0x04D3
+transcribed = true
+
+[[block]]
+name        = 'SbStartSampleHS'
+from        = 0x04D3
+to          = 0x052B
+transcribed = true
+
+[[block]]
+name        = 'SbPlaySample'
+from        = 0x052B
+to          = 0x058B
+transcribed = true
+
+[[block]]
+name        = 'MixerDetect'
+from        = 0x058B
+to          = 0x05E5
+transcribed = true
+
+[[block]]
+name        = 'SbProDetect'
+from        = 0x05E5
+to          = 0x062F
+transcribed = true
+
+[[block]]
+name        = 'SbProInit'
+from        = 0x062F
+to          = 0x0643
+transcribed = true
+
+[[block]]
+name        = 'SbProSetStereo'
+from        = 0x0643
+to          = 0x067C
+transcribed = true
+
+[[block]]
+name        = 'Sb16Detect'
+from        = 0x067C
+to          = 0x06C6
+transcribed = true
+
+[[block]]
+name        = 'Sb16Init'
+from        = 0x06C6
+to          = 0x06DE
+transcribed = true
+
+[[block]]
+name        = 'Sb16StartSample'
+from        = 0x06DE
+to          = 0x076A
+transcribed = true
