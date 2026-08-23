@@ -24,18 +24,23 @@ The 55,056-byte load image is **byte-identical** to the original's. All 31 segme
 
 ## Building and measuring
 
-Run everything **from this directory** — each script computes its root as its own grandparent. A DOSBox-X install with Turbo Pascal 6.0 and TASM does the actual compiling; `tools/dosbox/vt131.conf` wires it up.
+Run everything **from this directory** — each script computes its root as its own grandparent. A DOSBox-X install with Turbo Pascal 6.0 and TASM does the actual compiling. The DOSBox config is **generated** into the staging directory now, so there is nothing committed to keep in step with it; the machine paths come from the untracked `kit.local.toml`.
 
-    python v1.31b/build.py --sw=/GS    compile and link; writes build/VTMAIN.MAP
+    python kit/tools/pascal/build.py build.toml --sw=/GS         compile and link
+    python kit/tools/pascal/build.py build.toml --compiler tp7   ...with TP7 instead
 
-    python v1.31b/verify.py            per-unit, against the reference image
-    python v1.31b/asmcheck.py          the two hand-written .ASM modules
+    python kit/tools/pascal/units.py v1.31b/units.toml           per-unit, against the reference image
+    python kit/tools/pascal/objcheck.py v1.31b/objmodules.toml   the hand-written .ASM modules
+    python kit/tools/pascal/linkcmp.py v1.31b/linked.toml        every linked code segment
+    python kit/tools/pascal/blockcmp.py v1.31b/blocks/1000.toml  the program segment, block by block
+
+    python v1.31b/verify.py --detail   per-unit, WITH the divergent-region diagnostics
     python v1.31b/linkorder.py         segment order vs the original's
     python v1.31b/mapcmp.py            linked segment lengths
     python v1.31b/dgroup.py            the initialised data layout
-    python v1.31b/progcmp.py           the program segment, routine by routine
-    python v1.31b/linkcmp.py           every linked code segment, fixups resolved
     python v1.31b/coverage.py          how much of the binary is accounted for
+
+**`build.py`, `asmcheck.py`, `linkcmp.py`, `blocks.py`, the four `blockXXXX.py` and `progcmp.py` are gone** — archived under the `archive/pre-kit-scripts` tag by [psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36), each only once its kit successor had been measured to reproduce it. `verify.py` **stays**, and deliberately: `units.py` matches it on every row, but `--detail` and `--all` print the divergent-region diagnostics for a unit that does *not* match, and the kit has no equivalent yet.
 
 On Windows, pass switch arguments like `--sw=/GS` from **PowerShell**, not Git Bash — MSYS rewrites a leading slash into a path and the build then silently compiles nothing.
 

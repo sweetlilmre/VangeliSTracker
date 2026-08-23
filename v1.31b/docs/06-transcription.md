@@ -29,7 +29,7 @@ Include files (`*.INC`) are staged alongside the units automatically -- they
 never appear in `ORDER` because they are not compiled in their own right, but
 TP7 looks for them beside the `.PAS`.
 
-It reuses `tools/dosbox/vt131.conf` unchanged, which mounts `D:` on
+The DOSBox config is GENERATED into the staging directory now, per psycho #36; `tools/dosbox/vt131.conf` is archived under the `archive/pre-kit-scripts` tag. It mounted `D:` on
 `<root>/build` and runs `D:\BUILD.BAT`. **It therefore shares the build
 directory with `tools/dosbox/dosbuild.py`, and both wipe it on entry** — run
 one, read the result, then run the other. Never both at once.
@@ -419,7 +419,9 @@ units went in almost verbatim from the release.
 
 The largest untranscribed segment, and the first increment went in byte-exact:
 
-    python v1.31b/blocks.py     -- and NOT verify.py, while 12ba is unfinished
+    python kit/tools/pascal/blockcmp.py v1.31b/blocks/12ba.toml
+    -- and NOT units.py, while 12ba is unfinished: a prefix comparison stops at
+    the first placeholder and says nothing about the correct routines below it
 
     fourteen complete routines   4,257 bytes   0 real differences
     PlayStart, part-written        309 bytes   5 (its ENTER 8,0 and one jump)

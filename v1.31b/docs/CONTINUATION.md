@@ -8,16 +8,18 @@ It replaces the numbered per-session continuation notes, which are gone. Everyth
 
 ## WHERE THIS STANDS TODAY — read this before anything else
 
-    python v1.31b/build.py --sw=/GS     compile and link; writes build/VTMAIN.MAP
+    python kit/tools/pascal/build.py build.toml --sw=/GS         compile and link
 
-    python v1.31b/verify.py     2 byte-identical, 24 identical but for fixups, 0 mismatched
-    python v1.31b/asmcheck.py   PLAYMOD OK, SOUNDDEV OK
-    python v1.31b/linkorder.py  30 of 30 positions agree
-    python v1.31b/mapcmp.py     28 unit(s) exact; 0 with a live gap, 0 bytes
-    python v1.31b/dgroup.py     initialised DGROUP: 3184 of 3184 -- +0
-    python v1.31b/progcmp.py    DEMOVT agrees for all 1604 bytes
-    python v1.31b/linkcmp.py    27 unit(s) byte-identical in the linked image
-    python v1.31b/coverage.py   44,171 of 44,272 in-scope bytes = 99.8%
+    python kit/tools/pascal/units.py v1.31b/units.toml           2 byte-identical, 24 identical but for fixups, 0 mismatched
+    python kit/tools/pascal/objcheck.py v1.31b/objmodules.toml   PLAYMOD OK, SOUNDDEV OK
+    python v1.31b/linkorder.py                                   30 of 30 positions agree
+    python v1.31b/mapcmp.py                                      28 unit(s) exact; 0 with a live gap, 0 bytes
+    python v1.31b/dgroup.py                                      initialised DGROUP: 3184 of 3184 -- +0
+    python kit/tools/pascal/blockcmp.py v1.31b/blocks/1000.toml  1616 of 1616 bytes of segment 1000
+    python kit/tools/pascal/linkcmp.py v1.31b/linked.toml        every linked code segment
+    python v1.31b/coverage.py                                    44,171 of 44,272 in-scope bytes = 99.8%
+
+**Six of those commands moved into the kit on 23 Aug 2026** ([psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36)). `build.py`, `asmcheck.py`, `progcmp.py`, `linkcmp.py`, `blocks.py` and the four `blockXXXX.py` are archived under the `archive/pre-kit-scripts` tag -- each only once its successor had been measured to reproduce it row for row. **`verify.py` itself stays**, and deliberately: `units.py` matches it on every row, but `verify.py --detail` and `--all` print the divergent-region diagnostics for a unit that does *not* match, and the kit has no equivalent of those yet.
 
 **THE BUILD IS BYTE-IDENTICAL TO THE UNPACKED ORIGINAL.**
 
@@ -108,7 +110,7 @@ could not.
 | tool | what it compares | what it CANNOT see |
 |---|---|---|
 | `verify.py` | a `.TPU`'s CODE against its segment | every DGROUP address and inter-unit call — they are pending fixups it excuses. Also cannot see whether a routine is an init section or a named procedure |
-| `asmcheck.py` | a `{$L}` module's relocations against its `.OBJ` | anything outside the assembled run |
+| `objcheck.py` (was `asmcheck.py`) | a `{$L}` module's relocations against its `.OBJ` | anything outside the assembled run |
 | `linkorder.py` | the `uses` graph against the original's segment ADDRESSES | nothing about contents; it is a constraint check |
 | `mapcmp.py` | linked segment LENGTHS, both padded to a paragraph | contents. A unit can be the right length and wrong throughout |
 | `dgroup.py` | the INITIALISED DGROUP image, byte for byte | plain `var`s, which are never written to the EXE. **And a boundary inside a run of zeros** — it read 100% identical while `SelfName` was six bytes too long |
@@ -472,7 +474,7 @@ Everything used to sit under `D:\source\psycho`. It is now its own repository:
       .gitignore
       build/                          DOSBox mounts this as D:. Untracked.
       tools/
-        dosbox/vt131.conf             the build VM: C: on the HDD image, D: on build/
+        (dosbox/vt131.conf)           ARCHIVED -- the build VM's config is generated now
         paslint.py                    build.py refuses to compile when this fails
         unlzexe.py                    unpacks NEUROSIS.008; how ref/ is made
       v1.31b/                         THE RECONSTRUCTION -- our work
