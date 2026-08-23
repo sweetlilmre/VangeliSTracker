@@ -13,7 +13,7 @@ title   = "DemoVT build"
 drive   = "D"
 log     = "BUILD.LOG"
 timeout = 180
-lint    = "tools/paslint.py"
+lint    = "kit/tools/pascal/paslint.py"
 
 [compiler]
 # TURBO PASCAL 6 IS THE DEFAULT, and that is a RESULT rather than a preference.
