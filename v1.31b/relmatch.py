@@ -41,7 +41,43 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import verify as V                             # noqa: E402
+# verify.py is archived (#50). Its three functions this used map onto the kit:
+# original() is a segment read, locate() is align.anchor_first and prefix() is
+# align.walk under the pending rule -- the same substitution #33 measured row
+# for row against every unit.
+#
+# NOT EXERCISED HERE, and said out loud rather than implied: this script needs
+# build/vt, the 1.39b RELEASE build, and that tree is held out of source control
+# so it is absent on this machine. The repoint is therefore unverified. It is
+# still the right change -- leaving an import of a deleted module would be
+# broken by this migration rather than merely unrunnable.
+sys.path.insert(0, str(HERE.parent / "kit" / "tools"))
+from substrate import align                    # noqa: E402
+import struct                                  # noqa: E402
+
+
+class V:
+    """The three calls this file made into verify.py, on the kit's engine."""
+
+    import refpath as _rp
+    IMAGE = _rp.ORIG                           # as verify.py had it
+
+    @staticmethod
+    def original(seg, n):
+        d = V.IMAGE.read_bytes()
+        base = struct.unpack_from("<H", d, 8)[0] * 16
+        return d[base + seg * 16 - 0x10000:][:n]
+
+    @staticmethod
+    def locate(orig, tpu):
+        at, got = align.anchor_first(orig, tpu, align.pending)
+        return (at, got) if at >= 0 else (at, None)
+
+    @staticmethod
+    def prefix(orig, tpu, at, mask=frozenset()):
+        pre, _, _ = align.walk(orig, tpu[at:at + len(orig)],
+                               align.pending, None, False)
+        return pre
 
 ROOT = HERE.parent
 VT = ROOT / "build" / "vt"

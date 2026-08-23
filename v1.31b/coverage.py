@@ -1,7 +1,6 @@
 """Coverage of the DemoVT byte-exact pass, computed from the tree rather than recited."""
 import re, subprocess, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import verify as V
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -14,7 +13,13 @@ RTL = {0x1891: 'Objects', 0x1b6f: 'Dos', 0x1ba1: 'System'}   # never in scope
 DATA = {0x1caa: 'constants only, no code'}
 
 # what verify.py reports, parsed from its own output
-out = subprocess.run([sys.executable, 'v1.31b/verify.py'],
+# The per-unit table comes from the kit's instrument now (#50). This still
+# parses another tool's printed output, which is fragile by nature -- the row
+# shape is the contract and nothing enforces it. Moving this into the kit is
+# where that gets fixed; until then the parse is unchanged and so is the answer.
+out = subprocess.run([sys.executable,
+                      str(ROOT / 'kit/tools/pascal/units.py'),
+                      'v1.31b/units.toml'],
                      capture_output=True, text=True,
                      encoding='utf-8', cwd=str(ROOT)).stdout
 done, partial = {}, {}
