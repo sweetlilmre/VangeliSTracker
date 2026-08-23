@@ -32,7 +32,12 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from build import tp6_dialect          # noqa: E402  -- see the stale check
+# tp6_dialect is the kit's now (#50): TP6 has no `far` directive on a unit's
+# exported routines at all, which is a fact about a compiler rather than about
+# this target. build.py is archived; this is the same function.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] /
+                       "kit" / "tools"))
+from pascal.build import tp6_dialect   # noqa: E402  -- see the stale check
 from omf import code_and_fixups        # noqa: E402  -- see obj_mask below
 import refpath
 
