@@ -339,9 +339,31 @@ end;
   --------------------------------------------------------------------------- }
 procedure LoadSamples(var Song : TSong; var St : TStream);
 var
-  Instrument : TInstrumentRec;
+  { THE ORDER IS THE MEASUREMENT, and the whole $28 frame is accounted for.
+    Turbo Pascal allocates locals downward in declaration order, so the first
+    declared sits closest to BP. Reading the routine's BP displacements back:
+
+      -$04  Instr        4   a far pointer
+      -$20  Instrument  28   TInstrumentRec -- and its OWN field offsets prove
+                             it: Data is at record +18, which is -$0e, and
+                             every `LES DI,[BP-0e]` in the routine is that
+                             field; Xtra is at +22, which is -$0a.
+      -$22  i            2   `MOV [BP-22],1` then INC, pushed to GetInstrument
+      -$24  j            2   NOTHING REFERENCES IT -- see below
+      -$28  Avail        4   a LongInt: GetSize - GetPos, in an AX/DX pair
+
+    4 + 28 + 2 + 2 + 4 = 40 = $28, exactly.
+
+    `j` IS DECLARED AND NEVER USED, and that is a claim the binary supports
+    only negatively: two bytes at -$24 that no instruction touches, between a
+    counter and a LongInt. Turbo Pascal does not drop an unused local from the
+    frame, so an unreferenced slot IS a declaration -- but its NAME and TYPE
+    are inventions, and any other 2-byte local would compile the same. It is
+    written as `i, j` because MODLOADE.PAS declares its counters that way. }
   Instr      : PInstrument;
-  i          : Word;
+  Instrument : TInstrumentRec;
+  i, j       : Word;
+  Avail      : LongInt;
 begin
   for i := 1 to 31 do
     begin
@@ -353,10 +375,16 @@ begin
             Move(Instr^.Instr^, Instrument, SizeOf(Instrument));
             Instr^.FreeContents;
 
-            if St.GetSize - St.GetPos < Instrument.Len then
+            { 05ed..0634.  GetPos is stored, GetSize is fetched and the
+              stored value subtracted from it, and the difference goes back to
+              the same slot -- so the subtraction has a NAMED destination and
+              is read twice, which an inline expression would not be. }
+            Avail := St.GetSize - St.GetPos;
+
+            if Instrument.Len > Avail then
               begin
                 Song.Status := msFileTooShort;
-                Instrument.Len := St.GetSize - St.GetPos
+                Instrument.Len := Avail
               end;
 
             if Instrument.Len > 0 then
