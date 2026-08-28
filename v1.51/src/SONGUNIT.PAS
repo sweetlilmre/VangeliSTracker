@@ -246,7 +246,13 @@ type
     `array[0..31] of Byte` on either side forces the site to be `Move` and
     picks up the wrong helper. The same distinction cost v1.31b two of its last
     five divergent bytes, in PLAYMOD. }
-  TChannelPan = array[0..31] of Byte;
+  { BASE ONE, AND ONLY THE S3M LOADER COULD SAY SO. 1664:0b1f writes
+    `ES:[DI+28]` for `ChannelPan[i]` with i running 1..32, and the field starts
+    at TSong+$29 -- so the low bound is folded out of the displacement, which
+    a base-0 array indexed [i] would not do. SongUnit itself assigns the whole
+    array and never indexes it, so nothing here could distinguish the bounds;
+    the smallest consumer read the declaration. }
+  TChannelPan = array[1..32] of Byte;
 
   PSong = ^TSong;
   TSong = object(TObject)

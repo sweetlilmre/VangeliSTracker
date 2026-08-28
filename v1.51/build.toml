@@ -100,6 +100,7 @@ list = [
   "UNKLOADE.PAS",  # 164b  compiled against the BOOTSTRAP SongUnit
   "MODLOADE.PAS",  # 173d  ditto -- see the bootstrap note below
   "STMLOADE.PAS",  # 15d0  NEW IN v1.51 -- the Scream Tracker 2 loader
+  "S3MLOADE.PAS",  # 1664  NEW IN v1.51 -- the Scream Tracker 3 loader
   "SONGUNIT.PAS",  # 14b9  the module object -- complete; needs the loaders
   "MODCOMMA.PAS",  # 142f  A STUB, and the home of TCanal
   "PLAYMOD.PAS",  # 12ba  IN PROGRESS -- transcribed from the top down
