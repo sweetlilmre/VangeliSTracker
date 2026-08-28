@@ -158,7 +158,7 @@ const
     thing before an aligned field becomes a real declaration the moment something
     follows it. }
   Fill0003  : Byte = 0;  { DS:$0003  1.31b's alignment pad, now explicit }
-  Rut_0004  : Byte = 0;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
+  Rut_0004  : Boolean = False;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
 
   { DS:$0005 -- A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
     $0006 and Guard is at $0002, so those four bytes are accounted for exactly: a byte
@@ -166,7 +166,7 @@ const
     guarding a block that reloads three words from another unit's data. Declared
     rather than left as the compiler's alignment, because a pad and a variable are the
     same byte until something reads it. }
-  Rut_0005  : Byte = 0;  { DS:$0005  read at 1000:02ca }
+  Rut_0005  : Boolean = False;  { DS:$0005  read at 1000:02ca }
 
   { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
@@ -613,9 +613,19 @@ begin
                                                        { 1000:0288..0293  -> $4306 }
           TickSnapshot := Ticks;                    { 1000:029b  $0bca := $0bc8 }
           LastTick := 0;                          { 1000:02a1  $0058 := 0     }
-          DriverTicks := 0;                         { 1000:02a8  $0bd0 := 0     }
+          DriverTicks := 0;                         { 1000:02a6  $0c78 := 0     }
         end;
   end;
+
+  { NEW IN v1.51 -- the GUS event ring is re-seeded on the way out of the dispatcher,
+    AFTER the case rather than inside any arm: 1000:02ab follows the last arm's store
+    to $0c78 and precedes the `POP DS` below, so every call passes through it.
+
+    THE PAIR HAS TO BE SET TOGETHER -- `XOR AX,AX / MOV [02e8],AX / MOV word
+    [02ea],1`. One slot of daylight is the ring's empty state, so zeroing both would
+    make PlayMod's full test fire on the first tick and silence the player. }
+  RingSlot  := 0;                                 { 1000:02ab              }
+  FlushSlot := 1;                                 { 1000:02b0              }
 
   asm
     POP  DS                { 1000:02ab                                       }
@@ -683,10 +693,41 @@ begin
   StartSampling;                                  { 1000:0359  1a17:00a9 }
   Song.LoadFName(Name);                         { 1000:0368 }
 
-  PlayModule := False;                            { 1000:036d }
-  if Song.Status <= 2 then                           { 1000:0371 }
+  Rut_0004 := True;                               { 1000:03c8 }
+
+  PlayModule := False;                            { 1000:03cd }
+  if Song.Status <= 2 then                        { 1000:03d1 }
   begin
-    PlayModule := True;                           { 1000:0378 }
+    PlayModule := True;                           { 1000:03db }
+
+    { **NEW IN v1.51 -- THE CONTROL BLOCK IS RESET FOR THE NEW MODULE, and every
+      address in the block confirms TCtrlBlock's layout from the outside.** $461a is
+      CtrlBlock itself; $471a is CB+$100, the thirty-two ChanHit flags; $4747 is
+      CB+$12D, the 128-byte wide row; $473f is CB+$125, Ticks32; $47c7 and $47c8 are
+      CB+$1AD and CB+$1AE; $481d is CB+$203, SeekWant. Six fields that were measured
+      one at a time in PlayMod and VTCtrl, all landing where this routine puts them.
+
+      THE TWO INDICES START AT ONE, NOT ZERO, which is the same convention
+      NotePlaying and SeqPlaying carry inside TPlayingNote -- row 1 of order position
+      1, not a zero that would read as "before the start".
+
+      Filler1 IS CLEARED BY NAME. Its 256 bytes are the 1.31b-era per-channel tally,
+      and clearing it is what a new module needs; writing `FillChar(CtrlBlock, ...)`
+      with a length of $100 would say the same thing to the compiler and something
+      false to a reader. }
+    Rut_0005 := True;                             { 1000:03df }
+
+    FillChar(CtrlBlock.Filler1,
+             SizeOf(CtrlBlock.Filler1), 0);       { 1000:03e4 }
+    FillChar(CtrlBlock.ChanHit,
+             SizeOf(CtrlBlock.ChanHit), 0);       { 1000:03f3 }
+    FillChar(CtrlBlock.WideNotes,
+             SizeOf(CtrlBlock.WideNotes), 0);     { 1000:0401 }
+
+    CtrlBlock.Ticks32     := 0;                   { 1000:0410 }
+    CtrlBlock.NotePlaying := 1;                   { 1000:0418 }
+    CtrlBlock.SeqPlaying  := 1;                   { 1000:041d }
+    CtrlBlock.SeekWant    := 0;                   { 1000:0422 }
     PlayStart(Song);                         { 1000:0381 }
     asm
       MOV  DI, OFFSET Heap   { 1000:0386                                  }
