@@ -213,8 +213,16 @@ const
     reads; whatever it selects lives in a unit not yet read. }
   AltName  = 'inconexi';
 
-  { 1000:0495 }
-  NoSong   = 'No encuentro ninguna canci' + #162 + 'n.';
+  { 1000:0501 -- **AND IT IS IN ENGLISH IN v1.51.** 1.31b carries the Spanish
+    `No encuentro ninguna canci' + #162 + 'n.` -- twenty-nine characters and a CP437
+    o-acute; the original's is `12 "Can't find a song."`, eighteen. The length byte is
+    what identifies it: $1d against $12, and the text follows immediately.
+
+    THE STRING GOT SHORTER, WHICH IS WHY IT WAS NOT FOUND EARLIER. Everything after it
+    in the code segment moves ELEVEN BYTES down, and a routine-size check that is
+    already reporting the segment short by more than that has nothing to catch it on.
+    Only an aligned byte diff of the segment shows a literal changing. }
+  NoSong   = 'Can''t find a song.';
 
   { 1caa:0004 -- the name Install publishes over INT 2Fh. A TYPED constant, so it
     lives in DGROUP rather than in the code segment, and TWO measurements say so:
@@ -861,11 +869,24 @@ begin
     further on. }
   Cmd.ParseLine(GetDOSCmdLine);          { 1000:05f4, 05fa 116e:04b2, 0606 +$08 }
 
-  if DoSongColl(Cmd.FileDir) and Complain then     { 1000:060e, 1000:0617 }
-    WriteLn(NoSong);                              { 1000:062a }
+  { **`Rut_4821` GUARDS THE COMPLAINT TOO, WHICH IS THE THIRD READER OF A FLAG NOTHING
+    WRITES.** VTCMD tests it twice inside DoSongColl and this is the other one:
+    1000:069a is `CMP byte [4821],0 / JNZ` between the `Complain` test and the
+    WriteLn. Three reads, no writes anywhere in the image -- a switch wired up and
+    never given a way to be turned on. See VTGlobal's declaration. }
+  if DoSongColl(Cmd.FileDir) and Complain
+     and not Rut_4821 then                        { 1000:0679..06a0        }
+    WriteLn(NoSong);                              { 1000:06a1              }
 
-  EndSampling;                                    { 1000:0634  1a17:013e }
-  ShowBanner;                                     { 1000:0639 }
+  EndSampling;                                    { 1000:06ba  1bff:013e   }
+
+  { **AND THE CLOSING BANNER IS SUPPRESSED WHEN THE PROGRAM HAS JUST COMPLAINED.**
+    1000:06bf tests the same `Complain` byte the WriteLn above tests, with the sense
+    reversed -- `JZ` there, `JNZ` here. One variable read twice in ten instructions
+    to opposite ends, which is why the address had to be checked rather than the
+    second test assumed to be a different flag. }
+  if not Complain then                            { 1000:06bf..06c5        }
+    ShowBanner;                                   { 1000:06c6              }
 
   { NO EXPLICIT `Halt(0)`, AND THE ORDER OF THE LAST THREE INSTRUCTIONS IS WHY.
     The original ends `e8 bc fa / c9 / 31 c0 / 9a e9 00 a1 0b` -- the near CALL to
