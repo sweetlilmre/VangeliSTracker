@@ -627,7 +627,7 @@ implementation
   a clause changes the link, never the code. }
 {$IFNDEF BOOTSTRAP}
 uses
-  VTNotes, UnkLoader, ModLoader, AsciiZ, Filters;
+  VTNotes, UnkLoader, ModLoader, StmLoader, S3MLoader, AsciiZ, Filters;
 {$ENDIF}
 
 type
@@ -693,27 +693,22 @@ const
 var
   SongLoaders : array[1..NumLoaders] of TSongLoader;
 {$ELSE}
-  { ENTRIES 2 AND 3 ARE PLACEHOLDERS AND POINT AT THE WRONG ROUTINE. Their real
-    targets are 1664:0a8b and 15d0:0764, in two units this tree has not written.
+  { ALL FOUR ARE REAL NOW. The two placeholders are gone: STMLOADE.PAS and
+    S3MLOADE.PAS exist and are byte-exact, so this names the routines the
+    original's DS:$0430 names, in the original's order -- JMPlayer, S3M, STM,
+    ProTracker.
 
-    **`nil` WOULD BE THE HONEST PLACEHOLDER AND TP6 REFUSES IT** -- `SONGUNIT.PAS
-    (684): Error 20: Variable identifier expected`. A procedural typed constant
-    takes a procedure IDENTIFIER, not a pointer expression, so the choice is a
-    wrong name or no table. Repeating a name that already exists costs no code:
-    a typed constant is initialised DGROUP data and `Load`'s call through it is
-    `CALLF [DI+0430]`, a linker fixup either way.
-
-    THAT IS ALSO WHAT MAKES IT DANGEROUS, and it is the same trap v1.31b flagged
-    here for its own two entries. The byte comparison of CODE is blind to this;
-    only `dgimage.py` can see it, and it will report eight wrong bytes at
-    DS:$0434 and DS:$0438 until the loaders exist. Do not read a green
-    `units.py` or `linkcmp.py` as saying this table is right. }
+    `dgimage.py` IS THE ONLY INSTRUMENT THAT CAN CHECK THESE SIXTEEN BYTES.
+    A typed constant is initialised DGROUP data and `Load`'s call through it is
+    `CALLF [DI+0430]`, a linker fixup -- so a green `units.py` or `linkcmp.py`
+    has never said anything about them. This is the first build where the
+    DGROUP comparison means something. }
   SongLoaders : array[1..NumLoaders] of TSongLoader =
     (
-      LoadJMFileFormat,     { 1839       -- the 'JMPLAY' recogniser }
-      LoadJMFileFormat,     { 1664:0a8b  -- PLACEHOLDER, wrong       }
-      LoadJMFileFormat,     { 15d0:0764  -- PLACEHOLDER, wrong       }
-      LoadModFileFormat     { 173d       -- the ProTracker loader    }
+      LoadJMFileFormat,     { 1839:0000  -- the 'JMPLAY' recogniser  }
+      LoadS3MFileFormat,    { 1664:0a8b  -- the .S3M loader          }
+      LoadSTMFileFormat,    { 15d0:0764  -- the .STM loader          }
+      LoadModFileFormat     { 173d:0bd4  -- the ProTracker loader    }
     );
 {$ENDIF}
 
