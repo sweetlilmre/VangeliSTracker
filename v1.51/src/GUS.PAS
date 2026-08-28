@@ -1031,6 +1031,17 @@ var
     reads its limit from [BP-7]. A later addition, so it is left out. }
   i, k, Vol : Byte;
   j         : Word;
+  { NEW IN v1.51, AND THIS FILE PREDICTED IT. The note above records that 1.39b
+    declares `First : BOOLEAN` here, that a Boolean would take [BP-7] and push
+    the FOR temporary to [BP-8], and that v1.31b has neither -- "a later
+    addition, so it is left out". v1.51 IS that later addition: 1911:0837 is
+    `MOV BYTE PTR [BP-07],01` right after the second pass, and without a local
+    there the third pass's limit temporary takes -$07 and every reference in
+    the routine is one byte out.
+
+    Nothing in the segment READS it, so the name is the release's rather than
+    anything measured here. }
+  First     : Boolean;
 begin
   GUSStopTimer1;  { 1723:077f }
 
@@ -1057,141 +1068,38 @@ begin
       Inc(j, 2);                                   { 1723:0810 }
       CmdList[j - 1] := i;                         { 1723:081d }
       CmdList[j] := GetGusRegister8($00) and $FC;  { 1723:082b  clear the stop bits }
-      VoicesChanged[i] := 0;                       { 1723:0836 }
+      { v1.51 DOES NOT CLEAR IT HERE. The clear moved into the third pass
+        below, which is the pass that actually starts the voice. }
     end;
 
-  { `<= 0`, NOT `= 0`, though for a Word they are the same test. 1723:0847 is
-    `JA +3` over the `JMP` to the epilogue; Turbo Pascal branches on the
-    condition being FALSE, so `j <= 0` gives JA and `j = 0` gives JNZ. One
-    byte, and the only thing separating the two readings.
-
-    The release writes it the other way round -- `IF j > 0 THEN BEGIN <all the
-    rest> END` -- and that compiles to THE SAME BYTES, because a body too long
-    for a short branch gets the same `Jcc +3 / JMP` pair, and the end of the
-    wrapped `if` is the epilogue anyway. Kept as an early exit rather than
-    reindenting sixty lines of verbatim assembler for no change in output. }
-  if j <= 0 then Exit;  { 1723:0843 }
-
   { ------------------------------------------------------------------
-    1723:084c .. 1723:08c2 -- KICK ONE VOICE AND PUT IT BACK.
+    1911:0837..0888 -- A THIRD PASS, WHERE v1.31b HAD SIXTY BYTES OF HAND
+    ASSEMBLER.
 
-    HAND ASSEMBLER, verbatim. It holds a position in SI:DI and a control
-    byte in BH across a polling loop, which Pascal has no way to say.
+    v1.31b ended this routine by kicking ONE voice: it took the first entry of
+    the command list, saved that voice's control byte and playing position,
+    wrote the collected control byte so the voice ran, polled the position
+    until it moved, then put both back. The point was the GF1's own service
+    rotation -- starting a batch at an arbitrary moment scatters the voices
+    across it, and waiting for one voice to advance meant the writes began at a
+    known phase.
 
-    Read literally: take the FIRST voice in the command list, note its
-    current control byte and playing position, write the collected control
-    byte -- which has the stop bits cleared, so the voice runs -- then poll
-    the position until it CHANGES. Then put the original control byte and
-    the original position back, leaving the voice exactly as it was.
+    v1.51 DELETES ALL OF THAT, and the `if j <= 0 then Exit` guard with it.
+    Each changed voice is now started on its own: select it, read register $00,
+    clear the stop bits, write it back. Simpler, and it gives up the phase
+    alignment the assembler bought.
 
-    So one voice is started, allowed to advance by a single step, and
-    stopped again. Nothing about that voice is different afterwards.
+    The command list built in pass two is still built and is no longer used by
+    this routine, which is the sort of thing only a byte comparison notices. }
+  First := True;                      { 1911:0837 }
 
-    WHAT IT IS FOR is the phase of the GF1's own sample clock, not the
-    voice. The chip services its voices in a fixed rotation, and a batch of
-    starts issued at an arbitrary moment lands scattered across that
-    rotation. Waiting for one voice to move means the writes below begin at
-    a known point in it, so voices meant to sound together do. That is the
-    same concern the two-pass split above addresses, taken one level
-    further down.
-
-    THE COUNT IS A TIMEOUT. `MOV CX,0` gives 65536 tries, and the loop falls
-    out on its own if the voice never moves -- a card that is wedged, or a
-    voice with nothing to play, must not hang the interrupt handler.
-
-    Note the poll compares against the LOW word only. The high word is kept
-    but never re-read, because a single step cannot carry into it.
-    ------------------------------------------------------------------ }
-  { 1723:084c .. 1723:0860 -- the two loads. Written as Pascal because that
-    is what they are: indexing a byte array by a local. Turbo Pascal's inline
-    assembler will not take `CmdList[DI]` as a memory operand, and building
-    the address by hand would be a worse transcription than this. }
-  i       := CmdList[j - 1];  { 1723:0852  i again, not a second variable }
-  k := CmdList[j];            { 1723:085c }
-
-  asm
-    MOV  DX, GUSPort  { 1723:0863                                     }
-    ADD  DX, 0102h    { 1723:0867                                     }
-    MOV  AL, i        { 1723:086b                                     }
-    OUT  DX, AL       { 1723:086e  select it                          }
-    INC  DX           { 1723:086f  base+$103                          }
-    MOV  AL, 80h      { 1723:0870  $00 read alias -- voice control    }
-    OUT  DX, AL       { 1723:0872                                     }
-    ADD  DX, 2        { 1723:0873  base+$105                          }
-    IN   AL, DX       { 1723:0876                                     }
-    MOV  BH, AL       { 1723:0877  keep the ORIGINAL control byte     }
-    SUB  DX, 2        { 1723:0879                                     }
-    MOV  AL, 8Bh      { 1723:087c  $0B read alias -- position low     }
-    OUT  DX, AL       { 1723:087e                                     }
-    INC  DX           { 1723:087f  base+$104                          }
-    IN   AX, DX       { 1723:0880                                     }
-    MOV  SI, AX       { 1723:0881  keep the ORIGINAL position, low    }
-    DEC  DX           { 1723:0883                                     }
-    MOV  AL, 8Ah      { 1723:0884  $0A read alias -- position high    }
-    OUT  DX, AL       { 1723:0886                                     }
-    INC  DX           { 1723:0887                                     }
-    IN   AX, DX       { 1723:0888                                     }
-    MOV  DI, AX       { 1723:0889  ... and high                       }
-    DEC  DX           { 1723:088b                                     }
-
-    MOV  AL, 0   { 1723:088c  voice control, for writing         }
-    OUT  DX, AL  { 1723:088e                                     }
-    ADD  DX, 2   { 1723:088f  base+$105                          }
-    MOV  AL, k   { 1723:0892  stop bits clear -> it runs         }
-    OUT  DX, AL  { 1723:0895                                     }
-    SUB  DX, 2   { 1723:0896                                     }
-
-    MOV  CX, 0  { 1723:0899  65536 tries, then give up          }
-  @@Poll:
-    MOV  AL, 8Bh  { 1723:089c                                     }
-    OUT  DX, AL   { 1723:089e                                     }
-    INC  DX       { 1723:089f                                     }
-    IN   AX, DX   { 1723:08a0                                     }
-    DEC  DX       { 1723:08a1                                     }
-    CMP  AX, SI   { 1723:08a2  has it moved?                      }
-    JNZ  @@Moved  { 1723:08a4  yes -- that is what we waited for  }
-    LOOP @@Poll   { 1723:08a6                                     }
-  @@Moved:
-
-    MOV  AL, 0    { 1723:08a8                                     }
-    OUT  DX, AL   { 1723:08aa                                     }
-    ADD  DX, 2    { 1723:08ab                                     }
-    MOV  AL, BH   { 1723:08ae  the ORIGINAL control byte back     }
-    OUT  DX, AL   { 1723:08b0  ... which stops it again           }
-    SUB  DX, 2    { 1723:08b1                                     }
-    MOV  AL, 0Bh  { 1723:08b4  position low, for writing          }
-    OUT  DX, AL   { 1723:08b6                                     }
-    MOV  AX, SI   { 1723:08b7                                     }
-    INC  DX       { 1723:08b9                                     }
-    OUT  DX, AX   { 1723:08ba                                     }
-    DEC  DX       { 1723:08bb                                     }
-    MOV  AL, 0Ah  { 1723:08bc  position high                      }
-    OUT  DX, AL   { 1723:08be                                     }
-    MOV  AX, DI   { 1723:08bf                                     }
-    INC  DX       { 1723:08c1                                     }
-    OUT  DX, AX   { 1723:08c2  exactly as it was                  }
-  end;
-
-  { 1723:08c3 -- and now the list, two bytes at a time. }
-  asm
-    MOV  CX, j  { 1723:08c3                                     }
-    SHR  CX, 1  { 1723:08c6  entries, not bytes                  }
-    MOV  SI, OFFSET CmdList   { 1723:08c8  = $06c2, CmdList[1]              }
-  @@Next:
-    MOV  AL, [SI]     { 1723:08cb  the voice                           }
-    INC  SI           { 1723:08cd                                      }
-    MOV  DX, GUSPort  { 1723:08ce                                      }
-    ADD  DX, 0102h    { 1723:08d2                                      }
-    OUT  DX, AL       { 1723:08d6  select it                           }
-    INC  DX           { 1723:08d7                                      }
-    MOV  AL, 0        { 1723:08d8  register $00                        }
-    OUT  DX, AL       { 1723:08da                                      }
-    ADD  DX, 2        { 1723:08db                                      }
-    MOV  AL, [SI]     { 1723:08de  the control byte                    }
-    INC  SI           { 1723:08e0                                      }
-    OUT  DX, AL       { 1723:08e1  go                                  }
-    LOOP @@Next       { 1723:08e2                                      }
-  end;
+  for i := 0 to GUSChannels - 1 do    { 1911:083b, 1911:0881 }
+    if VoicesChanged[i] <> 0 then     { 1911:085a }
+    begin
+      SetGusVoice(i);                                  { 1911:0865 }
+      SetGusRegister8($00, GetGusRegister8($00) and $FC);  { 1911:086c..0872 }
+      VoicesChanged[i] := 0                            { 1911:087c }
+    end
 end;
 
 { --------------------------------------------------------------------------
