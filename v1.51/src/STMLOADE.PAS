@@ -435,59 +435,80 @@ const
 var
   Stm : TStmFile absolute Header;
   i   : Word;
-  Len : Word;
+  { A DECLARED LongInt, NOT AN INLINE EXPRESSION. 0770 calls GetPos and stores
+    the result before adding $490 to it, which is what a named local looks
+    like. The frame is $206 = 2 x 256 + 6, and 6 is this four bytes plus `i`. }
+  Pos : LongInt;
 begin
   Song.FileFormat := mffSTM;                       { 0768..076f  +$7d := $0b }
 
   { 0770..0799.  Past the header, the instrument table and the order table:
     $410 + $80 = $490. GetPos is VMT +$10 and Seek is VMT +$1c. }
-  St.Seek(St.GetPos + $490);
+  Pos := St.GetPos;
+  St.Seek(Pos + $490);
 
-  if Stm.Magic = StmIdString then                  { 079a..07c7 }
+  { 079a..07d3.  AN EARLY-EXIT GUARD, NOT AN if/else, AND THE JUMP SENSE IS
+    WHAT SAYS SO. 07c2 calls the string compare and 07c7 is `JE 07d4` -- a jump
+    INTO the body on equality, with the failure path falling through. Turbo
+    Pascal compiles `if cond then A else B` as jump-if-FALSE over A, so a jump
+    taken when the operands are EQUAL means the tested condition is `<>`.
+
+    IT IS ALSO WORTH 256 BYTES OF FRAME. Both sides of a char-array comparison
+    become String temporaries, and a temporary stays live for the whole
+    statement -- so with the body nested inside the `if`, StrAsciiZ's result
+    below cannot reuse either of them and the frame gets a third. Written as a
+    guard, the compare is its own statement, its two temporaries die at the
+    semicolon, and the rest of the routine reuses them: $206, which is
+    2 x 256 + 6, against $304 for the nested form. }
+  if Stm.Magic <> StmIdString then
     begin
-      Song.Status := msOk;                         { 07d7  +$79 := 1 }
+      Song.Status := msNotLoaded;                  { 07cc  +$79 := 0 }
+      Exit
+    end;
 
-      Song.Name := FullHeap.HNewStr(StrASCIIZ(Stm.Name, 20));
+    Song.Status := msOk;                         { 07d7  +$79 := 1 }
 
-      { 0814..0824.  $40 is clamped BEFORE the shift so the byte cannot
-        overflow when it is multiplied by four. }
-      if Stm.Volume = $40 then
-        Stm.Volume := $3F;
+    Song.Name := FullHeap.HNewStr(StrASCIIZ(Stm.Name, 20));
 
-      Song.FirstTick    := 1;
-      Song.InitialTempo := Stm.Tempo shr 4;
-      Song.InitialBPM   := 125;
-      Song.Volume       := Stm.Volume shl 2;
-      Song.NumChannels  := 4;
+    { 0814..0824.  $40 is clamped BEFORE the shift so the byte cannot
+      overflow when it is multiplied by four. }
+    if Stm.Volume = $40 then
+      Stm.Volume := $3F;
 
-      { 0860..0899.  The order table ends at the first entry of 99 or more, so
-        the length is the LAST index below it rather than the first at or
-        above -- which is why this is a scan and not a `while`. }
-      Song.SequenceLength := 0;
-      for i := 1 to 128 do
-        if Stm.PatternList[i - 1] < 99 then
-          Song.SequenceLength := i;
+    Song.FirstTick    := 1;
+    Song.InitialTempo := Stm.Tempo shr 4;
+    Song.InitialBPM   := 125;
+    Song.Volume       := Stm.Volume shl 2;
+    Song.NumChannels  := 4;
 
-      Song.SequenceRepStart := 1;
+    { 0860..0899.  The order table ends at the first entry of 99 or more, so
+      the length is the LAST index below it rather than the first at or
+      above -- which is why this is a scan and not a `while`. }
+    Song.SequenceLength := 0;
+    for i := 1 to 128 do
+      if Stm.PatternList[i - 1] < 99 then
+        Song.SequenceLength := i;
 
-      Move(Stm.PatternList, Song.PatternSequence^, Song.SequenceLength);
+    Song.SequenceRepStart := 1;
 
-      Len := Song.SequenceLength;
-      if Len <> 0 then
-        for i := 1 to Len do
-          Inc(Song.PatternSequence^[i]);
+    Move(Stm.PatternList, Song.PatternSequence^, Song.SequenceLength);
 
-      ProcessInstruments(Song, St, Stm);
+    { NO `Len` LOCAL. A `for` limit that is not a constant is evaluated once
+      into a compiler temporary and read every iteration, which is
+      indistinguishable from a declared local -- declare one as well and the
+      frame carries both. See the wiki's `loop-limit-is-a-temporary`. }
+    if Song.SequenceLength <> 0 then
+      for i := 1 to Song.SequenceLength do
+        Inc(Song.PatternSequence^[i]);
 
-      if Song.Status <= msOk then
-        begin
-          ProcessPatterns(Song, St, Stm.NumPatterns);
-          if Song.Status <= msOk then
-            LoadSamples(Song, St)
-        end
-    end
-  else
-    Song.Status := msNotLoaded                     { 07cc  +$79 := 0 }
+    ProcessInstruments(Song, St, Stm);
+
+    if Song.Status <= msOk then
+      begin
+        ProcessPatterns(Song, St, Stm.NumPatterns);
+        if Song.Status <= msOk then
+          LoadSamples(Song, St)
+      end
 end;
 
 end.
