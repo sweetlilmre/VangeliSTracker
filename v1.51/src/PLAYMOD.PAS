@@ -1495,10 +1495,10 @@ begin
         12ba:0187 will tally it into the control block. The ring is indexed by
         the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Note :=
-        CurCanal^.RetrigLen;   { was RingNote -- see TCanal }                          { 0a58..0a72            }
+        CurCanal^.RingNote;                          { 0a58..0a72            }
       NoteRing[EventSlot, ChanIdx - 1].Chan :=
-        CurCanal^.RetrigCt;    { was RingChan -- see TCanal }                          { 0a73..0a8d            }
-      CurCanal^.RetrigLen := 0                        { 0a8e..0a96            }
+        CurCanal^.RingChan;                          { 0a73..0a8d            }
+      CurCanal^.RingNote := 0                        { 0a8e..0a96            }
     end;                                             { 0a97..0aa1  for end   }
 
     { 0aa2..0ad6 -- how many samples this row is worth.

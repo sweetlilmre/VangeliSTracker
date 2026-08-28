@@ -128,39 +128,42 @@ type
       12ba:0a8a copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
       +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
       the first to index the published control block. }
-    { ~~RingChan AND RingNote~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER, and
-      that is proved by executed code in this very segment rather than inferred.
+    { ~~RingChan AND RingNote~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
       147d:05d8 is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
       MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
-      147d:05b9 stores `N.Parameter` into +$25 from command $1a, which `CommandStart`
-      maps to `mcRetrigNote`.
-
-      **AND IT COLLIDES WITH THE RING EVENT, WHICH IS NOT RESOLVED.** 1.31b measured
-      `RingChan` at +$24 and `RingNote` at +$25 from its own `StartRingEvent` at
-      142f:0622, and that routine's v1.51 address has not been found: 147d's Start
-      routines run 0635 (VolFineDown), 068a (OktArp), 0785 (S3mRetrigNote), 085d
-      (NPI1), and none of them is it. Either the ring event moved to one of the
-      fields at +$2a..+$2d that the segment also touches, or 1.51 dropped it. Until
-      that is settled the two readings share these bytes and `StartRingEvent` below
-      still writes them under these names -- WHICH IS KNOWN TO BE WRONG FOR AT LEAST
-      ONE OF THE TWO. Do not build on it. }
-    RetrigCt   : Byte;          { +$24  was RingChan   -- see above           }
-    RetrigLen  : Byte;          { +$25  was RingNote   -- see above           }
+      147d:05b9 stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
+    RetrigCt   : Byte;          { +$24  was RingChan in 1.31b                 }
+    RetrigLen  : Byte;          { +$25  was RingNote in 1.31b                 }
     RetrigNow  : Boolean;       { +$26                                        }
 
-    { NEW IN v1.51, AND THE 1.31b NOTE BELOW CALLED BOTH OF THESE BEFORE EITHER WAS
-      SEEN. The record grew: a scan of 147d for [SI+d8] and [DI+d8] past +$25 finds
-      live accesses as far as +$2d, so there are more fields than these three and the
-      rest are not named yet.
-
-      The retrigger triple above is the other half of that growth. }
-    { +$27 and +$28, and these ARE settled: 147d:0369 is `StartSampleOffs`, reached
-      from `CommandStart` on command $0a, which is `mcSampleOffs`. It sets the flag
-      and stores `N.Parameter shl 8` -- a 9xx sample offset is the parameter times
-      256, which is the format's own definition. The names are the release's, quoted
-      in this file's 1.31b note a version before the routine existed. }
+    { +$27 and +$28: 147d:0369 is `StartSampleOffs`, reached from `CommandStart` on
+      command $0a, `mcSampleOffs`. It sets the flag and stores `N.Parameter shl 8` --
+      a 9xx sample offset is the parameter times 256, which is the format's own
+      definition. The names are the release's, quoted in this file's 1.31b note a
+      version before the routine existed. }
     SOffs      : Boolean;       { +$27                                        }
-    SOffsVal   : Word;          { +$28   42 bytes as far as it is known       }
+    SOffsVal   : Word;          { +$28                                        }
+
+    { +$2a and +$2b -- THE S3M Qxy RETRIGGER'S VOLUME CHANGE, and the flag says which
+      of two arithmetics to use. 147d:0785 looks the high nibble up in a MULTIPLIER
+      table and sets +$2a when that entry is ZERO, meaning "this x is not a multiply";
+      147d:0818 then either multiplies the volume by +$2b and shifts down four, or
+      adds +$2b as a signed step. Two tables, one selector byte. }
+    RetrigAdds : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
+    RetrigVal  : Byte;          { +$2b                                        }
+
+    { +$2c and +$2d -- **THE RING EVENT, AND THIS IS WHERE IT WENT.** The collision
+      recorded in the previous commit is resolved, and by the routine that was
+      missing rather than by argument: 147d:085d stores `N.Parameter` into +$2c and 1
+      into +$2d, which is 1.31b's `StartRingEvent` moved two fields down the record
+      and nothing else changed. `CommandStart` maps command $09 to it -- `mcNPI1`,
+      ProTracker's do-nothing 8xx, exactly as 1.31b's note said.
+
+      THE LESSON IS THE ONE THE SOUNDDEV CORRECTION TAUGHT LAST WEEK: an address that
+      two readings both claim is not a contradiction to be argued out, it is a
+      MISSING MEASUREMENT. Both readings were right about their own version. }
+    RingChan   : Byte;          { +$2c                                        }
+    RingNote   : Byte;          { +$2d   46 bytes in all                      }
   end;
 
 { --------------------------------------------------------------------------
@@ -1234,6 +1237,181 @@ asm
 end;
 
 { --------------------------------------------------------------------------
+  147d:068a -- THE OKTALIZER ARPEGGIO, NEW IN v1.51, and it takes the source position
+  1.31b's `StartRingEvent` used to hold. `CommandStart` maps BOTH command $21 and
+  command $22 -- `mcOktArp` and `mcOktArp2` -- to this one address.
+
+  IT IS StartArpeggio's ARITHMETIC WITH TWO CHANGES. The semitone table is a SECOND,
+  IDENTICAL copy at DS:$039a rather than the one at $035a -- thirty-two bytes of the
+  same sixteen words, which is what a `const` declared inside a second procedure
+  looks like, and is why it is declared here rather than shared.
+
+  AND THE TWO STEPS ARE TAKEN THE OTHER WAY ROUND: the LOW nibble drives `Arp2` and
+  the high nibble drives `Arp1` through `xor $0F`, which on a 0..15 value is 15 - n.
+
+  **`Period := Period shl 1` IS DEAD AND IT IS THE ORIGINAL'S.** 147d:070d shifts the
+  period left one and stores it back to [BP-4], and nothing reads [BP-4] again --
+  the second divide at 073a loads `Scaled` from [BP-8], which the shift did not
+  touch. It looks like an octave drop the author meant to fold into `Scaled` and did
+  not. Transcribed because it is four instructions of the release's, not because it
+  does anything. }
+procedure StartOktArp(var Song : TSong; var Can : TCanal; var N : TFullNote);
+const
+  { DS:$039a. Byte for byte the same table as `SemitoneScale` above, and separate
+    because the original has two copies. }
+  OktScale : array[0..15] of Word =
+    (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
+     26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
+var
+  Period : LongInt;               { [BP-4]                                   }
+  Scaled : LongInt;               { [BP-8]                                   }
+begin
+  Can.ArpCt := 0;                                  { 068e..0695              }
+
+  Period := N.Period;                              { 0696..06a4              }
+  if Period = 0 then                               { 06a5..06ac              }
+    Period := Can.Note.Period;                     { 06ad..06bb              }
+
+  Scaled := Period shl 14;                         { 06bc..06d1              }
+  Can.Arp0 := Period;                              { 06d2..06db              }
+
+  Can.Arp2 := Scaled div OktScale[Can.Note.Parameter and $0F];     { 06dc..0706 }
+
+  { See the note above: this result is never read. }
+  Period := Period shl 1;                          { 0707..071c              }
+
+  Can.Arp1 := Scaled div OktScale[(Can.Note.Parameter shr 4) xor $0F] { 071d..074b }
+end;
+
+
+{ --------------------------------------------------------------------------
+  147d:0750 -- the Oktalizer arpeggio, per tick, and it is a FOUR-step cycle where
+  the ProTracker one is three: 1 -> Arp1, 2 -> Arp2, 3 -> Arp1 again, then Arp0 and
+  reset. The third step repeating Arp1 is what makes it Oktalizer's.
+
+  `DEC AL` THREE TIMES RATHER THAN THREE COMPARES. The counter is loaded once and
+  decremented between tests, two bytes a step against three -- the inline assembler
+  emits what it is written, so this is the release's own hand-written shape.
+
+  THE DISPATCH TABLE POINTS HERE FROM INDEX 34 ONLY. Index 33 -- `mcOktArp` -- points
+  at `TickArpeggio` instead, so the two Oktalizer commands share a Start routine and
+  differ in their tick. 1.31b's table has TickNone at both. }
+procedure TickOktArp; assembler;
+asm
+        INC     BYTE PTR [SI+13h]        { 0750  ArpCt                         }
+        MOV     AL,[SI+13h]              { 0753                                }
+        DEC     AL                       { 0756                                }
+        JNZ     @@2                      { 0758                                }
+         MOV    AX,[SI+16h]              { 075a  Arp1                          }
+         MOV    [SI+0Bh],AX              { 075d                                }
+         JMP    @@Out                    { 0760                                }
+@@2:    DEC     AL                       { 0762                                }
+        JNZ     @@3                      { 0764                                }
+         MOV    AX,[SI+18h]              { 0766  Arp2                          }
+         MOV    [SI+0Bh],AX              { 0769                                }
+         JMP    @@Out                    { 076c                                }
+@@3:    DEC     AL                       { 076e                                }
+        JNZ     @@0                      { 0770                                }
+         MOV    AX,[SI+16h]              { 0772  Arp1 again -- the fourth step }
+         MOV    [SI+0Bh],AX              { 0775                                }
+         JMP    @@Out                    { 0778                                }
+@@0:     MOV    AX,[SI+14h]              { 077a  Arp0                          }
+         MOV    [SI+0Bh],AX              { 077d                                }
+         MOV    BYTE PTR [SI+13h],0      { 0780                                }
+@@Out:
+end;
+
+
+{ --------------------------------------------------------------------------
+  147d:0785 -- SCREAM TRACKER'S Qxy, NEW IN v1.51 AND THE REASON THE COMMAND EXISTS.
+  `CommandStart` maps command $23, `mcS3mRetrigNote`, here. It decodes the volume
+  half of the effect, masks the parameter down to the tick count, and then calls
+  `StartRetrigNote` with the same three arguments -- 147d:0811's `E8 A5 FD` reaches
+  05b9 -- so the plain retrigger does the counting and this routine only decides what
+  happens to the volume when it fires.
+
+  TWO TABLES AND A SELECTOR. `S3mVolMul` is consulted first; where its entry is ZERO
+  the effect is an ADDITIVE slide and `S3mVolAdd` supplies a signed step. That is
+  what `MOV AL,0 / JNZ +1 / INC AX` computes -- `Ord(S3mVolMul[x] = 0)`, an
+  expression whose whole body is a set-on-condition the 8086 has no instruction for.
+
+  THE MULTIPLIERS ARE IN SIXTEENTHS: $08 is a half, $18 is three halves, $20 is a
+  double. $0c at index 6 is three quarters where Scream Tracker's own document says
+  two thirds -- **the binary wins**, and that is the standing rule for every place
+  the format reference and this program disagree. }
+procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
+const
+  { DS:$03ba -- zero means "not a multiply". }
+  S3mVolMul : array[0..15] of Byte =
+    ($00, $00, $00, $00, $00, $00, $0C, $08,
+     $00, $00, $00, $00, $00, $00, $18, $20);
+
+  { DS:$03ca -- signed steps, held unsigned because the tick adds them as bytes and
+    lets the carry decide. $FF is -1 and $F0 is -16. }
+  S3mVolAdd : array[0..15] of Byte =
+    ($00, $FF, $FE, $FC, $F8, $F0, $00, $00,
+     $00, $01, $02, $04, $08, $10, $00, $00);
+begin
+  if N.Parameter <> 0 then                         { 0788..0794              }
+  begin
+    Can.RetrigAdds := S3mVolMul[N.Parameter shr 4] = 0;    { 0795..07b3      }
+
+    if Can.RetrigAdds then                         { 07b4..07bd              }
+      Can.RetrigVal := S3mVolAdd[N.Parameter shr 4]        { 07be..07d8      }
+    else
+      Can.RetrigVal := S3mVolMul[N.Parameter shr 4];       { 07d9..07f1      }
+
+    N.Parameter := N.Parameter and $0F;            { 07f2..0801              }
+    StartRetrigNote(Song, Can, N)                  { 0802..0813              }
+  end
+end;
+
+
+{ --------------------------------------------------------------------------
+  147d:0818 -- Qxy per tick. Run the plain retrigger's counter first, and if it fired
+  this tick, change the volume.
+
+  `MUL AH` AND A FLOOR OF SIXTEEN. The multiply is byte by byte into AX, and the
+  product is clamped UP to 16 BEFORE the shift rather than after -- so a volume of 1
+  times a half gives 16 shr 4 = 1 and not 0, and a note being faded never reaches
+  silence by rounding. The clamp is `CMP AX,10 / JNC` on the whole product.
+
+  THE ADDITIVE PATH DETECTS UNDERFLOW WITH THE CARRY. `ADD AH,AL / JNC / MOV AH,0` --
+  adding $FF..$F0 to a small volume wraps, and the wrap is what says the slide went
+  below zero. Both paths then clamp at $3F. }
+procedure TickS3mRetrigNote; assembler;
+asm
+        CALL    TickRetrigNote           { 0818                                }
+        CMP     BYTE PTR [SI+26h],0      { 081b  RetrigNow                     }
+        JZ      @@Out                    { 081f                                }
+        CMP     BYTE PTR [SI+2Ah],0      { 0821  RetrigAdds                    }
+        JNZ     @@Add                    { 0825                                }
+         MOV    AL,[SI+2Bh]              { 0827  the multiplicative path       }
+         MOV    AH,[SI+0Ah]              { 082a  Volume                        }
+         MUL    AH                       { 082d                                }
+         CMP    AX,16                    { 082f                                }
+         JNC    @@Shift                  { 0832                                }
+          MOV   AX,16                    { 0834                                }
+@@Shift:  SHR   AX,4                     { 0837                                }
+         CMP    AX,3Fh                   { 083a                                }
+         JB     @@PutMul                 { 083d                                }
+          MOV   AL,3Fh                   { 083f                                }
+@@PutMul: MOV   [SI+0Ah],AL              { 0841                                }
+         JMP    @@Out                    { 0844                                }
+@@Add:   MOV    AL,[SI+2Bh]              { 0846  the additive path             }
+         MOV    AH,[SI+0Ah]              { 0849                                }
+         ADD    AH,AL                    { 084c                                }
+         JNC    @@Cap                    { 084e                                }
+          MOV   AH,0                     { 0850   it wrapped -- underflow      }
+@@Cap:   CMP    AH,3Fh                   { 0852                                }
+         JB     @@PutAdd                 { 0855                                }
+          MOV   AH,3Fh                   { 0857                                }
+@@PutAdd: MOV   [SI+0Ah],AH              { 0859                                }
+@@Out:
+end;
+
+
+{ --------------------------------------------------------------------------
   142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
   counterpart in the release at all.
 
@@ -1273,8 +1451,8 @@ end;
   -------------------------------------------------------------------------- }
 procedure StartRingEvent(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
-  Can.RetrigCt := N.Parameter;   { was Can.RingChan -- see TCanal   0625..0632 }
-  Can.RetrigLen := 1                                { 0633..063a              }
+  Can.RingChan := N.Parameter;                     { 0860..0871              }
+  Can.RingNote := 1                                { 0872..0875              }
 end;
 
 { --------------------------------------------------------------------------
@@ -1341,10 +1519,28 @@ const
     Ofs(TickPattDelay),     { E Ex                                        }
     Ofs(TickFunkIt),        { E Fx                                        }
 
-    Ofs(TickNone),          { Okt   the release has TickArpeggio here     }
-    Ofs(TickNone),          { Okt   ... and TickArpeggio2 here            }
+    { THREE ENTRIES 1.31b PARKED ON TickNone, AND THE 1.31b NOTE CALLED ALL THREE.
+      It said indices 33 and 34 "point at TickNone where the release points at
+      TickArpeggio and TickArpeggio2. The slots exist and the feature does not."
+      1.51 fills them in, and it does it exactly that way: 33 shares the ORDINARY
+      arpeggio tick and only 34 gets the new four-step one, even though both
+      commands share a Start routine.
 
-    Ofs(TickNone)           { mcLast -- unreachable, the guard stops at 34 }
+      AND INDEX 35 IS NO LONGER DEAD. `CommandTick`'s guard is `CMP BX,48h` in 1.51
+      against 46h in 1.31b, so it now admits index 35 -- and 35 is mcS3mRetrigNote,
+      which is the whole point of the version. The note that called this entry
+      unreachable was right about 1.31b and is why the change is visible at all. }
+    Ofs(TickArpeggio),      { Okt   33 -- the ORDINARY tick, not the new one }
+    Ofs(TickOktArp),        { Okt   34                                     }
+
+    Ofs(TickS3mRetrigNote), { 35    reachable in 1.51; 1.31b's guard stopped at 34 }
+
+    { THE DEAD SLOT IS STILL THERE AND IT IS STILL DEAD. DS:$0422 holds $0689 --
+      TickNone -- and the guard admits 0..35, so index 36 can never be reached. The
+      1.31b note said "the release's table has the same dead final entry"; so does
+      1.51, one index further along. It exists because the array is declared
+      `mcNone..mcLast` and `mcLast` is a count rather than a command. }
+    Ofs(TickNone)           { 36    mcLast -- unreachable, as it was in 1.31b }
   );
 
 { --------------------------------------------------------------------------
@@ -1360,15 +1556,24 @@ const
   `RETF` AT 064a IS THE COMPILER'S EPILOGUE and is why this must be declared `far`:
   the interface publishes it and 12ba calls it far.
 
-  THE RELEASE HAS ONE MORE INSTRUCTION -- `MOV TCanal([SI]).doretrig,0` between the
-  guard and the table lookup. 1.31 has no `doretrig` field, so it has no line.
+  ~~THE RELEASE HAS ONE MORE INSTRUCTION~~ -- AND IN v1.51 SO DO WE. The 1.31b note
+  read `MOV TCanal([SI]).doretrig,0` in the release, between the guard and the table
+  lookup, and recorded that 1.31 has no such field so it has no line. 147d:087f is
+  that instruction, `C6 44 26 00`, and +$26 is `RetrigNow` -- the field the retrigger
+  sets when it fires. Clearing it here means it is true for exactly one tick, which
+  is what `TickS3mRetrigNote` reads it as.
+
+  `CMP BX,48h` WHERE 1.31b HAS 46h, and the source line does not change: `mcLast`
+  grew by one when `mcS3mRetrigNote` joined the enumeration, so the same expression
+  emits a different immediate. Two bytes of difference that no edit here produced.
   -------------------------------------------------------------------------- }
 procedure CommandTick; assembler;
 asm
-        CMP     BX,mcLast * 2            { 063f                                }
-        JNC     @@1                      { 0642                                }
-        ADD     BX,OFFSET TickCommOfs    { 0644                                }
-        CALL    WORD PTR [BX]            { 0648                                }
+        CMP     BX,mcLast * 2            { 087a  $48; 1.31b's mcLast made it $46 }
+        JNC     @@1                      { 087d                                }
+        MOV     BYTE PTR [SI+26h],0      { 087f  RetrigNow -- one tick only    }
+        ADD     BX,OFFSET TickCommOfs    { 0883                                }
+        CALL    WORD PTR [BX]            { 0887                                }
 @@1:
 end;
 
@@ -1414,15 +1619,64 @@ begin
        (Can.Note.Command = mcVib_VSlide)) and
       ((N.Command <> mcVibrato) and
        (N.Command <> mcVib_VSlide))) then          { 064e..067f              }
-    Can.Period := Can.Note.Period;                 { 0680..068d              }
+    Can.Period := Can.Note.Period;                 { 08bf..08cc              }
 
-  if N.Period <> 0 then                            { 068e..0697              }
-    Can.Note.Period := N.Period;                   { 0698..06a5              }
+  { ALL THREE OF THE ADDITIONS BELOW WERE NAMED BY THE 1.31b NOTE ABOVE, a version
+    before any of them could be measured. It read the release and recorded "a
+    retrigger-counter reset, a `can.SOffs := FALSE`, and a block that copies
+    `PeriodDest` into the period when a note portamento ends. All three touch fields
+    1.31's TCanal does not have, and all three are simply absent." They are here, in
+    that order, and the fields exist now.
 
-  Can.Note.Command   := N.Command;                 { 06a6..06b3              }
-  Can.Note.Parameter := N.Parameter;               { 06b4..06c1              }
+    THE RETRIGGER COUNTER RESETS WHEN THE EFFECT STARTS, not while it runs -- the old
+    command must NOT be a retrigger and the new one must be. Five compares and four
+    branches, and the branch targets are what fix the bracketing: 08d5 and 08df both
+    leave for 08fd, so those two are the `and`; 08e9 goes to the STATEMENT at 08f5 and
+    08f3 leaves for 08fd, which is an `or` whose true-path is the assignment. }
+  if (Can.Note.Command <> mcS3mRetrigNote) and
+     (Can.Note.Command <> mcRetrigNote) and
+     ((N.Command = mcS3mRetrigNote) or
+      (N.Command = mcRetrigNote)) then             { 08cd..08f4              }
+    Can.RetrigCt := 0;                             { 08f5..08fc              }
 
-  case N.Command of                                { 06c2..0858              }
+  { A NOTE PORTAMENTO THAT HAS JUST ENDED SNAPS TO ITS TARGET. Both the note's period
+    and the channel's are set, and both from `PeriodDest` -- 0911 and 091f each reload
+    +$11 rather than reusing AX, which is two statements and not one. }
+  if (Can.Note.Command = mcNPortamento) and
+     (N.Command <> mcNPortamento) then             { 08fd..0910              }
+    begin
+      Can.Note.Period := Can.PeriodDest;           { 0911..091e              }
+      Can.Period      := Can.PeriodDest            { 091f..092c              }
+    end;
+
+  if N.Period <> 0 then                            { 092d..0936              }
+    Can.Note.Period := N.Period;                   { 0937..0944              }
+
+  { CLEARED ON EVERY ROW, so a 9xx offset applies to the row that carries it and not
+    to the one after. `StartSampleOffs` sets it again a few instructions later if the
+    new command is one. }
+  Can.SOffs := False;                              { 0945..094c              }
+
+  Can.Note.Command   := N.Command;                 { 094d..095a              }
+  Can.Note.Parameter := N.Parameter;               { 095b..0968              }
+
+  { THE ARM ORDER IS THE COMPARE ORDER AND IT IS NOT SORTED. Turbo Pascal keeps a
+    sparse `case` selector in AL and emits `CMP AL,n / JNZ` once per label in the
+    order the labels are WRITTEN, so the chain in the binary is a direct reading of
+    the release's source order and nothing else. 1.51's is
+
+        01 02 03 04 05 0c | 06 07 0b | 0a | 0d 0e 10 11 | 1a 1b 1c | 12 13 |
+        21 22 23 | 09
+
+    which is 1.31b's with `0a` inserted after the volume-slide group, `1a` ahead of
+    `1b`/`1c`, and the three new ones pushed in before `09` -- which stays last,
+    still the appended DemoVT arm the 1.31b note identified.
+
+    `mcOktArp` AND `mcOktArp2` ARE TWO ARMS, NOT ONE LABEL LIST. Both call 068a, but
+    from different displacements -- `E8 55 FB` and `E8 3D FB` -- so each has its own
+    copy of the three pushes and its own call. Written as `mcOktArp, mcOktArp2:` the
+    compiler would emit one body and a shared jump, which is 25 bytes fewer. }
+  case N.Command of                                { 0969..0b7c              }
     mcArpeggio:      StartArpeggio(Song, Can, N);
     mcTPortUp:       StartTPortUp(Song, Can, N);
     mcTPortDown:     StartTPortDown(Song, Can, N);
@@ -1432,14 +1686,19 @@ begin
     mcT_VSlide,
     mcVib_VSlide,
     mcVolSlide:      StartVolSlide(Song, Can, N);
+    mcSampleOffs:    StartSampleOffs(Song, Can, N);
     mcSetVolume:     StartSetVolume(Song, Can, N);
     mcEndPattern:    StartEndPattern(Song, Can, N);
     mcSetTempo:      StartSetTempo(Song, Can, N);
     mcSetFilter:     StartSetFilter(Song, Can, N);
+    mcRetrigNote:    StartRetrigNote(Song, Can, N);
     mcVolFineUp:     StartVolFineUp(Song, Can, N);
     mcVolFineDown:   StartVolFineDown(Song, Can, N);
     mcFinePortaUp:   StartFinePortaUp(Song, Can, N);
     mcFinePortaDn:   StartFinePortaDown(Song, Can, N);
+    mcOktArp:        StartOktArp(Song, Can, N);
+    mcOktArp2:       StartOktArp(Song, Can, N);
+    mcS3mRetrigNote: StartS3mRetrigNote(Song, Can, N);
     mcNPI1:          StartRingEvent(Song, Can, N);
   end;
 

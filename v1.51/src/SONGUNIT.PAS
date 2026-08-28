@@ -513,9 +513,20 @@ const
     and 19 sharing TickFPortUpDown and 27 and 28 sharing TickVolFineUpDn. Sixteen
     names came out of that one table.
 
-    `mcLast` IS 35 HERE AND 36 IN THE RELEASE, which is the S3M command missing:
-    1.39b has `mcS3mRetrigNote` at 35 and 1.31 has nothing there. Consistent with
-    TCanal having no S3mRetAdd/S3mRetVal either. }
+    ~~`mcLast` IS 35 HERE AND 36 IN THE RELEASE~~ -- IN v1.51 IT IS 36 HERE TOO, and
+    every part of that 1.31b note came true at once. It predicted the missing command
+    is `mcS3mRetrigNote` at 35, and that TCanal would gain `S3mRetAdd`/`S3mRetVal` when
+    it arrived. 147d's guard is now `CMP BX,48h`, the table at DS:$03da has an entry at
+    index 35 pointing at a real routine, and TCanal has two new bytes at +$2a and +$2b
+    that decide between an additive and a multiplicative volume change. Three
+    predictions, one version later, all confirmed by measurement rather than by
+    reading them back.
+
+    THESE ARE INTEGER CONSTANTS AND THEY SHADOW THE ENUMERATION. SongElements declares
+    `TModCommand` with the same names; this unit's `const` block wins wherever both are
+    in scope, which is why `mcLast` here -- and not `Ord(mcLast)` there -- is what
+    147d's `CMP BX,mcLast * 2` assembles against. That went unnoticed until the guard
+    came out two short. }
   mcGlissCtrl              = 20; { E 3x                                 }
   mcVibCtrl                = 21; { E 4x                                 }
   mcFineTune               = 22; { E 5x                                 }
@@ -531,7 +542,8 @@ const
   mcFunkIt                 = 32; { E Fx                                 }
   mcOktArp                 = 33; { Oktalizer -- slot exists, tick does not }
   mcOktArp2                = 34; { Oktalizer -- ditto                   }
-  mcLast                   = 35; { 142f:063f guards with mcLast*2 = 46h }
+  mcS3mRetrigNote          = 35; { Scream Tracker Qxy -- NEW IN v1.51   }
+  mcLast                   = 36; { 147d:087a guards with mcLast*2 = 48h }
 
   { +$59. TSongStatus. }
   msNotLoaded              = 0;  { 164b:0044 -- the initial state       }
