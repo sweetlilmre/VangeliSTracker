@@ -174,7 +174,7 @@ end;
   --------------------------------------------------------------------------- }
 procedure ReadInstruments(var Song : TSong; var St : TStream;
                           var Buf; var Para : TS3MParaTable;
-                          Num, A, B : Word);
+                          Num : Word; A : Boolean; B : Word);
 var
   { $17e is 126 bytes of locals and one 256-byte String temporary, and the
     126 divide exactly: 2 + 28 + 4 + 80 + 2 + 2 + 4 + 4. The header record's
@@ -229,26 +229,40 @@ begin
             swaps the two blocks in the segment. }
           if Instrument.Len > 0 then
             begin
-              if Hdr.Flags = 0 then
+              { `<> 0` WITH THE WORK FIRST. 07f7 is `JE` to the zeroing block,
+                and Turbo Pascal jumps if FALSE, so the tested condition is
+                `Hdr.Flags <> 0`. Written the other way the two blocks swap
+                places -- eighteen bytes moved, nothing computed differently. }
+              if Hdr.Flags <> 0 then
                 begin
-                  Instrument.Reps := 0;
-                  Instrument.Repl := 0
+                  { THE SECOND STATEMENT REUSES THE FIRST'S RESULT. 0908
+                    subtracts the pair at -$18, which is Instrument.Reps just
+                    assigned, not the header's LoopBeg at -$5c. Same value,
+                    a different load. }
+                  Instrument.Reps := Hdr.LoopBeg;
+                  Instrument.Repl := Hdr.LoopEnd - Instrument.Reps
                 end
               else
                 begin
-                  Instrument.Reps := Hdr.LoopBeg;
-                  Instrument.Repl := Hdr.LoopEnd - Hdr.LoopBeg
+                  Instrument.Reps := 0;
+                  Instrument.Repl := 0
                 end;
 
               Instrument.Vol  := Hdr.Vol;
               Instrument.DAdj := Hdr.C2Spd;
 
-              { TWO NUMERATORS, and the parameter chooses. $2100 is the same
-                constant STMLOADE uses; $20ab is 21/32 of a semitone below it. }
-              if A = 0 then
-                Instrument.NAdj := $2100
+              { A IS A Boolean, AND THE COMPARE WIDTH SAYS SO: 07fe is
+                `CMP BYTE PTR [BP+06],00`, where a Word parameter gives
+                `CMP WORD PTR`. The value still occupies two bytes of the
+                parameter block -- Turbo Pascal pushes a byte-sized value
+                parameter as a word -- so the RET $16 is unchanged.
+
+                $2100 is the numerator STMLOADE uses; $20ab is the other, and
+                the TRUE arm takes it. }
+              if A then
+                Instrument.NAdj := $20AB
               else
-                Instrument.NAdj := $20AB;
+                Instrument.NAdj := $2100;
 
               if Instrument.Repl > Instrument.Len then
                 Instrument.Repl := Instrument.Len;
@@ -262,7 +276,10 @@ begin
 
               SeekPara(St, Hdr.MemSeg);
 
-              if Instrument.Len < $FFF1 then
+              { $FFF0 WITH `<=`, as in STMLOADE's LoadSamples: `CMP ...,F0 /
+                JA` against `CMP ...,F1 / JAE`. The same 64K read boundary and
+                the same two-byte difference. }
+              if Instrument.Len <= $FFF0 then
                 begin
                   FullHeap.HGetMem(Pointer(Instrument.Data), Instrument.Len);
                   if Instrument.Data = nil then
@@ -291,7 +308,12 @@ begin
                   Falls := 0;
                   Rises := 0;
 
-                  if Instrument.Len <> 1 then
+                  { NO `Len <> 1` GUARD. `for j := 1 to Len - 1` already has
+                    its own entry test, and with Len = 1 the limit is zero and
+                    the loop is skipped. The explicit test is fifteen bytes of
+                    LongInt comparison the original does not have -- the third
+                    time this exact redundancy has appeared in these two
+                    units. }
                     for j := 1 to Instrument.Len - 1 do
                       if ((PSampleBytes(Instrument.Data)^[j - 1] xor PSampleBytes(Instrument.Data)^[j]) and $80) <> 0 then
                         if (ShortInt(PSampleBytes(Instrument.Data)^[j] - $40) < 0) and
@@ -301,7 +323,12 @@ begin
                                 (ShortInt(PSampleBytes(Instrument.Data)^[j - 1] - $40) >= 0) then
                           Inc(Rises);
 
-                  if Falls < Rises then
+                  { `Rises > Falls`, AND THE OPERAND ORDER IS IN THE LOADS.
+                    0992 loads the pair at -$7c (Rises) into AX:DX and compares
+                    it against the pair at -$78 (Falls), so Rises is the LEFT
+                    operand. `Falls < Rises` is the same condition and swaps
+                    which pair is loaded. }
+                  if Rises > Falls then
                     for j := 0 to Instrument.Len - 1 do
                       Dec(PSampleBytes(Instrument.Data)^[j], $80)
                 end
@@ -432,7 +459,7 @@ begin
   ReadPatterns(Song, St, Buf, PatPara, S3M.PatNum, 1, $FFFF);
   if Song.Status > msOk then Exit;
 
-  ReadInstruments(Song, St, Buf, InsPara, S3M.InsNum, 1, $FFFF);
+  ReadInstruments(Song, St, Buf, InsPara, S3M.InsNum, True, $FFFF);
   if Song.Status > msFileTooShort then Exit;
 
   if ChansUsed < Song.NumChannels then
