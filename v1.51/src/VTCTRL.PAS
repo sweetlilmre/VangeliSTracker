@@ -30,6 +30,22 @@ const
   CtrlBlockSize = $300;      { 14b7:0008 -- what Reset clears }
 
 type
+  { **DECLARED HERE AND NOT IN PLAYMOD, BECAUSE THE COPY HAS TO BE AN ASSIGNMENT.**
+    12ce:022b calls SYSTEM's $09f7 -- the whole-array copy the code generator emits
+    for `A := B` -- where a written `Move` gets $0fb2, the overlap-checking one. The
+    two helpers are eleven bytes apart in behaviour and identical in signature, so
+    only the CALL TARGET tells them apart.
+
+    An assignment needs one type on both sides. PlayMod uses VTCtrl and not the other
+    way round, so the type has to live here for the ring and the published row to be
+    the same thing. }
+  TWideEntry = record
+    Period     : Word;          { +$0  the channel's RealPeriod              }
+    Instrument : Byte;          { +$2                                        }
+    Volume     : Byte;          { +$3  scaled by UserVols                    }
+  end;
+  TWideRow   = array[1..32] of TWideEntry;   { 128 bytes                     }
+
   { Only the fields that are established are named. The rest is deliberately
     left as filler: guessing at 768 bytes of layout would put invented names
     into the one part of DemoVT that other programs actually depend on. }
@@ -67,7 +83,7 @@ type
       ARE is not named here because nothing that writes them has been read yet, and
       768 bytes of invented layout in the one structure other programs depend on is
       the mistake this record was built to avoid. }
-    WideNotes : array[1..32] of array[0..3] of Byte;  { CB+$12D               }
+    WideNotes : TWideRow;    { CB+$12D                                      }
 
     { CB+$1AD and CB+$1AE, and they carry `TPlayingNote`'s own two indices under the
       release's names for them. 12ce:090e stores `NotePlaying` -- the row within the

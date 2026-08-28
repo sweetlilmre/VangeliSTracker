@@ -423,11 +423,6 @@ const
   NextIdx          : Word          = 0;        { DS:$02fc                       }
   ChanIdx          : Word          = 0;        { DS:$02fe                       }
 
-  { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
-    declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
-    constants and uses it for exactly one thing: to know, after CommandStart has
-    run, whether this row started a sample that a 9xx could still be moved. }
-  NewSample        : Boolean       = False;    { DS:$030e                       }
   { DS:$02fa, six bytes. The initialiser names the FIRST variant's fields, which is
     the only form Turbo Pascal accepts for a variant record's typed constant --
     Instrument, Period, Volume, Command, Parameter is 1 + 2 + 1 + 1 + 1, and $02fa + 6
@@ -435,11 +430,18 @@ const
   NewNote          : TFullNote     = (Instrument : 0; Period : 0; Volume : 0;
                                       Command    : mcNone; Parameter : 0);
   CurCanal         : PCanal        = nil;      { DS:$0300                       }
-  Pattern          : PPattern      = nil;      { DS:$0304                       }
+  Pattern          : PPattern      = nil;      { DS:$030a in v1.51             }
 
-  { DS:$0308 -- UNIDENTIFIED, and the only non-zero one: a Word holding 1. Nothing in
-    the transcribed tree reads or writes $0308. Named by address on purpose. }
-  Word0308         : Word          = 1;
+  { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
+    declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
+    constants and uses it for exactly one thing: to know, after CommandStart has
+    run, whether this row started a sample that a 9xx could still be moved. }
+  NewSample        : Boolean       = False;    { DS:$030e                       }
+
+  { DS:$0310 in v1.51 -- UNIDENTIFIED, and still the only non-zero one: a Word holding
+    1 that nothing in the transcribed tree reads or writes. `NewSample` above went in
+    ahead of it, which is what moved it from 1.31b's $0308. Named by address. }
+  Word0310         : Word          = 1;
 
   MixChan          : Word          = 0;        { DS:$030a                       }
   ChanRec          : PModRawChan   = nil;      { DS:$030c                       }
@@ -773,22 +775,10 @@ type
   { For calling the driver record's +$26 through its Pointer field, the way
     SOUNDDEV already does with `TInitDevProc`. That one is a procedure; this one
     returns the rate the device settled on, which 12ba:0d44 stores. }
-  { ~~FOUR BYTES A CHANNEL AND THEY ARE NOT NAMED~~ -- **THEY ARE NAMED NOW, AND
-    AGAIN IT WAS THE WRITER THAT SAID SO.** PublishWideRow only moves the row whole,
-    so nothing there could tell the four apart; 12ce:11ca..1207 fills them one at a
-    time, and each has a source: `Can^.RealPeriod` into a Word at +$0, the channel's
-    current instrument number into +$2, and a scaled volume into +$3.
+  { ~~TWideEntry AND TWideRow ARE DECLARED HERE~~ -- they are VTCtrl's now, because
+    the published row and this ring have to be one type for the copies below to be
+    ASSIGNMENTS rather than Move calls. See the declaration there. }
 
-    THE VOLUME IS NOT THE CHANNEL'S OWN. It is `Can^.Volume * UserVols[i] shr 7` --
-    the mix of the tune's volume and the user's per-channel setting, which is what a
-    display should show and not what the tracker's data says. `MUL DX` with DX loaded
-    first makes UserVols the right-hand operand. }
-  TWideEntry = record
-    Period     : Word;          { +$0  Can^.RealPeriod                       }
-    Instrument : Byte;          { +$2                                        }
-    Volume     : Byte;          { +$3  scaled by UserVols                    }
-  end;
-  TWideRow   = array[1..WideChans] of TWideEntry;
 
   TGetFreqProc = function(Hz : Word) : Word;
 
@@ -1085,8 +1075,10 @@ begin
   if WideSlot > RingRows - 1 then                   { 020a..0210             }
     Dec(WideSlot, RingRows);                        { 0211..0215             }
 
-  Move(WideRing[WideSlot], CtrlBlock.WideNotes,
-       SizeOf(TWideRow));                           { 0216..022f             }
+  { AN ASSIGNMENT, NOT A `Move`, AND THE HELPER IS WHAT SAYS SO -- 022b calls SYSTEM's
+    $09f7 where a written `Move` gets $0fb2. Same rule this file already records for
+    `Volume := UserVols`. }
+  CtrlBlock.WideNotes := WideRing[WideSlot];        { 0216..022f             }
 
   for WideChan := 1 to WideChans do                 { 0230..0237, 0258..025e }
     if WideHit[WideSlot, WideChan] <> 0 then        { 023c..024e             }
@@ -1095,8 +1087,7 @@ begin
   CtrlBlock.NotePlaying := WideNoteRing[WideSlot];   { 025f..0269             }
   CtrlBlock.SeqPlaying  := WideSeqRing[WideSlot];    { 026a..0274             }
 
-  Move(WideRing[WidePrev], WideRing[WideSlot],
-       SizeOf(TWideRow));                           { 0275..0296             }
+  WideRing[WideSlot] := WideRing[WidePrev];        { 0275..0296             }
 
   FillChar(WideHit[WideSlot], WideChans, 0);        { 0297..02ac             }
 
