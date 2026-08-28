@@ -4,6 +4,8 @@
 
 It replaces the numbered per-session continuation notes, which are gone. Everything in them that was still true is here; what was superseded is described as superseded rather than deleted, because several of this project's most useful lessons are about conclusions that fell over. **The name is deliberately not numbered** — update this file in place rather than starting a `09-`.
 
+**A NOTE ON SCRIPT NAMES BELOW THE STATUS BLOCK.** The status block, "The three things you need" and "WHERE THINGS LIVE" were brought up to date on 28 Aug 2026 and are the authority on how to run anything. **The narrative sections further down still name the pre-kit scripts** -- `verify.py`, `blocks.py`, `progcmp.py`, `asmcheck.py`, `census.py`, `omf.py`, `probe.py` -- and that is deliberate: they are a record of what was run at the time, and rewriting them would falsify the account. Read those names as history, and take the rename table in "The three things you need" for what to run today.
+
 ---
 
 ## WHERE THIS STANDS TODAY — read this before anything else
@@ -12,14 +14,19 @@ It replaces the numbered per-session continuation notes, which are gone. Everyth
 
     python kit/tools/pascal/units.py v1.31b/units.toml           2 byte-identical, 24 identical but for fixups, 0 mismatched
     python kit/tools/pascal/objcheck.py v1.31b/objmodules.toml   PLAYMOD OK, SOUNDDEV OK
-    python v1.31b/linkorder.py                                   30 of 30 positions agree
-    python v1.31b/mapcmp.py                                      28 unit(s) exact; 0 with a live gap, 0 bytes
-    python v1.31b/dgroup.py                                      initialised DGROUP: 3184 of 3184 -- +0
+    python kit/tools/pascal/linkorder.py v1.31b/link.toml        30 of 30 positions agree
+    python kit/tools/pascal/mapcmp.py v1.31b/link.toml           30 unit(s) exact; 0 with a live gap, 0 bytes
+    python kit/tools/pascal/dgroup.py v1.31b/link.toml           initialised DGROUP: 3184 of 3184 -- +0
     python kit/tools/pascal/blockcmp.py v1.31b/blocks/1000.toml  1616 of 1616 bytes of segment 1000
-    python kit/tools/pascal/linkcmp.py v1.31b/linked.toml        every linked code segment
-    python v1.31b/coverage.py                                    44,171 of 44,272 in-scope bytes = 99.8%
+    python kit/tools/pascal/linkcmp.py v1.31b/linked.toml        27 unit(s) byte-identical in the linked image
+    python kit/tools/pascal/coverage.py v1.31b/link.toml v1.31b/units.toml   44,183 of 44,272 in-scope = 99.8%
 
-**Six of those commands moved into the kit on 23 Aug 2026** ([psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36)). `build.py`, `asmcheck.py`, `progcmp.py`, `linkcmp.py`, `blocks.py` and the four `blockXXXX.py` are archived under the `archive/pre-kit-scripts` tag -- each only once its successor had been measured to reproduce it row for row. **`verify.py` itself stays**, and deliberately: `units.py` matches it on every row, but `verify.py --detail` and `--all` print the divergent-region diagnostics for a unit that does *not* match, and the kit has no equivalent of those yet.
+**EVERY ONE OF THOSE COMMANDS IS NOW THE KIT'S**, and none of them lives under `v1.31b/` any more. The migration ran in two waves -- [psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36) on 23 Aug 2026 took `build.py`, `asmcheck.py`, `progcmp.py`, `linkcmp.py`, `blocks.py` and the four `blockXXXX.py`; [psycho #50](https://github.com/sweetlilmre/PsychoNeurosis/issues/50) took the rest -- each only once its successor had been measured to reproduce it row for row. The pre-kit originals are archived under the `archive/pre-kit-scripts` tag. **Two things changed about how they are CALLED, and a command copied out of an older note will simply not run:**
+
+* **`linkorder.py`, `mapcmp.py` and `dgroup.py` each take `v1.31b/link.toml`.** The local scripts took no argument, because the paths were baked into them; the kit's hold the method only and read the target from the config.
+* **`coverage.py` takes TWO configs, `link.toml` then `units.toml`**, and it still shells out to `units.py` and regex-parses the per-unit table. That parse is fragile by nature -- the row shape is the contract and nothing enforces it. If coverage reports a wild figure, suspect the parse before the build.
+
+**`verify.py` IS GONE, and the reason is worth reading, because this file argued twice for keeping it.** It was held back under both #33 and #36 on the grounds that `units.py` reproduced every row while dropping the two views a person reaches for once a unit has actually diverged. Those views are in the kit now, as `align.regions()` and `align.hexpair()` behind **`units.py --detail` and `--all`**. That was verified on a manufactured failure -- with everything passing neither view fires at all, so a `/$R+` rebuild was used to turn 0 mismatched into 19, and across all 19 units the 566 printed regions, the per-unit counts and the hex dump were identical byte for byte. `omf.py` went with it, as its only importer. **So the standing exception this file recorded no longer exists: reach for `units.py --detail`, not for a script that is not there.**
 
 **THE BUILD IS BYTE-IDENTICAL TO THE UNPACKED ORIGINAL.**
 
@@ -33,11 +40,15 @@ correctly. **There is no remaining difference between `build/VTMAIN.EXE` and
 `v1.31b/ref/vt1.31b.bin` that this tree can measure.** The only thing left
 is the PACKED file, which needs LZEXE — see "what is actually left" below.
 
-**FIRST THING TO DO IN A NEW SESSION: run the eight commands above and check they still
-say that.** They take a few seconds together, they are all computed rather than recited,
-and a disagreement means something has drifted — which is worth knowing before touching
-anything. `build.py` refuses to compile when its lint fails, and `verify.py` reports
-`STALE` rather than lying, but read the build output anyway.
+**FIRST THING TO DO IN A NEW SESSION: run the nine commands above and check they still say that.** The eight checks take a few seconds together, they are all computed rather than recited, and a disagreement means something has drifted — which is worth knowing before touching anything. `build.py` refuses to compile when its lint fails, but read the build output anyway.
+
+**Pass `--sw=/GS` from POWERSHELL, not Git Bash** — MSYS rewrites the leading slash into a path and the build then silently compiles nothing. This bites every session that starts in a bash shell.
+
+**And check the load image directly while you are there**, because none of the nine commands compares the whole file:
+
+    cmp <(tail -c +3121 build/VTMAIN.EXE) <(tail -c +3121 v1.31b/ref/vt1.31b.bin)
+
+Both files are 58,176 bytes; from 3120 on, the 55,056-byte load image is byte-identical. A bare `cmp` of the two files reports 2,709 differing bytes and **that is expected** — byte 13..14 is `maxalloc`, which our unpacker writes itself, and everything from offset 301 is the relocation table's seg:ofs re-encoding. Both are the measurement caveats below, not build differences; `relmatch.py` is the meaningful relocation test.
 
 Two caveats on the header, and both are about the MEASUREMENT rather than the build:
 
@@ -46,10 +57,16 @@ Two caveats on the header, and both are about the MEASUREMENT rather than the bu
   from SS:SP, because LZEXE preserves neither. So neither field is evidence about the
   original build, and minalloc agreeing is partly circular. SS:SP themselves ARE preserved
   in the packed header, which is what makes the stack finding below real.
-* **The relocation table's ORDER and its seg:ofs encoding differ**, while the set of LINEAR
-  targets is identical to the entry. The same linear address can be written as many
-  seg:ofs pairs and LZEXE re-encodes them, so the order is the unpacker's normalisation.
-  Comparing linear addresses is the only meaningful test and it passes.
+* **The relocation table's ORDER and its seg:ofs encoding differ**, while the set of LINEAR targets is identical to the entry. The same linear address can be written as many seg:ofs pairs and LZEXE re-encodes them, so the order is the unpacker's normalisation. Comparing linear addresses is the only meaningful test and it passes.
+
+  **MEASURED, 28 Aug 2026, and it is worth seeing once** because the shape of the difference is what makes it obviously benign. Both tables hold 772 entries at offset 28. **The first 68 entries are byte-identical**; they diverge at index 68, file offset 300, and from there our linker writes a NON-ZERO segment where LZEXE re-encoded everything onto segment 0:
+
+        idx        built     lin           ref     lin
+         68   0065:000a    1626    0000:065a    1626
+         69   0065:007d    1741    0000:06cd    1741
+         70   0065:0084    1748    0000:06d4    1748
+
+  Same linear address, two spellings. TP6's linker emits a fixup relative to the segment the reference sits in; LZEXE flattens each one to `0000:linear` while linear still fits in 16 bits. So the 2,709 bytes are **772 entries re-spelled, not 772 different targets** — and `nreloc`, `hdrsize`, `minalloc`, `ss:sp`, `cs:ip` and both size fields all agree exactly.
 
 ### HOW THE LAST FIVE BYTES WENT — three findings, and one of them withdrew a claim
 
@@ -109,7 +126,7 @@ could not.
 
 | tool | what it compares | what it CANNOT see |
 |---|---|---|
-| `verify.py` | a `.TPU`'s CODE against its segment | every DGROUP address and inter-unit call — they are pending fixups it excuses. Also cannot see whether a routine is an init section or a named procedure |
+| `units.py` (was `verify.py`) | a `.TPU`'s CODE against its segment | every DGROUP address and inter-unit call — they are pending fixups it excuses. Also cannot see whether a routine is an init section or a named procedure |
 | `objcheck.py` (was `asmcheck.py`) | a `{$L}` module's relocations against its `.OBJ` | anything outside the assembled run |
 | `linkorder.py` | the `uses` graph against the original's segment ADDRESSES | nothing about contents; it is a constraint check |
 | `mapcmp.py` | linked segment LENGTHS, both padded to a paragraph | contents. A unit can be the right length and wrong throughout |
@@ -485,7 +502,7 @@ Everything used to sit under `D:\source\psycho`. It is now its own repository:
         *.py                          the measures; run them from the git root
       v1.39b/                         the VangeliSTracker 1.39b source release. Tracked.
 
-Two habits that will save you. **Run every script from the git root** — `python v1.31b/verify.py`, not `cd v1.31b` — because each one computes `ROOT` as its own grandparent. And **mind what Git Bash does to an argument starting with a slash**: MSYS rewrites `/GS` into a Windows path and the build then silently compiles nothing, reporting `0 unit(s) compiled`. Prefix the command with `MSYS_NO_PATHCONV=1`, or run it from PowerShell. Two other traps in the same family cost time on 19 Aug 2026: a `\\` inside a quoted heredoc reaches Python as a single backslash, so build any escape you need with `chr(92)` rather than writing it literally; and `gh api` with a leading-slash path gets rewritten the same way, so call it from Python's `subprocess` or use `gh issue`/`gh label` subcommands instead.
+Two habits that will save you. **Run every script from the git root** — `python kit/tools/pascal/units.py v1.31b/units.toml`, not `cd v1.31b` — because each one computes `ROOT` as its own grandparent. And **mind what Git Bash does to an argument starting with a slash**: MSYS rewrites `/GS` into a Windows path and the build then silently compiles nothing, reporting `0 unit(s) compiled`. Prefix the command with `MSYS_NO_PATHCONV=1`, or run it from PowerShell. Two other traps in the same family cost time on 19 Aug 2026: a `\\` inside a quoted heredoc reaches Python as a single backslash, so build any escape you need with `chr(92)` rather than writing it literally; and `gh api` with a leading-slash path gets rewritten the same way, so call it from Python's `subprocess` or use `gh issue`/`gh label` subcommands instead.
 
 The old psycho tree is still there and still holds the Psycho Neurosis demo work, which is a different job — see the last section of this file.
 
@@ -539,31 +556,48 @@ So there is now **no measured evidence that the original's compiler differs from
 
 ## The three things you need
 
-    python v1.31b/build.py               compile every transcribed unit (TP6)
-    python v1.31b/build.py --tp7         ...with TP 7.01 instead
-    python v1.31b/build.py --tp61        ...with TP 6.01 instead
-    python v1.31b/build.py --sw=/$G-     ...with an extra compiler switch
-    python v1.31b/verify.py              how each unit compares to the original
-    python v1.31b/verify.py -a GUS       EVERY divergent region (use this one)
-    python v1.31b/verify.py -d GUS       hex either side of the first divergence
-    python v1.31b/probe.py               compile the compiler probe with EVERY TPC and diff
-    python v1.31b/omf.py build/SOUNDDEV.OBJ -v   which bytes of a module are relocations
-    python v1.31b/asmcheck.py            THE measure for a {$L} module -- strict, not the zero rule
-    python v1.31b/relmatch.py            which RELEASE unit each segment pairs with, MEASURED
-    python v1.31b/coverage.py            total coverage, computed rather than quoted
-    python v1.31b/census.py 165a         THE FIRST THING TO RUN on a new segment
-    python v1.31b/blocks.py              12ba block by block
-    python v1.31b/build.py --sw=/GS      write build/VTMAIN.MAP -- THE LINK MEASURE
-    python v1.31b/build.py --sw=/GD      ...a DETAILED map: adds publics by value
-    python v1.31b/mapcmp.py              our segment LENGTHS vs the original's
-    python v1.31b/linkorder.py           the link ORDER, and the uses edges it forbids
-    python v1.31b/dgroup.py              the initialised DGROUP image -- RISK 1
-    python v1.31b/progcmp.py             the PROGRAM's code, per routine -- 1000
-    python v1.31b/progcmp.py -a          ...and every difference, classified
-    python v1.31b/linkcmp.py             EVERY linked segment -- the VARIABLE half
-    python v1.31b/linkcmp.py -v VTCFG    ...one unit, every operand
-    python v1.31b/build.py --keep        do NOT erase the .TPUs (see below)
-    python v1.31b/repair_map.py          the 00-map.md repair -- ALREADY APPLIED, refuses to re-run
+**EVERY COMMAND BELOW WAS REWRITTEN ON 28 Aug 2026.** The list used to name `v1.31b/` scripts; all of them are the kit's now, they take a config rather than baked-in paths, and several were renamed on the way. `K` below stands for `kit/tools/pascal`, purely to keep these lines short.
+
+    python $K/build.py build.toml                  compile every transcribed unit (TP6)
+    python $K/build.py build.toml --compiler tp7   ...with TP 7.01 instead
+    python $K/build.py build.toml --compiler tp61  ...with TP 6.01 instead
+    python $K/build.py build.toml --sw=/$G-        ...with an extra compiler switch
+    python $K/build.py build.toml --sw=/GS         write build/VTMAIN.MAP -- THE LINK MEASURE
+    python $K/build.py build.toml --sw=/GD         ...a DETAILED map: adds publics by value
+
+    python $K/units.py v1.31b/units.toml                       how each unit compares
+    python $K/units.py v1.31b/units.toml --all --only GUS       EVERY divergent region (use this one)
+    python $K/units.py v1.31b/units.toml --detail --only GUS    hex either side of the first divergence
+    python $K/coverage.py v1.31b/link.toml v1.31b/units.toml    total coverage, computed not quoted
+
+    python $K/mapcmp.py v1.31b/link.toml            our segment LENGTHS vs the original's
+    python $K/linkorder.py v1.31b/link.toml         the link ORDER, and the uses edges it forbids
+    python $K/dgroup.py v1.31b/link.toml            the initialised DGROUP image -- RISK 1
+    python $K/linkcmp.py v1.31b/linked.toml         EVERY linked segment -- the VARIABLE half
+    python $K/blockcmp.py v1.31b/blocks/1000.toml   one segment, block by block
+    python $K/objcheck.py v1.31b/objmodules.toml    THE measure for a {$L} module -- strict, not the zero rule
+
+    python $K/survey.py ...        the four cheap measurements on a NEW segment
+    python $K/progseg.py ...       the program's per-unit entry-point table
+    python $K/codegen.py ...       compile a probe unit with EVERY TPC and diff
+    python v1.31b/relmatch.py      which RELEASE unit each segment pairs with, MEASURED
+
+**Renames worth knowing, because the old name tells you nothing about where to look:** `verify.py` -> `units.py --all/--detail`; `asmcheck.py` -> `objcheck.py`; `census.py` -> `survey.py`; `probe.py` -> `codegen.py`; `progcmp.py` -> `progseg.py` and `blockcmp.py` between them; `blocks.py` and the four `blockXXXX.py` -> `blockcmp.py` with a per-segment config under `v1.31b/blocks/`. `omf.py` is **gone**, deleted along with the `verify.py` that was its only importer.
+
+**The last group's arguments are NOT verified here** -- only the twelve commands above them were run on 28 Aug 2026. Every kit script answers `--help`; trust that over this list.
+
+**`relbuild.py` AND `relmatch.py` BOTH RUN, as of 28 Aug 2026, and the second was unverified since #50 until then.** `relmatch.py` needs `build/vt` — a build of the 1.39b RELEASE tree — and nothing in this checkout produced one, so it had never been exercised against the kit's `align` module it was repointed onto. The blocker was NOT what its own comment claimed: the release sources are tracked right here, 107 files under `v1.39b/`. What was missing was the BUILDER, `tools/dosbox/vtbuild.py` — a path that resolved when this tree was `demovt/` inside the psycho checkout and that the split left behind. `v1.31b/relbuild.py` is that script adapted: sources from `v1.39b/` here, every machine path from `kit.local.toml` (the original hardcoded both the DOSBox-X executable and a TP7 `BIN` directory that is not where this machine's install lives), the `/U` unit path derived from `toolchain.tp7`, and the `install()` into psycho's `run/` dropped.
+
+    python v1.31b/relbuild.py    3 program(s) OK, 0 failed, 21,266 lines, 49 .TPU
+    python v1.31b/relmatch.py    then this
+
+**RUN ORDER MATTERS AND NOTHING WARNS YOU.** The kit's `build.py` wipes its staging directory at the start of every run, and since #36 that wipe removes SUBDIRECTORIES too — `build/vt` is one. So a 1.31 build destroys the release build silently. Run `relbuild.py` after it.
+
+**AND THE FIRST RUN CORROBORATED THE PAIRINGS, WHICH IS THE REAL RESULT.** Every pairing in this project was found by hand — a role match, a shared string, a record offset — and `relmatch.py` now reproduces all of them by measurement, independently: `12ba`/PLAYMOD, `1a17`/SOUNDDEV, `11bb`/VTCFG, `165a`/SONGELEM, `14b9`/SONGUNIT, `142f`/MODCOMMANDS, `116e`/CMDLINE, `1b24`/HARDWARE at 83.7%, `1642`/ASCIIZ at 100.0%. **Nothing was overturned.** Four segments top-rank against a release unit under a different name, and those are version renames rather than disagreements: `1b54`→VTSPECIA (our VTRESID), `1650`→SONGUTIL (VTNOTES), `1880`→UMBUNIT (VTDOSMEM), `1065`→DEVGUS at only 5.8% (VTSILENC). `1000`→VTSTRCON at 13.9% means nothing — `1000` is the PROGRAM and the release's program is `VT.PAS`. `14b7` and `188f` score nothing above 5%; both are 32 bytes, too small to window. And `relmatch.py`'s own caution held to the letter: `154d` scores 55.4% against MODLOADE and its bodies still do not transfer.
+
+Note the release builds with **TP 7.01**, not the TP6 this project settles on for 1.31, because the release's own `TPC.CFG` is a TP7 configuration. That is right for a similarity RANKING and these `.TPU`s are not evidence about 1.31's toolchain.
+
+**`--keep` is gone too** -- staging is wiped wholesale now, and `build.py --help` is the authority on what replaced it. python v1.31b/repair_map.py          the 00-map.md repair -- ALREADY APPLIED, refuses to re-run
 
 **THE SEVEN MEASURES AND THEIR BLIND SPOTS ARE TABULATED AT THE TOP OF THIS FILE.** Read
 that table before running any of them: each one is blind to something the next one catches,
@@ -594,7 +628,7 @@ Two traps they taught, both of which cost a wrong answer first:
 
 **Building one unit only works for a leaf.** `build.py GUS` fails with `File not found (HARDWARE.TPU)` because it does not build dependencies, and it DELETES the stale `.TPU` on the way, so `verify.py` then reports the unit as missing. Just run the whole build; it takes a couple of seconds.
 
-**`build.py` refuses to compile when the lint fails.** If you silence its output you will verify a stale `.TPU` and reach a wrong conclusion — this has happened twice. `verify.py` compares the staged source against `v1.31b/src` and reports `STALE` rather than lying, but read the build output anyway.
+**`build.py` refuses to compile when the lint fails.** If you silence its output you will verify a stale `.TPU` and reach a wrong conclusion — this has happened twice. `units.py` compares the staged source against `v1.31b/src` and reports `STALE` rather than lying, but read the build output anyway.
 
 **`build.py` shares `build/` with `tools/dosbox/dosbuild.py` and both wipe it on entry**, so they cannot run at the same time. Run one, read the result, then run the other.
 
@@ -662,20 +696,20 @@ which scans for `55 89 E5`, `55 8B EC` and `C8 nn nn 00` prologues. 350 entry po
 | `v1.31b/docs/04-units.md` | per-unit contents from the line-by-line pass |
 | `v1.31b/docs/06-transcription.md` | the byte-exact pass in detail: every divergence pattern, every parked difference, the release comparison |
 | `v1.31b/src/*.PAS` | the transcribed units |
-| `v1.31b/build.py`, `verify.py` | compile, and compare against the original |
-| `v1.31b/scan_funcs.py`, `emit_gain.py` | the prologue scanner; the gain-ladder generator |
-| `v1.31b/probe/PROBE.PAS`, `probe.py` | the compiler probe: one routine per claimed compiler difference |
+| `kit/tools/pascal/build.py`, `units.py` | compile, and compare against the original. **Both take a config** — `build.toml` and `v1.31b/units.toml` |
+| `v1.31b/emit_gain.py` | the gain-ladder generator. `scan_funcs.py`, the prologue scanner beside it, is GONE — the kit's `prologue.py` is where that lives |
+| `v1.31b/probe/PROBE.PAS` | the compiler probe: one routine per claimed compiler difference. Driven by `kit/tools/pascal/codegen.py`; the local `probe.py` is gone |
 | `v1.31b/probe/ENCODING.ASM` | the assembler half — TASM against TP's inline asm, with the measured bytes in its header |
 | `v1.31b/src/SOUNDDEV.ASM` | `1a17:0746..10c3` as the TASM module the original built it as |
-| `v1.31b/omf.py` | reads an `.OBJ`'s FIXUPP records, so a module's relocations are known rather than guessed |
-| `v1.31b/mapcmp.py` | linked segment LENGTHS against the original's, both on the same footing |
-| `v1.31b/linkorder.py` | TP6's segment-order rule simulated, and every `uses` edge the original's order forbids |
-| `v1.31b/dgroup.py` | the INITIALISED DGROUP image, block by block, plus the delta ladder |
-| `v1.31b/progcmp.py` | segment `1000`'s code per routine, with the shift searched |
-| `v1.31b/linkcmp.py` | ALL twenty-seven linked segments with fixups resolved — the VARIABLE half of DGROUP |
-| `v1.31b/blocks.py` | per-block verification of `12ba`, because a prefix cannot measure a half-written routine |
-| `v1.31b/asmcheck.py` | the STRICT measure for a `{$L}` module — checks relocations against the `.OBJ`, where the zero rule cannot |
-| `v1.31b/census.py` | **the four cheap scans, in one command — run it FIRST on any new segment.** Far returns (a routine census whose cleanup counts are signatures), printable strings (an absence is evidence), far calls out (a missing call proves a missing routine), virtual call sites (the VMT layout, read off the code). It did nearly all of `165a` without a disassembler |
+| ~~`v1.31b/omf.py`~~ | GONE. It read an `.OBJ`'s FIXUPP records; deleted with `verify.py`, its only importer. `objcheck.py` reports the fixup breakdown now |
+| `kit/tools/pascal/mapcmp.py` | linked segment LENGTHS against the original's, both on the same footing. Takes `v1.31b/link.toml` |
+| `kit/tools/pascal/linkorder.py` | TP6's segment-order rule simulated, and every `uses` edge the original's order forbids. Takes `v1.31b/link.toml` |
+| `kit/tools/pascal/dgroup.py` | the INITIALISED DGROUP image, block by block, plus the delta ladder. Takes `v1.31b/link.toml` |
+| `kit/tools/pascal/progseg.py` | segment `1000`'s per-unit entry-point table. The per-routine shift search that `progcmp.py` did is `blockcmp.py` with `v1.31b/blocks/1000.toml` |
+| `kit/tools/pascal/linkcmp.py` | ALL twenty-seven linked segments with fixups resolved — the VARIABLE half of DGROUP. Takes `v1.31b/linked.toml` |
+| `kit/tools/pascal/blockcmp.py` | per-block verification of one segment, because a prefix cannot measure a half-written routine. **One config per segment**, and there are six: `v1.31b/blocks/{1000,12ba,14b9,154d,193a,19a0}.toml` |
+| `kit/tools/pascal/objcheck.py` | the STRICT measure for a `{$L}` module — checks relocations against the `.OBJ`, where the zero rule cannot. Takes `v1.31b/objmodules.toml` |
+| `kit/tools/pascal/survey.py` | **the four cheap scans, in one command — run it FIRST on any new segment.** Far returns (a routine census whose cleanup counts are signatures), printable strings (an absence is evidence), far calls out (a missing call proves a missing routine), virtual call sites (the VMT layout, read off the code). It did nearly all of `165a` without a disassembler. Was `census.py` |
 | `v1.31b/src/PLAYMOD.PAS`, `PLAYMOD.ASM` | `12ba`, COMPLETE — nineteen routines, the init section, and the object module |
 | `v1.31b/src/MODCOMMA.PAS` | `142f`, COMPLETE — forty-three routines and the dispatch table |
 | `v1.31b/src/VTCFG.PAS` | `11bb`, COMPLETE — twenty routines, essentially verbatim from the release |
@@ -685,8 +719,8 @@ which scans for `55 89 E5`, `55 8B EC` and `C8 nn nn 00` prologues. 350 entry po
 | `v1.31b/src/VTCMD.PAS` | `109c`, COMPLETE — twenty-two routines and the twenty-one-entry switch table |
 | `v1.31b/src/VTGLOBAL.PAS` | NO SEGMENT, declarations only — the settings `11bb` and `109c` both write |
 | `v1.31b/src/SOUNDBLA.PAS` | a declared STUB for `19a0` — its four port variables. **Start `19a0` here** |
-| `v1.31b/src/VTSONG.PAS` | a declared STUB for `14b9`, not a transcription. **See the pick-up note: decide whether this or `SONGUNIT.PAS` grows into the segment** |
-| `v1.31b/src/SONGUNIT.PAS` | NO SEGMENT, declarations only — the shared module record |
+| ~~`v1.31b/src/VTSONG.PAS`~~ | GONE, and the question it posed is ANSWERED: `SONGUNIT.PAS` is what grew into `14b9`, and it is complete |
+| `v1.31b/src/SONGUNIT.PAS` | `14b9`, COMPLETE — the module object. Needs the `/DBOOTSTRAP` prepass; see `build.toml` |
 
 `00-map.md` is authoritative on the segment layout. This, for orientation only:
 
@@ -734,7 +768,7 @@ that is left. Kept for the reasoning.
 
 That is a change of kind, not degree. Every "unfixable" thing this document has ever recorded turned out to be ours: five compiler differences, three structural deviations and a patch level, all withdrawn within two sessions of being tested rather than argued about.
 
-**Read the region count, not the percentage.** The `%` in `verify.py`'s summary is a PREFIX figure — how far in the FIRST divergence is — so a unit that is perfect except for one parked byte early on reports terribly. Use `verify.py -a`.
+**Read the region count, not the percentage.** The `%` in `units.py`'s summary is a PREFIX figure — how far in the FIRST divergence is — so a unit that is perfect except for one parked byte early on reports terribly. Use `units.py --all`.
 
     ASCIIZ    1642      144  IDENTICAL          (no fixups at all)
     FILEUTIL  116a       59  IDENTICAL          (closed by TP6)

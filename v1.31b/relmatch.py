@@ -1,8 +1,31 @@
 #!/usr/bin/env python3
 """How much of each 1.31 segment does the 1.39b RELEASE's compiled code reproduce?
 
-    python tools/dosbox/vtbuild.py     first -- compiles the release into build/vt
+    python v1.31b/relbuild.py          first -- compiles the release into build/vt
     python v1.31b/relmatch.py          then this
+
+BOTH RUN. This was unrunnable for a while and this docstring said so at length;
+`relbuild.py` beside this file closed that on 28 Aug 2026 and the two were measured
+together the same day -- 3 programs, 21,266 lines, 49 `.TPU`, and the corroboration
+below. **The 1.31 build DELETES build/vt** -- the kit's `build.py` wipes its staging
+directory and that wipe takes subdirectories too -- so run `relbuild.py` AFTER it.
+
+WHAT THE FIRST RUN SAID, and it is worth recording because it is INDEPENDENT
+CORROBORATION of pairings this project had already made by hand. Every segment's
+top-ranked release unit is the one this tree had independently named it:
+`12ba`/PLAYMOD, `1a17`/SOUNDDEV, `11bb`/VTCFG, `165a`/SONGELEM, `14b9`/SONGUNIT,
+`142f`/MODCOMMANDS, `116e`/CMDLINE, `1b24`/HARDWARE at 83.7%, `1642`/ASCIIZ at
+100.0%. Nothing was overturned.
+
+Four segments rank against a release unit under a DIFFERENT NAME, and those are
+version renames rather than disagreements: `1b54` -> VTSPECIA (we call it VTRESID),
+`1650` -> SONGUTIL (VTNOTES), `1880` -> UMBUNIT (VTDOSMEM), `1065` -> DEVGUS at only
+5.8% (VTSILENC). `1000` ranks against VTSTRCON at 13.9%, which means nothing:
+`1000` is the PROGRAM and the release's program is VT.PAS, a different program.
+`14b7` and `188f` score nothing above 5% -- both are 32 bytes, too small to window.
+
+And the caution below held exactly: `154d` scores 55.4% against MODLOADE and its
+bodies still do not transfer.
 
 WHY THIS EXISTS. Every pairing in this project was found by hand: a role match, a
 shared string, a record offset. Then `11bb` went in essentially VERBATIM from
@@ -46,11 +69,15 @@ sys.path.insert(0, str(HERE))
 # align.walk under the pending rule -- the same substitution #33 measured row
 # for row against every unit.
 #
-# NOT EXERCISED HERE, and said out loud rather than implied: this script needs
-# build/vt, the 1.39b RELEASE build, and that tree is held out of source control
-# so it is absent on this machine. The repoint is therefore unverified. It is
-# still the right change -- leaving an import of a deleted module would be
-# broken by this migration rather than merely unrunnable.
+# EXERCISED 28 Aug 2026, at last. `relbuild.py` builds the release now, this script
+# ran end to end against its 49 .TPU files, and it reproduced by measurement every
+# pairing the project had made by hand. So the repoint onto the kit's align module
+# -- original() is a segment read, locate() is align.anchor_first and prefix() is
+# align.walk under the pending rule -- is VERIFIED, not merely argued for.
+#
+# It was unverified from #50 until then, and this comment used to blame the release
+# tree being "held out of source control". That was wrong: the release SOURCES are
+# tracked under `v1.39b/`. What was missing was the BUILDER.
 sys.path.insert(0, str(HERE.parent / "kit" / "tools"))
 from substrate import align                    # noqa: E402
 import struct                                  # noqa: E402
@@ -124,7 +151,9 @@ def main():
 
     tpus = sorted(VT.glob("*.TPU")) + sorted((VT / "LIB").glob("*.TPU"))
     if not tpus:
-        print("no .TPU in build/vt -- run tools/dosbox/vtbuild.py first")
+        print("no .TPU in build/vt -- run python v1.31b/relbuild.py first.")
+        print("(the kit's build.py wipes build/, subdirectories included, so a")
+        print(" 1.31 build since the last relbuild.py is enough to explain this)")
         return 1
     blobs = {f: f.read_bytes() for f in tpus}
 
