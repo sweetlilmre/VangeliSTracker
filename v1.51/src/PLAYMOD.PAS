@@ -228,6 +228,12 @@ type
 const
   RingRows = 25;
 
+  { NEW IN v1.51. 12ce:0243's `SHL DI,5` fixes the flag grid at 32 bytes a row and
+    12ce:0258 stops the loop at 20h, so the wide ring carries thirty-two channels
+    where `MaxChannels` below still says eight. Both numbers are live at once: the
+    8-channel ring at 0183 and the 32-channel one at 0202 run back to back. }
+  WideChans = 32;
+
 
   { The release's names for both. `MaxChannels` is 8 here and not 32 as 1.39b has
     it -- every base-1 array in this segment is eight elements long and
@@ -332,6 +338,20 @@ const
   EventChan        : Word          = 0;        { DS:$02ee                       }
   RingSlot         : Word          = 0;        { DS:$02f0                       }
   RingVoice        : Word          = 0;        { DS:$02f2                       }
+
+  { NEW IN v1.51 -- the wide ring's own three. It does not share `EventSlot` or
+    `EventChan` with the 8-channel row above it: 12ce:0206 bumps a DIFFERENT word,
+    and 0183 and 0202 run one after the other with neither touching the other's.
+
+    THE ADDRESSES ARE PROVISIONAL. Every DS reference in this unit is a link-time
+    fixup, so nothing here can be measured until the segments are laid out; the
+    v1.51 offsets the code names are $02f2, $02f4 and $02f6, which collide with
+    what the block above already claims, so at least one declaration between here
+    and $02ea has changed size. That is a dgroup.py question and not a units.py
+    one, and it cannot move a byte of code either way. }
+  WideSlot         : Word          = 0;        { NEW  the wide ring's row       }
+  WideChan         : Word          = 0;        { NEW  its channel loop variable }
+  WidePrev         : Word          = 0;        { NEW  the row it inherits from  }
   NewFlags         : Byte          = 0;        { DS:$02f4                       }
   NoLoop           : Byte          = 0;        { DS:$02f5                       }
   NextIdx          : Word          = 0;        { DS:$02f6                       }
@@ -456,13 +476,24 @@ var
 procedure ChangeSamplingRate(Hz : Word); far;
 
 { 12ba:1008 -- the release exports this too. }
-{ NEW IN v1.51: EXPORTED, WHICH IS WHAT MAKES IT FAR. v1.31b keeps
-  AdvanceEventRow private and near -- 12ba:0187 ends `LEAVE / RET`. v1.51's ends
-  `LEAVE / RETF` at 12ce:04b9, and DEVGUS's interrupt handler calls it directly
-  at 106e:0019 as `CALLF 12ce:03d9`. One declaration moving from the
-  implementation to the interface changes the routine's own linkage AND gives
-  another unit the right to call it. }
-procedure AdvanceEventRow; far;
+{ ~~NEW IN v1.51: AdvanceEventRow IS EXPORTED~~ **WITHDRAWN. IT IS
+  `FlushEventRow`, AND THE EVIDENCE WAS RIGHT WHILE THE NAME WAS WRONG.**
+
+  The note said "v1.51's ends `LEAVE / RETF` at 12ce:04b9, and DEVGUS's interrupt
+  handler calls it at 106e:0019 as `CALLF 12ce:03d9`". Both facts hold. What does
+  not is that 03d9..04b9 is AdvanceEventRow: 03d9 is `ENTER 4,0 / CLD /
+  INC [02ea]`, then `IMUL DI,[02ea],0120` into a ring at $29fa, and it walks the
+  row calling two FAR routines in 1a?? before FillChar-ing the row -- that is
+  `FlushEventRow`, instruction for instruction. AdvanceEventRow is still at 0183
+  and still ends `LEAVE / RET` at 0201, near, exactly as 1.31b has it.
+
+  **NOTHING IN DEVGUS COULD HAVE CAUGHT THIS.** The call is `9A` plus a segment
+  fixup and an offset the linker supplies, so DEVGUS assembles to the same bytes
+  whichever PlayMod routine the name resolves to, and it verified byte-exact under
+  the wrong one. The same shape as SOUNDDEV's unlinked fixups and MODCOMMA's
+  shadowed `mcLast`: a cross-unit reference that only the CALLEE's own bytes can
+  check. Look at what is AT the address, not at what you expected to be. }
+procedure FlushEventRow; far;
 
 procedure ProcessTickEntry; far;
 
@@ -618,6 +649,13 @@ type
   { For calling the driver record's +$26 through its Pointer field, the way
     SOUNDDEV already does with `TInitDevProc`. That one is a procedure; this one
     returns the rate the device settled on, which 12ba:0d44 stores. }
+  { NEW IN v1.51. FOUR BYTES A CHANNEL AND THEY ARE NOT NAMED, for the same reason
+    TCtrlBlock's filler is not: the row is only ever moved whole in this routine, so
+    nothing here says what the four are. SizeOf is what matters and SizeOf is
+    measured -- `PUSH 80h` at 12ce:0228. }
+  TWideEntry = array[0..3] of Byte;
+  TWideRow   = array[1..WideChans] of TWideEntry;
+
   TGetFreqProc = function(Hz : Word) : Word;
 
   { The release's own type, and 12ba:1032 confirms both arguments: the song by
@@ -642,6 +680,19 @@ var
   MuestrasPerTick : Word;  { DS:$13a4 }
   RawChannels     : array[1..MaxChannels] of TModRawChan;  { DS:$13a6  base-1 base $1384 }
   NoteRing        : array[0..RingRows - 1] of TRingRow;  { DS:$14b6 }
+
+  { NEW IN v1.51 -- THE WIDE RING, and its shape is read off three multipliers.
+    12ce:021a is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
+    flag grid is 32 bytes a row; and 0206..0211 is `INC / CMP 18 / SUB 19`, so
+    there are 25 rows exactly as the narrow ring has. }
+  WideRing        : array[0..RingRows - 1] of TWideRow;
+  WideHit         : array[0..RingRows - 1, 1..WideChans] of Byte;
+
+  { One byte each per row, and they are TWO arrays and not a record of two: 12ce:0263
+    and 026e index them separately, 26 apart. They ride the ring with the row and are
+    published to CB+$1AD and CB+$1AE. }
+  WidePosRing     : array[0..RingRows - 1] of Byte;
+  WideLineRing    : array[0..RingRows - 1] of Byte;
   EventRing       : array[0..RingRows - 1] of TGusEventRow;  { DS:$1646 }
 
 { ---- MORE NOTES WITHOUT DECLARATIONS ----------------------------------------
@@ -854,6 +905,70 @@ begin
 end;
 
 { --------------------------------------------------------------------------
+  12ce:0202 -- THE WIDE ROW, NEW IN v1.51, and it is the 8-channel ring above it
+  done again for thirty-two.
+
+  IT IS A SECOND RING AND NOT A REPLACEMENT. 0183 and 0202 sit back to back and
+  neither touches the other's variables: the narrow one advances [02ee] and tallies
+  into CtrlBlock+$000, this one advances [02f2] and publishes to CtrlBlock+$100 and
+  CtrlBlock+$12D. Both are live. A client written for 1.31b keeps reading the block
+  it knows and a client that wants all thirty-two channels reads the new one.
+
+  THREE MULTIPLIERS FIX THE WHOLE SHAPE, and none of them had to be guessed:
+  `SHL DI,7` at 021a makes a row 128 bytes, `SHL DI,5` at 0243 makes the flag grid
+  32 bytes a row, and `INC / CMP 18h / SUB 19h` at 0206 makes it twenty-five rows --
+  the same depth the narrow ring has.
+
+  **THE ROW INHERITS FROM THE ONE BEFORE IT.** 0275 moves the PREVIOUS row over the
+  one just advanced to, and 02ad and 02bd carry the two loose bytes across the same
+  way, and only then is the flag grid cleared. So the ring holds STATE rather than
+  events: every row starts as a copy of its predecessor, whatever the tick writes
+  changes some of it, and the flag grid records which channels were touched. The
+  narrow ring works the other way -- 01ea clears the row outright.
+
+  `WidePrev` IS WHAT MAKES THAT WORK and it is why there is a third variable. 02cd
+  copies the slot into it as the last statement, so the next call inherits from this
+  one. Written with `WideSlot - 1` it would need a wrap test the original has not
+  got.
+
+  THE FOR LOOP HAS NO ENTRY GUARD. `MOV [02f4],1 / JMP test` -- Turbo Pascal omits
+  the `1 <= 32` test when both bounds are constants and the range is not empty,
+  which is why the body is reached by a jump forward rather than by falling in. }
+procedure PublishWideRow;
+begin
+  { 0205 -- the same hand-written CLD as AdvanceEventRow's, and for the same
+    reason: two `Move`s and a `FillChar` on a path the timer can reach. }
+  asm
+    CLD                                             { 0205                   }
+  end;
+
+  Inc(WideSlot);                                    { 0206..0209             }
+  if WideSlot > RingRows - 1 then                   { 020a..0210             }
+    Dec(WideSlot, RingRows);                        { 0211..0215             }
+
+  Move(WideRing[WideSlot], CtrlBlock.WideRow,
+       SizeOf(TWideRow));                           { 0216..022f             }
+
+  for WideChan := 1 to WideChans do                 { 0230..0237, 0258..025e }
+    if WideHit[WideSlot, WideChan] <> 0 then        { 023c..024e             }
+      CtrlBlock.ChanHit[WideChan] := 1;             { 024f..0257             }
+
+  CtrlBlock.WidePos  := WidePosRing[WideSlot];      { 025f..0269             }
+  CtrlBlock.WideLine := WideLineRing[WideSlot];     { 026a..0274             }
+
+  Move(WideRing[WidePrev], WideRing[WideSlot],
+       SizeOf(TWideRow));                           { 0275..0296             }
+
+  FillChar(WideHit[WideSlot], WideChans, 0);        { 0297..02ac             }
+
+  WidePosRing[WideSlot]  := WidePosRing[WidePrev];  { 02ad..02bc             }
+  WideLineRing[WideSlot] := WideLineRing[WidePrev]; { 02bd..02cc             }
+
+  WidePrev := WideSlot                              { 02cd..02d2             }
+end;
+
+
+{ --------------------------------------------------------------------------
   12ba:0202 -- fill one slot of the GUS event ring.
 
   Near, `RET $14`, and the seven arguments are `TriggerVoice`'s own list minus
@@ -940,7 +1055,7 @@ end;
 procedure FlushEventRow;
 begin
   asm
-    CLD                                          { 02ee                      }
+    CLD                                          { 03dd                      }
   end;
 
   Inc(RingSlot);                                 { 02ef..02f2                }

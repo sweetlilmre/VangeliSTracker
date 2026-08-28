@@ -34,12 +34,35 @@ type
     left as filler: guessing at 768 bytes of layout would put invented names
     into the one part of DemoVT that other programs actually depend on. }
   TCtrlBlock = record
-    Filler1  : array[$000..$120] of Byte;
+    Filler1  : array[$000..$0FF] of Byte;
+
+    { CB+$100..$11F, NEW IN v1.51 -- ONE BYTE PER CHANNEL AND THERE ARE THIRTY-TWO
+      OF THEM NOW. 12ce:0253 stores 1 into `[DI+4719]` with DI running 1 to 32, and
+      $4719 is CtrlBlock + $0FF, so the array is base-1 and its first element is at
+      CB+$100. The 8-channel tally 1.31b had is still there and still at CB+$000 --
+      this is a second, wider publication beside it, not a replacement. }
+    ChanHit  : array[1..32] of Byte;   { CB+$100                              }
+
+    Filler1b : array[$120..$120] of Byte;
     Dispatch : Pointer;      { CB+$121 -- the far entry every client calls  }
     { CB+$125 -- a 32-bit tick counter, incremented by 12ba:0c9a. Live state a
       client can poll; nothing in this unit touches it. }
     Ticks32  : LongInt;      { CB+$125                                      }
-    Filler2  : array[$129..$202] of Byte;
+    Filler2  : array[$129..$12C] of Byte;
+
+    { CB+$12D..$1AC, NEW IN v1.51 -- 128 bytes, published whole by a single Move at
+      12ce:022b. Four bytes per channel across thirty-two channels; what the four
+      ARE is not named here because nothing that writes them has been read yet, and
+      768 bytes of invented layout in the one structure other programs depend on is
+      the mistake this record was built to avoid. }
+    WideRow  : array[1..32] of array[0..3] of Byte;   { CB+$12D               }
+
+    { CB+$1AD and CB+$1AE. Copied out of two per-slot byte arrays that the ring
+      carries alongside each row, one each. }
+    WidePos  : Byte;         { CB+$1AD                                       }
+    WideLine : Byte;         { CB+$1AE                                       }
+
+    Filler2b : array[$1AF..$202] of Byte;
     SeekWant : Byte;         { CB+$203 -- a jump is pending                 }
     SeekPos  : Byte;         { CB+$204 -- requested order position          }
     SeekRow  : Byte;         { CB+$205 -- requested row                     }

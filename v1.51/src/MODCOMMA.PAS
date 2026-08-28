@@ -84,7 +84,7 @@ type
     that is determined by use. Only +$24 and +$25 keep names from elsewhere.
 
     THE TAIL DOES NOT CARRY OVER, AND 142f SAYS WHY. The record is 38 bytes,
-    $00..$25. The release runs to +$2b and its +$24/+$25 are `RetrigCt`/`RetrigVal`
+    $00..$25. The release runs to +$2b and its +$24/+$25 are `RetrigCt`/`S3mRetVal`
     -- but **1.31 HAS NO RETRIGGER COMMAND AT ALL**: where 1.39b puts
     StartRetrigNote and TickRetrigNote, 142f:0584 goes straight to the fine volume
     slide. With no retrigger routine there is nothing for those two bytes to hold,
@@ -133,8 +133,8 @@ type
       MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
       147d:05b9 stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
     RetrigCt   : Byte;          { +$24  was RingChan in 1.31b                 }
-    RetrigLen  : Byte;          { +$25  was RingNote in 1.31b                 }
-    RetrigNow  : Boolean;       { +$26                                        }
+    RetrigVal  : Byte;          { +$25  was RingNote in 1.31b                 }
+    DoRetrig  : Boolean;       { +$26                                        }
 
     { +$27 and +$28: 147d:0369 is `StartSampleOffs`, reached from `CommandStart` on
       command $0a, `mcSampleOffs`. It sets the flag and stores `N.Parameter shl 8` --
@@ -149,8 +149,8 @@ type
       table and sets +$2a when that entry is ZERO, meaning "this x is not a multiply";
       147d:0818 then either multiplies the volume by +$2b and shifts down four, or
       adds +$2b as a signed step. Two tables, one selector byte. }
-    RetrigAdds : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
-    RetrigVal  : Byte;          { +$2b                                        }
+    S3mRetAdd : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
+    S3mRetVal  : Byte;          { +$2b                                        }
 
     { +$2c and +$2d -- **THE RING EVENT, AND THIS IS WHERE IT WENT.** The collision
       recorded in the previous commit is resolved, and by the routine that was
@@ -1112,7 +1112,7 @@ end;
 
   `JB`, NOT `JBE`. 05e1 is `72 08`, so the counter is compared UNSIGNED and the reset
   happens when it REACHES the period rather than passes it -- `if Can.RetrigCt >=
-  Can.RetrigLen`, written the way round the compare emits.
+  Can.RetrigVal`, written the way round the compare emits.
 
   THE TICK IS FRAMELESS AND TAKES THE CHANNEL IN SI, like every other Tick here, so
   it is `assembler` with no parameters and the record fields are reached through SI
@@ -1120,17 +1120,17 @@ end;
 procedure StartRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   if N.Parameter <> 0 then                         { 05bc..05c5              }
-    Can.RetrigLen := N.Parameter                   { 05c6..05d3              }
+    Can.RetrigVal := N.Parameter                   { 05c6..05d3              }
 end;
 
 procedure TickRetrigNote; assembler;
 asm
         INC     BYTE PTR [SI+24h]        { 05d8  RetrigCt                      }
         MOV     AL,[SI+24h]              { 05db                                }
-        CMP     AL,[SI+25h]              { 05de  RetrigLen                     }
+        CMP     AL,[SI+25h]              { 05de  RetrigVal                     }
         JB      @@Out                    { 05e1                                }
          MOV    BYTE PTR [SI+24h],0      { 05e3                                }
-         MOV    BYTE PTR [SI+26h],1      { 05e7  RetrigNow                     }
+         MOV    BYTE PTR [SI+26h],1      { 05e7  DoRetrig                     }
 @@Out:
 end;
 
@@ -1143,7 +1143,7 @@ end;
   The release's order here is `StartRetrigNote`, `TickRetrigNote`, then these two.
   1.31 goes straight to these two -- 0584 is a fine volume slide, not a retrigger --
   so the retrigger command is absent from this version altogether. That is what
-  frees `+$24` and `+$25`: the release keeps `RetrigCt` and `RetrigVal` there, and
+  frees `+$24` and `+$25`: the release keeps `RetrigCt` and `S3mRetVal` there, and
   with no retrigger routine there is nothing to keep. So the two bytes 12ba uses as
   the note ring's `Chan` and `Note` are not a reinterpretation of the release's
   fields -- the release's fields simply do not exist yet. The record's tail has been
@@ -1330,9 +1330,9 @@ end;
   05b9 -- so the plain retrigger does the counting and this routine only decides what
   happens to the volume when it fires.
 
-  TWO TABLES AND A SELECTOR. `S3mVolMul` is consulted first; where its entry is ZERO
-  the effect is an ADDITIVE slide and `S3mVolAdd` supplies a signed step. That is
-  what `MOV AL,0 / JNZ +1 / INC AX` computes -- `Ord(S3mVolMul[x] = 0)`, an
+  TWO TABLES AND A SELECTOR. `RetMult` is consulted first; where its entry is ZERO
+  the effect is an ADDITIVE slide and `RetAdd` supplies a signed step. That is
+  what `MOV AL,0 / JNZ +1 / INC AX` computes -- `Ord(RetMult[x] = 0)`, an
   expression whose whole body is a set-on-condition the 8086 has no instruction for.
 
   THE MULTIPLIERS ARE IN SIXTEENTHS: $08 is a half, $18 is three halves, $20 is a
@@ -1341,25 +1341,24 @@ end;
   the format reference and this program disagree. }
 procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { DS:$03ba -- zero means "not a multiply". }
-  S3mVolMul : array[0..15] of Byte =
-    ($00, $00, $00, $00, $00, $00, $0C, $08,
-     $00, $00, $00, $00, $00, $00, $18, $20);
-
-  { DS:$03ca -- signed steps, held unsigned because the tick adds them as bytes and
-    lets the carry decide. $FF is -1 and $F0 is -16. }
-  S3mVolAdd : array[0..15] of Byte =
-    ($00, $FF, $FE, $FC, $F8, $F0, $00, $00,
-     $00, $01, $02, $04, $08, $10, $00, $00);
+  { DS:$03ba and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all, and so is
+    `RetAdd` being SHORTINT: the transcription had it as Byte with $FF..$F0, which is
+    the same sixteen bytes and says nothing about the sign. Reading them as signed is
+    what makes the tick's `ADD AH,AL / JNC / MOV AH,0` obviously an underflow test
+    rather than a wrap. }
+  RetMult : array[0..15] of Byte     = ( 0,  0,  0,  0,  0,   0, $0C, $08,
+                                         0,  0,  0,  0,  0,   0, $18, $20);
+  RetAdd  : array[0..15] of ShortInt = ( 0, -1, -2, -4, -8, -16,   0,   0,
+                                         0,  1,  2,  4,  8,  16,   0,   0);
 begin
   if N.Parameter <> 0 then                         { 0788..0794              }
   begin
-    Can.RetrigAdds := S3mVolMul[N.Parameter shr 4] = 0;    { 0795..07b3      }
+    Can.S3mRetAdd := RetMult[N.Parameter shr 4] = 0;    { 0795..07b3      }
 
-    if Can.RetrigAdds then                         { 07b4..07bd              }
-      Can.RetrigVal := S3mVolAdd[N.Parameter shr 4]        { 07be..07d8      }
+    if Can.S3mRetAdd then                         { 07b4..07bd              }
+      Can.S3mRetVal := RetAdd[N.Parameter shr 4]        { 07be..07d8      }
     else
-      Can.RetrigVal := S3mVolMul[N.Parameter shr 4];       { 07d9..07f1      }
+      Can.S3mRetVal := RetMult[N.Parameter shr 4];       { 07d9..07f1      }
 
     N.Parameter := N.Parameter and $0F;            { 07f2..0801              }
     StartRetrigNote(Song, Can, N)                  { 0802..0813              }
@@ -1382,9 +1381,9 @@ end;
 procedure TickS3mRetrigNote; assembler;
 asm
         CALL    TickRetrigNote           { 0818                                }
-        CMP     BYTE PTR [SI+26h],0      { 081b  RetrigNow                     }
+        CMP     BYTE PTR [SI+26h],0      { 081b  DoRetrig                     }
         JZ      @@Out                    { 081f                                }
-        CMP     BYTE PTR [SI+2Ah],0      { 0821  RetrigAdds                    }
+        CMP     BYTE PTR [SI+2Ah],0      { 0821  S3mRetAdd                    }
         JNZ     @@Add                    { 0825                                }
          MOV    AL,[SI+2Bh]              { 0827  the multiplicative path       }
          MOV    AH,[SI+0Ah]              { 082a  Volume                        }
@@ -1559,7 +1558,7 @@ const
   ~~THE RELEASE HAS ONE MORE INSTRUCTION~~ -- AND IN v1.51 SO DO WE. The 1.31b note
   read `MOV TCanal([SI]).doretrig,0` in the release, between the guard and the table
   lookup, and recorded that 1.31 has no such field so it has no line. 147d:087f is
-  that instruction, `C6 44 26 00`, and +$26 is `RetrigNow` -- the field the retrigger
+  that instruction, `C6 44 26 00`, and +$26 is `DoRetrig` -- the field the retrigger
   sets when it fires. Clearing it here means it is true for exactly one tick, which
   is what `TickS3mRetrigNote` reads it as.
 
@@ -1571,7 +1570,7 @@ procedure CommandTick; assembler;
 asm
         CMP     BX,mcLast * 2            { 087a  $48; 1.31b's mcLast made it $46 }
         JNC     @@1                      { 087d                                }
-        MOV     BYTE PTR [SI+26h],0      { 087f  RetrigNow -- one tick only    }
+        MOV     BYTE PTR [SI+26h],0      { 087f  DoRetrig -- one tick only    }
         ADD     BX,OFFSET TickCommOfs    { 0883                                }
         CALL    WORD PTR [BX]            { 0887                                }
 @@1:

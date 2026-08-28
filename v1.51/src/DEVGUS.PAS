@@ -181,7 +181,8 @@ begin
 @@Take:
   INC  Busy           { 106e:0011                                        }
   INC  LastTick       { 106e:0015                                        }
-  CALL FAR PTR AdvanceEventRow  { 106e:0019  CALLF 12ce:03d9             }
+  CALL FAR PTR FlushEventRow    { 106e:0019  CALLF 12ce:03d9  -- NOT      }
+                              { AdvanceEventRow; see PlayMod's interface  }
   DEC  Busy           { 106e:001e                                        }
 @@Out:
   end  { 106e:0022  LEAVE / RETF, supplied by Pascal      }
