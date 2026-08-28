@@ -2217,9 +2217,22 @@ begin
       MOV     ES:[SI+$1d], AH            { 0e6c  the high byte = shr 8        }
     end;
 
-    { 0e70..0e84 -- a period of zero would divide by zero downstream. }
-    if CanalPtr^.Period = 0 then                     { 0e70..0e7a            }
+    { 10d5..10e4 -- a period of zero would divide by zero downstream. }
+    if CanalPtr^.Period = 0 then                     { 10d5..10de            }
       CanalPtr^.Period := 1;
+
+    { **AND A CEILING TO GO WITH THE FLOOR, NEW IN v1.51.** 12ce:10e9 clamps `Period`
+      at $1FFF, the same bound the RealPeriod clamp further down uses. 1.31b guards
+      only against zero here; 1.51 guards both ends, for the same reason the other
+      clamp exists -- the rewritten arpeggio and the S3M loader can both produce
+      periods no note table would ever hold.
+
+      IT IS A SEPARATE `if`, NOT AN ELSE. 10ef's `JBE` skips only the assignment and
+      falls into the same continuation the zero test does; written as
+      `else if` the zero case would jump past this test entirely, and a period of
+      1 does not need testing against $1FFF. Two independent guards on one value. }
+    if CanalPtr^.Period > $1FFF then                 { 10e5..10f0            }
+      CanalPtr^.Period := $1FFF;                     { 10f1..10fa            }
 
     { 0e85..0ec4 -- turn the channel's period into the one the hardware wants,
       scaled by the instrument's own ratio when there is an instrument.
