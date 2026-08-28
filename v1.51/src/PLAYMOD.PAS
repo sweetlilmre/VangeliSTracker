@@ -565,7 +565,18 @@ const
   after all of its interface ones, so the order is preserved either way.
   ========================================================================== }
 var
-  SplBuf          : array[1..8] of Word;  { DS:$11f0  base-1 base $11ee }
+  { **THE THIRD LITERAL EIGHT IN THIS FILE, AND THE LAYOUT IS WHAT FOUND IT.**
+    1.39b declares this `ARRAY[1..MaxChannels] OF WORD` and so does the original;
+    written as `array[1..8]` it is sixteen bytes where the original has thirty-two,
+    and every PLAYMOD variable after it -- and every unit's block after PLAYMOD --
+    sits sixteen bytes low. Our UserVols came out at $12D0 against the original's
+    $12E0, measured from the linker map.
+
+    NO INSTRUCTION COULD HAVE CAUGHT IT. An indexed read with range checking off
+    emits the same bytes whatever the declared bound is, so this unit compared
+    identical while its data was short. See `constant-only-half-applied` and
+    `dead-data-has-no-witness` in the kit. }
+  SplBuf          : array[1..MaxChannels] of Word;  { DS:$12b8               }
   ActualHz        : Word;  { DS:$1200 }
   NoteHz          : Word;  { DS:$1202 }
   NoteCalcVal     : LongInt;  { DS:$1204 }
