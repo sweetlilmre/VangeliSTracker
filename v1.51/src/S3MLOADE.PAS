@@ -116,8 +116,13 @@ type
   { The recogniser's scratch, passed to both readers as an untyped `var`. }
   TS3MFlags = array[1..256] of Byte;
 
+  { SIGNED, AND THE WIDENING INSTRUCTION SAYS SO. The comparison chain in the
+    sign-detection loop widens each byte with `CBW` -- sign extension -- where
+    a Byte element gives `XOR AH,AH`. Four sites, two bytes each. So the
+    sample is read as ShortInt even though what the loop is deciding is
+    whether it was WRITTEN signed. }
   PSampleBytes = ^TSampleBytes;
-  TSampleBytes = array[0..65520] of Byte;
+  TSampleBytes = array[0..65520] of ShortInt;
 
 var
   { DS:$491c. `SeekPara` adds a paragraph count to it, so it is the module's
@@ -269,9 +274,16 @@ begin
               if Instrument.Reps + Instrument.Repl > Instrument.Len then
                 Instrument.Repl := Instrument.Len - Instrument.Reps;
 
-              { The HEADER's field is tested and the RECORD's is clamped --
-                0a20 reads -$56 and writes -$12, which are different bytes. }
-              if Hdr.Vol > $3F then
+              { THE RECORD'S OWN FIELD, TESTED AND CLAMPED. 0858 is
+                `CMP BYTE PTR [BP-10],3F / JBE / MOV BYTE PTR [BP-10],3F` --
+                one displacement, read and written, and -$10 is
+                Instrument.Vol (record offset 12 against a record at -$1c).
+
+                MODLOADE's ProcessInstruments does the odd thing here and tests
+                the HEADER's copy before clamping the record's; this routine
+                does not, and carrying that habit across cost two loads. Read
+                each unit, do not carry the sibling's quirk. }
+              if Instrument.Vol > $3F then
                 Instrument.Vol := $3F;
 
               SeekPara(St, Hdr.MemSeg);
@@ -315,7 +327,12 @@ begin
                     time this exact redundancy has appeared in these two
                     units. }
                     for j := 1 to Instrument.Len - 1 do
-                      if ((PSampleBytes(Instrument.Data)^[j - 1] xor PSampleBytes(Instrument.Data)^[j]) and $80) <> 0 then
+                      if ((PSampleBytes(Instrument.Data)^[j - 1] xor
+                           PSampleBytes(Instrument.Data)^[j]) and $80) <> 0 then
+                        { THE CAST IS BACK, AND `OR AL,AL` IS WHY. 0930 tests
+                          only the LOW byte of the difference; without the cast
+                          the subtraction stays an Integer and the test is
+                          `OR AX,AX`. One byte per site, four sites. }
                         if (ShortInt(PSampleBytes(Instrument.Data)^[j] - $40) < 0) and
                            (ShortInt(PSampleBytes(Instrument.Data)^[j - 1] - $40) < 0) then
                           Inc(Falls)
@@ -330,7 +347,12 @@ begin
                     which pair is loaded. }
                   if Rises > Falls then
                     for j := 0 to Instrument.Len - 1 do
-                      Dec(PSampleBytes(Instrument.Data)^[j], $80)
+                      { `Inc`, NOT `Dec`. 09c4 is `ADD BYTE PTR ES:[DI],80`
+                        -- a byte-wide ADD. `Dec(x, $80)` promotes, because 128
+                        does not fit a ShortInt, and emits a word SUB. On a
+                        signed byte the two produce the same value; they are
+                        not the same instruction. }
+                      Inc(PSampleBytes(Instrument.Data)^[j], $80)
                 end
               else
                 begin
