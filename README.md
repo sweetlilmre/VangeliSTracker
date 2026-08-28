@@ -8,7 +8,7 @@ Not "equivalent", not "same size". The same bytes.
 
 The 55,056-byte load image is **byte-identical** to the original's. All 31 segments are transcribed, the segment order is the original's, both halves of DGROUP are laid out correctly, and all 27 linked code segments match.
 
-**And so is the packed file, as of 28 August 2026.** `kit/tools/substrate/lzpack.py` is LZEXE 0.91's packer written out — its match rules measured against the original's own token stream rather than taken from a description — so the chain runs end to end with nothing left over: Pascal source → TPC 6.0 → `VTMAIN.EXE` → packed → **`NEUROSIS.008` itself, all 31,711 bytes, same MD5.** 31,335 of those bytes are computed here; the other 376 are LZEXE's own decompressor stub and the header fields around it, copied verbatim. The script is explicit about which is which, and `--selftest` re-compresses every other LZEXE 0.91 file in the tree to show the rules were not fitted to one sample.
+**And so is the packed file, as of 28 August 2026.** `kit/tools/substrate/lzpack.py` is LZEXE 0.91's packer — a port of `LZCOMP` from Fabrice Bellard's own [MIT-licensed source](https://bellard.org/lzexe/) — so the chain runs end to end with nothing left over: Pascal source → TPC 6.0 → `VTMAIN.EXE` → packed → **`NEUROSIS.008` itself, all 31,711 bytes, same MD5.** 31,335 of those bytes are computed here; the other 376 are LZEXE's own decompressor stub and the header fields around it, copied verbatim. The script is explicit about which is which, and `--selftest` re-compresses every LZEXE 0.91 file it is pointed at: **twelve of twelve reproduce token for token**, across three unrelated authors.
 
 ## Read this first
 
@@ -42,7 +42,7 @@ Run everything **from this directory** — each script computes its root as its 
     python kit/tools/pascal/coverage.py v1.31b/link.toml v1.31b/units.toml   how much is accounted for
 
     python kit/tools/substrate/lzpack.py build/VTMAIN.EXE <NEUROSIS.008>    pack, and compare
-    python kit/tools/substrate/lzpack.py --selftest DEMOVT15 v1.39b <...>   10 of 11 exact
+    python kit/tools/substrate/lzpack.py --selftest DEMOVT15 v1.39b <...>   12 of 12 exact
     python kit/tools/substrate/lzpack.py --tokens FILE                      dump a token stream
 
 `lzpack.py` takes the **packed** original as its second argument — it is the comparison target *and* the source of LZEXE's decompressor stub. It is not tracked here; only the unpacked image is.
