@@ -446,10 +446,17 @@ const
   Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
   TmpVal           : Word          = 0;        { DS:$0328                       }
   Fill032A         : Word          = 0;        { DS:$032a  UNIDENTIFIED         }
-  { A LONGINT IN v1.51, A WORD IN 1.31b. 12ce:11a5 is `MOV word [0336],1000 /
-    MOV word [0338],0` -- one assignment of a 32-bit constant, not two of 16-bit
-    ones -- while the hand-written divide above it still writes only the low half,
-    because that is all a 16-bit `DIV` produces. }
+  { A LONGINT IN v1.51, A WORD IN 1.31b, AND THE ZERO STORE IS WHAT SETTLES IT.
+    12ce:11a5 is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
+    Written as two separate Word variables the second would be `XOR AX,AX /
+    MOV [x],AX`, because Turbo Pascal special-cases assigning zero and five bytes
+    beat six; it only emits the immediate form for BOTH halves when they are one
+    32-bit assignment. Our build proved that by emitting the XOR when it was tried
+    the other way.
+
+    AND THE SHIFTS BELOW ARE CAST BACK DOWN. 121d and 122b are `SHL AX,4` and
+    `SHR AX,0Ch` on the low word alone; a LongInt shift would be an RTL call, so the
+    source has to narrow it first. }
   StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
   Fill032E         : LongInt       = 0;        { DS:$032e  UNIDENTIFIED         }
   TickChans        : Byte          = 0;        { DS:$0332                       }
@@ -2261,7 +2268,7 @@ begin
       JC      @@NoRound                     { 0ef3                           }
       INC     AX                            { 0ef5  then round up             }
   @@NoRound:
-      MOV     WORD PTR StepVal, AX          { 11a0                           }
+      MOV     WORD PTR StepVal, AX          { 11a0  the low half; see decl   }
       end
     else
     begin
@@ -2290,17 +2297,46 @@ begin
     begin
       Period     := CanalPtr^.RealPeriod;        { 11ca..11d7                     }
       Instrument := CanalPtr^.Note.Instrument;   { 11d8..11e5                     }
-      Volume     := CanalPtr^.Volume * UserVols[ChanIdx] shr 7   { 11e6..1207     }
+      Volume     := CanalPtr^.Volume * UserVols[ChanIdx] shr 7;  { 11e6..1207     }
+
+      { AND CLAMPED, STILL INSIDE THE `with` -- 12ce:1208 reloads [BP-6] rather than
+        the channel pointer, so the test is on the entry just written and not on the
+        channel it came from. Two 6-bit volumes multiplied give thirteen bits and the
+        shift takes back only seven, so the product can exceed $3F whenever both are
+        near full. }
+      if Volume > $3F then                       { 1208..1211                     }
+        Volume := $3F                            { 1212..1219                     }
     end;
 
-    RawPtr^.StepFrac := StepVal shl 4;               { 0ef9..0f06            }
-    RawPtr^.StepInt  := StepVal shr 12;              { 0f07..0f14            }
+    { `Word(StepVal)` AND NOT `StepVal` -- see the declaration. 121a and 1228 load the
+      low word and shift it sixteen bits wide; the LongInt itself would go through the
+      RTL and cost a CALLF apiece. }
+    RawPtr^.StepFrac := Word(StepVal) shl 4;         { 121a..1227            }
+    RawPtr^.StepInt  := Word(StepVal) shr 12;        { 1228..1235            }
 
     { 0f15..0f29 -- which filter is in force. }
     if FilterIsOn then                               { 0f15..0f1b            }
       FilterVal := FilterOn                          { 0f1c..0f23            }
     else
-      FilterVal := FilterOff;                        { 0f24..0f29            }
+      FilterVal := FilterOff;                        { 1245..124a            }
+
+    { **NEW IN v1.51 -- THIS IS WHERE THE RETRIGGER ACTUALLY RETRIGGERS.** MODCOMMA
+      only ever sets a flag: 147d:05d8 counts ticks and raises `DoRetrig`, and
+      147d:087a clears it again on the next dispatch, so it is true for exactly one
+      tick. Nothing in that segment restarts a sample -- it cannot, because the sample
+      machinery lives here. 12ce:124f is the reader, and `SetNewSample(.., 0)` is the
+      restart.
+
+      THE NIL TEST IS ON A POINTER AND SAYS SO: `MOV AX,ES:[DI+6] / OR AX,ES:[DI+8]`,
+      both halves. A channel with no instrument has nothing to retrigger.
+
+      OFFSET ZERO, NOT `SOffsVal`. A retrigger restarts the sample from its beginning
+      even when the row also carried a 9xx -- the two commands do not compose, and
+      the literal `PUSH 0` at 127a is what says so rather than anything in the docs. }
+    if CanalPtr^.DoRetrig then                       { 124b..1255            }
+      if CanalPtr^.Instrument <> nil then            { 1256..1263            }
+        SetNewSample(ChanIdx, RawPtr^,
+                     CanalPtr^.Instrument, 0);       { 1264..127e            }
 
     { 0f2a..0f56 -- and whether this channel is allowed to sound at all.
 
