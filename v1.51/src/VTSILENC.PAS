@@ -67,6 +67,24 @@ const
     of the program's `SelfName`, which is why that was read as String[25] and is really
     String[19]. Frac at $0018, a pad at $0019, OldVec at $001a..$001d, `Driver` at $001e:
     the arithmetic closes with nothing over. }
+  { NEW IN v1.51, AND THEY OPEN THE BLOCK. v1.31b has these as UNTYPED
+    constants -- `ComPort = $3F8; ComIrq = 4;` -- which occupy no DGROUP and
+    compile to immediates: 1065:0013 is `MOV DX,03F8`. v1.51 makes both
+    configurable (`/port:` and `/irq:` in WHATSNEW.DOC), so they become typed
+    constants and 115e:0013 is `MOV DX,[0200]`, four bytes against three.
+
+    CHANGING THE DECLARATION IS THE WHOLE EDIT. Turbo Pascal's inline assembler
+    resolves a typed constant to a MEMORY OPERAND and an untyped one to an
+    IMMEDIATE, so every `MOV DX, ComPort` in this unit's assembler follows
+    automatically -- nothing in the bodies changes.
+
+    THEY HAVE TO SIT AHEAD OF `Frac`, and the block arithmetic is what says so:
+    v1.31b runs Frac $18, pad, OldVec $1a, Driver $1e, table $34 -- and $34-$18
+    is $1c. v1.51's table is at $220 and its Frac at $204, the same $1c apart,
+    with $200 and $202 above. Four bytes, two Words, declared first. }
+  ComPort : Word    = $3F8;   { DS:$0200  COM1 by default }
+  ComIrq  : Word    = 4;      { DS:$0202 }
+
   Frac    : Byte    = 0;      { DS:$0018  the 5-in-12 accumulator }
   OldVec  : Pointer = nil;    { DS:$001a  the displaced INT 0Ch vector }
 
@@ -106,8 +124,6 @@ uses
   Hardware, SoundDevices;
 
 const
-  ComPort  = $3F8;       { COM1 -- hard-wired, not configurable }
-  ComIrq   = 4;
   Divisor  = $0060;      { 115200/96 = 1200 baud }
   AddPer   = 5;          { the accumulator step  }
   CarryAt  = 12;         { ... and its modulus   }
@@ -198,9 +214,20 @@ asm
   POP  DI                { 1065:002c                                       }
   POP  CX                { 1065:002d                                       }
   POP  BX                { 1065:002e                                       }
-  POP  ES                { 1065:002f                                       }
-  MOV  AL, 20h           { 1065:0030                                       }
-  OUT  20h, AL           { 1065:0032  EOI, late and on purpose             }
+  POP  ES                { 115e:0030                                       }
+  { 115e:0031..003f -- A SECOND EOI FOR THE SLAVE PIC, NEW IN v1.51 AND A
+    CONSEQUENCE OF THE IRQ BECOMING CONFIGURABLE. v1.31b is hard-wired to IRQ 4
+    and sends one EOI to the master; with `/irq:` able to name 8..15 the slave
+    controller has to be acknowledged first, or the second interrupt never
+    arrives. `MOV AX,[0202]` loads the whole word and the test is on AL. }
+  MOV  AX, ComIrq        { 115e:0031                                       }
+  CMP  AL, 8             { 115e:0034                                       }
+  JB   @@Master          { 115e:0036  master alone for 0..7                }
+  MOV  AL, 20h           { 115e:0038                                       }
+  OUT  0A0h, AL          { 115e:003a  EOI to the slave                     }
+@@Master:
+  MOV  AL, 20h           { 115e:003c                                       }
+  OUT  20h, AL           { 115e:003e  EOI, late and on purpose             }
   POP  DX                { 1065:0034                                       }
   POP  DS                { 1065:0035                                       }
   POP  AX                { 1065:0036                                       }
