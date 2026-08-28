@@ -1,0 +1,56 @@
+# Segment 15d0 -- the .STM loader -- routine by routine, against STMLOADE.TPU.
+#
+# THE PREFIX IS USELESS ON THIS UNIT AND WILL BE FOR A WHILE. ProcessPatterns
+# is the FIRST routine and the least finished, so `units.py` stops inside it
+# and says nothing about the three below -- two of which already have the
+# original's frame exactly. Each block here is compared at its OWN position,
+# with the shift searched for, which is the only honest measure while the unit
+# is part-written.
+#
+# THE BOUNDARIES ARE MEASURED, not guessed: each is a routine's ENTER, and each
+# routine's return form was read off the byte before the next one's prologue.
+#
+#   0000  ENTER $a2a  RET  $0a   ProcessPatterns
+#   03db  ENTER $12c  RET  $0c   ProcessInstruments
+#   0581  ENTER $28   RET  $08   LoadSamples
+#   0764  ENTER $206  RETF $0c   LoadSTMFileFormat
+#
+# A BLOCK ENDS WHERE THE NEXT ONE'S LITERALS BEGIN, not at its prologue -- the
+# trap the v1.31b tree records twice. These four end at the next ENTER because
+# nothing in this unit has a literal ahead of its routine; if a comparison
+# reports a run of differences at a block's tail, check that first.
+
+segment = 0x15d0
+length  = 2365            # code only; the segment's extent is 2368
+unit    = 'STMLOADE.TPU'
+window  = 2400
+
+# A .TPU's unresolved references are zeros plus a fixup record, so a zero on
+# OUR side is the linker's job rather than a difference. Note what that
+# covers: an intra-unit NEAR CALL is a pending fixup too, so a call inside the
+# unit agreeing is not evidence its target sits in the right place.
+rule = 'pending'
+
+[[block]]
+name        = 'ProcessPatterns'
+from        = 0x0000
+to          = 0x03db
+transcribed = true        # written, and its frame is 14 bytes short
+
+[[block]]
+name        = 'ProcessInstruments'
+from        = 0x03db
+to          = 0x0581
+transcribed = true        # written, and its frame is 10 bytes short
+
+[[block]]
+name        = 'LoadSamples'
+from        = 0x0581
+to          = 0x0764
+transcribed = true        # frame EXACT
+
+[[block]]
+name        = 'LoadSTMFileFormat'
+from        = 0x0764
+to          = 0x093d
+transcribed = true        # frame EXACT

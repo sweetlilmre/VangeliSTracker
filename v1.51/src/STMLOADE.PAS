@@ -462,11 +462,16 @@ const
   StmIdString : array[1..8] of Char = '!Scream!';
 var
   Stm : TStmFile absolute Header;
-  i   : Word;
-  { A DECLARED LongInt, NOT AN INLINE EXPRESSION. 0770 calls GetPos and stores
-    the result before adding $490 to it, which is what a named local looks
-    like. The frame is $206 = 2 x 256 + 6, and 6 is this four bytes plus `i`. }
+  { DECLARED FIRST, AND THE DISPLACEMENT IS WHAT SAYS SO. 0782 is
+    `MOV [BP-04],AX / MOV [BP-02],DX`, so the LongInt sits at -$04..-$01 --
+    closest to BP, which is where Turbo Pascal puts the FIRST local. Declared
+    after `i` it lands at -$06 and every reference in the routine is two bytes
+    out: same frame size, 233 differing bytes.
+
+    It is a named LongInt rather than an inline `St.GetPos + $490` because 0770
+    calls GetPos and stores the result before adding to it. }
   Pos : LongInt;
+  i   : Word;
 begin
   Song.FileFormat := mffSTM;                       { 0768..076f  +$7d := $0b }
 
