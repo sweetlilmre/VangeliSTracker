@@ -43,7 +43,11 @@ type
       this is a second, wider publication beside it, not a replacement. }
     ChanHit  : array[1..32] of Byte;   { CB+$100                              }
 
-    Filler1b : array[$120..$120] of Byte;
+    { CB+$120, NEW IN v1.51 -- and it was declared as one byte of filler until
+      12ce:140f was read. `PlayStart` stores `Song.NumChannels` here, so a client
+      reading the thirty-two ChanHit flags above knows how many of them mean
+      anything. One byte that makes the array before it interpretable. }
+    NumChannels : Byte;      { CB+$120                                      }
     Dispatch : Pointer;      { CB+$121 -- the far entry every client calls  }
     { CB+$125 -- a 32-bit tick counter, incremented by 12ba:0c9a. Live state a
       client can poll; nothing in this unit touches it. }

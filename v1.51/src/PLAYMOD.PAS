@@ -2357,9 +2357,12 @@ begin
       if Permisos[TmpVal] then                       { 0f5e..0f68            }
         PostEvent(TmpVal - 1, RawPtr^.Volume,
                   $364C00 div CanalPtr^.RealPeriod,
-                  Pannings[TmpVal])                  { 0f69..0f9c            }
+                  PlayingSong^.ChannelPan[TmpVal])   { 12b8..12f7            }
       else
-        PostEvent(TmpVal - 1, 0, $FFFF, Pannings[TmpVal]);  { 0f9f..0fb3     }
+        { `-1` AND NOT `$FFFF`, for the same reason SetNewSample's calls changed:
+          PostEvent's AFreq is a LongInt in 1.51, so the sentinel is two words. }
+        PostEvent(TmpVal - 1, 0, -1,
+                  PlayingSong^.ChannelPan[TmpVal]);  { 12fa..1315            }
 
     { 0fb4..0fe0 -- and hold the period inside ProTracker's range, 57 to 1712. }
     if CanalPtr^.Period < $39 then                   { 0fb4..0fbe            }
@@ -2481,7 +2484,12 @@ begin
     CLI                                            { 10a5                    }
   end;
 
-  PlayingSong := @Song;                            { 10a6..10b3              }
+  { NEW IN v1.51, and it is the first thing PlayStart does after the CLI. Publishing
+    the channel count is what makes the thirty-two ChanHit flags above it readable --
+    without it a client cannot tell an idle channel from one the song does not have. }
+  CtrlBlock.NumChannels := Song.NumChannels;       { 1408..1411              }
+
+  PlayingSong := @Song;                            { 1412..141f              }
 
   RangeStart := ReqStart;                          { 10b4..10b9              }
   RangeEnd   := ReqEnd;                            { 10ba..10bf              }
