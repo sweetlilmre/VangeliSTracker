@@ -119,7 +119,13 @@ type
   { A pattern as the file stores it: 64 rows of four channels. 1,024 bytes,
     which is the `St.Read` length at 15d0:00b2 and the largest local in
     ProcessPatterns' $a2a frame. }
-  TStmFilePattern = array[0..63] of array[1..4] of TStmFileNote;
+  { BASE ONE IN BOTH SUBSCRIPTS, and 15d0:011e is the whole argument:
+    `LEA DI,[BP+DI-0414]` with DI = i*16 + j*4. The buffer itself is at -$400,
+    so the folded constant is -$400 - 1*16 - 1*4 -- one row and one channel
+    below the base, which is what a base-1 array of base-1 rows folds to. A
+    base-0 outer bound would give -$404. See the wiki's
+    `subscript-fold-names-the-bounds`. }
+  TStmFilePattern = array[1..64] of array[1..4] of TStmFileNote;
 
   TStmFile = record
     Name        : array[1..20] of Char;
@@ -159,6 +165,11 @@ var
   FullTrack : TFullTrack;
   Pattern   : PPattern;
   Track     : PTrack;
+  { TWO BYTES BETWEEN `Track` AND `i` THAT NOTHING READS. Track is the far
+    pointer at -$a08, and the row counter is at -$a0c -- so -$a0a is a
+    declared local no instruction in the routine touches. Size measured, name
+    and type invented, exactly as in ProcessInstruments. }
+  Unused    : Word;
   i, j      : Word;
   n, t      : Word;
 begin
@@ -195,12 +206,34 @@ begin
           FillChar(FullTrack, SizeOf(FullTrack), 0);
 
           for i := 1 to 64 do
-            with FullTrack[i], Patt[i][j] do
+            { `FullTrack[i - 1]`, NOT `FullTrack[i]`. 012a computes
+              `(i-1)*6` at RUNTIME and adds it to -$a00, which is the buffer's
+              own base -- so the row subscript is one below the counter.
+              TFullTrack is array[0..255] and the stride is 6, which Turbo
+              Pascal cannot fold into the displacement the way it folds a
+              power of two, so the decrement is visible rather than absorbed. }
+            with FullTrack[i - 1], Patt[i][j] do
               begin
+                { 012a..0147 -- SIX BYTES CLEARED PER NOTE, and the whole-array
+                  FillChar before the channel loop does NOT make it redundant
+                  in the emitted code. The draft had only the outer one and was
+                  thirty bytes short here. Every field below is written on some
+                  path and left alone on another, so the clear is what makes an
+                  untouched field zero rather than the previous row's value. }
+                FillChar(FullTrack[i - 1], SizeOf(TFullNote), 0);
+
                 if b1 <> $FF then
                   begin
                     Period := b1;
+                    { THREE CLAUSES, AND THE MIDDLE ONE IS DEAD CODE THE
+                      COMPILER STILL EMITS. 017b is `AND AX,00F0 / OR AX,AX /
+                      JB` -- and `OR AX,AX` clears the carry flag, so the JB is
+                      never taken. It is `< $00` on a Word: a range test whose
+                      low bound happens to be zero, written the symmetric way.
+                      Turbo Pascal does not fold it away, so leaving it out is
+                      fifteen bytes short. Transcribe what the code does. }
                     if ((Period and $F0) > $70) or
+                       ((Period and $F0) < $00) or
                        ((Period and $0F) > $0B) then
                       Period := 0;
                     Instrument := b2 shr 3
