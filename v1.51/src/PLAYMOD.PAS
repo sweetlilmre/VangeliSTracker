@@ -446,7 +446,11 @@ const
   Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
   TmpVal           : Word          = 0;        { DS:$0328                       }
   Fill032A         : Word          = 0;        { DS:$032a  UNIDENTIFIED         }
-  StepVal          : Word          = 0;        { DS:$032c                       }
+  { A LONGINT IN v1.51, A WORD IN 1.31b. 12ce:11a5 is `MOV word [0336],1000 /
+    MOV word [0338],0` -- one assignment of a 32-bit constant, not two of 16-bit
+    ones -- while the hand-written divide above it still writes only the low half,
+    because that is all a 16-bit `DIV` produces. }
+  StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
   Fill032E         : LongInt       = 0;        { DS:$032e  UNIDENTIFIED         }
   TickChans        : Byte          = 0;        { DS:$0332                       }
 
@@ -726,11 +730,21 @@ type
   { For calling the driver record's +$26 through its Pointer field, the way
     SOUNDDEV already does with `TInitDevProc`. That one is a procedure; this one
     returns the rate the device settled on, which 12ba:0d44 stores. }
-  { NEW IN v1.51. FOUR BYTES A CHANNEL AND THEY ARE NOT NAMED, for the same reason
-    TCtrlBlock's filler is not: the row is only ever moved whole in this routine, so
-    nothing here says what the four are. SizeOf is what matters and SizeOf is
-    measured -- `PUSH 80h` at 12ce:0228. }
-  TWideEntry = array[0..3] of Byte;
+  { ~~FOUR BYTES A CHANNEL AND THEY ARE NOT NAMED~~ -- **THEY ARE NAMED NOW, AND
+    AGAIN IT WAS THE WRITER THAT SAID SO.** PublishWideRow only moves the row whole,
+    so nothing there could tell the four apart; 12ce:11ca..1207 fills them one at a
+    time, and each has a source: `Can^.RealPeriod` into a Word at +$0, the channel's
+    current instrument number into +$2, and a scaled volume into +$3.
+
+    THE VOLUME IS NOT THE CHANNEL'S OWN. It is `Can^.Volume * UserVols[i] shr 7` --
+    the mix of the tune's volume and the user's per-channel setting, which is what a
+    display should show and not what the tracker's data says. `MUL DX` with DX loaded
+    first makes UserVols the right-hand operand. }
+  TWideEntry = record
+    Period     : Word;          { +$0  Can^.RealPeriod                       }
+    Instrument : Byte;          { +$2                                        }
+    Volume     : Byte;          { +$3  scaled by UserVols                    }
+  end;
   TWideRow   = array[1..WideChans] of TWideEntry;
 
   TGetFreqProc = function(Hz : Word) : Word;
@@ -2205,8 +2219,24 @@ begin
         clears all of this, which is how the branch's real extent was found. }
       CanalPtr^.RealPeriod := CanalPtr^.Period;      { 0eb5..0ec4            }
       RawPtr^.Volume := 0;                           { 0ec5..0ecd            }
-      RawPtr^.Flags := RawPtr^.Flags and not rcfActiveChannel   { 0ece..0edd }
+      RawPtr^.Flags := RawPtr^.Flags and not rcfActiveChannel   { 1148..1153 }
     end;
+
+    { **NEW IN v1.51: THE PERIOD IS CLAMPED, AND THE ARPEGGIO IS WHY IT HAS TO BE.**
+      1.31b divides `NoteCalcVal` by whatever `RealPeriod` holds; 1.51 first bounds it
+      to $1F..$1FFF. Nothing in 1.31b could produce a period outside the note table's
+      own range, because every period came FROM the table -- but 147d:0000's rewritten
+      arpeggio computes periods by dividing a 14-bit fixed point by a semitone ratio,
+      and 1.51 loads S3M, whose periods are arbitrary. A `RealPeriod` of zero would
+      make the `DIV BX` below fault outright.
+
+      THE TWO BOUNDS ARE AN if/else-if AND NOT TWO if's: 12ce:115d is `JNC` past the
+      low clamp to the HIGH test, and 1169 jumps over the high test entirely once the
+      low one has fired. Two separate `if`s would test both every time. }
+    if CanalPtr^.RealPeriod < $1F then               { 1154..115e            }
+      CanalPtr^.RealPeriod := $1F                    { 115f..1168            }
+    else if CanalPtr^.RealPeriod > $1FFF then        { 116b..1176            }
+      CanalPtr^.RealPeriod := $1FFF;                 { 1177..1180            }
 
     { 0ede..0f14 -- the resampling STEP for this channel: NoteCalcVal over the
       real period, rounded, then spread across the two words of a 16.16-ish
@@ -2219,8 +2249,9 @@ begin
       Equivalent Pascal, REFERENCE ONLY:
 
           StepVal := round(NoteCalcVal / CanalPtr^.RealPeriod) }
-    asm
-      MOV     AX, WORD PTR NoteCalcVal      { 0ede                           }
+    if not UsingGUS then                             { 1181..1187            }
+      asm
+      MOV     AX, WORD PTR NoteCalcVal      { 1188                           }
       MOV     DX, WORD PTR NoteCalcVal+2    { 0ee1                           }
       LES     SI, CanalPtr                  { 0ee5                           }
       MOV     BX, ES:[SI+$0d]               { 0ee9  RealPeriod                }
@@ -2230,7 +2261,36 @@ begin
       JC      @@NoRound                     { 0ef3                           }
       INC     AX                            { 0ef5  then round up             }
   @@NoRound:
-      MOV     StepVal, AX                   { 0ef6                           }
+      MOV     WORD PTR StepVal, AX          { 11a0                           }
+      end
+    else
+    begin
+      { **THE GUS DOES ITS OWN RESAMPLING, SO THERE IS NOTHING TO STEP.** 1.31b runs
+        the divide unconditionally and throws the answer away on the GUS path; 1.51
+        skips it and plants unity instead. $1000 is 1.0 in the 12-bit fixed point the
+        step is kept in -- the same 4096 that `shl 4` and `shr 12` split it around
+        below. }
+      StepVal := $1000                         { 11a5..11b0                     }
+    end;
+
+    { **NEW IN v1.51 -- THE WIDE RING'S ROW IS FILLED HERE, ONE CHANNEL AT A TIME.**
+      This is the producer PublishWideRow later moves whole, and it is what finally
+      names the four bytes: a Word period, an instrument number, and a volume.
+
+      IT IS A `with` AND THE FRAME PROVES IT. SeqTick is `ENTER 6` in v1.51 against
+      1.31b's `ENTER 2`; two of the four extra bytes are the hidden pointer at
+      [BP-6]/[BP-4] that 12ce:11c4 builds and every field store reloads with
+      `LES DI,[BP-6]`. That is Turbo Pascal's `with` on an indexed record and nothing
+      else looks like it.
+
+      THE VOLUME IS SCALED BY UserVols, so what a client reads is what it would HEAR
+      rather than what the tune asked for. `MUL DX` with DX loaded first puts
+      UserVols on the right of the multiply. }
+    with WideRing[WideSlot, ChanIdx] do          { 11b1..11c9                     }
+    begin
+      Period     := CanalPtr^.RealPeriod;        { 11ca..11d7                     }
+      Instrument := CanalPtr^.Note.Instrument;   { 11d8..11e5                     }
+      Volume     := CanalPtr^.Volume * UserVols[ChanIdx] shr 7   { 11e6..1207     }
     end;
 
     RawPtr^.StepFrac := StepVal shl 4;               { 0ef9..0f06            }
