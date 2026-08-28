@@ -108,7 +108,14 @@ program DemoVT;
   placed the same way -- `dgroup.py` is the instrument, not `mapcmp.py`. }
 uses
   Dos, VTResid, DevSB, VTGlobal, VTShell, Objects, Heaps, PlayMod, VTCfg,
-  VTCmd, DevGus, VTSilenc,
+  { VTSilenc MOVED AHEAD OF VTCmd, and `linkorder.py` is what settles it.
+    v1.31b's order is DEMOVT, VTSILENC, DEVGUS, VTCMD, FILEUTIL; v1.51's is
+    DEMOVT, DEVGUS, VTCMD, FILEUTIL, VTSILENC -- the unit moved four places
+    down. Turbo Pascal's segment order is reverse DFS post-order, so a unit
+    finishing EARLIER lands LATER, and naming VTSilenc before VTCmd makes it
+    finish before VTCmd's own subtree -- FileUtil included. That produces
+    DEVGUS, VTCMD, FILEUTIL, VTSILENC exactly. }
+  VTSilenc, VTCmd, DevGus,
 
   SoundDevices, SongUnit, VTCtrl, CmdLine, VTNotes, Hardware, VTDosMem,
   ModCommands;

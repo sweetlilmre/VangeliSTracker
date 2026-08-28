@@ -627,7 +627,14 @@ implementation
   a clause changes the link, never the code. }
 {$IFNDEF BOOTSTRAP}
 uses
-  VTNotes, UnkLoader, ModLoader, StmLoader, S3MLoader, AsciiZ, Filters;
+  { S3MLoader BEFORE StmLoader, AND THE SEGMENT ORDER IS WHY. Turbo Pascal's
+    link order is reverse DFS post-order over the uses graph with clauses taken
+    in declaration order, so the unit named LATER in a clause finishes later and
+    lands EARLIER in the segment map. The original has 15d0 (STM) below 1664
+    (S3M), so StmLoader has to be named second. Written the other way round the
+    two segments swap, which `segpair --pair` reports as OUT OF ORDER and which
+    moves every DGROUP block below them. }
+  VTNotes, UnkLoader, ModLoader, S3MLoader, StmLoader, AsciiZ, Filters;
 {$ENDIF}
 
 type
