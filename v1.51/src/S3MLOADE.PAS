@@ -14,7 +14,7 @@
   THE ROUTINE MAP, in address order, which is SOURCE order. The return forms
   are measured and are the signatures:
 
-    0000  no ENTER    RET  $06   SeekPara            Para, St
+    0000  no ENTER    RET  $06   SeekPara            St, Para
     002b  ENTER $19b2 RET  $16   ReadPatterns        7 parameters
     06cb  ENTER $17e  RET  $16   ReadInstruments     7 parameters
     0a8b  ENTER $702  RETF $0c   LoadS3MFileFormat   Song, St, Header
@@ -139,7 +139,7 @@ var
   is widened before it is scaled -- a Word times 16 would overflow at $1000
   paragraphs and the file's tables reach further than that.
   --------------------------------------------------------------------------- }
-procedure SeekPara(Para : Word; var St : TStream);
+procedure SeekPara(var St : TStream; Para : Word);
 begin
   St.Seek(ModBase + LongInt(Para) * 16)
 end;
@@ -188,12 +188,13 @@ var
   Falls      : LongInt;           { -$7a  see the sign detection below      }
   Rises      : LongInt;           { -$7e                                    }
 begin
-  { A WRAPPING `if`, NOT A GUARD -- and this routine differs from the
-    recogniser in that. The Exit form emits nine bytes here that the original
-    does not have. Not every test in this unit is a guard; the bytes decide
-    each one. }
-  if Num <> 0 then
-    for i := 1 to Num do
+  { NO ZERO TEST AT ALL. 06cf is `MOV AX,[BP+08] / MOV [BP-7e],AX /
+    MOV AX,1 / CMP AX,[BP-7e] / JBE / JMP end` -- the loop's own limit
+    temporary and its own entry test, which already skips a zero count. Both
+    an `if Num <> 0 then` wrapper and an `if Num = 0 then Exit` guard emit that
+    comparison a SECOND time. Same defect as ProcessPatterns in STMLOADE, and
+    the same tell: a decompiler renders the loop's entry test as a guard. }
+  for i := 1 to Num do
     begin
       FillChar(Instrument, SizeOf(Instrument), 0);
 
@@ -204,16 +205,16 @@ begin
           Exit
         end;
 
-      SeekPara(Para[i], St);
+      SeekPara(St, Para[i]);
       St.Read(Hdr, SizeOf(Hdr));
 
       { THE DOS FILENAME IS THE FALLBACK, NOT THE OTHER WAY ROUND. 0771 tests
         the FIRST character of the long name and takes the short one when it
         is NUL. }
-      if Hdr.Name[1] = #0 then
-        Instr^.SetName(StrASCIIZ(Hdr.DosName, 13))
+      if Hdr.Name[1] <> #0 then
+        Instr^.SetName(StrASCIIZ(Hdr.Name, 25))
       else
-        Instr^.SetName(StrASCIIZ(Hdr.Name, 25));
+        Instr^.SetName(StrASCIIZ(Hdr.DosName, 13));
 
       if Hdr.Typ = 1 then
         begin
@@ -222,9 +223,11 @@ begin
           if TS3MFlags(Buf)[i] <> 0 then
             Instrument.Len := Hdr.Length;
 
-          if Instrument.Len <= 0 then
-            Instr^.Change(nil)
-          else
+          { `> 0` WITH THE WORK FIRST, as in STMLOADE's ProcessInstruments.
+            The original's three-branch LongInt compare -- high word signed,
+            low word unsigned -- is the shape of `> 0`; `<= 0` inverts it and
+            swaps the two blocks in the segment. }
+          if Instrument.Len > 0 then
             begin
               if Hdr.Flags = 0 then
                 begin
@@ -257,7 +260,7 @@ begin
               if Hdr.Vol > $3F then
                 Instrument.Vol := $3F;
 
-              SeekPara(Hdr.MemSeg, St);
+              SeekPara(St, Hdr.MemSeg);
 
               if Instrument.Len < $FFF1 then
                 begin
@@ -323,6 +326,8 @@ begin
 
               Instr^.Change(@Instrument)
             end
+          else
+            Instr^.Change(nil)
         end
     end
 end;
