@@ -115,3 +115,7 @@ length  = 766
 [unit.VTRESID]
 segment = 0x1D3C
 length  = 429
+
+[unit.STMLOADE]
+segment = 0x15D0
+length  = 2365

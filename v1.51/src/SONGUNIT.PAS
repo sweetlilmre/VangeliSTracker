@@ -553,6 +553,21 @@ const
   mffComposer669 = 6;   { no loader in 1.31 }
   mffWow8        = 7;   { 154d:0c6d -- '.WOW', eight channels }
   mffFastTracker = 8;   { '6CHN' / '8CHN' }
+  { TWO MORE IN v1.51, AND BOTH ARE READ OFF THE STORE RATHER THAN COUNTED.
+    Each new loader writes its own value into FileFormat before it tests its
+    magic, which is this tree's loader contract, so the value is the first
+    instruction of the routine:
+
+      1664:0a90   MOV BYTE PTR ES:[DI+7d],09      LoadS3MFileFormat
+      15d0:076b   MOV BYTE PTR ES:[DI+7d],0b      LoadSTMFileFormat
+
+    NINE AND ELEVEN, NOT NINE AND TEN. The gap at 10 is a format v1.51 numbers
+    and does not load -- the release's enumeration is longer than its loader
+    list, exactly as it is at 5 and 6 above, where mffOktalizer and
+    mffComposer669 have no loader in either version. Naming 10 would be an
+    invention; leaving the hole is what the binary supports. }
+  mffS3M         = 9;   { 1664:0a90 }
+  mffSTM         = 11;  { 15d0:076b }
 
 { DS:$0564 -- the release's `LowQuality`, and its OWNER is the release's too:
   `LIB/SONGELEM.PAS` is this unit's counterpart and declares it. 11bb:0b0e's
