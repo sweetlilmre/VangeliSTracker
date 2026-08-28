@@ -286,9 +286,28 @@ end;
 procedure ProcessInstruments(var Song : TSong; var St : TStream;
                              var Stm : TStmFile);
 var
+  { THE FIRST THREE ARE READ; THE LAST FOUR ARE A SIZE AND NOTHING MORE.
+    03df puts the counter at -$22, 03e9 FillChars 28 bytes at -$1c, and 0404
+    stores a far pointer at -$20 -- so the record is declared first, the
+    pointer second and the counter third, which is the order below.
+
+    Ten further bytes sit at -$2c..-$23 and NO INSTRUCTION IN THE ROUTINE
+    TOUCHES THEM. Turbo Pascal does not drop an unused local, so ten bytes of
+    declaration are there; their names, types and division are inventions.
+    They are written as MODLOADE.PAS's ProcessInstruments declares its
+    leftovers, because this unit shadows that one throughout -- `Acc` is a
+    ShortInt there and the odd byte is padded to even, which is what makes the
+    total 10 rather than 9. Any other ten bytes compile the same.
+
+    What makes the guess safe to act on is that it is the ONLY thing left: with
+    the body already agreeing byte for byte over 422 bytes, the frame is the
+    last difference, so this is not a total being balanced. }
   Instrument : TInstrumentRec;
   Instr      : PInstrument;
   i          : Word;
+  j, k       : Word;
+  l          : LongInt;
+  Acc        : ShortInt;
 begin
   for i := 1 to 31 do
     with Instrument do
@@ -306,25 +325,51 @@ begin
 
         Len := Stm.Instruments[i].Len;
 
-        if Len = 0 then
-          Instr^.Change(nil)
-        else
+        { BOTH TESTS ARE WRITTEN THE POSITIVE WAY ROUND, AND THE DRAFT HAD BOTH
+          INVERTED. The values are identical either way; the code is not,
+          because Turbo Pascal emits the `then` branch as the fall-through and
+          jumps to the `else`. Put the trivial arm first and the two blocks
+          swap places in the segment.
+
+          045c is a signed LongInt `> 0`:
+
+            CMP [BP-1a],0 / JG take / JGE testlow / JMP skip
+            CMP [BP-1c],0 / JA take / JMP skip
+
+          -- high word signed, low word unsigned, which is the shape of a
+          32-bit `> 0` and not of `= 0`. An equality test is
+          `MOV AX,lo / OR AX,hi / JNE`, which is what the draft emitted.
+
+          047b is a short-circuit `or`:
+
+            CMP ES:[DI+22],0  / JNE real
+            CMP ES:[DI+24],-1 / JE  zero
+
+          -- the first test jumping TO the work when it succeeds is `or`, not
+          `and`; an `and` would jump AWAY on failure. }
+        if Len > 0 then
           begin
-            if (Stm.Instruments[i].LoopStart = 0) and
-               (Stm.Instruments[i].LoopEnd   = $FFFF) then
-              begin
-                Reps := 0;
-                Repl := 0
-              end
-            else
+            if (Stm.Instruments[i].LoopStart <> 0) or
+               (Stm.Instruments[i].LoopEnd   <> $FFFF) then
               begin
                 Reps := Stm.Instruments[i].LoopStart;
                 Repl := LongInt(Stm.Instruments[i].LoopEnd) - Reps
+              end
+            else
+              begin
+                Reps := 0;
+                Repl := 0
               end;
 
+            { THE ORDER IS Vol, DAdj, NAdj -- 04e5, 04f7, 04fe -- and the
+              constant goes LAST. Writing NAdj before DAdj moves the eighteen
+              bytes that fetch C2Spd (`MOV AX,[BP-22] / SHL AX,5 /
+              LES DI,[BP+04] / ADD DI,AX / MOV AX,ES:[DI+28] / MOV [BP-0c],AX`)
+              past the five that store the literal. Same three values, and the
+              statements are in the segment in the order they are written. }
             Vol  := Stm.Instruments[i].Vol;
-            NAdj := $2100;
             DAdj := Stm.Instruments[i].C2Spd;
+            NAdj := $2100;
 
             if Vol > $40 then
               Vol := $40;
@@ -334,6 +379,8 @@ begin
 
             Instr^.Change(@Instrument)
           end
+        else
+          Instr^.Change(nil)
       end
 end;
 
