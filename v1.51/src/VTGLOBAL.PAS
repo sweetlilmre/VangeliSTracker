@@ -102,6 +102,26 @@ const
     eleven bytes further on. }
   NoBanner          : Boolean       = False;         { DS:$09e8  MEASURED      }
 
+{ NEW IN v1.51, AND ITS OWNER IS NOT YET PROVEN. DS:$4821 is read in three places --
+  `1000:069a`, beside the `NoBanner` test that gates the banner, and twice inside
+  109c's `DoSongColl` -- and WRITTEN NOWHERE. A scan of the whole image for the two
+  bytes `21 48` finds exactly three sites and all three are `CMP`; the two `MOV
+  BYTE [x],1` in VTCMD go to $0a90 and $0c6e, which are `NoBanner` and the `nx` byte.
+
+  SO IT IS A PLAIN `var`, NOT A TYPED CONSTANT: $4821 is past the end of the
+  initialised image, in BSS, where a typed constant could not be. That is also the
+  whole of what fixes it here rather than somewhere else -- this unit is otherwise all
+  typed constants, and the DGROUP layout is not settled enough to say which unit's
+  block $4821 falls in. **It is placed here because it has to compile somewhere, and
+  it will move once the link order is right.** See docs/CONTINUATION.md.
+
+  READ THE BEHAVIOUR, NOT THE NAME: set, it would suppress the banner and make
+  `DoSongColl` return True without playing anything or running the shell. A switch
+  wired up and never given a way to be turned on -- the mirror image of `nx`, which
+  can be set and is never read. }
+var
+  Rut_4821 : Boolean;   { DS:$4821  BSS, never written }
+
 { ~~TWO `var`s USED TO SIT HERE~~ AND BOTH HAVE GONE TO THE UNIT THAT OWNS THEM,
   each because its ADDRESS is inside another unit's DGROUP block:
 

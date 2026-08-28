@@ -183,7 +183,7 @@ implementation
   re-checked with `demovt/linkorder.py` either way. }
 uses
   SoundBlaster, VTShell, SongUnit, SongElements, PlayMod, GUS, FileUtil,
-  VTSilenc;
+  VTSilenc, Heaps;
 
 
 { ===========================================================================
@@ -648,37 +648,74 @@ end;
   --------------------------------------------------------------------------- }
 function DoSongColl(Path : PathStr) : Boolean;
 var
-  i : Word;
+  i     : Word;
+  Saved : LongInt;
 label
   Fin;
 begin
   DoSongColl := True;
-  if SongColl.Count = 0 then Exit;
 
-  DoSongColl := False;
-  for i := 0 to SongColl.Count - 1 do
-    if not DoAllMODs(Path, PString(SongColl.At(i))^, OneMODProc) then goto Fin;
-  DoSongColl := True;
+  { NEW IN v1.51. `1086:074b` tests `[4821]` and jumps the whole body, epilogue
+    included -- the `JMP` at `0752` reaches `0803`, which is `MOV AL,[BP-1] / LEAVE /
+    RETF 4`. The result is already True by then, so the flag makes this succeed
+    without doing anything. See the note on the variable in VTGlobal. }
+  if Rut_4821 then Exit;
 
-Fin:
-  SongColl.FreeAll;
+  { ~~THE EMPTY CASE JUST RETURNED TRUE~~ -- IN v1.51 IT RUNS THE SHELL.
+    `1086:075c..0799` is the Turbo Pascal `Exec` idiom in full, and every part of it
+    is forced:
 
-  { EIGHT BYTES THE RELEASE DOES NOT HAVE: `109c:079f` is `XOR AX,AX / MOV [03c0],AX /
-    MOV [03c2],AX`.
+      Saved := Heap.HTotalAvail   `MOV DI,5cd8 / PUSH DS / PUSH DI / MOV DI,[DI] /
+                                   CALLF [DI+18]`. $5cd8 is `Heap` and not one of the
+                                   other four heap variables, and HEAPS itself proves
+                                   it: `ChangeSystemHeap` ends `MOV DI,5cd8 ... CALLF
+                                   [DI+20]`, which is `Heap.TransferFromSystem`. +$18
+                                   is the sixth virtual slot, `HTotalAvail`.
+      ShrinkSystemHeap(0)         hand every free byte back to DOS, because the child
+                                   needs somewhere to load. `SetMemTop` is the half
+                                   that makes this different from ChangeSystemHeap.
+      SwapVectors                 0d57:00a6, no parameters, called twice around the
+      Exec(ProgName, ShellParam)  Exec -- the DOS unit's own required protocol.
+      SwapVectors                 `0d57` IS the DOS unit: its first routine sets the
+                                   DTA with `MOV AH,1A / INT 21` and then FindFirsts
+                                   with `MOV AH,4E / INT 21`.
+      ShrinkSystemHeap(Saved)     take the memory back.
 
-    **IT CLEARS `ModOffset`, NOT `OneModPtr`, AND THAT CORRECTION COMES FROM THE LAYOUT.**
-    This was read as `OneModPtr := nil` and used as the evidence for putting `OneModPtr`
-    at $03c0. It is not there: $03c0 is `SongUnit.ModOffset`, four bytes below that
-    unit's `SongLoaders` at $03c4, and `OneModPtr` is at $009a -- four bytes below
-    `TVTCmd`'s own VMT at $009e, inside THIS unit's block, which `1000:05e2` names when
-    the program installs its player. Two four-byte zeroes that no byte comparison could
-    tell apart; the instructions that reach them are what separate them.
+    `Exec` GETS TWO ADDRESSES AND NO COPIES -- `MOV DI,5e38 / PUSH DS / PUSH DI` and
+    the same for $0970 -- which is what an open `string` parameter looks like. $5e38 is
+    VTShell's `ProgName` and $0970 is `ShellParam`; v1.31b's `CmdInitShell` fills both
+    and that release never ran them from here, because `1000:03af` did the Exec instead.
+    In 1.51 the shell moved down here, so a command line that names a program and no
+    module runs the program rather than falling through to the player. }
+  if SongColl.Count = 0 then
+    begin
+      Saved := Heap.HTotalAvail;
+      ShrinkSystemHeap(0);
+      SwapVectors;
+      Exec(ProgName, ShellParam);
+      SwapVectors;
+      ShrinkSystemHeap(Saved)
+    end
+  else
+    begin
+      DoSongColl := False;
 
-    IT STILL BELONGS WITH THE `FreeAll` ABOVE, and it reads better this way: `ModOffset`
-    is where inside a file the next module starts, set by `CmdModOffset` from the command
-    line, and resetting it after a collection has been played stops one file's offset
-    leaking into the next run. Housekeeping the release left out. }
-  ModOffset := 0
+      { **THE TWO ABORTS ARE ONE BOOLEAN EXPRESSION, NOT TWO STATEMENTS,** and the
+        branch targets say so. `07b5` is `CMP [4821],0 / JNZ 07e3` and `07df` is
+        `OR AL,AL / JNZ 07e5`, with `07e3` holding a single `JMP 07f1`. Written as two
+        `if ... then goto Fin` the first would have to be `JZ +3 / JMP`, five bytes
+        where there are two, and there would be two `JMP 07f1` rather than one shared.
+        Short-circuit `or` puts both false-paths on the same label, which is what
+        Turbo Pascal 6's default boolean evaluation -- B-minus -- emits. }
+      for i := 0 to SongColl.Count - 1 do
+        if Rut_4821 or
+           not DoAllMODs(Path, PString(SongColl.At(i))^, OneMODProc) then goto Fin;
+      DoSongColl := True;
+
+    Fin:
+      SongColl.FreeAll;
+      ModOffset := 0
+    end
 end;
 
 
