@@ -2779,7 +2779,20 @@ procedure PlayStop;
 var
   i : Word;                       { [BP-2], and the whole of `ENTER 2,0`       }
 begin
-  Playing := False;                                { 13db..13df              }
+  { **NEW IN v1.51, AND IT IS A DEBUGGING LINE THE RELEASE LEFT IN.** 12ce:174c
+    writes a four-character string at CS:$1743 -- `04 'S' 't' 'o' 'p'`, a Pascal
+    short string sitting in the code segment -- and then calls SYSTEM's WriteLn.
+
+    NO FILE VARIABLE, WHICH IS WHY IT IS `Output`. The Text pushed is DS:$6890, and
+    that is NOT VTShell's `ConFile`: ProgName measures at $5e38 in 1.51 against
+    $3ade in 1.31b, a shift of $235a, which would put ConFile at $5d38. $6890 is
+    further on and is what a bare `WriteLn` uses.
+
+    So a released player prints "Stop" every time a module ends. Transcribed because
+    it is there. }
+  WriteLn('Stop');                                 { 174c..1761              }
+
+  Playing := False;                                { 1762..1766              }
 
   { The idle asker returns nil, so anything still asking for a buffer while this
     unwinds is told there is nothing to play. }
@@ -2821,5 +2834,12 @@ begin
   FillChar(SplBuf,   SizeOf(SplBuf),   0);         { 1461..146e              }
 
   FillChar(EventRing, SizeOf(EventRing), 0);       { 146f..147d              }
-  FillChar(NoteRing,  SizeOf(NoteRing),  0)        { 147e..148c              }
+  FillChar(NoteRing,  SizeOf(NoteRing),  0);       { 1804..1813              }
+
+  { NEW IN v1.51 -- the wide ring and its flag grid are cleared here with the narrow
+    one, and the two immediates confirm both shapes independently of the routines
+    that use them: `PUSH 0C80h` is 3,200, which is 25 rows of 128 bytes, and
+    `PUSH 0320h` is 800, which is 25 rows of 32. }
+  FillChar(WideRing,  SizeOf(WideRing),  0);       { 1814..1822              }
+  FillChar(WideHit,   SizeOf(WideHit),   0)        { 1823..1831              }
 end.
