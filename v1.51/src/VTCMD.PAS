@@ -182,7 +182,8 @@ implementation
   clause is already reached through `PlayMod` before the walk gets here; the order was
   re-checked with `demovt/linkorder.py` either way. }
 uses
-  SoundBlaster, VTShell, SongUnit, SongElements, PlayMod, GUS, FileUtil;
+  SoundBlaster, VTShell, SongUnit, SongElements, PlayMod, GUS, FileUtil,
+  VTSilenc;
 
 
 { ===========================================================================
@@ -464,6 +465,10 @@ begin
   begin
     SbPort  := i;
     GUSPort := i;
+    { 1086:04c6 -- NEW IN v1.51. `/port:` now reaches the silence device's
+      serial port as well as the two sound cards': a third
+      `MOV AX,[BP-0102] / MOV [0200],AX` on the end of the same block. }
+    ComPort := i;
   end;
 end;
 
@@ -479,6 +484,8 @@ begin
   begin
     SbIrq  := i;
     GUSIrq := i;
+    { 1086:051f -- the same third store, for the IRQ. }
+    ComIrq := i;
   end;
 end;
 

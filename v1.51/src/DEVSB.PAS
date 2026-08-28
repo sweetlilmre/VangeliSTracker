@@ -324,7 +324,15 @@ begin
     begin
       TimeConst := Hi(65536 - 256000000 div Hz);
       SoundHz   := 1000000 div (256 - Word(TimeConst))
-    end
+    end;
+
+  { 1b22:02be -- NEW IN v1.51, AND IT IS THE LAST STATEMENT. `DEC BYTE PTR
+    [0c36]` sits after the whole if/else, so it applies to both arms: the time
+    constant the Sound Blaster is actually given is one below the one the
+    sample rate was computed from. The four other references to this variable
+    are byte for byte what v1.31b has -- 0253, 0256, 029b, 029e -- so this one
+    instruction is the entire change to the routine. }
+  Dec(TimeConst)
 end;
 
 { 02c2..02e6.  RETF.  Device 1's Autodetect. }
