@@ -160,6 +160,14 @@ const
   Fill0003  : Byte = 0;  { DS:$0003  1.31b's alignment pad, now explicit }
   Rut_0004  : Byte = 0;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
 
+  { DS:$0005 -- A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
+    $0006 and Guard is at $0002, so those four bytes are accounted for exactly: a byte
+    at $0003, then two flags. 1000:02ca reads this one with `CMP byte [0005],0 / JZ`,
+    guarding a block that reloads three words from another unit's data. Declared
+    rather than left as the compiler's alignment, because a pad and a variable are the
+    same byte until something reads it. }
+  Rut_0005  : Byte = 0;  { DS:$0005  read at 1000:02ca }
+
   { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
     difference is where the bytes live: a TYPED constant is initialised DGROUP data
@@ -181,8 +189,11 @@ const
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196 + #191;
-  Banner2 = '    ' + #179 + '  DemoVT.  VangeliSTracker''s version for demos, v1.31  ' + #179;
-  Banner3 = '    ' + #179 + '                (C) 1992-93  VangeliSTeam              ' + #179;
+  { THE VERSION AND THE YEAR BOTH MOVE, and both are same-length substitutions --
+    each line is $3d bytes in the original as it is here, so the box still closes.
+    1000:0077 is `35 31` where ours had `33 31`, and 1000:0097 is `39 34` for `39 33`. }
+  Banner2 = '    ' + #179 + '  DemoVT.  VangeliSTracker''s version for demos, v1.51  ' + #179;
+  Banner3 = '    ' + #179 + '                (C) 1992-94  VangeliSTeam              ' + #179;
   Banner4 = '    ' + #192 + #196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +

@@ -388,32 +388,40 @@ const
     L R R L L R R L pattern the Amiga uses. 1.51 gets the same effect from the song's
     own per-channel pan, which is where the release always had it. }
 
-  Rest             : Word          = 0;        { DS:$02ea                       }
-  EventSlot        : Word          = 0;        { DS:$02ec                       }
-  EventChan        : Word          = 0;        { DS:$02ee                       }
-  RingSlot         : Word          = 0;        { DS:$02e8 in v1.51  the PRODUCER }
+  { **THE ORDER OF THIS RUN IS MEASURED, AND IT IS NOT 1.31b's.** Every address below
+    is named by an instruction in 12ce, and the declaration order is the only thing
+    that can put them there -- a typed constant lands where the ones before it leave
+    off. 1.31b runs Rest, EventSlot, EventChan, then the ring pair; 1.51 puts the ring
+    pair FIRST, moves the wide ring's three in ahead of RingVoice, and leaves
+    RingVoice where FlushEventRow's loop names it.
 
-  { NEW IN v1.51 -- the consumer's own cursor. See the split above. }
-  FlushSlot        : Word          = 0;        { DS:$02ea                       }
-  RingVoice        : Word          = 0;        { DS:$02f2                       }
+    THE INITIALISER ON FlushSlot IS WHY THIS WAS NOTICED. Setting it to 1 changed no
+    byte of the image, because the declaration sat at the wrong address -- `dgroup.py`
+    went from 164 blocks in place to 163 and one MOVED, which is the only reading
+    that says "right content, wrong place". }
+  RingSlot         : Word          = 0;        { DS:$02e8  the PRODUCER's cursor }
 
-  { NEW IN v1.51 -- the wide ring's own three. It does not share `EventSlot` or
-    `EventChan` with the 8-channel row above it: 12ce:0206 bumps a DIFFERENT word,
-    and 0183 and 0202 run one after the other with neither touching the other's.
+  { **IT STARTS AT ONE, NOT ZERO,** and two independent places say so: DGROUP holds
+    `01 00` at $02ea in the original's initialised image, and 1000:02b0 sets it again
+    at run time with `MOV word [02ea],1` beside `RingSlot := 0`. One slot of daylight
+    between producer and consumer is what stops the full test firing on the first
+    tick. }
+  FlushSlot        : Word          = 1;        { DS:$02ea  the CONSUMER's        }
 
-    THE ADDRESSES ARE PROVISIONAL. Every DS reference in this unit is a link-time
-    fixup, so nothing here can be measured until the segments are laid out; the
-    v1.51 offsets the code names are $02f2, $02f4 and $02f6, which collide with
-    what the block above already claims, so at least one declaration between here
-    and $02ea has changed size. That is a dgroup.py question and not a units.py
-    one, and it cannot move a byte of code either way. }
-  WideSlot         : Word          = 0;        { NEW  the wide ring's row       }
-  WideChan         : Word          = 0;        { NEW  its channel loop variable }
-  WidePrev         : Word          = 0;        { NEW  the row it inherits from  }
-  NewFlags         : Byte          = 0;        { DS:$02f4                       }
-  NoLoop           : Byte          = 0;        { DS:$02f5                       }
-  NextIdx          : Word          = 0;        { DS:$02f6                       }
-  ChanIdx          : Word          = 0;        { DS:$02fe in v1.51              }
+  Rest             : Word          = 0;        { DS:$02ec                       }
+  EventSlot        : Word          = 0;        { DS:$02ee  AdvanceEventRow's    }
+  EventChan        : Word          = 0;        { DS:$02f0                       }
+
+  { NEW IN v1.51 -- the wide ring's own three, named by 12ce:0206, 023c and 02cd. }
+  WideSlot         : Word          = 0;        { DS:$02f2                       }
+  WideChan         : Word          = 0;        { DS:$02f4                       }
+  WidePrev         : Word          = 0;        { DS:$02f6                       }
+
+  RingVoice        : Word          = 0;        { DS:$02f8  FlushEventRow's loop }
+  NewFlags         : Byte          = 0;        { DS:$02fa                       }
+  NoLoop           : Byte          = 0;        { DS:$02fb                       }
+  NextIdx          : Word          = 0;        { DS:$02fc                       }
+  ChanIdx          : Word          = 0;        { DS:$02fe                       }
 
   { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
     declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
