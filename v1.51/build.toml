@@ -33,7 +33,7 @@ default = "tp6"
 # subdirectory -- and its own TPC.CFG beside it carries the unit path.
 binpath = "C:\\TP6"
 dialect = "tp6"
-switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /GD /Q"
 
 [compiler.tp61]
 # Turbo Pascal 6.01: TPC.EXE dated 11-Jun-1991 at 69,278 bytes, beside 6.0's
@@ -42,11 +42,11 @@ switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X
 # it is worth being able to build with.
 binpath = "C:\\TP61"
 dialect = "tp6"
-switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /GD /Q"
 
 [compiler.tp7]
 binpath = "C:\\TP\\BIN"
-switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /GD /Q"
 
 # The switches the original was actually built with, taken verbatim from
 # TPC.CFG in the VangeliSTracker 1.39b source release. They had been guessed at

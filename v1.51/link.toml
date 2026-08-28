@@ -12,9 +12,12 @@
 # and the score is high, and it is WEAK on the small segments, where a 32-byte
 # unit has too few windows to score. Re-read a name before spending a day on it.
 #
-# TWO SEGMENTS ARE NEW AND HAVE NO v1.31b PARTNER, so they carry placeholder
-# names -- LOADER1 and LOADER2. What is known about them is in
-# docs/CONTINUATION.md; rename them here the moment either is identified.
+# ~~TWO SEGMENTS ARE NEW AND HAVE NO v1.31b PARTNER~~ -- BOTH ARE NAMED NOW, and
+# not by pairing: 0x15d0 and 0x1664 were written from nothing against these
+# addresses and both now rebuild byte for byte, which is a stronger claim than any
+# similarity score. STMLOADER is the Scream Tracker 2 loader and S3MLOADER the
+# Scream Tracker 3 one. They are the only two names in this file that are
+# MEASURED rather than carried.
 
 map_file = "build/VTMAIN.MAP"
 layout   = "docs/00-map.md"
@@ -41,8 +44,8 @@ segments = [
   { segment = 0x1538, name = "VTCTRL" },
   { segment = 0x153a, name = "SONGUNIT" },
   { segment = 0x15c7, name = "FILTERS" },
-  { segment = 0x15d0, name = "LOADER1" },
-  { segment = 0x1664, name = "LOADER2" },
+  { segment = 0x15d0, name = "STMLOADER" },
+  { segment = 0x1664, name = "S3MLOADER" },
   { segment = 0x173d, name = "MODLOADER" },
   { segment = 0x1830, name = "ASCIIZ" },
   { segment = 0x1839, name = "UNKLOADER" },

@@ -181,9 +181,13 @@ implementation
   `SongLoaders` at $03c4. Adding it cannot move a segment, because everything in this
   clause is already reached through `PlayMod` before the walk gets here; the order was
   re-checked with `demovt/linkorder.py` either way. }
+{ VTSilenc BEFORE FileUtil, AND THE LINK ORDER IS THE ONLY REASON. The two are
+  unrelated and either order compiles; the original's segments run FILEUTIL then
+  VTSILENC then CMDLINE, and reverse post-order means FileUtil has to finish LAST of
+  the three. See VTMAIN's uses clause for the other half of the change. }
 uses
-  SoundBlaster, VTShell, SongUnit, SongElements, PlayMod, GUS, FileUtil,
-  VTSilenc, Heaps;
+  SoundBlaster, VTShell, SongUnit, SongElements, PlayMod, GUS,
+  VTSilenc, FileUtil, Heaps;
 
 
 { ===========================================================================

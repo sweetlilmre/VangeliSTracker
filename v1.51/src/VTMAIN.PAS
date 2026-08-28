@@ -108,17 +108,21 @@ program DemoVT;
   placed the same way -- `dgroup.py` is the instrument, not `mapcmp.py`. }
 uses
   Dos, VTResid, DevSB, VTGlobal, VTShell, Objects, Heaps, PlayMod, VTCfg,
-  { VTSilenc MOVED AHEAD OF VTCmd, and `linkorder.py` is what settles it.
-    v1.31b's order is DEMOVT, VTSILENC, DEVGUS, VTCMD, FILEUTIL; v1.51's is
-    DEMOVT, DEVGUS, VTCMD, FILEUTIL, VTSILENC -- the unit moved four places
-    down. Turbo Pascal's segment order is reverse DFS post-order, so a unit
-    finishing EARLIER lands LATER, and naming VTSilenc before VTCmd makes it
-    finish before VTCmd's own subtree -- FileUtil included. That produces
-    DEVGUS, VTCMD, FILEUTIL, VTSILENC exactly. }
-  VTSilenc, VTCmd, DevGus,
+  { ~~VTSilenc MOVED AHEAD OF VTCmd~~ -- **IT GOES AFTER, AND CMDLINE IS WHY.** The
+    earlier note had VTSilenc finishing before VTCmd's whole subtree, which produces
+    DEVGUS, VTCMD, FILEUTIL, ..., CMDLINE, VTSILENC -- right for the first four and
+    one place out for the last two. The original is DEVGUS, VTCMD, FILEUTIL,
+    VTSILENC, CMDLINE, so reading the reverse post-order backwards, the finish order
+    has to be CmdLine, then VTSilenc, then FileUtil, and all three inside VTCmd.
+
+    So VTSilenc must NOT be reached from here before VTCmd. It is named last in this
+    clause instead, where it is already visited and the mention costs nothing; what
+    orders it is VTCMD's own implementation list, which now reads GUS, VTSilenc,
+    FileUtil. Two edges in two files for one position. }
+  VTCmd, DevGus,
 
   SoundDevices, SongUnit, VTCtrl, CmdLine, VTNotes, Hardware, VTDosMem,
-  ModCommands;
+  ModCommands, VTSilenc;
 
 { `Guard` IS A TYPED CONSTANT, NOT A VAR, and that is the only thing that can put it
   at $0002. DGROUP is laid out as ALL the units' typed constants in link order and then
