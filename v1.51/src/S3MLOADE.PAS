@@ -135,6 +135,14 @@ var
     module that declares sixteen channels and uses four reports four. }
   ChansUsed : Word;
 
+  { THE SAME TWO-SUBSCRIPT VIEW STMLOADE LAYS OVER VTNotes' FLAT TABLE, and
+    this unit needs it for the same reason: 0250 is
+    `IMUL DI,AX,18 / ADD DI,DX` with the note term already doubled, which is
+    per-term scaling and therefore two subscripts. The row index is
+    `(Period shr 4) - 2` here, so S3M's octave numbering starts two above the
+    table's. }
+  NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
+
 { ---------------------------------------------------------------------------
   1664:0000..002a.  No ENTER, RET $06.
 
@@ -162,8 +170,285 @@ end;
   --------------------------------------------------------------------------- }
 procedure ReadPatterns(var Song : TSong; var St : TStream;
                        var Buf; var Para : TS3MParaTable;
-                       Num, A, B : Word);
+                       Num : Word; A : Boolean; B : Word);
+label
+  Found, NextPattern;
+var
+  { $19b2 = 6,578, and it divides as 2 + 5000 + 1536 + 40. The packed buffer
+    is declared FIRST after one Word, and the St.Read lands at -$138a with a
+    5,000-byte cap, which is what places it. }
+  w         : Word;
+  Blk    : array[1..5000] of Byte;
+  FullTrack : TFullTrack;
+  Pattern   : PPattern;
+  Track     : PTrack;
+  Note      : TFullNote;
+  c         : Byte;
+  k, j      : Word;
+  n, t      : Word;
+  Row       : Word;
+  Len       : Word;
+  { FOUR BYTES BETWEEN `Len` AND `MaxChan` THAT NOTHING READS. With the body
+    already the original's length to within three bytes, the frame was the
+    only difference left; size measured, names and types invented, as in the
+    other two routines of this unit. }
+  Pad1, Pad2 : Word;
+  MaxChan   : Word;
+
 begin
+  t := 1;
+
+  for n := 1 to Num do
+    begin
+      { THE PATTERN IS ONLY READ IF THE ORDER TABLE USES IT, and the search is
+        a `for` with two labels, not a `while`. 0060 is the loop's own entry
+        test against Song.SequenceLength -- which also covers a zero-length
+        sequence, so no guard is needed and adding one costs seven bytes. The
+        fall-through past the loop is the NOT-FOUND path; Turbo Pascal 6 has
+        no `Break` and no `Continue`, so both exits are `goto`. }
+      for k := 1 to Song.SequenceLength do
+        if Song.PatternSequence^[k] = n then goto Found;
+      goto NextPattern;
+
+    Found:
+        begin
+          Pattern := PPattern(Song.GetPattern(n));
+          if Pattern = nil then
+            begin
+              Song.Status := msOutOfMemory;
+              Exit
+            end;
+
+          with Pattern^.Patt^ do
+            begin
+              NNotes := 64;
+              NChans := Song.NumChannels;
+              Tempo  := 0;
+              BPM    := 0
+            end;
+
+          SeekPara(St, Para[n]);
+
+          { The block's own length prefix, except where the caller says the
+            format does not carry one. }
+          if (not A) and (B < $1B) then
+            Len := $138A
+          else
+            St.Read(Len, 2);
+
+          Dec(Len, 2);
+          if Len > 5000 then
+            Len := 5000;
+
+          St.Read(Blk[1], Len);
+          if St.Status <> stOk then
+            begin
+              Song.Status := msFileTooShort;
+              Exit
+            end;
+
+          MaxChan := 1;
+
+          if Song.NumChannels <> 0 then
+            begin
+              j := 0;
+              repeat
+                Inc(j);
+                FillChar(FullTrack, SizeOf(FullTrack), 0);
+
+                k   := 1;
+                Row := 0;
+
+                while (k <= Len) and (A or (Row < 64)) do
+                  begin
+                    c := Blk[k];
+                    Inc(k);
+
+                    if c = 0 then
+                      Inc(Row)
+                    else if (c and $1F) = j - 1 then
+                      begin
+                        FillChar(Note, SizeOf(Note), 0);
+
+                        if (c and $20) <> 0 then
+                          begin
+                            Note.Period := Blk[k];
+                            if not A then
+                              Inc(Note.Period, $20);
+
+                            if ((Note.Period and $F0) > $90) or
+                               ((Note.Period and $F0) < $20) or
+                               ((Note.Period and $0F) > $0B) then
+                              begin
+                                if Note.Period = $FE then
+                                  Note.Volume := 1;
+                                Note.Period := 0
+                              end;
+
+                            if Note.Period <> 0 then
+                              begin
+                                Note.Period :=
+                                  NoteGrid[(Note.Period shr 4) - 2,
+                                           Note.Period and $0F];
+                                if ChansUsed <= (c and $1F) then
+                                  ChansUsed := (c and $1F) + 1
+                              end;
+
+                            Note.Instrument := Blk[k + 1];
+                            if Note.Instrument <> 0 then
+                              TS3MFlags(Buf)[Note.Instrument] := 1;
+
+                            Inc(k, 2)
+                          end;
+
+                        if (c and $40) <> 0 then
+                          begin
+                            Note.Volume := Blk[k] + 1;
+                            if Note.Volume > $40 then
+                              Note.Volume := $40;
+                            Inc(k)
+                          end;
+
+                        if (c and $80) <> 0 then
+                          begin
+                            Note.Parameter := Blk[k + 1];
+                            { A `case`, NOT AN if/else CHAIN, AND THE COMPARE OPERAND IS THE
+                              TELL. The original tests `CMP AL,n` over and over -- the
+                              effect byte held in a register and compared in place. An
+                              if/else chain on a local emits `CMP BYTE PTR [BP-19a9],n`
+                              every time, four bytes against two, at more than twenty sites.
+                              Turbo Pascal keeps a case selector in AL when the labels are
+                              sparse enough for a compare chain. }
+                            case Blk[k] of
+                              1  : begin
+                                     Note.Command := mcSetTempo;
+                                     if not A then
+                                       Note.Parameter := Note.Parameter shr 4
+                                   end;
+                              2  : begin
+                                     Note.Command := mcJumpPattern;
+                                     Note.Parameter := Note.Parameter + 1
+                                   end;
+                              3  : Note.Command := mcEndPattern;
+                              4  : if Note.Parameter < $F1 then
+                                     if ((Note.Parameter and $0F) = $0F) and (Note.Parameter > $0F) then
+                                       begin
+                                         Note.Command := mcVolFineUp;
+                                         Note.Parameter := Note.Parameter shr 4
+                                       end
+                                     else
+                                       Note.Command := mcVolSlide
+                                   else
+                                     begin
+                                       Note.Command := mcVolFineDown;
+                                       Note.Parameter := (Note.Parameter and $0F) + 1
+                                     end;
+                              5  : if Note.Parameter < $F0 then
+                                     if Note.Parameter < $E0 then
+                                       Note.Command := mcTPortDown
+                                     else
+                                       begin
+                                         Note.Command := mcFinePortaDn;
+                                         Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
+                                       end
+                                   else
+                                     begin
+                                       Note.Command := mcFinePortaDn;
+                                       Note.Parameter := (Note.Parameter and $0F) + 1
+                                     end;
+                              6  : if Note.Parameter < $F0 then
+                                     if Note.Parameter < $E0 then
+                                       Note.Command := mcTPortUp
+                                     else
+                                       begin
+                                         Note.Command := mcFinePortaUp;
+                                         Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
+                                       end
+                                   else
+                                     begin
+                                       Note.Command := mcFinePortaUp;
+                                       Note.Parameter := Note.Parameter and $0F
+                                     end;
+                              7  : begin
+                                     Note.Command := mcNPortamento;
+                                     if Note.Parameter <> 0 then
+                                       Note.Parameter := Note.Parameter + 1
+                                   end;
+                              8  : Note.Command := mcVibrato;
+                              10 : Note.Command := mcArpeggio;
+                              $0B : Note.Command := mcVib_VSlide;
+                              $0C : Note.Command := mcT_VSlide;
+                              $0F : Note.Command := mcSampleOffs;
+                              $11 : Note.Command := mcS3mRetrigNote;
+                              $12 : Note.Command := mcTremolo;
+                              $13 : begin
+                                      case Note.Parameter shr 4 of
+                                        0  : Note.Command := mcSetFilter;
+                                        1  : Note.Command := mcGlissCtrl;
+                                        2  : Note.Command := mcFineTune;
+                                        3  : Note.Command := mcVibCtrl;
+                                        4  : Note.Command := mcTremCtrl;
+                                        8  : Note.Command := mcNPI2;
+                                        $B : Note.Command := mcJumpLoop;
+                                        $C : Note.Command := mcNoteCut;
+                                        $D : Note.Command := mcNoteDelay;
+                                        $E : Note.Command := mcPattDelay;
+                                        $F : Note.Command := mcFunkIt;
+                                      else
+                                        Note.Command := TModCommand((Note.Parameter shr 4) + $50)
+                                      end;
+                                      Note.Parameter := Note.Parameter and $0F
+                                    end;
+                              $14 : if Note.Parameter < $31 then
+                                      Note.Command := mcNone
+                                    else
+                                      Note.Command := mcSetTempo;
+                              $18 : Note.Command := mcNPI1;
+                            else
+                              Note.Command := TModCommand(Blk[k] + $24)
+                            end;
+
+
+                            if (Note.Command = mcEndPattern) or
+                               (Note.Command = mcJumpPattern) then
+                              if Row + 1 < Pattern^.Patt^.NNotes then
+                                Pattern^.Patt^.NNotes := Row + 1;
+
+                            Inc(k, 2)
+                          end;
+
+                        FullTrack[Row] := Note
+                      end
+                    else
+                      begin
+                        if (j = 1) and (MaxChan < (c and $1F) + 1) then
+                          MaxChan := (c and $1F) + 1;
+                        if (c and $20) <> 0 then
+                          Inc(k, 2);
+                        if (c and $40) <> 0 then
+                          Inc(k);
+                        if (c and $80) <> 0 then
+                          Inc(k, 2)
+                      end
+                  end;
+
+                Track := Song.GetTrack(t);
+                if Track = nil then
+                  begin
+                    Song.Status := msOutOfMemory;
+                    Exit
+                  end;
+
+                Track^.SetFullTrack(FullTrack);
+
+                Pattern^.Patt^.Channels[j] := t;
+
+                Inc(t)
+              until (MaxChan < j) or (j = Song.NumChannels)
+            end
+        end;
+    NextPattern:
+    end
 end;
 
 { ---------------------------------------------------------------------------
@@ -478,7 +763,7 @@ begin
   for i := 1 to Song.SongStart - 1 do
     Song.PatternSequence^[i] := 0;
 
-  ReadPatterns(Song, St, Buf, PatPara, S3M.PatNum, 1, $FFFF);
+  ReadPatterns(Song, St, Buf, PatPara, S3M.PatNum, True, $FFFF);
   if Song.Status > msOk then Exit;
 
   ReadInstruments(Song, St, Buf, InsPara, S3M.InsNum, True, $FFFF);
