@@ -144,6 +144,22 @@ uses
 const
   Guard     : Byte = 0;  { DS:$0002  the poll re-entrancy guard }
 
+  { DS:$0003 and DS:$0004, AND THE LAYOUT IS WHAT FOUND THEM. `dgroup.py` puts this
+    unit's block at 20 bytes in the original against our 24, and the original's
+    version string starts at $0006 where 1.31b's starts at $0004 -- so two bytes went
+    in ahead of it. A scan of the image for absolute references to $0004 finds
+    exactly two, both in this segment: `CMP byte [0004],0 / JZ` at 1000:02f7 and
+    `MOV byte [0004],1` at 1000:03c8. A BYTE, set and tested, and nothing else
+    touches it.
+
+    $0003 IS STILL THE PAD 1.31b HAD -- it has to be declared now rather than left to
+    the compiler, because the flag below would otherwise take that slot and the
+    string would land two bytes early. A pad that was invisible while it was the last
+    thing before an aligned field becomes a real declaration the moment something
+    follows it. }
+  Fill0003  : Byte = 0;  { DS:$0003  1.31b's alignment pad, now explicit }
+  Rut_0004  : Byte = 0;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
+
   { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
     difference is where the bytes live: a TYPED constant is initialised DGROUP data
@@ -207,7 +223,12 @@ const
     the same and the SIZES were still wrong. A byte comparison of initialised data cannot
     see a boundary inside a run of zeros; only an instruction that names an address can,
     and `demovt/linkcmp.py` is what reads those. }
-  SelfName : String[19] = 'DemoVT v1.31 (beta)';
+  { **String[13] AND 'DemoVT v1.51'.** The declared width is measured, not chosen:
+    the field runs from $0006 to $0013 because DEVGUS's block -- whose first typed
+    constant is the driver record beginning `03 'GUS'` -- starts at $0014, and
+    $0014 - $0006 - 1 is 13. The release dropped the `(beta)` and the string got
+    shorter with it. }
+  SelfName : String[13] = 'DemoVT v1.51';
 
 var
   { ~~PlayProc $009a and AltMode $02d1~~ -- BOTH GONE, and both were other units'.
