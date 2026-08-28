@@ -128,8 +128,39 @@ type
       12ba:0a8a copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
       +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
       the first to index the published control block. }
-    RingChan   : Byte;          { +$24                                        }
-    RingNote   : Byte;          { +$25   38 bytes in all                      }
+    { ~~RingChan AND RingNote~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER, and
+      that is proved by executed code in this very segment rather than inferred.
+      147d:05d8 is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
+      MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
+      147d:05b9 stores `N.Parameter` into +$25 from command $1a, which `CommandStart`
+      maps to `mcRetrigNote`.
+
+      **AND IT COLLIDES WITH THE RING EVENT, WHICH IS NOT RESOLVED.** 1.31b measured
+      `RingChan` at +$24 and `RingNote` at +$25 from its own `StartRingEvent` at
+      142f:0622, and that routine's v1.51 address has not been found: 147d's Start
+      routines run 0635 (VolFineDown), 068a (OktArp), 0785 (S3mRetrigNote), 085d
+      (NPI1), and none of them is it. Either the ring event moved to one of the
+      fields at +$2a..+$2d that the segment also touches, or 1.51 dropped it. Until
+      that is settled the two readings share these bytes and `StartRingEvent` below
+      still writes them under these names -- WHICH IS KNOWN TO BE WRONG FOR AT LEAST
+      ONE OF THE TWO. Do not build on it. }
+    RetrigCt   : Byte;          { +$24  was RingChan   -- see above           }
+    RetrigLen  : Byte;          { +$25  was RingNote   -- see above           }
+    RetrigNow  : Boolean;       { +$26                                        }
+
+    { NEW IN v1.51, AND THE 1.31b NOTE BELOW CALLED BOTH OF THESE BEFORE EITHER WAS
+      SEEN. The record grew: a scan of 147d for [SI+d8] and [DI+d8] past +$25 finds
+      live accesses as far as +$2d, so there are more fields than these three and the
+      rest are not named yet.
+
+      The retrigger triple above is the other half of that growth. }
+    { +$27 and +$28, and these ARE settled: 147d:0369 is `StartSampleOffs`, reached
+      from `CommandStart` on command $0a, which is `mcSampleOffs`. It sets the flag
+      and stores `N.Parameter shl 8` -- a 9xx sample offset is the parameter times
+      256, which is the format's own definition. The names are the release's, quoted
+      in this file's 1.31b note a version before the routine existed. }
+    SOffs      : Boolean;       { +$27                                        }
+    SOffsVal   : Word;          { +$28   42 bytes as far as it is known       }
   end;
 
 { --------------------------------------------------------------------------
@@ -729,6 +760,31 @@ procedure TickNPI1; assembler;
 asm
 end;
 
+{ --------------------------------------------------------------------------
+  147d:0369 -- SAMPLE OFFSET, NEW IN v1.51, and it lands exactly where the 1.31b note
+  above said it would: between `TickNPI1` and `TickSampleOffs`, with `TickVib_VSlide`'s
+  own unreachable trailing `RET` accounting for the third `C3` in the run.
+
+  THE DISPATCH TABLE NAMED IT, which is what that note said would have to happen.
+  `CommandStart` at 147d:088a is an `else if` chain on the command byte -- `CMP AL,n /
+  JNZ` twenty-one times -- and decoding its near calls maps command $0a to this
+  address. $0a is `mcSampleOffs`. The same pass named `StartRetrigNote` ($1a),
+  `StartOktArp` ($21 AND $22, both), `StartS3mRetrigNote` ($23) and `StartNPI1` ($09),
+  and confirmed that $06, $07 and $0b all share `StartVolSlide` -- six routines and
+  one three-way alias from one table, which is why the note said to wait for it.
+
+  `N.Parameter shl 8` IS THE FORMAT'S OWN ARITHMETIC: a MOD 9xx offset is xx * 256
+  bytes into the sample, so a byte parameter reaches a 16-bit offset. `XOR AH,AH`
+  before `SHL AX,8` is the byte widening to a Word first. }
+procedure StartSampleOffs(var Song : TSong; var Can : TCanal; var N : TFullNote);
+begin
+  if N.Parameter <> 0 then                         { 036c..0375              }
+  begin
+    Can.SOffs    := True;                          { 0376..037d              }
+    Can.SOffsVal := N.Parameter shl 8              { 037e..0390              }
+  end
+end;
+
 procedure TickSampleOffs; assembler;
 asm
 end;
@@ -1046,8 +1102,33 @@ procedure TickNPI2; assembler;
 asm
 end;
 
+{ --------------------------------------------------------------------------
+  147d:05b9 and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
+  carries an empty `TickRetrigNote` and no Start at all. `CommandStart` maps command
+  $1a to 05b9, and $1a is `mcRetrigNote`.
+
+  `JB`, NOT `JBE`. 05e1 is `72 08`, so the counter is compared UNSIGNED and the reset
+  happens when it REACHES the period rather than passes it -- `if Can.RetrigCt >=
+  Can.RetrigLen`, written the way round the compare emits.
+
+  THE TICK IS FRAMELESS AND TAKES THE CHANNEL IN SI, like every other Tick here, so
+  it is `assembler` with no parameters and the record fields are reached through SI
+  by hand. }
+procedure StartRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
+begin
+  if N.Parameter <> 0 then                         { 05bc..05c5              }
+    Can.RetrigLen := N.Parameter                   { 05c6..05d3              }
+end;
+
 procedure TickRetrigNote; assembler;
 asm
+        INC     BYTE PTR [SI+24h]        { 05d8  RetrigCt                      }
+        MOV     AL,[SI+24h]              { 05db                                }
+        CMP     AL,[SI+25h]              { 05de  RetrigLen                     }
+        JB      @@Out                    { 05e1                                }
+         MOV    BYTE PTR [SI+24h],0      { 05e3                                }
+         MOV    BYTE PTR [SI+26h],1      { 05e7  RetrigNow                     }
+@@Out:
 end;
 
 { --------------------------------------------------------------------------
@@ -1192,8 +1273,8 @@ end;
   -------------------------------------------------------------------------- }
 procedure StartRingEvent(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
-  Can.RingChan := N.Parameter;                     { 0625..0632              }
-  Can.RingNote := 1                                { 0633..063a              }
+  Can.RetrigCt := N.Parameter;   { was Can.RingChan -- see TCanal   0625..0632 }
+  Can.RetrigLen := 1                                { 0633..063a              }
 end;
 
 { --------------------------------------------------------------------------
