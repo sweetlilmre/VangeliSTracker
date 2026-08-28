@@ -369,19 +369,24 @@ const
     in the SONG (`PanPositions`, initialised from its `DefPan`) and 1.31 keeps it in
     the player -- which is why `InitValues` in 14b9 has no trace of the release's last
     statement, a thing this project had already found from the other end. }
-  { **THE SECOND EIGHT ARE NOT MEASURED.** The first eight are 1.31b's and are
-    transcribed; `MaxChannels` is 16 in v1.51, so the array needs sixteen and this
-    file cannot yet say what the other eight hold. The Amiga L R R L pattern repeated
-    is the obvious guess and a guess is all it is.
+  { ~~Pannings~~ **IS GONE IN v1.51, AND THE PREVIOUS COMMIT'S GUESS NEVER HAD TO BE
+    RESOLVED.** Last time round this array needed sixteen entries where only eight
+    were measured, and the second eight went in as the Amiga L R R L pattern repeated
+    with a note saying it was a guess. It is not needed: the original's DGROUP has
+    `00 00 01 00` at $02e8 where ours had the table, and MODCOMMANDS' block starts 20
+    bytes lower than ours -- sixteen of which are exactly this.
 
-    IT IS INVISIBLE TO THE BYTE COMPARISON EITHER WAY -- the table is DGROUP data and
-    the only reference to it is an indexed read with no bound, so nothing in the code
-    changes whatever the values are. It becomes measurable when the link lands and
-    dgimage.py can read the original's own bytes at this address. Flagged rather than
-    quietly filled in. }
-  Pannings         : array[1..MaxChannels] of Byte =
-                       ($40, $b0, $b0, $40, $40, $b0, $b0, $40,
-                        $40, $b0, $b0, $40, $40, $b0, $b0, $40);
+    NOTHING REFERENCES IT ANY MORE. All three readers moved to
+    `PlayingSong^.ChannelPan` over the last few commits -- SetNewSample's two
+    SetEvent calls and both PostEvent calls -- so the declaration was the only thing
+    keeping it alive, and Turbo Pascal emits a typed constant whether or not anything
+    reads it. **A dead typed constant is invisible to every code comparison and
+    sixteen bytes wide in the layout.**
+
+    THE VALUES ARE KEPT IN THIS NOTE because they are 1.31b's and measured: $40, $b0,
+    $b0, $40, $40, $b0, $b0, $40 -- a third of the way in from each side, in the
+    L R R L L R R L pattern the Amiga uses. 1.51 gets the same effect from the song's
+    own per-channel pan, which is where the release always had it. }
 
   Rest             : Word          = 0;        { DS:$02ea                       }
   EventSlot        : Word          = 0;        { DS:$02ec                       }
@@ -435,17 +440,26 @@ const
   Fill0318         : Word          = 0;        { DS:$0318  UNIDENTIFIED         }
   PrevTick         : Word          = 0;        { DS:$0322 in v1.51              }
 
-  { NEW IN v1.51 -- the span of ticks this call has to work through, and the counter
-    that walks it. 1.39b calls them `i` and `t` and declares them as typed constants
-    exactly like this; single letters are the release's and not worth carrying, so
-    the roles are named instead. }
-  TickSpan         : Word          = 0;        { DS:$0330  1.39b's `i`          }
-  TickIter         : Word          = 0;        { DS:$0334  1.39b's `t`          }
   CanalPtr         : PCanal        = nil;      { DS:$031c                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
   Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
-  TmpVal           : Word          = 0;        { DS:$0328                       }
-  Fill032A         : Word          = 0;        { DS:$032a  UNIDENTIFIED         }
+  { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
+    A separate `TickSpan` was declared for the tempo loop's span last commit and it
+    put this unit's block four bytes over; the original has only six bytes between
+    Fill0324 and StepVal, not eight. The same address serves both: 12ce:0f2f stores
+    the span into [0330] and 12ce:11b1 reads [0330] as the channel index in the
+    volume pass. The first use is finished before the second begins.
+
+    THAT IS THE THIRD TIME THIS UNIT REUSES ONE GLOBAL FOR TWO ROLES -- the notes at
+    $02f6 and $0328 record the other two, both found the same way. It is the
+    release's habit, not an accident, and it is why neutral names are right here. }
+  TmpVal           : Word          = 0;        { DS:$0330 in v1.51  TWO JOBS    }
+  Fill032A         : Word          = 0;        { DS:$0332  UNIDENTIFIED         }
+
+  { 1.39b's `t`, the tempo loop's counter. It IS its own variable -- 12ce:0f45's
+    `DEC word [0334]` and 0fa5's `CMP [0334],1` are two bytes the span's address
+    cannot account for. }
+  TickIter         : Word          = 0;        { DS:$0334                       }
   { A LONGINT IN v1.51, A WORD IN 1.31b, AND THE ZERO STORE IS WHAT SETTLES IT.
     12ce:11a5 is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
     Written as two separate Word variables the second would be `XOR AX,AX /
@@ -458,7 +472,10 @@ const
     `SHR AX,0Ch` on the low word alone; a LongInt shift would be an RTL call, so the
     source has to narrow it first. }
   StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
-  Fill032E         : LongInt       = 0;        { DS:$032e  UNIDENTIFIED         }
+  { A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends pin it: StepVal
+    occupies $0336..$0339 and TickChans is at $033c, so two bytes are left over and
+    not four. }
+  Fill033A         : Word          = 0;        { DS:$033a  UNIDENTIFIED         }
   TickChans        : Byte          = 0;        { DS:$0332                       }
 
 { THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
@@ -2044,10 +2061,10 @@ begin
     `downto` AND NOT `to`, which the loop shape says outright: 0f3b is `CMP AX,1 /
     JC` on the span, 0f40 seeds the counter with it, and 0fa5 closes on `CMP [0334],1
     / JNZ` with a `DEC` at the top. Counting down needs no limit temporary. }
-  TickSpan := TickInRow - PrevTick;                  { 0f26..0f31            }
+  TmpVal := TickInRow - PrevTick;                  { 0f26..0f31            }
   TickInRow := PrevTick;                             { 0f32..0f37            }
 
-  for TickIter := TickSpan downto 1 do               { 0f38..0f48, 0fa5..0fab }
+  for TickIter := TmpVal downto 1 do               { 0f38..0f48, 0fa5..0fab }
   begin
     Inc(TickInRow);                                  { 0f49..0f4c            }
 
