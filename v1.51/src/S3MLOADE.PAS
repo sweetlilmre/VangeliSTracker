@@ -169,10 +169,17 @@ const
   S3MIdString : array[1..4] of Char = 'SCRM';
 var
   S3M     : TS3MFile absolute Header;
-  Buf     : array[1..256] of Byte;
+  { THE ORDER IS READ OFF THE COUNTER'S OWN DISPLACEMENT. 0b8e is
+    `MOV [BP-0402],1` for `for i := 1 to 32`, so exactly $400 bytes of locals
+    sit ABOVE the counter -- the two 512-byte paragraph tables and nothing
+    else. The scratch buffer is declared after it, at -$502. Turbo Pascal
+    allocates downward in declaration order, so this order is the measurement
+    and not a preference: with the buffer first, every local below it is 256
+    bytes out and the frame is still $702. }
   InsPara : TS3MParaTable;
   PatPara : TS3MParaTable;
   i       : Word;
+  Buf     : array[1..256] of Byte;
 begin
   Song.FileFormat := mffS3M;                       { 0a90  +$7d := 9 }
 
@@ -219,7 +226,10 @@ begin
 
   St.Read(Song.PatternSequence^, S3M.OrdNum);
 
-  if Song.SongLen < S3M.OrdNum then
+  { 0c09 LOADS OrdNum FIRST and compares it against SongLen, so the header's
+    field is the left operand: `if S3M.OrdNum > Song.SongLen`. Written the
+    other way round the two loads swap and the jump inverts. }
+  if S3M.OrdNum > Song.SongLen then
     S3M.OrdNum := Song.SongLen;
 
   Song.SequenceLength := S3M.OrdNum;
