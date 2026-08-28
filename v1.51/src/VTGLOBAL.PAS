@@ -102,25 +102,22 @@ const
     eleven bytes further on. }
   NoBanner          : Boolean       = False;         { DS:$09e8  MEASURED      }
 
-{ NEW IN v1.51, AND ITS OWNER IS NOT YET PROVEN. DS:$4821 is read in three places --
-  `1000:069a`, beside the `NoBanner` test that gates the banner, and twice inside
-  109c's `DoSongColl` -- and WRITTEN NOWHERE. A scan of the whole image for the two
-  bytes `21 48` finds exactly three sites and all three are `CMP`; the two `MOV
-  BYTE [x],1` in VTCMD go to $0a90 and $0c6e, which are `NoBanner` and the `nx` byte.
+{ ~~A NEW BOOLEAN AT DS:$4821 WHOSE OWNER IS NOT YET PROVEN~~ -- **IT IS
+  `VTCtrl.CtrlBlock.StopWant`, AND THE ARITHMETIC IS ONE SUBTRACTION.** $4821 minus
+  CtrlBlock's $461a is $207, inside the published control block, one byte after
+  MasterVol and four after SeekWant.
 
-  SO IT IS A PLAIN `var`, NOT A TYPED CONSTANT: $4821 is past the end of the
-  initialised image, in BSS, where a typed constant could not be. That is also the
-  whole of what fixes it here rather than somewhere else -- this unit is otherwise all
-  typed constants, and the DGROUP layout is not settled enough to say which unit's
-  block $4821 falls in. **It is placed here because it has to compile somewhere, and
-  it will move once the link order is right.** See docs/CONTINUATION.md.
+  THE NOTE THAT STOOD HERE HAD THE EVIDENCE RIGHT AND THE CONCLUSION BACKWARDS. It
+  said "read in three places and written NOWHERE ... a switch wired up and never
+  given a way to be turned on". Both facts hold. What does not follow is that nothing
+  can set it: a field in a block this program PUBLISHES for other programs to write
+  is supposed to have no writer here. **No writer inside the image is what an INPUT
+  looks like.**
 
-  READ THE BEHAVIOUR, NOT THE NAME: set, it would suppress the banner and make
-  `DoSongColl` return True without playing anything or running the shell. A switch
-  wired up and never given a way to be turned on -- the mirror image of `nx`, which
-  can be set and is never read. }
-var
-  Rut_4821 : Boolean;   { DS:$4821  BSS, never written }
+  Declaring it here also cost two bytes of DGROUP in the wrong place -- it landed
+  between VTShell's variables and SoundDevices', putting 53 operands in one unit and
+  13 in another two bytes high. }
+
 
 { ~~TWO `var`s USED TO SIT HERE~~ AND BOTH HAVE GONE TO THE UNIT THAT OWNS THEM,
   each because its ADDRESS is inside another unit's DGROUP block:

@@ -87,7 +87,25 @@ type
       client can attenuate the whole mix by writing here. This unit only knows
       that Reset sets it to $FF, which is why it was called `Mark`. }
     MasterVol : Byte;        { CB+$206                                      }
-    Filler3  : array[$207..$2FF] of Byte;
+    { **CB+$207, AND IT IS WRITTEN BY THE CLIENT, NOT BY THIS PROGRAM.** DS:$4821 is
+      read in three places -- 1000:069a beside the banner test, and twice inside
+      109c's DoSongColl -- and written NOWHERE in the image. That was recorded as "a
+      switch wired up and never given a way to be turned on", declared as a loose var
+      in VTGlobal, and it was wrong: $4821 minus CtrlBlock's $461a is $207, which puts
+      it in this record, four bytes after SeekWant and one after MasterVol.
+
+      A CONTROL-BLOCK FIELD WITH NO WRITER IS AN INPUT. Everything in this run is:
+      SeekWant, SeekPos and SeekRow are set by a client and consumed by the player,
+      and this is the fourth. Set, it makes DoSongColl return True without playing
+      anything, aborts the loop between modules, and suppresses the complaint -- so a
+      client asks the player to stop by writing here.
+
+      IT WAS THE LAST TWO BYTES OF DGROUP, TOO. Declared as a var in VTGlobal it sat
+      between VTShell's block and SoundDevices', which put every SoundDevices and
+      VTResid variable two bytes high -- 53 operands in one unit, 13 in another. }
+    StopWant : Boolean;      { CB+$207  a client asks the player to stop      }
+
+    Filler3  : array[$208..$2FF] of Byte;
   end;
 
 var

@@ -941,7 +941,7 @@ begin
     WriteLn. Three reads, no writes anywhere in the image -- a switch wired up and
     never given a way to be turned on. See VTGlobal's declaration. }
   if (SongColl.Count <> 0) and DoSongColl(Cmd.FileDir) and Complain
-     and not Rut_4821 then                        { 1000:0679..06a0        }
+     and not CtrlBlock.StopWant then                        { 1000:0679..06a0        }
     WriteLn(NoSong);                              { 1000:06a1              }
 
   StopModule;                                     { 1000:06b7              }
