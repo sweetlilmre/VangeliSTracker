@@ -201,15 +201,37 @@ type
   support was rebuilt elsewhere.
   -------------------------------------------------------------------------- }
 type
+  { EIGHTEEN BYTES IN v1.51, SIXTEEN IN 1.31b, AND `Freq` IS WHERE THE TWO WENT.
+    12ce:02de is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
+    and 12ce:0305/0309 store a WORD PAIR into +$1 and +$3 from [BP+12] and [BP+14],
+    which is a LongInt where 1.31b stored one word. Every field after it moves up
+    two, and FlushEventRow's "is this slot free" test at 12ce:0413 is
+    `MOV AX,ES:[DI+1] / OR AX,ES:[DI+3]` -- a 32-bit zero test, which it could not
+    have been while Freq was a Word.
+
+    IT ALSO REMOVES A WIDENING. 1.31b's flush had to `XOR DX,DX` before passing Freq
+    to TriggerVoice, which takes a LongInt; 12ce:043e pushes +$3 and +$1 straight
+    through. The ring now carries what the driver wants. }
   TGusEvent = record
     Vol    : Byte;              { +$00                                       }
-    Freq   : Word;              { +$01                                       }
-    Pan    : Byte;              { +$03                                       }
-    StartA : LongInt;           { +$04                                       }
-    LoopA  : LongInt;           { +$08                                       }
-    EndA   : LongInt;           { +$0c  the flush tests this for the long form }
+    Freq   : LongInt;           { +$01  a Word in 1.31b                      }
+    Pan    : Byte;              { +$05                                       }
+    StartA : LongInt;           { +$06                                       }
+    LoopA  : LongInt;           { +$0a                                       }
+    EndA   : LongInt;           { +$0e  the flush tests this for the long form }
   end;
-  TGusEventRow = array[0..7] of TGusEvent;   { 128 bytes                     }
+const
+  { The GUS event ring's width, and it is not the same number as `WideChans` further
+    down: 12ce:02e1 multiplies the row index by $120, and $120 divided by the 18-byte
+    event is 16. Declared here rather than with the other counts because the type
+    below needs it and Turbo Pascal reads in one pass. }
+  GusVoices = 16;
+
+type
+  { SIXTEEN VOICES IN v1.51 AND EIGHT IN 1.31b. 12ce:02e1 multiplies the row index
+    by $120 -- 288, which is 16 x 18 -- and FlushEventRow's loop closes on
+    `CMP [02f8],0Fh`, so the last voice is 15. }
+  TGusEventRow = array[0..GusVoices - 1] of TGusEvent;   { 288 bytes            }
 
 { --- the channel state, DS:$1260 -----------------------------------------
     `TCanal` and `TFullNote` ARE the release's, head for head, and 12ba:0820
@@ -233,6 +255,7 @@ const
     where `MaxChannels` below still says eight. Both numbers are live at once: the
     8-channel ring at 0183 and the 32-channel one at 0202 run back to back. }
   WideChans = 32;
+
 
 
   { The release's names for both. `MaxChannels` is 8 here and not 32 as 1.39b has
@@ -336,7 +359,10 @@ const
   Rest             : Word          = 0;        { DS:$02ea                       }
   EventSlot        : Word          = 0;        { DS:$02ec                       }
   EventChan        : Word          = 0;        { DS:$02ee                       }
-  RingSlot         : Word          = 0;        { DS:$02f0                       }
+  RingSlot         : Word          = 0;        { DS:$02e8 in v1.51  the PRODUCER }
+
+  { NEW IN v1.51 -- the consumer's own cursor. See the split above. }
+  FlushSlot        : Word          = 0;        { DS:$02ea                       }
   RingVoice        : Word          = 0;        { DS:$02f2                       }
 
   { NEW IN v1.51 -- the wide ring's own three. It does not share `EventSlot` or
@@ -539,10 +565,21 @@ implementation
     flagged rather than resolved: settling it needs the DGROUP layout. }
 
 
-  { DS:$02f0 -- ONE cursor, shared. 12ba:0202 and 12ba:0275 post into the row
-    it names and 12ba:02ea ADVANCES it before flushing, so a post always lands
-    in the row the flush has just reached. That is where the ring's look-ahead
-    comes from, and it is why neither producer needs a cursor of its own. }
+  { ~~ONE cursor, shared~~ -- **v1.51 SPLITS IT, AND ADDS THE FULL TEST THAT GOES
+    WITH A REAL RING.** 1.31b had SetEvent, PostEvent and FlushEventRow all indexing
+    by DS:$02f0. In 1.51 the two producers use $02e8 and the flush uses $02ea, and
+    12ce:0e78 is what makes the pair mean something:
+
+        MOV AX,[02e8] / INC AX / XOR DX,DX / MOV CX,19 / DIV CX / XCHG AX,DX
+        CMP AX,[02ea] / JNZ advance / JMP away
+
+    which is `if (RingSlot + 1) mod RingRows = FlushSlot then` -- the producer
+    refusing to advance onto the row the consumer has not drained. A `mod` by a
+    non-power-of-two is a DIV, which is why the sequence is six instructions for one
+    expression.
+
+    The 1.31b note said the shared cursor "is why neither producer needs a cursor of
+    its own". That was true of 1.31b and is the thing 1.51 changed. }
 
   { DS:$02f4 -- `Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
     so: 12ba:03cc starts it at 2 and then adds $01, $04, $10 and $20, which are
@@ -984,7 +1021,9 @@ end;
   unqualified name binds to the record field first, so `Vol := Vol` would
   quietly assign the field to itself.
   -------------------------------------------------------------------------- }
-procedure SetEvent(Voice, AVol : Byte; AFreq : Word; APan : Byte;
+{ `RET 16h` IN v1.51 AGAINST 1.31b's `RET 14h`, and the two bytes are AFreq going
+  from Word to LongInt -- the same change the record made. }
+procedure SetEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte;
                    AStart, ALoop, AEnd : LongInt);
 begin
   with EventRing[RingSlot, Voice] do             { 0206..0220                }
@@ -1019,7 +1058,12 @@ end;
   alone, not the twenty the pair would need. So a caller CANNOT leave the pan
   alone by passing $FFFF for the frequency.
   -------------------------------------------------------------------------- }
-procedure PostEvent(Voice, AVol : Byte; AFreq : Word; APan : Byte);
+{ AFreq IS A LONGINT HERE TOO, and the sentinel test is what shows it most plainly:
+  12ce:03ae is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
+  compare done high word first. 1.31b had one `CMP ...,$FFFF`. Written as `-1` and
+  not `$FFFFFFFF` because that is what gives the sign-extended byte immediate the
+  original has -- the full constant would need four bytes of operand. }
+procedure PostEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte);
 begin
   with EventRing[RingSlot, Voice] do             { 0279..0293                }
     if Freq = 0 then                             { 0294..029d                }
@@ -1032,8 +1076,8 @@ begin
     begin
       if AVol <> $FF then                        { 02bd..02c2                }
         Vol := AVol;                             { 02c3..02cb                }
-      if AFreq <> $FFFF then                     { 02cc..02d1                }
-        Freq := AFreq;                           { 02d2..02db                }
+      if AFreq <> -1 then                        { 03ae..03b9                }
+        Freq := AFreq;                           { 03ba..03c3                }
       Pan := APan                                { 02dc..02e5                }
     end
 end;
@@ -1058,12 +1102,12 @@ begin
     CLD                                          { 03dd                      }
   end;
 
-  Inc(RingSlot);                                 { 02ef..02f2                }
-  if RingSlot > RingRows - 1 then                { 02f3..02f9                }
-    Dec(RingSlot, RingRows);                     { 02fa..02fe                }
+  Inc(FlushSlot);                                { 03de..03e1                }
+  if FlushSlot > RingRows - 1 then               { 03e2..03e8                }
+    Dec(FlushSlot, RingRows);                    { 03e9..03ed                }
 
-  for RingVoice := 0 to 7 do                     { 02ff..0309, 03a9..03b2    }
-    with EventRing[RingSlot, RingVoice] do       { 030a..0322                }
+  for RingVoice := 0 to GusVoices - 1 do         { 03ee..03f8, 0499..04a2    }
+    with EventRing[FlushSlot, RingVoice] do      { 03f9..0411                }
       if Freq <> 0 then                          { 0323..032c                }
         if EndA > 0 then                         { 032d..033f                }
           TriggerVoice(RingVoice, Vol, Freq, Pan,
@@ -1071,7 +1115,7 @@ begin
         else
           ChangeVoiceParams(RingVoice, Vol, Freq, Pan);   { 0386..03a8       }
 
-  FillChar(EventRing[RingSlot], SizeOf(TGusEventRow), 0)  { 03b3..03c9       }
+  FillChar(EventRing[FlushSlot], SizeOf(TGusEventRow), 0) { 04a3..04b8       }
 end;
 
 { --------------------------------------------------------------------------
