@@ -52,7 +52,15 @@ type
     { CB+$125 -- a 32-bit tick counter, incremented by 12ba:0c9a. Live state a
       client can poll; nothing in this unit touches it. }
     Ticks32  : LongInt;      { CB+$125                                      }
-    Filler2  : array[$129..$12C] of Byte;
+    { CB+$129, NEW IN v1.51 -- **A SECOND ENTRY POINT BESIDE THE FIRST**, and the four
+      bytes were declared as filler until 1000:0601 was read. CB+$121 still holds
+      @Dispatch, which takes its selector as a Pascal parameter; this one holds
+      @DispatchEntry, the seven-byte stub that pushes AX first. A client can use
+      whichever calling convention suits it, and an old client keeps working.
+
+      $129..$12C is exactly four bytes, so the filler it replaces was the right size
+      and the wrong name. }
+    DispatchAX : Pointer;    { CB+$129  the AX-in-register entry             }
 
     { CB+$12D..$1AC, NEW IN v1.51 -- 128 bytes, published whole by a single Move at
       12ce:022b. Four bytes per channel across thirty-two channels; what the four

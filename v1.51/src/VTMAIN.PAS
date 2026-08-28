@@ -807,34 +807,24 @@ begin
     ShrinkSystemHeap(0);                         { 1000:039b }
     SwapVectors;                                  { 1000:03a0 }
     Exec(ProgName, ShellParam);                        { 1000:03af  1b6f:00df }
-    UnhookTimer;                                  { 1000:03b4  a NEAR call   }
-    SwapVectors;                                  { 1000:03b7 }
-    ShrinkSystemHeap(SavedCD);           { 1000:03c4 }
-    PlayStop;                                     { 1000:03c9 }
-    { 1000:03ce..03de -- the OTHER FillChar, and the argument says what it is
-      for: `PUSH -0x80` is $80, which is SILENCE for unsigned 8-bit audio. It
-      wipes the whole DMA buffer after the shell-out, so whatever the shelled
-      program left in it cannot be played back. }
-    FillChar(DMABuffer^, DMABufferSize, $80);     { 1000:03ce..03de }
+    { ~~UnhookTimer, PlayStop, THE FillChar AND THE THREE Req COPIES STOOD HERE~~ --
+      **ALL FIVE MOVED INTO `StopModule` IN v1.51.** 1.31b runs the whole
+      unhook-silence-restore sequence inline in the middle of the shell-out; 1.51's
+      PlayModule goes straight from the Exec to `ShrinkSystemHeap(SavedCD)` and its
+      epilogue -- 1000:0464 is the restore and 0471 is `MOV AL,[BP-1]`, with nothing
+      between them.
 
-    { 1000:03df..03f0 -- three Words copied straight across, which is all the
-      `Copy8C2To342` placeholder ever stood for. }
-    ReqStart := VT1stPattern;                             { 1000:03df }
-    ReqEnd := VTRepStart;                             { 1000:03e5 }
-    ReqLen := VTSongLen;                             { 1000:03eb }
+      THE DUPLICATE IS WHAT FOUND IT. Writing StopModule left this routine 53 bytes
+      LONGER than the original while the segment was still short overall, and the
+      extra bytes disassembled to the same instructions the new routine has. Two
+      copies of one sequence is what factoring out looks like from the wrong side. }
+    SwapVectors;                                  { 1000:045f }
+    ShrinkSystemHeap(SavedCD);                    { 1000:0464 }
   end;
 
-  asm
-    XOR  AX, AX            { 1000:03f1                                       }
-    PUSH AX                { 1000:03f3                                       }
-    MOV  DI, OFFSET Song   { 1000:03f4                                       }
-    PUSH DS                { 1000:03f7                                       }
-    PUSH DI                { 1000:03f8                                       }
-    MOV  DI, [DI]          { 1000:03f9  the song object's VMT                }
-    CALL DWORD PTR [DI+4]              { 1000:03fb  Done(0); DS-relative, see 038d       }
-  end;
-
-  { 1000:03fe is `MOV AL,[BP-1]`, the epilogue loading the result -- not a statement. }
+  { ~~AND `Song.Done` STOOD HERE~~ -- it is StopModule's last statement now, guarded by
+    `Rut_0004` rather than run unconditionally. 1000:0471 is the epilogue and it
+    follows `ShrinkSystemHeap` directly. }
 end;
 
 { ==========================================================================
@@ -893,12 +883,18 @@ begin
     MOV  ES:[DI+3], AX     { 1000:0588                                       }
   end;
 
-  { **@DispatchEntry AND NOT @Dispatch IN v1.51**, and the stub existing is not enough
-    to prove it -- Turbo Pascal drops an unreferenced routine, so building with the
-    stub written and nothing pointing at it emitted no bytes at all and left a
-    seven-byte hole exactly where 1000:02c0 is. A routine that only the PUBLISHED
-    pointer reaches has to be published before it exists. }
-  CtrlBlock.Dispatch := @DispatchEntry;           { 1000:0605  -> CB+$121   }
+  { ~~@DispatchEntry AND NOT @Dispatch~~ -- **BOTH, AND THAT IS THE POINT.** 1000:05f4
+    loads $024c into CB+$121 and 0601 loads $02c0 into CB+$129: the old entry, which
+    takes its selector as a Pascal parameter, and the new stub, which takes it in AX.
+    Two conventions published side by side so a client written against 1.31b keeps
+    working.
+
+    THE STUB STILL HAS TO BE REFERENCED TO EXIST. Turbo Pascal drops an unreferenced
+    routine, so writing it and pointing nothing at it emitted no bytes at all and left
+    a seven-byte hole exactly where 1000:02c0 is. The second assignment below is what
+    brings it into the image. }
+  CtrlBlock.Dispatch   := @Dispatch;              { 1000:05f4  -> CB+$121   }
+  CtrlBlock.DispatchAX := @DispatchEntry;         { 1000:0601  -> CB+$129   }
 
   Install(SelfName, @CtrlBlock);                  { 1000:05a3  1b54:0088 }
 
