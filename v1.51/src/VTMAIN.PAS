@@ -723,8 +723,15 @@ function PlayModule(Name, Params : PathStr) : Boolean; far;
   "assign to the function identifier, not to a local"; the three assignments below do
   that now, and the closing `PlayModule := Ok` is gone with the variable. }
 begin
-  Complain := False;                              { 1000:02dc }
-  PlayModule := True;                             { 1000:02e1 }
+  { **NEW IN v1.51 AND IT IS THE FIRST STATEMENT**, before even `Complain := False`:
+    1000:0334's `E8 90 FF` reaches 02c7. Whatever was playing is stopped, silenced and
+    disposed of before the next module is looked at -- which is what makes calling
+    PlayModule twice in a row safe, and is presumably why the sequence was factored
+    out of the shell-out in the first place. }
+  StopModule;                                     { 1000:0334 }
+
+  Complain := False;                              { 1000:0337 }
+  PlayModule := True;                             { 1000:033c }
   ShowBanner;                                     { 1000:02e5 }
 
   if ShellLoopMod then                                 { 1000:02e8 }
@@ -922,12 +929,18 @@ begin
     further on. }
   Cmd.ParseLine(GetDOSCmdLine);          { 1000:05f4, 05fa 116e:04b2, 0606 +$08 }
 
-  { **`Rut_4821` GUARDS THE COMPLAINT TOO, WHICH IS THE THIRD READER OF A FLAG NOTHING
+  { **AN EMPTY COLLECTION IS NOT AN ERROR, AND v1.51 SAYS SO FIRST.** 1000:0679 is
+    `CMP word [1046],0 / JZ` ahead of the DoSongColl call -- $1046 is VTCmd's
+    `SongColl`, whose Count is at +$4. A command line that named no module gets no
+    complaint about not finding one, and DoSongColl is not called at all from here.
+    Its shell-out path still runs, because `InterpretSwitch` calls it too.
+
+    **`Rut_4821` GUARDS THE COMPLAINT TOO, WHICH IS THE THIRD READER OF A FLAG NOTHING
     WRITES.** VTCMD tests it twice inside DoSongColl and this is the other one:
     1000:069a is `CMP byte [4821],0 / JNZ` between the `Complain` test and the
     WriteLn. Three reads, no writes anywhere in the image -- a switch wired up and
     never given a way to be turned on. See VTGlobal's declaration. }
-  if DoSongColl(Cmd.FileDir) and Complain
+  if (SongColl.Count <> 0) and DoSongColl(Cmd.FileDir) and Complain
      and not Rut_4821 then                        { 1000:0679..06a0        }
     WriteLn(NoSong);                              { 1000:06a1              }
 
