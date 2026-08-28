@@ -336,59 +336,80 @@ begin
                                    end;
                               2  : begin
                                      Note.Command := mcJumpPattern;
-                                     Note.Parameter := Note.Parameter + 1
+                                     { `Inc`, NOT `x := x + 1`. 035b is
+                                       `INC BYTE PTR [BP-1991]` -- one
+                                       instruction against a load, a widen, an
+                                       increment and a store. The wiki's
+                                       `inc-is-not-an-assignment`. }
+                                     Inc(Note.Parameter)
                                    end;
                               3  : Note.Command := mcEndPattern;
-                              4  : if Note.Parameter < $F1 then
-                                     if ((Note.Parameter and $0F) = $0F) and (Note.Parameter > $0F) then
-                                       begin
-                                         Note.Command := mcVolFineUp;
-                                         Note.Parameter := Note.Parameter shr 4
-                                       end
-                                     else
-                                       Note.Command := mcVolSlide
-                                   else
+                              { THE THREE SLIDE ARMS ALL TEST POSITIVELY AND PUT THE FINE CASE
+                                FIRST. 0372 is `CMP ...,F0 / JBE` and 03be and 0400 are
+                                `CMP ...,F0 / JB` -- so the conditions are `> $F0` and `>= $F0`,
+                                with the coarse slide as the final `else`. The draft had each of
+                                the three inverted: the same values, and the two blocks the other
+                                way round in the segment. }
+                              4  : if Note.Parameter > $F0 then
                                      begin
                                        Note.Command := mcVolFineDown;
                                        Note.Parameter := (Note.Parameter and $0F) + 1
-                                     end;
-                              5  : if Note.Parameter < $F0 then
-                                     if Note.Parameter < $E0 then
-                                       Note.Command := mcTPortDown
-                                     else
-                                       begin
-                                         Note.Command := mcFinePortaDn;
-                                         Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
-                                       end
+                                     end
+                                   else if ((Note.Parameter and $0F) = $0F) and
+                                           (Note.Parameter > $0F) then
+                                     begin
+                                       Note.Command := mcVolFineUp;
+                                       Note.Parameter := Note.Parameter shr 4
+                                     end
                                    else
+                                     Note.Command := mcVolSlide;
+                              5  : if Note.Parameter >= $F0 then
                                      begin
                                        Note.Command := mcFinePortaDn;
                                        Note.Parameter := (Note.Parameter and $0F) + 1
-                                     end;
-                              6  : if Note.Parameter < $F0 then
-                                     if Note.Parameter < $E0 then
-                                       Note.Command := mcTPortUp
-                                     else
-                                       begin
-                                         Note.Command := mcFinePortaUp;
-                                         Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
-                                       end
+                                     end
+                                   else if Note.Parameter >= $E0 then
+                                     begin
+                                       Note.Command := mcFinePortaDn;
+                                       { `+ 2` COMPILES TO TWO `INC AX`, not `ADD AX,2` -- Borland
+                                         emits one operation per operator and turns 1 and 2 into
+                                         INC and DEC. 03ed is the pair. }
+                                       Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
+                                     end
                                    else
+                                     Note.Command := mcTPortDown;
+                              6  : if Note.Parameter >= $F0 then
                                      begin
                                        Note.Command := mcFinePortaUp;
                                        Note.Parameter := Note.Parameter and $0F
-                                     end;
+                                     end
+                                   else if Note.Parameter >= $E0 then
+                                     begin
+                                       Note.Command := mcFinePortaUp;
+                                       Note.Parameter := ((Note.Parameter and $0F) + 2) shr 2
+                                     end
+                                   else
+                                     Note.Command := mcTPortUp;
                               7  : begin
                                      Note.Command := mcNPortamento;
                                      if Note.Parameter <> 0 then
-                                       Note.Parameter := Note.Parameter + 1
+                                       Inc(Note.Parameter)
                                    end;
                               8  : Note.Command := mcVibrato;
                               10 : Note.Command := mcArpeggio;
                               $0B : Note.Command := mcVib_VSlide;
                               $0C : Note.Command := mcT_VSlide;
                               $0F : Note.Command := mcSampleOffs;
-                              $11 : Note.Command := mcS3mRetrigNote;
+                              { A SELF-ASSIGNMENT, AND IT IS IN THE BINARY.
+                                049f is `MOV AL,[BP-1991] / MOV [BP-1991],AL`
+                                -- Note.Parameter loaded and stored straight
+                                back, eight bytes that compute nothing. Turbo
+                                Pascal does not elide it. Transcribed because
+                                the rule is to write what the code does. }
+                              $11 : begin
+                                      Note.Command := mcS3mRetrigNote;
+                                      Note.Parameter := Note.Parameter
+                                    end;
                               $12 : Note.Command := mcTremolo;
                               $13 : begin
                                       case Note.Parameter shr 4 of
@@ -408,10 +429,10 @@ begin
                                       end;
                                       Note.Parameter := Note.Parameter and $0F
                                     end;
-                              $14 : if Note.Parameter < $31 then
-                                      Note.Command := mcNone
+                              $14 : if Note.Parameter > $30 then
+                                      Note.Command := mcSetTempo
                                     else
-                                      Note.Command := mcSetTempo;
+                                      Note.Command := mcNone;
                               $18 : Note.Command := mcNPI1;
                             else
                               Note.Command := TModCommand(Blk[k] + $24)
@@ -420,7 +441,11 @@ begin
 
                             if (Note.Command = mcEndPattern) or
                                (Note.Command = mcJumpPattern) then
-                              if Row + 1 < Pattern^.Patt^.NNotes then
+                              { `NNotes > Row + 1`, NOT `Row + 1 < NNotes`.
+                                Borland evaluates the RIGHT operand first, and
+                                05ab computes Row + 1 into DX before loading
+                                NNotes -- so Row + 1 is on the right. }
+                              if Pattern^.Patt^.NNotes > Row + 1 then
                                 Pattern^.Patt^.NNotes := Row + 1;
 
                             Inc(k, 2)
@@ -454,7 +479,9 @@ begin
 
                 Inc(t);
 
-                if MaxChan < j then goto NextPattern
+                { `j > MaxChan`, and the loads say which is which: 06a3
+                  reads j and compares it against MaxChan. }
+                if j > MaxChan then goto NextPattern
             end
         end;
     NextPattern:

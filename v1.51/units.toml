@@ -119,3 +119,7 @@ length  = 429
 [unit.STMLOADE]
 segment = 0x15D0
 length  = 2365
+
+[unit.S3MLOADE]
+segment = 0x1664
+length  = 3458
