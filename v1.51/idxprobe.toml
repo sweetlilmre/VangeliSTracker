@@ -66,7 +66,7 @@ flags = "/la /m2"
 
 [order]
 mode = "declared"
-list = ["RTLPROBE.PAS"]
+list = ["IDXPROBE.PAS"]
 
 
 [stage]

@@ -70,6 +70,25 @@ implementation
 uses
   SongElements, Heaps, AsciiZ, VTNotes;
 
+var
+  { A TWO-SUBSCRIPT VIEW OF VTNotes' FLAT TABLE, AND IT IS MEASURED RATHER THAN
+    convenient. 0343 is `IMUL DI,AX,18` with the note term already doubled by
+    `SHL AX,1` -- the element scale distributed across the two TERMS of the
+    index. A single-subscript access scales the SUM instead and emits
+    `IMUL AX,AX,0C / ADD AX,DX / MOV DI,AX / SHL DI,1`, two bytes longer.
+
+    probe/IDXPROBE.PAS settles it: five candidate forms compiled with TP6, and
+    only the two-subscript one reproduces the original's bytes. The other four
+    -- both operand orders, an explicit *1 on the note term, and the index
+    built in a variable first -- all emit the scale-the-sum shape.
+
+    IT CANNOT BE VTNotes' OWN DECLARATION. MODCOMMANDS indexes NotePeriods with
+    a SINGLE subscript and is byte-exact in v1.31b, which a two-dimensional
+    declaration would not compile against at all. So the table is flat where it
+    is declared and this unit lays a grid over it. `absolute` costs no data and
+    no code: the base is the same DS:$4bc either way. }
+  NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
+
 { ---------------------------------------------------------------------------
   THE FILE FORMAT RECORDS.
 
@@ -172,8 +191,16 @@ var
   Unused    : Word;
   i, j      : Word;
   n, t      : Word;
+  { THREE WORDS NOTHING READS, AND THEY ARE PINNED RATHER THAN GUESSED: `w`
+    below has to land at -$a1a, which is four slots under `t` at -$a12, so
+    exactly six bytes sit between them. }
   Pad1, Pad2, Pad3 : Word;
   w         : Word;
+  { FOUR MORE BYTES, and they are the last thing in the frame: with the body
+    already the original's length, every remaining difference was a compiler
+    temporary sitting four bytes high. MODLOADE's ProcessPatterns ends with a
+    LongInt, so this one is written the same way. Size measured, type carried. }
+  l         : LongInt;
 begin
   t := 1;
   for n := 1 to Num do
@@ -286,7 +313,7 @@ begin
                   transcribing the behaviour. }
                 if Period <> 0 then
                   begin
-                    w := NotePeriods[(Period shr 4) * Semis + (Period and $0F)];
+                    w := NoteGrid[Period shr 4, Period and $0F];
                     Period := w
                   end
               end;
