@@ -1161,7 +1161,25 @@ end;
   inside it, and the encodings are what separate the two halves.
   -------------------------------------------------------------------------- }
 
-procedure SetGusVoiceCtl(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc);
+{ **A FOURTH PARAMETER, AND IT IS THE 9xx SAMPLE OFFSET ARRIVING IN THE PLAYER.**
+  `RET 0Ch` in v1.51 against 1.31b's `RET 0Ah`, and everything the routine already
+  did moved up two: Desc from [BP+4] to [BP+6], Raw from [BP+8] to [BP+0a]. The two
+  spare bytes are at [BP+4], read twice -- 12ce:06cd and 073c -- as
+  `MOV AX,[BP+4] / XOR DX,DX / ADD AX,ES:[DI+12] / ADC DX,ES:[DI+14]`, so a Word
+  widened and added to the sample's start address. That is an offset into the sample
+  and nothing else.
+
+  1.39b NAMES IT, AND THE ROUTINE. LIB/PLAYMOD.PAS line 532 is
+  `SetNewSample(i: BYTE; VAR Raw: TModRawChan; Spl: PInstrumentRec; Offs: WORD)`,
+  and its two call sites inside ProcessNewNote pass `0` and `can^.SOffsVal` -- the
+  same field 147d:0369 sets from command $0a. The whole 9xx path, from the effect to
+  the voice, is one feature crossing two units, and both halves were found
+  independently before either name was read.
+
+  ~~SetGusVoiceCtl~~ takes the release's name. It was never GUS-specific: 1.39b has
+  no GUS support in this unit at all and still has this routine. }
+procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc;
+                       Offs : Word);
 begin
   { 03cf..03d9 -- compiled: `OR AX,[BP+6]` is the code generator's direction,
     and the `JNZ +3 / JMP` pair is what a large if-body gives when the skip is
@@ -1331,9 +1349,16 @@ begin
   asm
     MOV     DI, WORD PTR Raw         { 056b                                   }
     MOV     WORD PTR [DI+$01], 0     { 056e  SplPosFrac                       }
-    MOV     AX, [DI+$0d]             { 0573  SplOfs1                          }
-    MOV     [DI+$03], AX             { 0576  -> SplPosInt                     }
-    MOV     [DI+$07], AX             { 0579  -> SplOfs                        }
+    { THE TWO STORES SWAP AND AN `ADD` GOES BETWEEN THEM, which is where `Offs`
+      reaches the playing position. 1.31b writes SplPosInt and SplOfs from the same
+      AX; 1.51 writes SplOfs FIRST, adds the offset, and only then writes SplPosInt --
+      so playback starts `Offs` bytes in while the channel's base pointer stays where
+      the sample really is. Everything downstream measures from SplOfs, which is why
+      the order had to change rather than just the arithmetic. }
+    MOV     AX, [DI+$0d]             { 0662  SplOfs1                          }
+    MOV     [DI+$07], AX             { 0665  -> SplOfs, unshifted             }
+    ADD     AX, WORD PTR Offs        { 0668  + the 9xx offset                 }
+    MOV     [DI+$03], AX             { 066b  -> SplPosInt                     }
     MOV     AX, [DI+$0f]             { 057c  SplSeg1                          }
     MOV     [DI+$05], AX             { 057f  -> SplPosSeg                     }
     MOV     [DI+$09], AX             { 0582  -> SplSeg                        }
@@ -1360,16 +1385,41 @@ begin
     only a pan position and the three DRAM addresses. A looping sample gets
     LoopA and EndA measured from the loop; a one-shot gets LoopA = -1 and EndA at
     the end of the sample. }
-  if UsingGUS then                             { 05a8..05b1             }
-    if (Raw.Flags and rcfDoesLoop) <> 0 then         { 05b2..05bd             }
-      SetEvent(Chan - 1, $FF, $FFFF, Pannings[Chan],
-               Desc^.Data1,
+  { THREE CHANGES IN BOTH ARMS, and the third is the one that matters.
+
+    `$FFFF` BECOMES `-1` because AFreq is a LongInt now: 12ce:0728 and 072a are
+    `PUSH -1 / PUSH -1`, two words where 1.31b pushed one.
+
+    `Offs` IS ADDED TO THE START ADDRESS and to that alone -- 073c is
+    `MOV AX,[BP+4] / XOR DX,DX / ADD AX,ES:[DI+12] / ADC DX,ES:[DI+14]`, and the loop
+    and end addresses are still measured from the unshifted sample. Which is right: a
+    9xx starts playback part-way in without moving where the loop is.
+
+    **AND THE PAN COMES FROM THE SONG, WHICH IS THE 1.31b NOTE COMING TRUE.** The note
+    at `Pannings` said "The release keeps pan in the SONG (`PanPositions`, initialised
+    from its `DefPan`) and 1.31 keeps it in the player -- which is why `InitValues` in
+    14b9 has no trace of the release's last statement, a thing this project had
+    already found from the other end." 12ce:0731 is `LES DI,[02ca] / ADD DI,AX /
+    MOV AL,ES:[DI+28]`, and $02ca is `PlayingSong` after this block's +$6 shift, and
+    +$28 plus a base-1 index is `TSong.ChannelPan` -- the field SONGUNIT measured from
+    the S3M loader's own `ES:[DI+28]`. Two units, two independent measurements, one
+    field. 1.51 is where DemoVT catches up with the release. }
+  if UsingGUS then                             { 0699..06a3             }
+    if (Raw.Flags and rcfDoesLoop) <> 0 then         { 06a4..06af             }
+      SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
+               Offs + Desc^.Data1,
                Desc^.Data1 + Desc^.LoopStart,
-               Desc^.Data1 + Desc^.LoopStart + Desc^.LoopLen)  { 05be..061d   }
+               Desc^.Data1 + Desc^.LoopStart + Desc^.LoopLen)  { 06b0..071f   }
     else
-      SetEvent(Chan - 1, $FF, $FFFF, Pannings[Chan],
-               Desc^.Data1, -1,
-               Desc^.Data1 + Desc^.SplLen)           { 0620..065f             }
+      SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
+               Offs + Desc^.Data1, -1,
+               Desc^.Data1 + Desc^.SplLen);          { 0722..076b             }
+
+  { NEW IN v1.51, AND IT IS OUTSIDE THE `UsingGUS` TEST. The false path at 06a1 jumps
+    to 076c, which is this store -- so a channel is marked in the wide ring whatever
+    the output device is, while the event ring above it is GUS-only. That is what
+    makes the published row a description of the SONG rather than of the hardware. }
+    WideHit[WideSlot, Chan] := 1                     { 076c..077e             }
   end
 end;
 
@@ -1617,11 +1667,11 @@ begin
         end;
 
         { 09c8..09e5 -- and hand the sample to the GUS voice. This is the call
-          site that gave SetGusVoiceCtl its signature back when 03cc was
+          site that gave SetNewSample its signature back when 03cc was
           transcribed: the channel number as a Byte, the raw channel by
           reference, the descriptor by value. }
-        SetGusVoiceCtl(ChanIdx, RawChannels[ChanIdx],
-                       CurCanal^.Instrument)           { 09c8..09e5            }
+        SetNewSample(ChanIdx, RawChannels[ChanIdx],
+                     CurCanal^.Instrument, 0)          { 09c8..09e5            }
       end;
 
       { 09e6..0a0e -- a new instrument also resets the channel's volume to that
