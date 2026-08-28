@@ -172,6 +172,8 @@ var
   Unused    : Word;
   i, j      : Word;
   n, t      : Word;
+  Pad1, Pad2, Pad3 : Word;
+  w         : Word;
 begin
   t := 1;
   for n := 1 to Num do
@@ -283,7 +285,10 @@ begin
                   with range checking off, so transcribing the arithmetic is
                   transcribing the behaviour. }
                 if Period <> 0 then
-                  Period := NotePeriods[(Period shr 4) * 12 + (Period and $0F)]
+                  begin
+                    w := NotePeriods[(Period shr 4) * Semis + (Period and $0F)];
+                    Period := w
+                  end
               end;
 
           Track := Song.GetTrack(t);
