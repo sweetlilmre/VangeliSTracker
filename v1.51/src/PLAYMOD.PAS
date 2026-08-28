@@ -122,6 +122,23 @@ type
   into the published control block. No counterpart in the 1.39b release, so
   these names are ours and provisional.
   -------------------------------------------------------------------------- }
+const
+  { **SIXTEEN IN v1.51, EIGHT IN 1.31b, AND `TPlayingNote`'s SIZE IS THE PROOF.**
+    12ce:07e9 is `IMUL DI,[02fc],77h` where 1.31b has `IMUL DI,..,3Fh`, and 0807
+    pushes `6A 77` where 1.31b pushes `6A 3F` -- so the record is 119 bytes against
+    63. 1.39b's field list makes that arithmetic decisive: four fixed bytes, then
+    `Volume : TVolumes` which is one byte a channel, then `Note` which is a 6-byte
+    TFullNote a channel, then a Word and a filler. 119 - 7 is 112, and 112 divided by
+    seven is 16. No other channel count gives 119.
+
+    SIXTEEN AND NOT THE RELEASE'S THIRTY-TWO. 1.39b's SOUNDDEV says
+    `MaxChannels = 32`; DemoVT 1.51 went half way. It agrees with the GUS event row,
+    which is also sixteen, and it does NOT agree with the wide note ring, which is
+    thirty-two -- so the published row can describe more channels than the player can
+    sound. Three different widths live in this build at once and each one is
+    measured separately. }
+  MaxChannels = 16;
+
 type
   { THE RELEASE'S NAMED TYPE, AND IT IS LOAD-BEARING. Turbo Pascal only allows a
     whole-array assignment between operands of the SAME named type, and 12ba:075e and
@@ -129,7 +146,7 @@ type
     as two anonymous `array[1..8] of Byte` the assignment does not compile at all, which
     is why both sites were read as `Move`. Eight is written out rather than `MaxChannels`
     because that constant is declared further down, after the records that use it. }
-  TVolumes = array[1..8] of Byte;
+  TVolumes = array[1..MaxChannels] of Byte;
 
   PRingEntry = ^TRingEntry;
   TRingEntry = record
@@ -180,7 +197,7 @@ type
     NotePlaying : Byte;         { +$02  written from NextNote at 12ba:074a    }
     SeqPlaying  : Byte;         { +$03  written from NextSeq at 12ba:0754    }
     Volume      : TVolumes;                 { +$04  assigned from UserVols   }
-    Note        : array[1..8] of TFullNote; { +$0c  see 12ba:094b            }
+    Note        : array[1..MaxChannels] of TFullNote;   { +$14 in v1.51      }
     NMuestras   : Word;         { +$3c  the release's name; unused so far    }
     Fill        : Byte;         { +$3e                                       }
   end;
@@ -221,10 +238,10 @@ type
     EndA   : LongInt;           { +$0e  the flush tests this for the long form }
   end;
 const
-  { The GUS event ring's width, and it is not the same number as `WideChans` further
-    down: 12ce:02e1 multiplies the row index by $120, and $120 divided by the 18-byte
-    event is 16. Declared here rather than with the other counts because the type
-    below needs it and Turbo Pascal reads in one pass. }
+  { The GUS event ring's width. 12ce:02e1 multiplies the row index by $120, and $120
+    divided by the 18-byte event is 16 -- the same number `MaxChannels` turned out to
+    be, and kept separate because the two were measured from different instructions
+    and nothing says the author had to keep them equal. }
   GusVoices = 16;
 
 type
@@ -266,7 +283,6 @@ const
     a different pair of shifts, so the byte confirms the 8.
 
     `NumBuffers` is 1, against the release's 3 -- see the note beside Buffers. }
-  MaxChannels = 8;
   NumBuffers  = 1;
 
   rcfLongSample     = $01;      { over 65,520 bytes, so it is in two parts   }
@@ -353,8 +369,19 @@ const
     in the SONG (`PanPositions`, initialised from its `DefPan`) and 1.31 keeps it in
     the player -- which is why `InitValues` in 14b9 has no trace of the release's last
     statement, a thing this project had already found from the other end. }
+  { **THE SECOND EIGHT ARE NOT MEASURED.** The first eight are 1.31b's and are
+    transcribed; `MaxChannels` is 16 in v1.51, so the array needs sixteen and this
+    file cannot yet say what the other eight hold. The Amiga L R R L pattern repeated
+    is the obvious guess and a guess is all it is.
+
+    IT IS INVISIBLE TO THE BYTE COMPARISON EITHER WAY -- the table is DGROUP data and
+    the only reference to it is an indexed read with no bound, so nothing in the code
+    changes whatever the values are. It becomes measurable when the link lands and
+    dgimage.py can read the original's own bytes at this address. Flagged rather than
+    quietly filled in. }
   Pannings         : array[1..MaxChannels] of Byte =
-                       ($40, $b0, $b0, $40, $40, $b0, $b0, $40);
+                       ($40, $b0, $b0, $40, $40, $b0, $b0, $40,
+                        $40, $b0, $b0, $40, $40, $b0, $b0, $40);
 
   Rest             : Word          = 0;        { DS:$02ea                       }
   EventSlot        : Word          = 0;        { DS:$02ec                       }
@@ -702,13 +729,13 @@ type
 
 { ...and the rest, private but in the same run -- see the note above. }
 var
-  Permisos        : array[1..8] of Boolean;  { DS:$1210  base-1 base $120f }
+  Permisos        : array[1..MaxChannels] of Boolean;  { DS:$1210  base-1 base $120f }
   TickCount       : Word;  { DS:$1218 }
   ModTickProc     : TTickProc;  { DS:$121a }
   MyCanFallBack   : Boolean;  { DS:$121e }
   FilterVal       : TFilterMethod;  { DS:$121f }
   NoteBuff        : array[0..0] of TPlayingNote;  { DS:$1220  63 bytes, then a pad }
-  Canales         : array[1..8] of TCanal;  { DS:$1260  base-1 base $123a }
+  Canales         : array[1..MaxChannels] of TCanal;  { DS:$1260  base-1 base $123a }
   BuffIdx         : Word;  { DS:$1390 }
   BuffGive        : Word;  { DS:$1392 }
   Buffers         : array[1..NumBuffers] of TSampleBuffer;  { DS:$1394 }
@@ -727,9 +754,14 @@ var
 
   { One byte each per row, and they are TWO arrays and not a record of two: 12ce:0263
     and 026e index them separately, 26 apart. They ride the ring with the row and are
-    published to CB+$1AD and CB+$1AE. }
-  WidePosRing     : array[0..RingRows - 1] of Byte;
-  WideLineRing    : array[0..RingRows - 1] of Byte;
+    published to CB+$1AD and CB+$1AE.
+
+    WHAT THEY HOLD CAME FROM THE WRITER, NOT THE READER. PublishWideRow only moves
+    them, so nothing there says which is which; 12ce:090b does, storing
+    `NoteProcessed^.NotePlaying` into the first and `SeqPlaying` into the second. The
+    transcription had the pair swapped until that was read. }
+  WideNoteRing     : array[0..RingRows - 1] of Byte;
+  WideSeqRing    : array[0..RingRows - 1] of Byte;
   EventRing       : array[0..RingRows - 1] of TGusEventRow;  { DS:$1646 }
 
 { ---- MORE NOTES WITHOUT DECLARATIONS ----------------------------------------
@@ -983,23 +1015,23 @@ begin
   if WideSlot > RingRows - 1 then                   { 020a..0210             }
     Dec(WideSlot, RingRows);                        { 0211..0215             }
 
-  Move(WideRing[WideSlot], CtrlBlock.WideRow,
+  Move(WideRing[WideSlot], CtrlBlock.WideNotes,
        SizeOf(TWideRow));                           { 0216..022f             }
 
   for WideChan := 1 to WideChans do                 { 0230..0237, 0258..025e }
     if WideHit[WideSlot, WideChan] <> 0 then        { 023c..024e             }
       CtrlBlock.ChanHit[WideChan] := 1;             { 024f..0257             }
 
-  CtrlBlock.WidePos  := WidePosRing[WideSlot];      { 025f..0269             }
-  CtrlBlock.WideLine := WideLineRing[WideSlot];     { 026a..0274             }
+  CtrlBlock.NotePlaying := WideNoteRing[WideSlot];   { 025f..0269             }
+  CtrlBlock.SeqPlaying  := WideSeqRing[WideSlot];    { 026a..0274             }
 
   Move(WideRing[WidePrev], WideRing[WideSlot],
        SizeOf(TWideRow));                           { 0275..0296             }
 
   FillChar(WideHit[WideSlot], WideChans, 0);        { 0297..02ac             }
 
-  WidePosRing[WideSlot]  := WidePosRing[WidePrev];  { 02ad..02bc             }
-  WideLineRing[WideSlot] := WideLineRing[WidePrev]; { 02bd..02cc             }
+  WideNoteRing[WideSlot]  := WideNoteRing[WidePrev];  { 02ad..02bc             }
+  WideSeqRing[WideSlot] := WideSeqRing[WidePrev]; { 02bd..02cc             }
 
   WidePrev := WideSlot                              { 02cd..02d2             }
 end;

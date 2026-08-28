@@ -55,12 +55,16 @@ type
       ARE is not named here because nothing that writes them has been read yet, and
       768 bytes of invented layout in the one structure other programs depend on is
       the mistake this record was built to avoid. }
-    WideRow  : array[1..32] of array[0..3] of Byte;   { CB+$12D               }
+    WideNotes : array[1..32] of array[0..3] of Byte;  { CB+$12D               }
 
-    { CB+$1AD and CB+$1AE. Copied out of two per-slot byte arrays that the ring
-      carries alongside each row, one each. }
-    WidePos  : Byte;         { CB+$1AD                                       }
-    WideLine : Byte;         { CB+$1AE                                       }
+    { CB+$1AD and CB+$1AE, and they carry `TPlayingNote`'s own two indices under the
+      release's names for them. 12ce:090e stores `NotePlaying` -- the row within the
+      pattern -- into the ring the first of these is published from, and 091d stores
+      `SeqPlaying`, the position in the order list. The transcription had the pair
+      the other way round before 12ce:090b was read; the ring alone could not say
+      which byte was which, because it only ever moves them. }
+    NotePlaying : Byte;      { CB+$1AD  the row inside the pattern           }
+    SeqPlaying  : Byte;      { CB+$1AE  the position in the order list       }
 
     Filler2b : array[$1AF..$202] of Byte;
     SeekWant : Byte;         { CB+$203 -- a jump is pending                 }
