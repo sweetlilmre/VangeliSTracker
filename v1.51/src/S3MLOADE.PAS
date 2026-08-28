@@ -170,15 +170,16 @@ end;
   --------------------------------------------------------------------------- }
 procedure ReadPatterns(var Song : TSong; var St : TStream;
                        var Buf; var Para : TS3MParaTable;
-                       Num : Word; A : Boolean; B : Word);
+                       Num : Word; A : Boolean; B : Byte);
 label
   Found, NextPattern;
 var
   { $19b2 = 6,578, and it divides as 2 + 5000 + 1536 + 40. The packed buffer
     is declared FIRST after one Word, and the St.Read lands at -$138a with a
     5,000-byte cap, which is what places it. }
-  w         : Word;
-  Blk    : array[1..5000] of Byte;
+  { NOTHING ABOVE `Blk`. Its address is -$1388 and it is 5,000 bytes, so it
+    reaches -$0001 and is the FIRST local. FullTrack follows at -$1988. }
+  Blk       : array[1..5000] of Byte;
   FullTrack : TFullTrack;
   Pattern   : PPattern;
   Track     : PTrack;
@@ -192,7 +193,9 @@ var
     already the original's length to within three bytes, the frame was the
     only difference left; size measured, names and types invented, as in the
     other two routines of this unit. }
-  Pad1, Pad2 : Word;
+  { SIX BYTES BELOW `Len` THAT NOTHING READS -- the original's -$19a6..-$19ab.
+    Size measured from the frame with everything else placed; names invented. }
+  Pad1, Pad2, Pad3 : Word;
   MaxChan   : Word;
 
 begin
@@ -231,10 +234,14 @@ begin
 
           { The block's own length prefix, except where the caller says the
             format does not carry one. }
-          if (not A) and (B < $1B) then
-            Len := $138A
+          { BOTH TAIL PARAMETERS ARE BYTE-SIZED: 0113 is `CMP BYTE PTR
+            [BP+06],00` and 0119 is `CMP BYTE PTR [BP+04],1A`. And the bound is
+            `<= $1A`, which emits JBE; `< $1B` is the same set of values and
+            emits JB against a different immediate. }
+          if A or (B > $1A) then
+            St.Read(Len, 2)
           else
-            St.Read(Len, 2);
+            Len := $138A;
 
           Dec(Len, 2);
           if Len > 5000 then
@@ -249,11 +256,13 @@ begin
 
           MaxChan := 1;
 
-          if Song.NumChannels <> 0 then
+          { A `for` OVER THE CHANNELS, AND ITS ZERO CASE JUMPS TO NextPattern.
+            018d is the loop's own entry test against Song.NumChannels and
+            0193 is `JMP 06ba` -- so a channel count of zero skips the whole
+            pattern, and no `if NumChannels <> 0` guard is written. The
+            MaxChan exit cannot be a `Break` in TP6, so it is the same `goto`. }
+          for j := 1 to Song.NumChannels do
             begin
-              j := 0;
-              repeat
-                Inc(j);
                 FillChar(FullTrack, SizeOf(FullTrack), 0);
 
                 k   := 1;
@@ -443,8 +452,9 @@ begin
 
                 Pattern^.Patt^.Channels[j] := t;
 
-                Inc(t)
-              until (MaxChan < j) or (j = Song.NumChannels)
+                Inc(t);
+
+                if MaxChan < j then goto NextPattern
             end
         end;
     NextPattern:
@@ -763,7 +773,7 @@ begin
   for i := 1 to Song.SongStart - 1 do
     Song.PatternSequence^[i] := 0;
 
-  ReadPatterns(Song, St, Buf, PatPara, S3M.PatNum, True, $FFFF);
+  ReadPatterns(Song, St, Buf, PatPara, S3M.PatNum, True, $FF);
   if Song.Status > msOk then Exit;
 
   ReadInstruments(Song, St, Buf, InsPara, S3M.InsNum, True, $FFFF);
