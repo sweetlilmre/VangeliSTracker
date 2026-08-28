@@ -18,6 +18,9 @@
 [layout]
 src   = "src"                          # the Pascal sources under reconstruction
 build = "build"                        # where the DOSBox build stages and leaves its output
+# The same directory, under the name `dgimage.py` asks for. It wants the LINKED
+# output rather than the staged sources; here they share a directory.
+built = "build"
 wiki  = "../kit/wiki"                  # the field manual, inside the kit
 
 [target]

@@ -719,6 +719,24 @@ procedure LoadS3MFileFormat(var Song : TSong; var St : TStream;
 const
   { DS:$0468, four raw bytes with no length prefix. }
   S3MIdString : array[1..4] of Char = 'SCRM';
+
+  { **TWO MORE FOUR-BYTE CONSTANTS, AND NOTHING REFERENCES EITHER.** DGROUP holds
+    `SCRM SCRS SCRM` at $0468, $046c and $0470 -- twelve bytes where this routine
+    used four -- and it was the LAYOUT that found them, not a call site: this unit's
+    code is byte-exact without them, so the original's are unreferenced too. The same
+    shape as PlayMod's dead `Pannings` table, from the opposite direction: there a
+    declaration outlived its readers, here two declarations never had any.
+
+    THE FIRST OF THE TWO IS THE SAMPLE MAGIC, and this file's own address map named
+    it before it was declared -- line 53 records `'SCRS'  DS:$046c`. Scream Tracker 3
+    stamps every instrument header with it at +$4c, and this loader reads that byte
+    range as `Filler3` and never checks it. Declared and unchecked is what the
+    original is; transcribed as found.
+
+    THE SECOND IS 'SCRM' AGAIN. Turbo Pascal emits one typed constant per
+    declaration, so the author wrote it twice. }
+  S3MInsString  : array[1..4] of Char = 'SCRS';   { DS:$046c  never read        }
+  S3MIdString2  : array[1..4] of Char = 'SCRM';   { DS:$0470  never read        }
 var
   S3M     : TS3MFile absolute Header;
   { THE ORDER IS READ OFF THE COUNTER'S OWN DISPLACEMENT. 0b8e is
