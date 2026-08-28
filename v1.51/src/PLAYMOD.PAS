@@ -433,7 +433,14 @@ const
   OutPtr           : Pointer       = nil;      { DS:$0310                       }
   ModRec           : PSampleBuffer = nil;      { DS:$0314                       }
   Fill0318         : Word          = 0;        { DS:$0318  UNIDENTIFIED         }
-  PrevTick         : Word          = 0;        { DS:$031a                       }
+  PrevTick         : Word          = 0;        { DS:$0322 in v1.51              }
+
+  { NEW IN v1.51 -- the span of ticks this call has to work through, and the counter
+    that walks it. 1.39b calls them `i` and `t` and declares them as typed constants
+    exactly like this; single letters are the release's and not worth carrying, so
+    the roles are named instead. }
+  TickSpan         : Word          = 0;        { DS:$0330  1.39b's `i`          }
+  TickIter         : Word          = 0;        { DS:$0334  1.39b's `t`          }
   CanalPtr         : PCanal        = nil;      { DS:$031c                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
   Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
@@ -1998,17 +2005,85 @@ begin
   { ONLY THE `mod` IS GUARDED. The `JZ` at 0cc9 jumps thirteen bytes, which is the
     remainder statement alone -- the row test below is reached either way. Written
     with the second `if` nested, the jump would have to clear both. }
-  if TickInRow <> PrevTick then                      { 0cc0..0cca            }
-    TempoAccum := TempoAccum mod TempoDiv;           { 0ccb..0cd7            }
+  if TickInRow <> PrevTick then                      { 0f0e..0f18            }
+    TempoAccum := TempoAccum mod TempoDiv;           { 0f19..0f25            }
 
-  { The row is over when its tick count is reached. `Tempo` is the release's name
-    and its comment is "Number of ticks the note will last". }
-  if TickInRow >= NoteProcessed^.Tempo then          { 0cd8..0ce4            }
+  { **NEW IN v1.51: THE ROW ADVANCE IS A LOOP, AND IT IS 1.39b's.** 1.31b takes the
+    accumulator's whole part, applies it to `TickInRow` in one go, and processes ONE
+    row boundary; if the tempo is high enough for two ticks to fall in a single call,
+    the second is simply lost. 1.51 winds `TickInRow` back to where it started and
+    walks forward one tick at a time, so every boundary in the span gets its row
+    change and its effect pass.
+
+    `i := TickInRow - PrevTick` IS WHAT MAKES THAT POSSIBLE and it has to be computed
+    BEFORE the wind-back -- 12ce:0f26 subtracts, 0f32 restores. Two statements that
+    look redundant together and are not: the first captures the span the accumulator
+    produced, the second undoes the advance so the loop can redo it in steps.
+
+    `downto` AND NOT `to`, which the loop shape says outright: 0f3b is `CMP AX,1 /
+    JC` on the span, 0f40 seeds the counter with it, and 0fa5 closes on `CMP [0334],1
+    / JNZ` with a `DEC` at the top. Counting down needs no limit temporary. }
+  TickSpan := TickInRow - PrevTick;                  { 0f26..0f31            }
+  TickInRow := PrevTick;                             { 0f32..0f37            }
+
+  for TickIter := TickSpan downto 1 do               { 0f38..0f48, 0fa5..0fab }
   begin
-    NextPattern(Song);                               { 0ce5..0cec            }
-    if not Playing then                              { 0ced..0cf3            }
-      Exit;                                          { 0cf4                  }
-    TickInRow := 0                                   { 0cf7..0cfb            }
+    Inc(TickInRow);                                  { 0f49..0f4c            }
+
+    { The row is over when its tick count is reached. `Tempo` is the release's name
+      and its comment is "Number of ticks the note will last". }
+    if TickInRow >= NoteProcessed^.Tempo then        { 0f4d..0f59            }
+    begin
+      NextPattern(Song);                             { 0f5a..0f61            }
+      if not Playing then                            { 0f62..0f6b            }
+        Exit;                                        { 0f69                  }
+      TickInRow := 0                                 { 0f6c..0f70            }
+    end;
+
+  { ~~TWO `NullProcedure` CALLS STOOD HERE~~ AND v1.51 HAS NEITHER. 1.31b brackets
+    the effect loop with `NullProcedure($FFFF, 0, 0)` before it and
+    `NullProcedure($FFFF, $FFFF, 0)` after; 12ce:0ffc runs from the tempo loop's last
+    instruction straight into `LES DI,[BP+4]`, with no `PUSH -1` anywhere between.
+    They were debugging colour-bar markers -- 1.39b's equivalent is a commented-out
+    `SetBorder` -- and the release took them out. }
+
+  { 0d64..0d97 -- run every channel's effect for this tick, unless this is the
+    row's first tick and the song has nothing at Fill16[$24].
+
+    THE LOOP IS HAND-WRITTEN. `LOOP` and `MUL BL` are not Turbo Pascal's output,
+    and the callee takes its arguments in REGISTERS -- SI pointing at the channel,
+    BX the command number doubled into a jump-table index. The release documents
+    exactly that: "En las del tick, se entra con SI apuntando al TCanal
+    correspondiente."
+
+    Equivalent Pascal, REFERENCE ONLY -- there is none that produces these bytes:
+
+        for i := TickChans downto 1 do
+          CommandTick(Canales[i], Canales[i].Note.Command * 2) }
+    if (TickInRow > 0) or (Song.FirstTick <> 0) then  { 0f71..0f81            }
+      asm
+      XOR     CH, CH                 { 0d75                                   }
+      MOV     CL, TickChans          { 0d77                                   }
+  @@Chan:
+      PUSH    CX                     { 0d7b                                   }
+      MOV     AL, CL                 { 0d7c                                   }
+      DEC     AL                     { 0d7e                                   }
+      { `$2E` IN v1.51 AND `$26` IN 1.31b -- the stride is SizeOf(TCanal), and the
+        record grew eight bytes when the retrigger, the sample offset and the S3M
+        volume fields went in. Written through SizeOf so the two cannot drift; the
+        original has the literal, and a literal is what a hand-written loop would
+        have, but a wrong literal here would silently index into the wrong channel. }
+      MOV     BL, $2E                { 0f8d  46 in v1.51, 38 in 1.31b         }
+      MUL     BL                     { 0d82                                   }
+      MOV     SI, OFFSET Canales     { 0d84                                   }
+      ADD     SI, AX                 { 0d87                                   }
+      MOV     BL, [SI+$04]           { 0d89  Note.Command                     }
+      ADD     BL, BL                 { 0d8c  doubled -- a word index          }
+      XOR     BH, BH                 { 0d8e                                   }
+      CALL    FAR PTR CommandTick    { 0d90                                   }
+      POP     CX                     { 0fa2                                   }
+      LOOP    @@Chan                 { 0fa3                                   }
+      end
   end;
 
   { 0cfc..0d22 -- the fall-back request. `PleaseFallback` is SoundDevices' way of
@@ -2053,47 +2128,8 @@ begin
     ChangeSamplingRate(DesiredHz)                    { 0d49..0d50            }
   end;
 
-  NullProcedure($FFFF, 0, 0);                        { 0d5b..0d63            }
 
-  { 0d64..0d97 -- run every channel's effect for this tick, unless this is the
-    row's first tick and the song has nothing at Fill16[$24].
 
-    THE LOOP IS HAND-WRITTEN. `LOOP` and `MUL BL` are not Turbo Pascal's output,
-    and the callee takes its arguments in REGISTERS -- SI pointing at the channel,
-    BX the command number doubled into a jump-table index. The release documents
-    exactly that: "En las del tick, se entra con SI apuntando al TCanal
-    correspondiente."
-
-    Equivalent Pascal, REFERENCE ONLY -- there is none that produces these bytes:
-
-        for i := TickChans downto 1 do
-          CommandTick(Canales[i], Canales[i].Note.Command * 2) }
-  if (TickInRow > 0) or (Song.FirstTick <> 0) then  { 0d64..0d74            }
-    asm
-      XOR     CH, CH                 { 0d75                                   }
-      MOV     CL, TickChans          { 0d77                                   }
-  @@Chan:
-      PUSH    CX                     { 0d7b                                   }
-      MOV     AL, CL                 { 0d7c                                   }
-      DEC     AL                     { 0d7e                                   }
-      { `$2E` IN v1.51 AND `$26` IN 1.31b -- the stride is SizeOf(TCanal), and the
-        record grew eight bytes when the retrigger, the sample offset and the S3M
-        volume fields went in. Written through SizeOf so the two cannot drift; the
-        original has the literal, and a literal is what a hand-written loop would
-        have, but a wrong literal here would silently index into the wrong channel. }
-      MOV     BL, $2E                { 0f8d  46 in v1.51, 38 in 1.31b         }
-      MUL     BL                     { 0d82                                   }
-      MOV     SI, OFFSET Canales     { 0d84                                   }
-      ADD     SI, AX                 { 0d87                                   }
-      MOV     BL, [SI+$04]           { 0d89  Note.Command                     }
-      ADD     BL, BL                 { 0d8c  doubled -- a word index          }
-      XOR     BH, BH                 { 0d8e                                   }
-      CALL    FAR PTR CommandTick    { 0d90                                   }
-      POP     CX                     { 0d95                                   }
-      LOOP    @@Chan                 { 0d96                                   }
-    end;
-
-  NullProcedure($FFFF, $FFFF, 0);                    { 0d98..0da0            }
 
   { 0da1..0e23 -- turn each channel's own volume into the mixing volume the
     resampler will use. The divisor is the channel count rounded UP to an even
