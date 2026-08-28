@@ -48,7 +48,7 @@ unit DevGUS;
 interface
 
 uses
-  VTDriver, GUS, SoundDevices;
+  VTDriver, GUS, SoundDevices, PlayMod;
 
 const
   { The release keeps the ID as a named constant and initialises the record
@@ -75,7 +75,19 @@ const
     keeps the SIZE honest and says plainly that the name is missing. }
   Fill005A : LongInt = 0;
 
-  Busy     : Byte    = 0;   { DS:$005e  the re-entrancy guard; pad at $005f    }
+  Busy     : Byte    = 0;   { DS:$001a in v1.51  the handler's guard          }
+
+  { FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
+    DS:$0020, and nothing in the segment touches what lies between. Declared as
+    filler for the same reason Fill005A above is: it keeps the SIZE honest and
+    says plainly that the name is missing. }
+  Fill001B : LongInt = 0;
+  Fill001F : Byte    = 0;
+
+  { NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
+    handler's Busy cannot serve, because the whole point of the change is that
+    the two now run at different times. }
+  PollBusy : Byte    = 0;
 
   { DS:$0060. `03 'G' 'U' 'S'` and a zero -- INITIALISED DATA, so a typed
     constant rather than a var assigned at run time. The eight pointers below
@@ -161,33 +173,18 @@ implementation
 procedure NullTimerHandler; far;
 begin
   asm
-  MOV  AX, SEG @DATA  { 1084:0003  was MOV AX,1CAAh                      }
-  MOV  DS, AX         { 1084:0006                                        }
-  CMP  Busy, 0        { 1084:0008                                        }
-  JBE  @@Take         { 1084:000d  zero -> nobody is inside              }
-  JMP  @@Out          { 1084:000f  already inside; do nothing            }
+  MOV  AX, SEG @DATA  { 106e:0003                                        }
+  MOV  DS, AX         { 106e:0006                                        }
+  CMP  Busy, 0        { 106e:0008                                        }
+  JBE  @@Take         { 106e:000d  zero -> nobody is inside              }
+  JMP  @@Out          { 106e:000f  already inside; do nothing            }
 @@Take:
-  INC  Busy         { 1084:0011                                        }
-  MOV  SoundDevices.SavedSS, SS { 1084:0015  keep the interrupted stack }
-  MOV  SoundDevices.SavedSP, SP { 1084:0019                            }
-  MOV  DX, DS       { 1084:001d                                        }
-  MOV  SS, DX       { 1084:001f  ours lives in the data segment        }
-  MOV  SP, OFFSET SoundDevices.SavedSS  { 1084:0021  was MOV SP,4302h  }
-  CMP  UsingGUS, 0    { 1084:0024                                        }
-  JZ   @@Do          { 1084:0029  not started -> always call            }
-  MOV  AX, DriverTicks     { 1084:002b                                        }
-  CMP  AX, LastTick  { 1084:002e                                        }
-  JNZ  @@Do          { 1084:0032  the counter moved -> call             }
-  JMP  @@Restore     { 1084:0034  nothing new                           }
-@@Do:
-  INC  LastTick  { 1084:0036                                        }
-  CALL DWORD PTR SoundDevices.PeriodicProc { 1084:003a  was CALLF [4312] }
-@@Restore:
-  MOV  SS, SoundDevices.SavedSS { 1084:003e                            }
-  MOV  SP, SoundDevices.SavedSP { 1084:0042                            }
-  DEC  Busy         { 1084:0046                                        }
+  INC  Busy           { 106e:0011                                        }
+  INC  LastTick       { 106e:0015                                        }
+  CALL FAR PTR AdvanceEventRow  { 106e:0019  CALLF 12ce:03d9             }
+  DEC  Busy           { 106e:001e                                        }
 @@Out:
-  end  { 1084:004a  LEAVE / RETF, supplied by Pascal      }
+  end  { 106e:0022  LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------
@@ -199,7 +196,35 @@ end;
   -------------------------------------------------------------------------- }
 procedure Poll; far;
 begin
-  Inc(DriverTicks);  { 1084:004f }
+  { 106e:0024..0058 -- THE WORK THAT LEFT THE INTERRUPT. In v1.31b this routine
+    was one increment and the handler did the stack switch and the indirect
+    call; v1.51 moves both here. WHATSNEW.DOC: "under GUS the CallMusic() is no
+    longer a dumb do-nothing -- now the partiture is not interpreted during
+    interrupts, and behaves more like under SB."
+
+    NO `MOV AX,SEG @DATA` at the top, unlike the handler: Poll is called with DS
+    already right, and only an interrupt entry has to establish it.
+
+    The guard is PollBusy, not Busy. The two now run at different times and each
+    needs its own. }
+  asm
+  CMP  PollBusy, 0    { 106e:0027                                        }
+  JBE  @@Take         { 106e:002c                                        }
+  JMP  @@Out          { 106e:002e                                        }
+@@Take:
+  INC  PollBusy       { 106e:0030                                        }
+  MOV  SoundDevices.SavedSS, SS { 106e:0034  keep the caller's stack     }
+  MOV  SoundDevices.SavedSP, SP { 106e:0038                              }
+  MOV  DX, DS         { 106e:003c                                        }
+  MOV  SS, DX         { 106e:003e  ours lives in the data segment        }
+  MOV  SP, OFFSET SoundDevices.SavedSS  { 106e:0040                      }
+  CALL DWORD PTR SoundDevices.PeriodicProc { 106e:0043                   }
+  MOV  SS, SoundDevices.SavedSS { 106e:0047                              }
+  MOV  SP, SoundDevices.SavedSP { 106e:004b                              }
+  INC  DriverTicks    { 106e:004f  AFTER the call, not before            }
+  DEC  PollBusy       { 106e:0053                                        }
+@@Out:
+  end  { 106e:0057  LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------

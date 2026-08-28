@@ -92,7 +92,6 @@ list = [
   "VTGLOBAL.PAS",  # --    no segment: the shared settings
   "DEVSB.PAS",  # 193a  the Sound Blaster device unit
   "GUS.PAS",  # 1723  the GUS hardware layer
-  "DEVGUS.PAS",  # 1084
   "VTSILENC.PAS",  # 1065  BLOCKED on 1a17
   "VTRESID.PAS",  # 1b54
   "HEAPS.PAS",  # 17cf  the memory pool
@@ -104,6 +103,7 @@ list = [
   "SONGUNIT.PAS",  # 14b9  the module object -- complete; needs the loaders
   "MODCOMMA.PAS",  # 142f  A STUB, and the home of TCanal
   "PLAYMOD.PAS",  # 12ba  IN PROGRESS -- transcribed from the top down
+  "DEVGUS.PAS",  # 1084  # MOVED: v1.51's DEVGUS calls PlayMod.AdvanceEventRow
   "CMDLINE.PAS",  # 116e  the command line
   "VTCFG.PAS",  # 11bb  the config file
   "VTCMD.PAS",  # 109c  the switch table -- IN PROGRESS (needs VTCfg)

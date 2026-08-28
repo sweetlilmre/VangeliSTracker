@@ -456,6 +456,14 @@ var
 procedure ChangeSamplingRate(Hz : Word); far;
 
 { 12ba:1008 -- the release exports this too. }
+{ NEW IN v1.51: EXPORTED, WHICH IS WHAT MAKES IT FAR. v1.31b keeps
+  AdvanceEventRow private and near -- 12ba:0187 ends `LEAVE / RET`. v1.51's ends
+  `LEAVE / RETF` at 12ce:04b9, and DEVGUS's interrupt handler calls it directly
+  at 106e:0019 as `CALLF 12ce:03d9`. One declaration moving from the
+  implementation to the interface changes the routine's own linkage AND gives
+  another unit the right to call it. }
+procedure AdvanceEventRow; far;
+
 procedure ProcessTickEntry; far;
 
 { 12ba:13d7 -- stop playing and give the buffers back. Declared here because
