@@ -226,6 +226,26 @@ const
   NextSeq            : Word    = 1;      { DS:$034c                             }
   TickInRow          : Byte    = 0;      { DS:$034e  release: TempoCt           }
 
+{ NEW IN v1.51, DS:$035a -- THE EQUAL-TEMPERED SEMITONE TABLE, and it is what the
+  new arpeggio divides by. Sixteen words, indexed by a nibble, and each one is
+  16384 * 2**(n/12) to the nearest unit: 16384, 17358, 18390 ... 32768 at the twelfth,
+  which is the octave and the check that fixes the formula. A period divided by
+  2**(n/12) is the period n semitones higher, so `(Period shl 14) div Table[n]` raises
+  a pitch by n semitones with no note table involved at all.
+
+  THAT IS THE WHOLE POINT OF THE CHANGE. v1.31b's arpeggio looked the note up in
+  `NoteOf`, added the semitone count and read `NotePeriods` back -- which only works
+  when the channel is sitting exactly on a table entry. S3M and finetuned MOD periods
+  are not, and 1.51 loads both. Arithmetic replaces the lookup.
+
+  THIS BLOCK'S ADDRESSES ALL MOVED +$0a, which is what puts the table at $035a and
+  not $0350: verdiff's largest bucket across the two versions is seventeen bytes
+  shifting by exactly ten, with old values $35..$4c -- the low halves of $0334..$034c.
+  So the unit's block runs $033e..$0359 in 1.51 and the table follows it. }
+  SemitoneScale : array[0..15] of Word =
+    (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
+     26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
+
 { 142f:064b -- start whatever effect the note carries. STILL A STUB. }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote); far;
 
@@ -317,25 +337,38 @@ procedure TickVolSlide; forward;
   -------------------------------------------------------------------------- }
 procedure StartArpeggio(var Song : TSong; var Can : TCanal; var N : TFullNote);
 var
-  { `ENTER 4,0`, and both slots are written then read back, so both are declared
-    variables rather than compiler temporaries. Semis is assigned twice, once per
-    nibble, which by the standing rule makes it one variable and not two. }
-  Period : Word;                  { [BP-2]                                   }
-  Semis  : Integer;               { [BP-4]                                   }
+  { `ENTER 8,0` in 1.51 where 1.31b has `ENTER 4,0`, and both slots are LONGINT now.
+    `147d:0015` stores AX to [BP-4] and DX to [BP-2] after an `XOR DX,DX`, which is a
+    32-bit store of a zero-extended word, and `147d:001b` tests the value with
+    `MOV AX,[BP-4] / OR AX,[BP-2]`. Nothing else in the routine is 16-bit. }
+  Period : LongInt;               { [BP-4]                                   }
+  Scaled : LongInt;               { [BP-8]                                   }
 begin
-  Can.ArpCt := 0;                                  { 0007..000b              }
+  Can.ArpCt := 0;                                  { 0004..000b              }
 
-  Period := N.Period;                              { 000c..0015              }
-  if Period = 0 then                               { 0016..001b              }
-    Period := Can.Note.Period;                     { 001c..0025              }
+  Period := N.Period;                              { 000c..001a              }
+  if Period = 0 then                               { 001b..0022              }
+    Period := Can.Note.Period;                     { 0023..0031              }
 
-  Can.Arp0 := Period;                              { 0026..002f              }
+  { `MOV CX,0e / XOR BX,BX / CALLF 1d89:0aa8`, and 0aa8 is `AND CX,1F / SHL AX,1 /
+    RCL DX,1 / LOOP` -- Turbo Pascal's LongInt shift-left, with the count arriving as
+    a whole LongInt in BX:CX because that is how it loads an integer constant. Fourteen
+    bits is the fixed point the table is written in: 1 << 14 is 16384. }
+  Scaled := Period shl 14;                         { 0032..0047              }
 
-  Semis := N.Parameter shr 4;                      { 0030..003e              }
-  Can.Arp1 := NotePeriods[(NoteOf[Period] and $FF) + Semis];   { 003f..0067   }
+  { `MOV AX,[BP-4]` and nothing more -- a LongInt assigned to a Word field keeps the
+    low half. }
+  Can.Arp0 := Period;                              { 0048..0051              }
 
-  Semis := N.Parameter and $0F;                    { 0068..0075              }
-  Can.Arp2 := NotePeriods[(NoteOf[Period] and $FF) + Semis]    { 0076..009e   }
+  { BOTH ARPEGGIO STEPS COME FROM `Can.Note.Parameter`, NOT FROM `N.Parameter`, and
+    the base register is what says so: `LES DI,[BP+8]` is the CHANNEL, and the note is
+    at [BP+4]. `Can.Note` is a TFullNote at offset zero, so its `Parameter` is +$5.
+
+    THE DIVISOR IS EVALUATED FIRST. `MOV AX,[DI+35a] / XOR DX,DX / MOV CX,AX /
+    MOV BX,DX` builds the right operand in BX:CX before the left is loaded into DX:AX
+    -- the LongInt divide helper at 1d89:0a2e takes them that way round. }
+  Can.Arp1 := Scaled div SemitoneScale[Can.Note.Parameter shr 4];   { 0052..007d }
+  Can.Arp2 := Scaled div SemitoneScale[Can.Note.Parameter and $0F]  { 007e..00a8 }
 end;
 
 
