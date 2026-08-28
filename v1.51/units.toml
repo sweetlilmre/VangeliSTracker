@@ -1,0 +1,117 @@
+# Every compiled unit, and the v1.51 segment it must rebuild.
+#
+# GENERATED on 28 Aug 2026 from the measured segment map in link.toml. `length`
+# is the ORIGINAL's code length -- the segment's extent less the linker's zero
+# padding -- so a unit may legitimately compile SHORTER and only the overlap is
+# compared.
+#
+# THE RTL UNITS AND THE TWO NEW SEGMENTS ARE ABSENT, for opposite reasons: DOS,
+# OBJECTS and SYSTEM are not ours to rebuild, and LOADER1/LOADER2 have no source
+# file yet. An absent row is not a pass -- see docs/CONTINUATION.md.
+
+sources  = "src"
+rewrites = ["tp6_far"]
+
+[unit.DEVGUS]
+segment = 0x106E
+length  = 380
+
+[unit.VTCMD]
+segment = 0x1086
+length  = 3381
+
+[unit.FILEUTIL]
+segment = 0x115A
+length  = 60
+
+[unit.VTSILENC]
+segment = 0x115E
+length  = 574
+
+[unit.CMDLINE]
+segment = 0x1182
+length  = 1232
+
+[unit.VTCFG]
+segment = 0x11CF
+length  = 4068
+
+[unit.PLAYMOD]
+segment = 0x12CE
+length  = 6890
+
+[unit.MODCOMMA]
+segment = 0x147D
+length  = 2978
+
+[unit.VTCTRL]
+segment = 0x1538
+length  = 25
+
+[unit.SONGUNIT]
+segment = 0x153A
+length  = 2244
+
+[unit.FILTERS]
+segment = 0x15C7
+length  = 128
+
+[unit.MODLOADE]
+segment = 0x173D
+length  = 3872
+
+[unit.ASCIIZ]
+segment = 0x1830
+length  = 140
+
+[unit.UNKLOADE]
+segment = 0x1839
+length  = 76
+
+[unit.VTNOTES]
+segment = 0x183E
+length  = 149
+
+[unit.SONGELEM]
+segment = 0x1848
+length  = 3212
+
+[unit.GUS]
+segment = 0x1911
+length  = 2649
+
+[unit.HEAPS]
+segment = 0x19B7
+length  = 2821
+
+[unit.VTDOSMEM]
+segment = 0x1A68
+length  = 236
+
+[unit.VTDOSRSZ]
+segment = 0x1A77
+length  = 30
+
+[unit.VTSHELL]
+segment = 0x1B19
+length  = 138
+
+[unit.DEVSB]
+segment = 0x1B22
+length  = 1625
+
+[unit.SOUNDBLA]
+segment = 0x1B88
+length  = 1897
+
+[unit.SOUNDDEV]
+segment = 0x1BFF
+length  = 4291
+
+[unit.HARDWARE]
+segment = 0x1D0C
+length  = 766
+
+[unit.VTRESID]
+segment = 0x1D3C
+length  = 429

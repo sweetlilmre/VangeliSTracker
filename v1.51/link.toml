@@ -1,0 +1,81 @@
+# The v1.51 original's link, as MEASURED on 28 Aug 2026.
+#
+# THE ADDRESSES ARE MEASURED; THE NAMES ARE CARRIED, and the difference matters.
+# Every address below is a distinct relocation TARGET in ref/vt1.51.bin, read by
+# `segpair.our_segments` -- the same reading `substrate/segmap.py` prints, and it
+# owes nothing to any source. The NAMES come from
+#
+#     segpair.py --pair <a v1.31b build> ref/vt1.51.bin
+#
+# which pairs the two releases' segments by masked K-gram content. That is a
+# claim, not a measurement: it is corroborated where the paired sizes are equal
+# and the score is high, and it is WEAK on the small segments, where a 32-byte
+# unit has too few windows to score. Re-read a name before spending a day on it.
+#
+# TWO SEGMENTS ARE NEW AND HAVE NO v1.31b PARTNER, so they carry placeholder
+# names -- LOADER1 and LOADER2. What is known about them is in
+# docs/CONTINUATION.md; rename them here the moment either is identified.
+
+map_file = "build/VTMAIN.MAP"
+layout   = "docs/00-map.md"
+program_blocks = "blocks/1000.toml"
+# Where the last segment ends. A boundary, not a unit.
+end_at   = 0x1e92
+
+# Segments holding constants and no code.
+data = [
+  { segment = 0x1e92, why = "constants only, no code" },
+]
+
+# THE ORIGINAL'S ORDER AND ADDRESSES. The order of this list IS the link order.
+segments = [
+  { segment = 0x1000, name = "DEMOVT" },
+  { segment = 0x106e, name = "DEVGUS" },
+  { segment = 0x1086, name = "VTCMD" },
+  { segment = 0x115a, name = "FILEUTIL" },
+  { segment = 0x115e, name = "VTSILENC" },
+  { segment = 0x1182, name = "CMDLINE" },
+  { segment = 0x11cf, name = "VTCFG" },
+  { segment = 0x12ce, name = "PLAYMOD" },
+  { segment = 0x147d, name = "MODCOMMANDS" },
+  { segment = 0x1538, name = "VTCTRL" },
+  { segment = 0x153a, name = "SONGUNIT" },
+  { segment = 0x15c7, name = "FILTERS" },
+  { segment = 0x15d0, name = "LOADER1" },
+  { segment = 0x1664, name = "LOADER2" },
+  { segment = 0x173d, name = "MODLOADER" },
+  { segment = 0x1830, name = "ASCIIZ" },
+  { segment = 0x1839, name = "UNKLOADER" },
+  { segment = 0x183e, name = "VTNOTES" },
+  { segment = 0x1848, name = "SONGELEMENTS" },
+  { segment = 0x1911, name = "GUS" },
+  { segment = 0x19b7, name = "HEAPS" },
+  { segment = 0x1a68, name = "VTDOSMEM" },
+  { segment = 0x1a77, name = "VTDOSRSZ" },
+  { segment = 0x1a79, name = "OBJECTS" },
+  { segment = 0x1b19, name = "VTSHELL" },
+  { segment = 0x1b22, name = "DEVSB" },
+  { segment = 0x1b88, name = "SOUNDBLASTER" },
+  { segment = 0x1bff, name = "SOUNDDEVICES" },
+  { segment = 0x1d0c, name = "HARDWARE" },
+  { segment = 0x1d3c, name = "VTRESID" },
+  { segment = 0x1d57, name = "DOS" },
+  { segment = 0x1d89, name = "SYSTEM" },
+]
+
+# Our filename stem -> the unit name Turbo Pascal writes into the map. Only the
+# ones that differ, plus the program, which the original calls DEMOVT.
+[unitname]
+"MODCOMMA"     = "MODCOMMANDS"
+"MODLOADE"     = "MODLOADER"
+"SONGELEM"     = "SONGELEMENTS"
+"SOUNDBLA"     = "SOUNDBLASTER"
+"SOUNDDEV"     = "SOUNDDEVICES"
+"UNKLOADE"     = "UNKLOADER"
+"VTMAIN"       = "DEMOVT"
+
+[lists]
+# No segment of their own in EITHER image: declarations only.
+noseg = ["VTDRIVER", "VTGLOBAL"]
+# Never in scope: the runtime's own units, which we do not rebuild.
+rtl = ["DOS", "OBJECTS", "SYSTEM"]

@@ -1,0 +1,84 @@
+# How DemoVT is built. Read by kit/tools/pascal/build.py, which holds the
+# method; everything here is this target's own data.
+#
+# GENERATED from v1.31b/build.py on 23 Aug 2026 by parsing it, not by
+# transcribing it.
+#
+# NO MACHINE PATHS. DOSBox-X, the drive C: image and each compiler's location
+# live in kit.local.toml, which git ignores.
+
+src     = "v1.51/probe"
+build   = "build51"
+title   = "DemoVT build"
+drive   = "D"
+log     = "BUILD.LOG"
+timeout = 180
+lint    = "kit/tools/pascal/paslint.py"
+
+[compiler]
+# TURBO PASCAL 6 IS THE DEFAULT, and that is a RESULT rather than a preference.
+# The standing suspicion that the original was not built with TP7 was tested
+# the moment a TP6 install appeared beside it, and TP6 won: 116a went from
+# three divergent regions to BYTE-IDENTICAL, including a string-pointer reload
+# TP7 elides, and 1a17 dropped from ten regions to six. No unit got worse.
+default = "tp6"
+
+[compiler.tp6]
+# TP6's install is flat -- TPC.EXE sits in C:\\TP6 rather than a BIN
+# subdirectory -- and its own TPC.CFG beside it carries the unit path.
+binpath = "C:\\TP6"
+dialect = "tp6"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+
+[compiler.tp61]
+# Turbo Pascal 6.01: TPC.EXE dated 11-Jun-1991 at 69,278 bytes, beside 6.0's
+# 69,214 of 23-Oct-1990. A different TP6 patch level is one of the three
+# candidate explanations for the divergences that survive both compilers, so
+# it is worth being able to build with.
+binpath = "C:\\TP61"
+dialect = "tp6"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+
+[compiler.tp7]
+binpath = "C:\\TP\\BIN"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+
+# The switches the original was actually built with, taken verbatim from
+# TPC.CFG in the VangeliSTracker 1.39b source release. They had been guessed at
+# before that (only /$S-), which is a poor foundation for a byte-exact target:
+# $G+ alone decides whether 286 instructions are emitted at all, and every unit
+# except VTPLAYER was being compiled as plain 8086.
+#
+# Omitted deliberately: /U and /O (the build directory is flat here); /M (this
+# drives the order itself -- TRIED AND REVERTED, because TP6 answers Error 68
+# on SongUnit's circular reference rather than resolving it on demand); /GD
+# (a detailed .MAP, until the map is useful); /V (debug info in the .TPU, and
+# the shipped binary was run through tdstrip so it carries none).
+#
+# $D+ and $L+ are kept because the original's configuration has them; they add
+# debug information rather than code, and tdstrip removes it afterwards.
+
+[assembler]
+# 1a17's 0746..10c3 was built with an object module in the original, and the
+# 1.39b release builds the same unit that way. /la leaves a listing, which is
+# the quickest way to see what byte an instruction assembled to.
+flags = "/la /m2"
+
+[order]
+mode = "declared"
+list = ["RTLPROBE.PAS"]
+
+
+[stage]
+# TP6 and TP7 are DOS tools and choke on anything above 7 bits in source, so
+# everything round-trips through the DOS code page and a character that cannot
+# survive becomes visible here rather than as an error forty lines away.
+encoding = "cp437"
+# Every DemoVT source is already an 8.3 name and every unit identifier already
+# matches its filename, so nothing is renamed -- an empty [names] says so.
+alongside = []
+
+
+[names]
+
+[install]

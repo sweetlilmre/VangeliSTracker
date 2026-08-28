@@ -1,0 +1,42 @@
+# This directory is its own HOST ROOT for the kit, and that is deliberate.
+#
+# `kit/tools/project.py` walks UP from the working directory looking for
+# kit.toml, and the kit's model is one target per host root -- `target.image`
+# is a single path, not a table. This repository now reconstructs two builds of
+# one program, so the second one gets its own root rather than overwriting the
+# first one's answers. Run every v1.51 command with this directory as the
+# working directory:
+#
+#     cd v1.51 && ..\.venv\Scripts\python.exe ..\kit\tools\pascal\build.py build.toml
+#
+# From the repository root the same commands still answer for v1.31b, and its
+# reconstruction stays measurable exactly as it was.
+#
+# The target is DemoVT v1.51 -- April 1994, the released version, shipped in
+# demovt15.zip as DEMOVT.EXE, LZEXE 0.91-packed, unpacked back to a load image.
+
+[layout]
+src   = "src"                          # the Pascal sources under reconstruction
+build = "build"                        # where the DOSBox build stages and leaves its output
+wiki  = "../kit/wiki"                  # the field manual, inside the kit
+
+[target]
+# The paragraph the disassembly calls the start of the load image. The same
+# 0x1000 the v1.31b notes use, so an address is comparable between the two
+# versions without arithmetic.
+first_para = 0x1000
+
+# The measurement target: DEMOVT.EXE from demovt15.zip, unpacked by
+# kit/tools/substrate/unlzexe.py. 66,448 bytes -- 3,408 of header and a
+# 63,040-byte load image. See ref/README.md.
+image = "ref/vt1.51.bin"
+
+# The PACKED original, which is what actually shipped. lzpack.py needs it both
+# as the comparison target and as the source of LZEXE's decompressor stub.
+packed = "../DEMOVT15/DEMOVT.EXE"
+
+[encaudit]
+dirs = ["src"]
+
+[census]
+roots = ["."]

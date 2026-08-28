@@ -1,0 +1,156 @@
+# The v1.51 linked image's segment layout, and what counts as a DGROUP address.
+#
+# GENERATED on 28 Aug 2026 from the measured segment map in link.toml.
+
+image = "VTMAIN.EXE"      # our linked image, in the build directory
+map   = "VTMAIN.MAP"      # and its map, which says where each unit landed
+
+# The initialised/uninitialised DGROUP boundary: the initialised half is
+# everything from the constants segment to the end of the load image.
+# MEASURED: 0x0d20 = 3360 bytes, against v1.31b's 0x0C70.
+varbase  = 0x0D20
+# The original's DGROUP size. MEASURED from the header: SS is 0x2530 and DGROUP
+# begins at 0x1E92, so DGROUP is 0x69E paragraphs. The same arithmetic gives
+# v1.31b's 0x4690 exactly, which is what makes it trustworthy here.
+datalen  = 0x69E0
+# A plausible misplacement. Beyond this the two words are not the same
+# variable in two places, they are unrelated numbers.
+maxdelta = 8192
+
+# Not ours to compare: the runtime library's own units.
+skip = ['DOS', 'OBJECTS', 'SYSTEM']
+
+# The ORIGINAL's segment layout. Ours is read from the .MAP; the original
+# has no map, so it is declared. Each entry's extent is the NEXT entry's
+# address minus its own, so the last entry is a bound and names no unit.
+
+[[segment]]
+at   = 0x1000
+unit = 'DEMOVT'
+
+[[segment]]
+at   = 0x106E
+unit = 'DEVGUS'
+
+[[segment]]
+at   = 0x1086
+unit = 'VTCMD'
+
+[[segment]]
+at   = 0x115A
+unit = 'FILEUTIL'
+
+[[segment]]
+at   = 0x115E
+unit = 'VTSILENC'
+
+[[segment]]
+at   = 0x1182
+unit = 'CMDLINE'
+
+[[segment]]
+at   = 0x11CF
+unit = 'VTCFG'
+
+[[segment]]
+at   = 0x12CE
+unit = 'PLAYMOD'
+
+[[segment]]
+at   = 0x147D
+unit = 'MODCOMMANDS'
+
+[[segment]]
+at   = 0x1538
+unit = 'VTCTRL'
+
+[[segment]]
+at   = 0x153A
+unit = 'SONGUNIT'
+
+[[segment]]
+at   = 0x15C7
+unit = 'FILTERS'
+
+[[segment]]
+at   = 0x15D0
+unit = 'LOADER1'
+
+[[segment]]
+at   = 0x1664
+unit = 'LOADER2'
+
+[[segment]]
+at   = 0x173D
+unit = 'MODLOADER'
+
+[[segment]]
+at   = 0x1830
+unit = 'ASCIIZ'
+
+[[segment]]
+at   = 0x1839
+unit = 'UNKLOADER'
+
+[[segment]]
+at   = 0x183E
+unit = 'VTNOTES'
+
+[[segment]]
+at   = 0x1848
+unit = 'SONGELEMENTS'
+
+[[segment]]
+at   = 0x1911
+unit = 'GUS'
+
+[[segment]]
+at   = 0x19B7
+unit = 'HEAPS'
+
+[[segment]]
+at   = 0x1A68
+unit = 'VTDOSMEM'
+
+[[segment]]
+at   = 0x1A77
+unit = 'VTDOSRSZ'
+
+[[segment]]
+at   = 0x1A79
+unit = 'OBJECTS'
+
+[[segment]]
+at   = 0x1B19
+unit = 'VTSHELL'
+
+[[segment]]
+at   = 0x1B22
+unit = 'DEVSB'
+
+[[segment]]
+at   = 0x1B88
+unit = 'SOUNDBLASTER'
+
+[[segment]]
+at   = 0x1BFF
+unit = 'SOUNDDEVICES'
+
+[[segment]]
+at   = 0x1D0C
+unit = 'HARDWARE'
+
+[[segment]]
+at   = 0x1D3C
+unit = 'VTRESID'
+
+[[segment]]
+at   = 0x1D57
+unit = 'DOS'
+
+[[segment]]
+at   = 0x1D89
+unit = 'SYSTEM'
+
+[[segment]]
+at   = 0x1E92
