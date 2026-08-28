@@ -21,7 +21,7 @@ It replaces the numbered per-session continuation notes, which are gone. Everyth
     python kit/tools/pascal/linkcmp.py v1.31b/linked.toml        27 unit(s) byte-identical in the linked image
     python kit/tools/pascal/coverage.py v1.31b/link.toml v1.31b/units.toml   44,183 of 44,272 in-scope = 99.8%
 
-    python v1.31b/lzpack.py                                      BYTE-IDENTICAL to NEUROSIS.008 (needs VT_PACKED)
+    python kit/tools/substrate/lzpack.py build/VTMAIN.EXE <NEUROSIS.008>   BYTE-IDENTICAL to the packed original
 
 **EVERY ONE OF THOSE COMMANDS IS NOW THE KIT'S**, and none of them lives under `v1.31b/` any more. The migration ran in two waves -- [psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36) on 23 Aug 2026 took `build.py`, `asmcheck.py`, `progcmp.py`, `linkcmp.py`, `blocks.py` and the four `blockXXXX.py`; [psycho #50](https://github.com/sweetlilmre/PsychoNeurosis/issues/50) took the rest -- each only once its successor had been measured to reproduce it row for row. The pre-kit originals are archived under the `archive/pre-kit-scripts` tag. **Two things changed about how they are CALLED, and a command copied out of an older note will simply not run:**
 
@@ -30,7 +30,7 @@ It replaces the numbered per-session continuation notes, which are gone. Everyth
 
 **`verify.py` IS GONE, and the reason is worth reading, because this file argued twice for keeping it.** It was held back under both #33 and #36 on the grounds that `units.py` reproduced every row while dropping the two views a person reaches for once a unit has actually diverged. Those views are in the kit now, as `align.regions()` and `align.hexpair()` behind **`units.py --detail` and `--all`**. That was verified on a manufactured failure -- with everything passing neither view fires at all, so a `/$R+` rebuild was used to turn 0 mismatched into 19, and across all 19 units the 566 printed regions, the per-unit counts and the hex dump were identical byte for byte. `omf.py` went with it, as its only importer. **So the standing exception this file recorded no longer exists: reach for `units.py --detail`, not for a script that is not there.**
 
-**THE BUILD IS BYTE-IDENTICAL TO THE UNPACKED ORIGINAL — AND SO IS THE PACKED FILE, AS OF 28 Aug 2026.** `v1.31b/lzpack.py` reproduces LZEXE 0.91 and `NEUROSIS.008` comes back byte for byte, all 31,711 of it. Risk 3 is closed; see its section below.
+**THE BUILD IS BYTE-IDENTICAL TO THE UNPACKED ORIGINAL — AND SO IS THE PACKED FILE, AS OF 28 Aug 2026.** `kit/tools/substrate/lzpack.py` reproduces LZEXE 0.91 and `NEUROSIS.008` comes back byte for byte, all 31,711 of it. Risk 3 is closed; see its section below.
 
     load image      55,056 bytes, BYTE-IDENTICAL
     relocations     772 entries, the same 772 linear targets
@@ -40,7 +40,7 @@ All thirty-one segments are transcribed; every unit and the program reproduce th
 segment; the segment order is the original's; both halves of DGROUP are laid out
 correctly. **There is no remaining difference between `build/VTMAIN.EXE` and
 `v1.31b/ref/vt1.31b.bin` that this tree can measure.** The only thing left
-was the PACKED file, and that is CLOSED as of 28 Aug 2026 — `v1.31b/lzpack.py` is
+was the PACKED file, and that is CLOSED as of 28 Aug 2026 — `kit/tools/substrate/lzpack.py` is
 LZEXE 0.91's packer written out, and it reproduces `NEUROSIS.008` byte for byte.
 See risk 3's section below.
 
@@ -109,10 +109,12 @@ because two of the three are general.
 
 ### ~~WHAT IS ACTUALLY LEFT — risk 3, and it needs a tool that is not here~~ — **CLOSED 28 Aug 2026**
 
-**THE PACKED FILE IS BYTE-IDENTICAL TOO. `v1.31b/lzpack.py` IS LZEXE 0.91's PACKER, WRITTEN OUT.**
+**THE PACKED FILE IS BYTE-IDENTICAL TOO. `kit/tools/substrate/lzpack.py` IS LZEXE 0.91's PACKER, WRITTEN OUT.**
 
-    python v1.31b/lzpack.py        BYTE-IDENTICAL to the original packed file
-    python v1.31b/lzpack.py --selftest    9 of 11 LZ91 file(s) reproduce exactly
+    python kit/tools/substrate/lzpack.py build/VTMAIN.EXE $VT_PACKED
+        BYTE-IDENTICAL to the original packed file
+    python kit/tools/substrate/lzpack.py --selftest DEMOVT15 v1.39b $VT_PACKED
+        10 of 11 LZ91 file(s) reproduce exactly
 
 The chain now runs end to end with nothing left over: our Pascal source → TPC 6.0 → `build/VTMAIN.EXE` → packed → **`NEUROSIS.008` itself, all 31,711 bytes, same MD5.** The section below is kept because its reasoning was right — LZEXE is third-party and was not going to be fetched — but the conclusion that this was "a decision for the user" is superseded: the packer was cheaper to derive than to acquire.
 
@@ -130,10 +132,14 @@ The chain now runs end to end with nothing left over: our Pascal source → TPC 
 
 **WHAT IS COMPUTED AND WHAT IS COPIED, because byte-identity here is a narrower claim than it looks.** Computed from our own build: the 30,480-byte bitstream, the 855-byte relocation table (linear deltas — it re-encodes byte-identically, which was the pleasant surprise), and the header's sizes. Copied from the reference packed file: LZEXE's 344-byte decompressor stub, which is its own machine code, plus `ss:sp`, `ip`, `minalloc` and `maxalloc`. **So 31,335 of 31,711 bytes are ours and 376 are LZEXE's.** The header arithmetic is not derived and the script says so.
 
-**TWO THINGS ARE STILL OPEN**, and neither touches this target:
+**BOTH OPEN QUESTIONS FROM THE FIRST DRAFT ARE NOW CLOSED, and closing them needed the stub read rather than guessed.** `kit/tools/substrate/disasm.py` (which is the kit's own instrument, and needs `capstone`) decodes the 344-byte stub, and two rules fell straight out of it:
 
-* **The segment-step token's position.** One token, at output offset 0xA001, taken from the original. It tells the stub to advance its destination segment, so it is a property of the stub and the image length — both of which we reproduce — but nothing obvious lands at 0xA001. Settling it means disassembling the 344-byte stub.
-* **Tail handling.** The two `--selftest` files that do not reproduce diverge in their last 11 bytes: `BIN2DB.EXE` takes an 11-byte match at distance 254 where distances 12–17 give the same 11 bytes, and `PMODETST.EXE` emits two literals where a 2-byte match sits at distance 5. So at the very end LZEXE stops preferring the nearest. A binary-search-tree match finder would behave exactly like that, but that is a hypothesis rather than a reading.
+* **THE SEGMENT STEP IS DERIVED, not copied.** Its handler at stub offset `0xd1` is `mov bx,di / and di,0Fh / add di,2000h` followed by the matching `ES` adjustment — it renormalises `ES:DI` to keep **DI at or above 0x2000**. That floor is also *why* the distance limit is `0x2000`: the back-reference is `mov al, es:[bx+di]` with `BX` forced into `0xE000..0xFFFF` by `or bh,0E0h`, a 16-bit negative offset of `-0x2000..-1`, so DI must never drop below `0x2000` or the read wraps out of the segment. **The encoder emits a step at the first token boundary where DI reaches 0xA000.** Measured on every file: `NEUROSIS.008` steps at `0xA001`, DemoVT 1.51's `DEMOVT.EXE` at `0xA00D`, and the nine files whose final DI never reaches `0xA000` emit none. `DEMOVT.EXE` — 63,040 bytes — now reproduces on that rule alone, which is the proof it is right rather than fitted.
+* **THE TAIL RULE: no match is attempted with fewer than 3 bytes left.** Bracketed from both sides — 3 reproduces every file, 4 breaks the ones ending in a 3-byte match (`BCCTST.EXE`) and 5 breaks `NEUROSIS.008` too. Without it `PMODETST.EXE` takes a 2-byte match at distance 5 where the original spends two literals.
+
+**So the self-test now feeds in nothing at all** — control tokens included — and **10 of 11 files reproduce exactly**.
+
+**ONE THING IS STILL OPEN, and it is one token in one file.** `BIN2DB.EXE`, 11 bytes from the end, takes its 11-byte match at **distance 254 — neither the nearest nor the farthest** of the 11-length matches available there, which run from distance 12 to 3,569. So at that point LZEXE searched a *proper subset* of the candidates, and the subset is not explained. The script's header lists what has been **ruled out** so a later session need not re-run it: token-start-only indexing (fails immediately on all 11), caps on how late a match source may sit (break all 11), farthest-on-tie (breaks all 11), and a longer minimum tail. A match finder whose chain order is not position order — a binary search tree — would explain it, and that is labelled a hypothesis. It does not touch this target, whose own tail reproduces exactly.
 
 **THE ORIGINAL PACKED FILE IS NOT TRACKED HERE** — only the unpacked image is. Point `VT_PACKED` at a copy of `NEUROSIS.008` or pass `--packed`; the sibling psycho checkout has one at `bin/NEUROSIS.008`. It supplies both the comparison target and the stub.
 
