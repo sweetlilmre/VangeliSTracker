@@ -89,8 +89,35 @@ type
     Channels    : array[1..32] of Byte;  { +$40  bit 3 is the pan side        }
   end;
 
+  { The 0x50-byte instrument header, read one at a time into the frame. Every
+    offset is cited at the instruction that reads it; the sizes follow from
+    the gaps between them and from the two StrASCIIZ lengths.
+
+      1 + 13 + 2 + 4 + 4 + 4 + 1 + 2 + 1 + 2 + 14 + 25 + 7  =  80 = $50 }
+  TS3MInstrument = record
+    Typ      : Byte;                  { +$00  tested against 1 at 0770       }
+    DosName  : array[1..13] of Char;  { +$01  StrASCIIZ over $0d at 0757     }
+    MemSeg   : Word;                  { +$0e  the sample's own paragraph     }
+    Length   : LongInt;               { +$10                                 }
+    LoopBeg  : LongInt;               { +$14                                 }
+    LoopEnd  : LongInt;               { +$18                                 }
+    Vol      : Byte;                  { +$1c                                 }
+    Filler1  : array[1..2] of Byte;   { +$1d                                 }
+    Flags    : Byte;                  { +$1f  zero means no loop             }
+    C2Spd    : Word;                  { +$20                                 }
+    Filler2  : array[1..14] of Byte;  { +$22                                 }
+    Name     : array[1..25] of Char;  { +$30  StrASCIIZ over $19 at 0775     }
+    Filler3  : array[1..7] of Byte;   { +$49  and the 'SCRS' marker          }
+  end;
+
   { The two paragraph-pointer tables, each read straight off the stream. }
   TS3MParaTable = array[1..256] of Word;
+
+  { The recogniser's scratch, passed to both readers as an untyped `var`. }
+  TS3MFlags = array[1..256] of Byte;
+
+  PSampleBytes = ^TSampleBytes;
+  TSampleBytes = array[0..65520] of Byte;
 
 var
   { DS:$491c. `SeekPara` adds a paragraph count to it, so it is the module's
@@ -148,7 +175,156 @@ end;
 procedure ReadInstruments(var Song : TSong; var St : TStream;
                           var Buf; var Para : TS3MParaTable;
                           Num, A, B : Word);
+var
+  { $17e is 126 bytes of locals and one 256-byte String temporary, and the
+    126 divide exactly: 2 + 28 + 4 + 80 + 2 + 2 + 4 + 4. The header record's
+    own field offsets place it -- Length is read at -$62 and the record starts
+    at -$72, which is +$10, the offset the file format uses. }
+  Instrument : TInstrumentRec;    { -$1e                                    }
+  Instr      : PInstrument;       { -$22                                    }
+  Hdr        : TS3MInstrument;    { -$72                                    }
+  i          : Word;              { -$74                                    }
+  j          : Word;              { -$76                                    }
+  Falls      : LongInt;           { -$7a  see the sign detection below      }
+  Rises      : LongInt;           { -$7e                                    }
 begin
+  { A WRAPPING `if`, NOT A GUARD -- and this routine differs from the
+    recogniser in that. The Exit form emits nine bytes here that the original
+    does not have. Not every test in this unit is a guard; the bytes decide
+    each one. }
+  if Num <> 0 then
+    for i := 1 to Num do
+    begin
+      FillChar(Instrument, SizeOf(Instrument), 0);
+
+      Instr := PInstrument(Song.GetInstrument(i));
+      if Instr = nil then
+        begin
+          Song.Status := msOutOfMemory;
+          Exit
+        end;
+
+      SeekPara(Para[i], St);
+      St.Read(Hdr, SizeOf(Hdr));
+
+      { THE DOS FILENAME IS THE FALLBACK, NOT THE OTHER WAY ROUND. 0771 tests
+        the FIRST character of the long name and takes the short one when it
+        is NUL. }
+      if Hdr.Name[1] = #0 then
+        Instr^.SetName(StrASCIIZ(Hdr.DosName, 13))
+      else
+        Instr^.SetName(StrASCIIZ(Hdr.Name, 25));
+
+      if Hdr.Typ = 1 then
+        begin
+          { The recogniser's scratch says which instruments a pattern actually
+            referenced; one nobody plays keeps a zero length and is dropped. }
+          if TS3MFlags(Buf)[i] <> 0 then
+            Instrument.Len := Hdr.Length;
+
+          if Instrument.Len <= 0 then
+            Instr^.Change(nil)
+          else
+            begin
+              if Hdr.Flags = 0 then
+                begin
+                  Instrument.Reps := 0;
+                  Instrument.Repl := 0
+                end
+              else
+                begin
+                  Instrument.Reps := Hdr.LoopBeg;
+                  Instrument.Repl := Hdr.LoopEnd - Hdr.LoopBeg
+                end;
+
+              Instrument.Vol  := Hdr.Vol;
+              Instrument.DAdj := Hdr.C2Spd;
+
+              { TWO NUMERATORS, and the parameter chooses. $2100 is the same
+                constant STMLOADE uses; $20ab is 21/32 of a semitone below it. }
+              if A = 0 then
+                Instrument.NAdj := $2100
+              else
+                Instrument.NAdj := $20AB;
+
+              if Instrument.Repl > Instrument.Len then
+                Instrument.Repl := Instrument.Len;
+              if Instrument.Reps + Instrument.Repl > Instrument.Len then
+                Instrument.Repl := Instrument.Len - Instrument.Reps;
+
+              { The HEADER's field is tested and the RECORD's is clamped --
+                0a20 reads -$56 and writes -$12, which are different bytes. }
+              if Hdr.Vol > $3F then
+                Instrument.Vol := $3F;
+
+              SeekPara(Hdr.MemSeg, St);
+
+              if Instrument.Len < $FFF1 then
+                begin
+                  FullHeap.HGetMem(Pointer(Instrument.Data), Instrument.Len);
+                  if Instrument.Data = nil then
+                    begin
+                      Song.Status := msOutOfMemory;
+                      Exit
+                    end;
+                  St.Read(Instrument.Data^, Instrument.Len);
+                  if St.Status <> stOk then
+                    begin
+                      Song.Status := msFileDamaged;
+                      Exit
+                    end;
+
+                  { ------------------------------------------------------
+                    SIGNED OR UNSIGNED, DECIDED BY COUNTING. An S3M sample
+                    may be stored either way and the header does not say
+                    which, so the loader looks at the data: for every pair of
+                    adjacent bytes whose top bits DIFFER, it asks whether both
+                    are far from the midpoint on the same side. Reading the
+                    run as unsigned makes a quiet signal cross $80 constantly;
+                    reading it as signed makes it cross zero. The tally that
+                    wins says which convention the file used, and $80 is
+                    subtracted from every byte when it was the other one.
+                    ------------------------------------------------------ }
+                  Falls := 0;
+                  Rises := 0;
+
+                  if Instrument.Len <> 1 then
+                    for j := 1 to Instrument.Len - 1 do
+                      if ((PSampleBytes(Instrument.Data)^[j - 1] xor PSampleBytes(Instrument.Data)^[j]) and $80) <> 0 then
+                        if (ShortInt(PSampleBytes(Instrument.Data)^[j] - $40) < 0) and
+                           (ShortInt(PSampleBytes(Instrument.Data)^[j - 1] - $40) < 0) then
+                          Inc(Falls)
+                        else if (ShortInt(PSampleBytes(Instrument.Data)^[j] - $40) >= 0) and
+                                (ShortInt(PSampleBytes(Instrument.Data)^[j - 1] - $40) >= 0) then
+                          Inc(Rises);
+
+                  if Falls < Rises then
+                    for j := 0 to Instrument.Len - 1 do
+                      Dec(PSampleBytes(Instrument.Data)^[j], $80)
+                end
+              else
+                begin
+                  FullHeap.HGetMem(Pointer(Instrument.Data), $FFF0);
+                  FullHeap.HGetMem(Pointer(Instrument.Xtra),
+                                   Instrument.Len - $FFF0);
+                  if (Instrument.Data = nil) or (Instrument.Xtra = nil) then
+                    begin
+                      Song.Status := msOutOfMemory;
+                      Exit
+                    end;
+                  St.Read(Instrument.Data^, $FFF0);
+                  St.Read(Instrument.Xtra^, Instrument.Len - $FFF0);
+                  if St.Status <> stOk then
+                    begin
+                      Song.Status := msFileDamaged;
+                      Exit
+                    end
+                end;
+
+              Instr^.Change(@Instrument)
+            end
+        end
+    end
 end;
 
 { ---------------------------------------------------------------------------
