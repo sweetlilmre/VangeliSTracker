@@ -133,7 +133,7 @@ var
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
   SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
-  WasOff  : Boolean;     { DS:$0e36 }
+  WasOn  : Boolean;     { DS:$0e36 }
 
 { ~~Flag0BC7, Flag0BBD, Flag0BBF, Flag0BBC~~ -- ALL FOUR GONE, and all four were
   SoundDevices' own, in its CONSTANT-region block at $0bbc..$0bc7. The note here said
@@ -290,8 +290,13 @@ begin
 
   if OldVec <> nil then Exit;                     { 1065:005d  already running }
 
-  { 1065:0069 -- bit 4 SET in the 8259 mask means IRQ 4 is masked now. }
-  WasOff := (Port[$21] and $10) <> 0;             { 1065:0074  DS:$0e36 }
+  { 115e:0075 -- `IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
+    v1.31b tests `Port[$21] and $10` with the mask bit for IRQ 4 written in;
+    once the IRQ is configurable that constant cannot be formed inline, so the
+    work moves to Hardware's own routine, which already knew how to pick the
+    controller and the bit. The same shape as the second EOI above: a feature
+    turning an immediate into a call. }
+  WasOn := IRQState(ComIrq);                     { 115e:0079  1d0c:007e }
 
   OldVec := SetIRQVector(ComIrq, @IrqHandler);    { 1065:0081  1b24:00d7 }
   EnableIRQ(ComIrq);                              { 1065:008f  1b24:0000 }
@@ -374,7 +379,14 @@ begin
     SetIRQVector(ComIrq, OldVec);                 { 1065:0155  1b24:00d7 }
     OldVec := nil;                                { 1065:015c }
 
-    if WasOff then DisableIRQ(ComIrq)             { 1065:0162  only if it was }
+    { `not WasOn`, AND THE SENSE FLIPPED WITH THE SOURCE OF THE VALUE.
+      v1.31b tested the 8259 mask bit directly, so its flag meant "was
+      MASKED" and the IRQ was disabled again when it had been. v1.51 takes
+      the flag from Hardware.IRQState, which answers the opposite question --
+      "is it getting through" -- so restoring the previous state disables the
+      IRQ when it was NOT. 115e:01ba is `JNE` over the call where v1.31b has
+      `JE` into it: one byte, and the variable's NAME had to change with it. }
+    if not WasOn then DisableIRQ(ComIrq)          { 115e:01ba }
   end
 end;
 
