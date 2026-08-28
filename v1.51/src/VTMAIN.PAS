@@ -661,6 +661,58 @@ end;
   the frame on entry, and reading it as an assignment produced two extra locals and two
   extra copies. Same class as the invented `String` locals in `1b54` and `164b`: **a
   frame is explained by the parameters before it is explained by declarations.** }
+{ --------------------------------------------------------------------------
+  1000:02c0 -- THE FAR ENTRY, NEW IN v1.51. Seven bytes: `PUSH AX / CALLF Dispatch /
+  RETF`, with the RETF the compiler's own.
+
+  IT EXISTS TO MOVE THE FUNCTION NUMBER FROM A REGISTER TO THE STACK. `Dispatch`
+  takes its selector as a Word parameter; a client reaching this program over INT 2Fh
+  has it in AX. 1.31b published `Dispatch` itself and left the caller to push -- this
+  stub does it, so the published address and the Pascal signature stop having to agree
+  about who owns the argument. }
+procedure DispatchEntry; far; assembler;
+asm
+  PUSH    AX                     { 1000:02c0                                }
+  CALL    FAR PTR Dispatch       { 1000:02c1                                }
+end;
+
+
+{ --------------------------------------------------------------------------
+  1000:02c7 -- STOP EVERYTHING, NEW IN v1.51, and it is what the main body calls
+  before `EndSampling` at 1000:06b7.
+
+  FOUR ADDRESSES IDENTIFIED IT AND THE LINKER MAP IS WHAT NAMED THEM: $0d1c is `Song`,
+  $0c4c is `DMABufferSize`, the near call at 02d1 reaches 1000:020a which this file's
+  own address map has as `UnhookTimer`, and the far call at 02c1 above reaches
+  1000:024c, `Dispatch`. Reading the map beat reading the instructions, and it was
+  available all along -- it only became so once the link order was right.
+
+  `Song.Done` IS A DESTRUCTOR AND THE EXTRA PUSH SAYS SO. 1000:02fe is
+  `XOR AX,AX / PUSH AX` BEFORE Self, which is Turbo Pascal's hidden deallocate flag;
+  zero means "do not dispose", so this is `Song.Done` on a statically allocated object
+  and not a `Dispose`.
+
+  THE BUFFER IS FILLED WITH $80 AND NOT ZERO. Unsigned 8-bit audio has silence at
+  mid-scale; SoundDevices' own `StartSampling` does the same thing at 1bff:00f7. }
+procedure StopModule;
+begin
+  if Rut_0005 then                                { 1000:02ca }
+  begin
+    UnhookTimer;                                  { 1000:02d1 }
+    FillChar(DMABuffer^, DMABufferSize, $80);     { 1000:02d4 }
+
+    { The range a caller ASKED for is put back, so the next module starts from the
+      command line's own numbers rather than from whatever the last one left. }
+    ReqStart := VT1stPattern;                     { 1000:02e5 }
+    ReqEnd   := VTRepStart;                       { 1000:02eb }
+    ReqLen   := VTSongLen                         { 1000:02f1 }
+  end;
+
+  if Rut_0004 then                                { 1000:02f7 }
+    Song.Done                                     { 1000:02fe }
+end;
+
+
 function PlayModule(Name, Params : PathStr) : Boolean; far;
 { AND THERE IS NO LOCAL AT ALL. `[BP-1]` is the FUNCTION RESULT: the tail of the
   routine is `8a 46 ff / c9 / ca 08 00`, `MOV AL,[BP-1] / LEAVE / RETF 8`, which is
@@ -841,7 +893,12 @@ begin
     MOV  ES:[DI+3], AX     { 1000:0588                                       }
   end;
 
-  CtrlBlock.Dispatch := @Dispatch;                { 1000:058c  -> DS:$23e7 }
+  { **@DispatchEntry AND NOT @Dispatch IN v1.51**, and the stub existing is not enough
+    to prove it -- Turbo Pascal drops an unreferenced routine, so building with the
+    stub written and nothing pointing at it emitted no bytes at all and left a
+    seven-byte hole exactly where 1000:02c0 is. A routine that only the PUBLISHED
+    pointer reaches has to be published before it exists. }
+  CtrlBlock.Dispatch := @DispatchEntry;           { 1000:0605  -> CB+$121   }
 
   Install(SelfName, @CtrlBlock);                  { 1000:05a3  1b54:0088 }
 
@@ -878,6 +935,7 @@ begin
      and not Rut_4821 then                        { 1000:0679..06a0        }
     WriteLn(NoSong);                              { 1000:06a1              }
 
+  StopModule;                                     { 1000:06b7              }
   EndSampling;                                    { 1000:06ba  1bff:013e   }
 
   { **AND THE CLOSING BANNER IS SUPPRESSED WHEN THE PROGRAM HAS JUST COMPLAINED.**
