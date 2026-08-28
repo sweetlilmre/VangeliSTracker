@@ -408,7 +408,13 @@ const
   NewFlags         : Byte          = 0;        { DS:$02f4                       }
   NoLoop           : Byte          = 0;        { DS:$02f5                       }
   NextIdx          : Word          = 0;        { DS:$02f6                       }
-  ChanIdx          : Word          = 0;        { DS:$02f8                       }
+  ChanIdx          : Word          = 0;        { DS:$02fe in v1.51              }
+
+  { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
+    declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
+    constants and uses it for exactly one thing: to know, after CommandStart has
+    run, whether this row started a sample that a 9xx could still be moved. }
+  NewSample        : Boolean       = False;    { DS:$030e                       }
   { DS:$02fa, six bytes. The initialiser names the FIRST variant's fields, which is
     the only form Turbo Pascal accepts for a variant record's typed constant --
     Instrument, Period, Volume, Command, Parameter is 1 + 2 + 1 + 1 + 1, and $02fa + 6
@@ -1539,8 +1545,26 @@ begin
   NoteHd := NextIdx;                              { 06ee..06f3            }
 
   with NoteProcessed^ do
-  begin                                              { 06f4..06fd            }
-    EoMod := NextNote = $FFFF;                        { 06fe..070d            }
+  begin                                              { 0806..080f            }
+
+    { **NEW IN v1.51: THE WHOLE HEAD OF THIS ROUTINE IS NOW A `repeat`,** and it is
+      1.39b's, which has carried it since 1993. The loop skips ORDER POSITIONS THAT
+      NAME A PATTERN THE SONG HAS NOT GOT -- `GetPatternSequence` returning an index
+      at or past `Patterns.Count` -- by advancing the position and going round again.
+      1.31b has no such test and would have indexed off the end.
+
+      `Song.Patterns.Count` IS AT +$67 AND THAT IS THE +$20 SHIFT SHOWING. SONGUNIT
+      measures the collection at Song+$41 with its count at +$47; TSong gained 32
+      bytes in 1.51 when `ChannelPan` went in, so everything past the insertion moves
+      by $20 and $47 + $20 is $67. A field offset confirming a record change measured
+      in a different unit, from the other side.
+
+      THE COMPARISON IS 32-BIT AND MIXED-SIGN, which is what the two widenings say:
+      12ce:08a6 is `XOR DX,DX` on the call's result -- a Word, unsigned -- and 08b3 is
+      `CWD` on `Patterns.Count`, which TCollection declares as an Integer. Turbo
+      Pascal promotes both to LongInt so the signed and unsigned halves can meet. }
+    repeat                                           { 081d                  }
+    EoMod := NextNote = $FFFF;                        { 0810..081f            }
 
     if EoMod then                                    { 070e..0716            }
       if MyLoopMod then                              { 0717..071d            }
@@ -1577,7 +1601,25 @@ begin
       two addresses are two routines in the SAME library rather than evidence of a
       different one. That closes the RTL half of risk 2 and turns this from a toolchain
       question into a source one. }
-    Volume := UserVols;                              { 075e..0772            }
+    Volume := UserVols;                              { 0870..0884            }
+
+      if Song.GetPatternSequence(SeqPlaying) >=
+         Song.Patterns.Count then                    { 0892..08bd            }
+      begin
+        Inc(NextSeq);                                { 08be..08c1            }
+        if NextSeq > MySongLen then                  { 08c2..08ca            }
+          NextNote := $FFFF                          { 08cb..08d0            }
+        else
+          NextNote := 1                              { 08d3..08d8            }
+      end
+    until Song.GetPatternSequence(SeqPlaying) <
+          Song.Patterns.Count;                       { 08d9..090a            }
+
+    { NEW IN v1.51 -- the wide ring learns where the song is. These are the two loose
+      bytes PublishWideRow later hands to CB+$1AD and CB+$1AE, and this is the writer
+      that says which is which. }
+    WideNoteRing[WideSlot] := NotePlaying;           { 090b..0919            }
+    WideSeqRing[WideSlot]  := SeqPlaying;            { 091a..0928            }
 
     { 0773..078d -- `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
       14b9. THAT UNIT IS A STUB -- see demovt/src/VTSONG.PAS -- but the call site
@@ -1676,6 +1718,16 @@ begin
                    NewNote);                          { 091f..0945            }
       MyMove(NewNote, Note[ChanIdx], SizeOf(TFullNote));  { 0946..0965         }
 
+      { NEW IN v1.51 -- A CHANGE OF INSTRUMENT MARKS THE CHANNEL IN THE WIDE RING,
+        and it is a narrower test than the retrigger below: only the instrument
+        number, not the period. 12ce:0b2a compares the channel's current instrument
+        against the new note's and sets the flag when they differ. }
+      if (NewNote.Instrument <> 0) and
+         (CurCanal^.Note.Instrument <> NewNote.Instrument) then  { 0b1c..0b2f    }
+        WideHit[WideSlot, ChanIdx] := 1;               { 0b30..0b40             }
+
+      NewSample := False;                              { 0b41..0b45             }
+
       { 0966..098e -- DOES THIS ROW RETRIGGER THE CHANNEL? Two groups joined by
         `or`, each short-circuited, and the jump targets read straight off:
 
@@ -1703,7 +1755,8 @@ begin
           transcribed: the channel number as a Byte, the raw channel by
           reference, the descriptor by value. }
         SetNewSample(ChanIdx, RawChannels[ChanIdx],
-                     CurCanal^.Instrument, 0)          { 09c8..09e5            }
+                     CurCanal^.Instrument, 0);         { 0ba8..0bc5            }
+        NewSample := True                              { 0bc6..0bcb            }
       end;
 
       { 09e6..0a0e -- a new instrument also resets the channel's volume to that
@@ -1723,7 +1776,22 @@ begin
 
       { 0a38..0a4c -- hand the note to the effects unit. `CommandStart` is the
         release's name and the argument order is its own; see MODCOMMA.PAS. }
-      CommandStart(Song, CurCanal^, NewNote);        { 0a38..0a4c            }
+      CommandStart(Song, CurCanal^, NewNote);        { 0c18..0c2c            }
+
+      { NEW IN v1.51 -- THE SAMPLE IS HANDED OVER A SECOND TIME, and this is the far
+        end of the 9xx path. `CommandStart` has just run, so if the row carried a
+        sample-offset command `StartSampleOffs` has set `SOffs` and `SOffsVal` by
+        now; re-issuing the sample with the offset is what makes the effect audible.
+        `NewSample` is what stops it firing on a row that did not start a sample at
+        all -- the offset would then apply to a note already part-way through.
+
+        BOTH HALVES OF THIS FEATURE WERE MEASURED BEFORE EITHER WAS NAMED. 147d:0369
+        set the two fields, 12ce:04bb grew the parameter that carries the value, and
+        only 1.39b's own call site joined them up. }
+      if NewSample and CurCanal^.SOffs then          { 0c2d..0c3e            }
+        SetNewSample(ChanIdx, RawChannels[ChanIdx],
+                     CurCanal^.Instrument,
+                     CurCanal^.SOffsVal);            { 0c3f..0c60            }
 
       { 0a4d..0a57 -- and NOT `Tempo := CurSpeed`, which is what the enclosing
         `with` would give. The original reloads the pointer from DS:$02dc, so the
