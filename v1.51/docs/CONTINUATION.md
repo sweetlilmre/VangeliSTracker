@@ -77,7 +77,37 @@ The *not found* is the useful half. 6.0 and 6.01 are not separable this way — 
 
 v1.31b's table is at `DS:$03c4`, is eight bytes, and holds exactly entries [1] and [4]. So v1.51 inserts two loaders between them, and this is the order `TSong.Load` tries them in.
 
-**`15d0` is the Scream Tracker 2 (`.STM`) loader.** Its entry at `15d0:0764` sets `FileFormat := $0b`, then compares eight bytes at file offset `+$14` against `DS:$0460`, which holds `'!Scream!'` — the STM signature at exactly that offset. **`1664` is therefore the `.S3M` loader**, and `DS:$0468`/`$046c` hold `'SCRM'` and `'SCRS'`, which are S3M's module and sample magics. Neither is transcribed yet.
+**`15d0` is the Scream Tracker 2 (`.STM`) loader and `1664` is the `.S3M` loader.** Both are read, both are in Ghidra, and neither is transcribed yet.
+
+### THE TWO LOADERS, AS READ
+
+`ref/vt1.51.bin` is imported into the Ghidra project under `v1.51/ghidra/` (untracked — it is a working artefact with locks in it; the findings belong here). **Ghidra's auto-analysis found ZERO functions on its own**, which is worth knowing before opening it: every entry point has to be created by hand, and the SongLoaders table is where the first four come from. What is named and saved so far:
+
+    15d0:0764  LoadSTMFileFormat          SongLoaders[3]
+    15d0:03db  ReadStmInstrumentHeaders
+    15d0:0581  ReadStmSampleData
+    15d0:0000  DecodeStmPatternEvents
+    1664:0a8b  LoadS3MFileFormat          SongLoaders[2]
+    1664:06cb  ReadS3mInstrumentBlocks
+    1664:002b  ReadS3mPatternBlocks
+    1664:0000  not yet read
+
+plus the shared helpers, named once because they appear in every decompile: `1d89:09f7 CopyArrayNoOverlapCheck`, `1d89:0fb2 RtlMoveWithOverlapCheck`, `1d89:0c05 ConvertCharArrayToString`, `1d89:0bc8 CompareStringsForEquality`, `1830:0000 ConvertAsciizToString`, and `153a:0352/0404/04b6` as `GetSongInstrument`/`GetSongTrack`/`GetSongPattern`.
+
+**Both follow `MODLOADE.PAS`'s shape exactly** — a recogniser that sets `FileFormat` before testing, three or four near-local helpers, and one far entry — so that file is the template rather than a reference.
+
+| | `.STM` (`15d0`) | `.S3M` (`1664`) |
+|---|---|---|
+| `FileFormat` | `$0b` | `$09` |
+| magic | `'!Scream!'` at `Header+$14`, `DS:$0460` | `'SCRM'` at `Header+$2c`, `DS:$0468` |
+| skips to | `Pos + $490` — 48 header + 31×32 instruments + 128 order | `Pos + $60` — the S3M header |
+| channels | fixed 4 | `$10`, then narrowed to what the patterns use |
+| tempo | `InitialBPM := 125`, tempo from `Header[$20] shr 4` | `Header[$31]` and `Header[$32]` |
+| volume | `Header[$22] shl 2`, `$40` clamped to `$3f` first | `Header[$30]*4 + 3`, same clamp |
+
+**`LoadS3MFileFormat` IS THE CONSUMER OF `ChannelPan`, and it is what confirms that field beyond argument.** For `i := 1 to 32` it reads the S3M channel setting at `Header+$3f+i` and writes `Song+$28+i` — that is `Song+$29..$48`, exactly the inserted range — with `$40` when bit 3 of the setting is clear and `$B0` when it is set. The same two values `DefaultChannelPan` tiles. A field inferred from a size, a VMT word and a copy instruction now has a reader that uses it for the thing its values say it is.
+
+**`DecodeStmPatternEvents` is where the real work is.** It converts STM effect codes to the player's own command set with a fifteen-way case — `1→$10`, `2→$0c`, `3→$0e`, `4→$0b`, `5→$03`, `6→$02`, `7→$04`, `8→$05`, `A→$01`, and anything else to `code + $24` — and looks the period up in `VTNOTES`'s table at `DS:$04bc`. So the STM unit `uses VTNotes`, which nothing else about it would have said.
 
 ---
 
@@ -116,7 +146,7 @@ The constant at `DS:$0440` is `40 B0 B0 40` repeated eight times — L-R-R-L pan
 
 ## WHERE TO PICK UP
 
-1. **The two loaders.** They gate the DGROUP layout, and the DGROUP layout gates most of what is still red. `vt1.51.bin` is imported into Ghidra with `LoadSTMFileFormat` at `15d0:0764` and `LoadS3MFileFormat` at `1664:0a8b` already created; Ghidra's auto-analysis found **zero** functions on its own, so every entry point has to be created by hand — the SongLoaders table and `rtl.py entries` are where they come from.
+1. **The two loaders.** They gate the DGROUP layout, and the DGROUP layout gates most of what is still red. Both are READ now (see above) and neither is WRITTEN. `MODLOADE.PAS` is the template. Start with `.STM` -- it is 1,100 bytes smaller, has four routines to S3M's four-or-more, and its pattern decoder is the only hard part.
 2. Then the eight units above, easiest first.
 3. `PLAYMOD` last, as in v1.31b.
 
