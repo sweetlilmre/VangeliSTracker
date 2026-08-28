@@ -6,7 +6,9 @@ Not "equivalent", not "same size". The same bytes.
 
 ## Where it stands
 
-The 55,056-byte load image is **byte-identical** to the original's. All 31 segments are transcribed, the segment order is the original's, both halves of DGROUP are laid out correctly, and all 27 linked code segments match. What is left is the *packed* file, which needs LZEXE 0.91 — see the risks section of the continuation doc.
+The 55,056-byte load image is **byte-identical** to the original's. All 31 segments are transcribed, the segment order is the original's, both halves of DGROUP are laid out correctly, and all 27 linked code segments match.
+
+**And so is the packed file, as of 28 August 2026.** `v1.31b/lzpack.py` is LZEXE 0.91's packer written out — its match rules measured against the original's own token stream rather than taken from a description — so the chain runs end to end with nothing left over: Pascal source → TPC 6.0 → `VTMAIN.EXE` → packed → **`NEUROSIS.008` itself, all 31,711 bytes, same MD5.** 31,335 of those bytes are computed here; the other 376 are LZEXE's own decompressor stub and the header fields around it, copied verbatim. The script is explicit about which is which.
 
 ## Read this first
 
@@ -38,6 +40,12 @@ Run everything **from this directory** — each script computes its root as its 
     python kit/tools/pascal/mapcmp.py v1.31b/link.toml           linked segment lengths
     python kit/tools/pascal/dgroup.py v1.31b/link.toml           the initialised data layout
     python kit/tools/pascal/coverage.py v1.31b/link.toml v1.31b/units.toml   how much is accounted for
+
+    python v1.31b/lzpack.py             pack, and compare against the shipped NEUROSIS.008
+    python v1.31b/lzpack.py --selftest  re-compress every LZ91 file in the tree -- 9 of 11 exact
+    python v1.31b/lzpack.py --tokens F  dump any LZEXE 0.91 file's token stream
+
+`lzpack.py` needs the **packed** original, which is not tracked here — only the unpacked image is. Point `VT_PACKED` at a copy of `NEUROSIS.008`, or pass `--packed FILE`.
 
 **EVERY MEASUREMENT SCRIPT IS THE KIT'S NOW, and none of them lives under `v1.31b/`.** They were archived under the `archive/pre-kit-scripts` tag in two waves — [psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36) took `build.py`, `asmcheck.py`, `linkcmp.py`, `blocks.py`, the four `blockXXXX.py` and `progcmp.py`; [psycho #50](https://github.com/sweetlilmre/PsychoNeurosis/issues/50) took `verify.py`, `omf.py`, `linkorder.py`, `mapcmp.py`, `dgroup.py`, `coverage.py` and `census.py` — each only once its kit successor had been measured to reproduce it. `verify.py` had been kept twice for its divergent-region diagnostics; those are `units.py --detail` and `--all` now. Renames: `verify.py`→`units.py`, `asmcheck.py`→`objcheck.py`, `census.py`→`survey.py`, `probe.py`→`codegen.py`, `progcmp.py`→`progseg.py`+`blockcmp.py`.
 
