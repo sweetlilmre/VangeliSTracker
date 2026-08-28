@@ -1659,7 +1659,9 @@ begin
       FillChar(Canales, SizeOf(Canales), 0);           { 07f3..0801            }
 
       { A silent note at period 800 in every channel. }
-      for NextIdx := 1 to 8 do                         { 0802..080d, 083e..0844 }
+      { `CMP [02fc],10h` in v1.51 against 1.31b's `CMP ..,08` -- the literal follows
+        the channel count, so it goes through the constant now. }
+      for NextIdx := 1 to MaxChannels do               { 09b7..09c2, 09f3..09f9 }
         with Canales[NextIdx] do
         begin
           Note.Period     := 800;                      { 081d..0825            }
@@ -1929,7 +1931,29 @@ end;
   -------------------------------------------------------------------------- }
 procedure SeqTick(var Song : TSong);
 begin
-  if IsDmaDevice and (TickSnapshot = Ticks) then     { 0c52..0c64            }
+  { **NEW IN v1.51: THE PRODUCER ADVANCES HERE, AND IT CAN REFUSE TO.** 1.31b had one
+    shared ring cursor and no way to run out of room; 1.51 splits the cursors and puts
+    the producer's advance at the top of the tick, guarded by the full test.
+
+    `(RingSlot + 1) mod RingRows` IS SIX INSTRUCTIONS BECAUSE 25 IS NOT A POWER OF
+    TWO. 12ce:0e78 is `MOV AX,[02e8] / INC AX / XOR DX,DX / MOV CX,19 / DIV CX /
+    XCHG AX,DX` -- Turbo Pascal's Word `mod`, with the remainder swapped out of DX.
+    Then `CMP AX,[02ea] / JNZ +3 / JMP exit`: if the next row is the one the consumer
+    is still on, the ring is full and the whole tick is abandoned.
+
+    ABANDONING THE TICK IS THE POINT. The rest of this routine is what advances the
+    song, so declining to run it is how the sequencer waits for the mixer -- back
+    pressure, not a dropped event. }
+  if UsingGUS then                                 { 0e70..0e77            }
+  begin
+    if (RingSlot + 1) mod RingRows = FlushSlot then { 0e78..0e8c            }
+      Exit;
+    Inc(RingSlot);                                 { 0e8d..0e90            }
+    if RingSlot > RingRows - 1 then                { 0e91..0e97            }
+      Dec(RingSlot, RingRows)                      { 0e98..0e9c            }
+  end;
+
+  if IsDmaDevice and (TickSnapshot = Ticks) then     { 0e9d..0eaf            }
     Exit;
   Inc(TickSnapshot);                                 { 0c65..0c68            }
 
@@ -1940,17 +1964,27 @@ begin
       Exit                                           { 0c86                  }
   end;
 
-  if UsingGUS then                                 { 0c89..0c8f            }
-    FlushEventRow;                                   { 0c90..0c92            }
-  AdvanceEventRow;                                   { 0c93..0c95            }
+  { ~~if UsingGUS then FlushEventRow~~ -- **GONE IN v1.51, AND DEVGUS IS WHY.** The
+    consumer now runs from the timer interrupt: 106e:0019 is `CALLF FlushEventRow`,
+    so draining the ring is no longer the sequencer's job. What replaces the call
+    here is the wide ring's own advance, which IS the sequencer's. 12ce:0ed4 and 0ed7
+    are two bare near CALLs with nothing between them. }
+  AdvanceEventRow;                                   { 0ed4..0ed6            }
+  PublishWideRow;                                    { 0ed7..0ed9            }
 
-  Inc(TickCount);                                    { 0c96..0c99            }
+  Inc(TickCount);                                    { 0eda..0edd            }
 
   { 0c9a..0ca3 -- a 32-bit counter INSIDE the published control block, at
     CtrlBlock + $125, immediately after the dispatch pointer. Together with the
     per-channel counters 12ba:0187 bumps, that is live state any INT 2Fh client
     can read. Psycho Neurosis never does. }
-  Inc(CtrlBlock.Ticks32);                            { 0c9a..0ca3            }
+  Inc(CtrlBlock.Ticks32);                            { 0ede..0ee7            }
+
+  { **MOVED UP IN v1.51** -- 1.31b assigns this 170 bytes further down, immediately
+    before the hand-written loop that reads it. Nothing between the two positions
+    touches it, so the move changes no behaviour and it is transcribed where the
+    original puts it. }
+  TickChans := Song.NumChannels;                     { 0ee8..0ef1            }
 
   { 0ca4..0cf6 -- THE TEMPO ENGINE, and it divides nothing per row. `TempoAccum`
     is a running fractional accumulator, `CurTempo` the amount added each tick and
@@ -2019,7 +2053,6 @@ begin
     ChangeSamplingRate(DesiredHz)                    { 0d49..0d50            }
   end;
 
-  TickChans := Song.NumChannels;                           { 0d51..0d5a            }
   NullProcedure($FFFF, 0, 0);                        { 0d5b..0d63            }
 
   { 0d64..0d97 -- run every channel's effect for this tick, unless this is the
@@ -2043,7 +2076,12 @@ begin
       PUSH    CX                     { 0d7b                                   }
       MOV     AL, CL                 { 0d7c                                   }
       DEC     AL                     { 0d7e                                   }
-      MOV     BL, $26                { 0d80  the TCanal stride                }
+      { `$2E` IN v1.51 AND `$26` IN 1.31b -- the stride is SizeOf(TCanal), and the
+        record grew eight bytes when the retrigger, the sample offset and the S3M
+        volume fields went in. Written through SizeOf so the two cannot drift; the
+        original has the literal, and a literal is what a hand-written loop would
+        have, but a wrong literal here would silently index into the wrong channel. }
+      MOV     BL, $2E                { 0f8d  46 in v1.51, 38 in 1.31b         }
       MUL     BL                     { 0d82                                   }
       MOV     SI, OFFSET Canales     { 0d84                                   }
       ADD     SI, AX                 { 0d87                                   }
