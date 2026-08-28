@@ -91,6 +91,12 @@ uses
 type
   TStmFileInstrument = record
     Name      : array[1..14] of Char;  { StrASCIIZ over 14 at 15d0:0416      }
+    { TWO BYTES, AND WITHOUT THEM THE RECORD IS 30 AND EVERYTHING DOWNSTREAM
+      MOVES. `Len` is read at record offset $10, which is 16, and the name runs
+      to 13 -- so 14 and 15 are unaccounted for. Thirty bytes puts the order
+      table at $30 + 31*30 = $3d2, and that is exactly the immediate our build
+      emitted where the original has $410. }
+    Filler0   : Word;                  { +$0e                                }
     Len       : Word;                  { +$10  read at 15d0:0448            }
     LoopStart : Word;                  { +$12  read at 15d0:0465            }
     LoopEnd   : Word;                  { +$14  read at 15d0:0472            }
@@ -124,7 +130,13 @@ type
     Volume      : Byte;                 { +$22                                }
     Filler2     : array[1..13] of Byte; { +$23                                }
     Instruments : array[1..31] of TStmFileInstrument;   { +$30                }
-    PatternList : array[0..127] of Byte;                { +$410               }
+    { BASE ONE, AND THE DISPLACEMENT IS WHAT SAYS SO. The scan reads the table
+      with the immediate $40f where the table itself begins at $410. Turbo
+      Pascal folds an array's low bound into the address, so a base-1 array
+      indexed `[i]` addresses base-1+i -- and base-0 indexed `[i-1]` computes
+      base+(i-1) and emits $410. One byte, and it names the bounds; see the
+      wiki's `subscript-fold-names-the-bounds`. }
+    PatternList : array[1..128] of Byte;                { +$410               }
   end;
 
 { ---------------------------------------------------------------------------
@@ -519,29 +531,50 @@ begin
       above -- which is why this is a scan and not a `while`. }
     Song.SequenceLength := 0;
     for i := 1 to 128 do
-      if Stm.PatternList[i - 1] < 99 then
+      if Stm.PatternList[i] < 99 then
         Song.SequenceLength := i;
 
     Song.SequenceRepStart := 1;
 
     Move(Stm.PatternList, Song.PatternSequence^, Song.SequenceLength);
 
-    { NO `Len` LOCAL. A `for` limit that is not a constant is evaluated once
-      into a compiler temporary and read every iteration, which is
-      indistinguishable from a declared local -- declare one as well and the
-      frame carries both. See the wiki's `loop-limit-is-a-temporary`. }
-    if Song.SequenceLength <> 0 then
-      for i := 1 to Song.SequenceLength do
-        Inc(Song.PatternSequence^[i]);
+    { NO `Len` LOCAL AND NO ZERO GUARD, and the second is the subtler of the
+      two. A `for` limit that is not a constant is evaluated once into a
+      compiler temporary, and the loop's own entry test compares against it --
+      so `if Song.SequenceLength <> 0 then for i := 1 to Song.SequenceLength`
+      emits that test TWICE, and the surplus copy is eleven bytes:
+      `LES DI,[BP+0e] / CMP WORD ES:[DI+55],0 / JE +32`.
 
+      What made it look necessary was Ghidra rendering the loop as
+      `local_a = Song.SequenceLength; if (local_a != 0) then a for loop` -- but
+      `local_a` IS the limit temporary and the test IS the loop's. A decompiler
+      showing a guard is not evidence of a guard in the source. }
+    for i := 1 to Song.SequenceLength do
+      Inc(Song.PatternSequence^[i]);
+
+    { 08ae..093a -- A CHAIN OF GUARDS, NOT NESTED ifs, AND THE LAST ONE PROVES
+      IT. 0931 is `CMP ES:[DI+79],02 / JLE 093a / JMP 093a` -- both arms jump
+      to the same address, which is what an `Exit` guard compiles to when it is
+      the routine's LAST statement: the "skip" target and the exit target are
+      one place, and Turbo Pascal does not fold the jump away. A nested `if`
+      would have nothing to jump over and would emit no second jump at all.
+
+      Ghidra shows the two earlier tests as nesting and elides this one
+      entirely, because to a decompiler both arms going to the same block is
+      dead code. The bytes disagree, and the bytes are the measurement.
+
+      THE THRESHOLDS DIFFER, AND THEY ARE READ RATHER THAN ASSUMED: `> msOk`
+      after each of the first two, `> msFileTooShort` after the last. That is
+      the same pair MODLOADE's LoadMod uses, which is where the v1.31b tree
+      established that this field is a SIGNED byte. }
     ProcessInstruments(Song, St, Stm);
+    if Song.Status > msOk then Exit;
 
-    if Song.Status <= msOk then
-      begin
-        ProcessPatterns(Song, St, Stm.NumPatterns);
-        if Song.Status <= msOk then
-          LoadSamples(Song, St)
-      end
+    ProcessPatterns(Song, St, Stm.NumPatterns);
+    if Song.Status > msOk then Exit;
+
+    LoadSamples(Song, St);
+    if Song.Status > msFileTooShort then Exit
 end;
 
 end.
