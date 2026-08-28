@@ -387,11 +387,22 @@ begin
             Move(Instr^.Instr^, Instrument, SizeOf(Instrument));
             Instr^.FreeContents;
 
-            { 05ed..0634.  GetPos is stored, GetSize is fetched and the
-              stored value subtracted from it, and the difference goes back to
-              the same slot -- so the subtraction has a NAMED destination and
-              is read twice, which an inline expression would not be. }
-            Avail := St.GetSize - St.GetPos;
+            { 05ed..0614 -- TWO STATEMENTS, AND `Avail` IS ITS OWN
+              ACCUMULATOR. The original calls GetPos and stores the result
+              straight into the local, then calls GetSize and subtracts the
+              local from it in place:
+
+                05f8  MOV [BP-28],AX / MOV [BP-26],DX     Avail := GetPos
+                0609  SUB AX,[BP-28] / SBB DX,[BP-26]     GetSize - Avail
+                060f  MOV [BP-28],AX / MOV [BP-26],DX     Avail := that
+
+              Written as the single expression `St.GetSize - St.GetPos` it is
+              six bytes longer and starts `PUSH DX / PUSH AX`: Borland
+              evaluates the right operand first and has nowhere to put it but
+              the stack, because the destination is not free yet. Same value,
+              different code. }
+            Avail := St.GetPos;
+            Avail := St.GetSize - Avail;
 
             if Instrument.Len > Avail then
               begin
@@ -400,7 +411,11 @@ begin
               end;
 
             if Instrument.Len > 0 then
-              if Instrument.Len < $FFF1 then
+              { $FFF0 WITH `<=`, NOT $FFF1 WITH `<`. The two are the same
+                set of values and they are not the same instruction: 0657 is
+                `CMP [BP-20],F0 / JA`, and `< $FFF1` emits `CMP ...,F1 / JAE`.
+                One byte of immediate and one of opcode. }
+              if Instrument.Len <= $FFF0 then
                 begin
                   FullHeap.HGetMem(Pointer(Instrument.Data), Instrument.Len);
                   if Instrument.Data = nil then
@@ -420,12 +435,17 @@ begin
                   FullHeap.HGetMem(Pointer(Instrument.Data), $FFF0);
                   FullHeap.HGetMem(Pointer(Instrument.Xtra),
                                    Instrument.Len - $FFF0);
-                  if Instrument.Data = nil then
-                    begin
-                      Song.Status := msOutOfMemory;
-                      Exit
-                    end;
-                  if Instrument.Xtra = nil then
+                  { ONE `if`, NOT TWO, AND THE SHARED JUMP TARGET IS WHY.
+                    Both nil tests branch to the SAME address in the original
+                    -- Ghidra names it LAB_15d0_06ea and sends both there --
+                    so there is one copy of the failure block, not one per
+                    test. Written as two statements it is ten bytes longer:
+                    a second `MOV ES:[DI+79],04` and its jump.
+
+                    The build has complete boolean evaluation OFF, so `or`
+                    short-circuits and the two tests stay separate
+                    comparisons rather than a combined boolean. }
+                  if (Instrument.Data = nil) or (Instrument.Xtra = nil) then
                     begin
                       Song.Status := msOutOfMemory;
                       Exit
