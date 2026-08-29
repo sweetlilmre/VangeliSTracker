@@ -497,7 +497,7 @@ const
   { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
     A separate `TickSpan` was declared for the tempo loop's span last commit and it
     put this unit's block four bytes over; the original has only six bytes between
-    Fill032C and StepVal, not eight. The same address serves both: 12ce:0f2f stores
+    `NoteHzFreq` and `StepVal`, not eight. The same address serves both: 12ce:0f2f stores
     the span into [0330] and 12ce:11b1 reads [0330] as the channel index in the
     volume pass. The first use is finished before the second begins.
 
