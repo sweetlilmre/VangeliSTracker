@@ -522,9 +522,27 @@ const
   mcLast                   = 35; { 142f:063f guards with mcLast*2 = 46h }
 
   { +$59. TSongStatus. }
+  { **AND THE COMPARISON THIS TREE MEASURED IS THE RELEASE'S OWN BOUNDARY.**
+    154d tests `Song.Status > msFileTooShort`, which was read from the bytes and
+    said nothing about what the boundary MEANT. The release's source groups these
+    same codes under two headings: "[1.39b] Non fatal states" over 1 and 2, and
+    "[1.39b] Fatal states" over 3 to 6.
+
+    Those are the same line. A status above msFileTooShort is a fatal one, and
+    the test in the code is asking exactly that question.
+
+    Neither source says it alone. The comparison is a measurement with no
+    meaning attached; the headings are a meaning with no code attached. Put
+    together they name the boundary and explain the test.
+
+    AND STATUS 2 BEING NON-FATAL IS A FACT ABOUT THE WORLD. The release calls it
+    "[1.39b] End of file premature (lot's of modules have this)" -- common enough
+    in modules of the day that the author expected it and played the file anyway.
+    Nothing in any image could have said that. }
   msNotLoaded              = 0;  { 164b:0044 -- the initial state       }
   msOK                     = 1;  { 154d:09d7                            }
-  msFileTooShort           = 2;  { 154d:00c9 -- premature end of file   }
+  msFileTooShort           = 2;  { 154d:00c9 -- premature end of file, and
+                                   the last of the non-fatal codes       }
   msFileOpenError          = 3;  { not seen stored yet                  }
   msOutOfMemory            = 4;  { 154d:004a, 154d:0490                 }
   msFileDamaged            = 5;  { 154d:09d7                            }
