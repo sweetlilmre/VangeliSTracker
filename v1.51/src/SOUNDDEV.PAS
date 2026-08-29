@@ -416,24 +416,29 @@ var
     the release's own form, `OFFSET DevStack + DevStkSize`. }
   DevStack          : array[1..DevStkSize] of Byte;
 
-  { **A THOUSAND BYTES ABOVE THE STACK, AND STILL UNNAMED** -- but the size and
-    the position are now measured rather than left over. It is `DevStkSize`
-    exactly, it sits between the stack's top and `SavedSS`, and 1.31b has the same
-    thousand bytes in the same place.
+  { **THE SECOND STACK, AND DEVGUS IS WHAT NAMES IT.** 106e:0040 is
+    `MOV SP,OFFSET SoundDevices.SavedSS` -- SP set to $665c, with SS already
+    pointing at DGROUP two instructions earlier. A stack grows DOWNWARDS, so that
+    switch runs on the thousand bytes below $665c: $6274..$665b, which is exactly
+    this block.
 
-    NOTHING IN EITHER IMAGE READS THEM. This reconstruction is byte-identical and
-    its source names this block nowhere, so no instruction in the original names
-    it either. The release declares `DevStack`, `DevSS` and `DevSP` with nothing
-    between, so it is not the release's.
+    **IT WAS INVISIBLE BECAUSE THE CODE NEVER USES ITS OWN ADDRESS.** Every
+    instrument here asks the same question -- what reads or writes these bytes --
+    and the answer really is nothing. No instruction names $6274. The one
+    instruction that uses the block names the address ABOVE it, `SavedSS`, and
+    lets the hardware walk down. A search for a block's own address cannot find a
+    block that is only ever addressed by its neighbour.
 
-    A THOUSAND BYTES THE SIZE OF THE STACK, DIRECTLY ABOVE THE STACK, is a shape
-    worth stating plainly: it is what a SECOND stack of the same size looks like.
-    v1.51 gave the poll its own re-entrancy guard -- DevGus's `PollBusy`, new in
-    this version, exists because the poll and the handler now run at different
-    times -- and two routines that can be in flight together need two stacks. The
-    shape fits and no instruction confirms it, so it is written here as the
-    reading to test rather than as a finding. }
-  Fill6274          : array[1..DevStkSize] of Byte;
+    TWO POLLS, TWO STACKS, TWO GUARDS, and v1.51 is where the second of each
+    appears. SoundDevices switches to `DevStack` at 1bff:102b behind `Busy`;
+    DevGus switches to this one at 106e:0040 behind `PollBusy`, which is new in
+    this version. Both save the caller's SS:SP into the same `SavedSS`/`SavedSP`
+    pair, which is safe only because the two guards stop them from nesting -- and
+    that is why the poll needed a guard of its own once it acquired a body.
+
+    THE SIZE IS THE SAME `DevStkSize`, and the arithmetic closes with nothing
+    over: $5e8c + 1000 is $6274, $6274 + 1000 is $665c, and $665c is `SavedSS`. }
+  PollStack         : array[1..DevStkSize] of Byte;
 
   { $4302/$4304 -- the caller's stack, saved across the poll, because the poll
     switches to the stack above. The release calls them `DevSS` and `DevSP`. }

@@ -246,8 +246,12 @@ begin
   MOV  SoundDevices.SavedSS, SS { 106e:0034  keep the caller's stack     }
   MOV  SoundDevices.SavedSP, SP { 106e:0038                              }
   MOV  DX, DS         { 106e:003c                                        }
+  { **THE STACK THIS SWITCHES TO IS `SoundDevices.PollStack`**, and the operand
+    below is why nothing could find it: SP is loaded with the address of `SavedSS`,
+    the variable ABOVE the block, and the stack then grows down through it. The
+    block's own address appears in no instruction anywhere in the image. }
   MOV  SS, DX         { 106e:003e  ours lives in the data segment        }
-  MOV  SP, OFFSET SoundDevices.SavedSS  { 106e:0040                      }
+  MOV  SP, OFFSET SoundDevices.SavedSS  { 106e:0040  the top of PollStack }
   CALL DWORD PTR SoundDevices.PeriodicProc { 106e:0043                   }
   MOV  SS, SoundDevices.SavedSS { 106e:0047                              }
   MOV  SP, SoundDevices.SavedSP { 106e:004b                              }
