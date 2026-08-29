@@ -839,7 +839,7 @@ begin
       0187 is the with-slot and this routine declares NO local at all. }
     with NoteRing[EventSlot, EventChan] do              { 01b3..01ca             }
       if Note <> 0 then                             { 01cb..01d4             }
-        Inc(CtrlBlock.Filler1[Chan])                { 01d5..01e2             }
+        Inc(CtrlBlock.Semaphores[Chan])                { 01d5..01e2             }
   end;
 
   FillChar(NoteRing[EventSlot], SizeOf(TRingRow), 0)    { 01ea..01ff             }
