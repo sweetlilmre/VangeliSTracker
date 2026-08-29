@@ -90,7 +90,7 @@ function GetDOSCmdLine : TCmdLine;
 implementation
 
 { --------------------------------------------------------------------------
-  116e:0002 -- ParseLine. Split a line into tokens and dispatch each one.
+ParseLine. Split a line into tokens and dispatch each one.
 
   THREE KINDS OF TOKEN, distinguished by the first character: `/` or `-` is a switch,
   `@` names another file to read, anything else is a bare argument. The `@` case is
@@ -150,7 +150,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:01b8 -- ParseFile. Read a file a line at a time and hand each to ParseLine.
+ParseFile. Read a file a line at a time and hand each to ParseLine.
 
   `FSplit(FExpand(FName), FileDir, Name, Ext)` KEEPS THE DIRECTORY IN A FIELD and
   throws the name and extension away -- `FileDir` is what a nested `@file` would be
@@ -210,7 +210,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:02dd -- GetToken. Take the next token from `Line`, advancing `Idx`.
+GetToken. Take the next token from `Line`, advancing `Idx`.
 
   IT BUILDS THE RESULT IN PLACE, one character at a time, rewriting the length byte on
   every iteration -- `GetToken[0] := Chr(i - Idx + 1)`. A Pascal function returning a
@@ -248,7 +248,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:03a9 -- CmpSwitch. Does `Token` begin with `Switch`, ignoring case -- and if so,
+CmpSwitch. Does `Token` begin with `Switch`, ignoring case -- and if so,
   CONSUME the switch and leave the parameter behind in `Token`.
 
   IT IS A TEST THAT MUTATES ITS ARGUMENT, which is why every caller in `109c` reads

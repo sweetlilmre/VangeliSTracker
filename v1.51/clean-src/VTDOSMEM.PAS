@@ -80,7 +80,7 @@ function  UMBLink(State : Byte) : Byte; far;
 implementation
 
 { --------------------------------------------------------------------------
-  1880:0000 -- ask DOS for Size bytes, settle for less rather than fail.
+ask DOS for Size bytes, settle for less rather than fail.
 
   Compiler output with an assembler middle, and it has to be that shape: the
   frame is `ENTER 6,0` with a Word local at [BP-6], the two conversions are
@@ -130,7 +130,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1880:005a -- give a block back.
+give a block back.
 
   HAND ASSEMBLER, verbatim: INT 21h $49 wants the block's segment in ES, and
   Pascal cannot load a segment register.
@@ -157,7 +157,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1880:0077 -- read the UMB link state, set a new one, return the old.
+read the UMB link state, set a new one, return the old.
 
   HAND ASSEMBLER, verbatim. Two DOS calls with the first one's answer carried
   across the second on the stack.

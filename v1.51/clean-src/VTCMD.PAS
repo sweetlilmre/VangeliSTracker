@@ -197,7 +197,7 @@ uses
   =========================================================================== }
 
 { --------------------------------------------------------------------------
-  109c:0000 -- SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
+SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
   bytes, and every one of them accounted for:
 
       0003  MOV DI,0882 / PUSH DS / PUSH DI     DevID -- DS:$0882, agreeing with 11bb
@@ -245,7 +245,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0048 -- DoAllMODs. Find every module matching a pattern, across a list of
+DoAllMODs. Find every module matching a pattern, across a list of
   directories and a list of extensions, and hand each to a caller-supplied procedure.
 
   IT IS NEAR, not far -- it is not in the interface -- and `RET 12` is its signature:
@@ -417,7 +417,7 @@ end;
 
 
 { ===========================================================================
-  109c:03fb .. 109c:0720 -- SIXTEEN NEAR PROCEDURES, one per switch action.
+SIXTEEN NEAR PROCEDURES, one per switch action.
 
   THE ORDER IS THE ORIGINAL'S, NOT THE RELEASE'S, and it was read off the near-call
   targets rather than guessed: each CmpSwitch branch in `InterpretSwitch` calls exactly
@@ -580,7 +580,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0611 .. 109c:0641 -- THE FOUR BOOLEAN SWITCHES, and `RET 2` is their signature:
+THE FOUR BOOLEAN SWITCHES, and `RET 2` is their signature:
   one Byte-sized parameter in a word of stack, no frame beyond `PUSH BP`.
 
   EACH IS CALLED FROM TWO BRANCHES, once with False and once with True, which is what
@@ -662,7 +662,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0724 -- DoSongColl. Play everything the command line collected.
+DoSongColl. Play everything the command line collected.
 
   FAR, because it is in the interface, and `ENTER $056` is 80 bytes of `Path` copy plus
   six of locals. `SongColl` is filled by `TVTCmd.InterpretNoSwitch`, one entry per bare
@@ -770,7 +770,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:07e1 -- CmdInitShell. `sh` names a program to run, and everything after it on the
+CmdInitShell. `sh` names a program to run, and everything after it on the
   line is that program's arguments.
 
   **`Copy(Line, Idx, 255)` IS THE POINT OF THE WHOLE THING.** `Line` and `Idx` are
@@ -815,7 +815,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0890 -- InterpretSwitch, the switch table itself. `ENTER $180` is the 128-byte
+InterpretSwitch, the switch table itself. `ENTER $180` is the 128-byte
   `Token` copy plus a 256-byte temporary for the `TokenParam` results.
 
   TWENTY-ONE BRANCHES IN ONE `ELSE IF` CHAIN, in the order the constants appear at

@@ -181,7 +181,7 @@ var
 
 
 { --------------------------------------------------------------------------
-  11bb:0020 -- KillSpaces. Strip blanks from both ends of a string, in place.
+KillSpaces. Strip blanks from both ends of a string, in place.
 
   TWO `while`s AND NOT ONE, and they are not symmetrical: the leading blanks are
   removed by COPYING the string down (`S := Copy(S, 2, 255)`, which costs a 256-byte
@@ -244,7 +244,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  11bb:0097 -- NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
+NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
   regard to case. The awkward name and the inverted sense are the release's; every
   caller writes `NOT NotInStr(...)`, which is how GetBool tests eleven spellings of
   "true" in four languages.
@@ -279,7 +279,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0131 -- GetString. Take everything after the `=` on the current line and
+GetString. Take everything after the `=` on the current line and
   return it as a string, honouring quotes and stripping comments. 786 bytes, the
   largest routine in the segment, and almost all of it is Pascal string handling.
 
@@ -415,7 +415,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:05a9 -- GetPath. GetString, then expand the result against the current
+GetPath. GetString, then expand the result against the current
   directory so a relative path in the config file means what the user expects.
 
   `SizeOf(P) - 1` IS 79 HERE AND 255 IN GetBool, because P is a `PathStr` --
@@ -433,7 +433,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:05f2 -- GetNum. Read a number, and it accepts two forms.
+GetNum. Read a number, and it accepts two forms.
 
   THE ORDINARY FORM is a decimal or (via `Val`) a `$`-prefixed hex literal, taken
   from after the `=` and stopped at the first comment character exactly as GetString
@@ -602,7 +602,7 @@ begin
   if not NotInStr(Line, 'FilterOn'    ) then GetByte(Byte(FilterOn));
   if not NotInStr(Line, 'FilterOff'   ) then GetByte(Byte(FilterOff));
   { QUALIFIED ON PURPOSE. PlayMod now exports a `FilterIsOn` of its own at
-    DS:$02cd -- its address forced it into that unit's interface -- and this unit
+its address forced it into that unit's interface -- and this unit
     uses both, so a bare reference would bind to whichever `uses` entry comes
     last. 11bb:0b0e writes $0348, which is ModCommands'. }
   if not NotInStr(Line, 'FilterIsOn'  ) then GetBool(ModCommands.FilterIsOn);
@@ -633,7 +633,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0da0 -- DoSectGeneric. Read lines until the next `[` and hand each one to the
+DoSectGeneric. Read lines until the next `[` and hand each one to the
   handler for the section we are inside. One routine drives all seven.
 
   THE HANDLER ARRIVES AS AN OFFSET, NOT A POINTER, and that is why the `asm` block
@@ -697,7 +697,7 @@ const
 
 
 { --------------------------------------------------------------------------
-  11bb:0e0b -- FindNextSect. Skip forward to the next line that starts with `[`,
+FindNextSect. Skip forward to the next line that starts with `[`,
   leaving it in `Line` for the caller to identify.
   -------------------------------------------------------------------------- }
 procedure FindNextSect;
@@ -712,7 +712,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  11bb:0e4f -- ReadConfiguration. The only routine this unit publishes: open the
+ReadConfiguration. The only routine this unit publishes: open the
   file, then alternate between finding a section header and running its handler.
 
   `FileMode` IS SAVED, FORCED TO 0 AND RESTORED around the `Reset`, which is how you
@@ -772,7 +772,7 @@ end;
 
 
 { ==========================================================================
-  11bb:0f2e -- THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
+THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
 
   `11bb:0f1f..0f2d` IS ITS DATA: three literals, `02 'VT'`, `06 'VT.CFG'` and
   `04 '.CFG'`, which are exactly the three the release's block uses.

@@ -58,7 +58,7 @@ implementation
 
   Note `MOV CL,4 / SHR BX,CL` rather than `SHR BX,4`. Shifting by an
   immediate greater than one is a 186 instruction, so this routine runs on an
-  8086 -- unlike 1544, whose filter kernels use `SAR AX,2` and do not. The
+unlike 1544, whose filter kernels use `SAR AX,2` and do not. The
   two were plainly written by different hands or at different times.
 
   The result of INT 21h is DISCARDED. Carry means the shrink failed, and

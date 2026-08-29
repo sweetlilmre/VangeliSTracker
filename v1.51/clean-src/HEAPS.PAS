@@ -205,7 +205,7 @@ procedure ShrinkSystemHeap(Size : LongInt);
 implementation
 
 { --------------------------------------------------------------------------
-  17cf:0000, 0052, 0081 -- THE THREE POINTER HELPERS, and all three are one-liners
+THE THREE POINTER HELPERS, and all three are one-liners
   that cost thirty to fifty bytes each because 8086 pointer arithmetic is 32-bit.
 
   A far pointer is a segment and an offset, and the same byte can be addressed many
@@ -281,7 +281,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf:00b5 -- InitUmbHeap. Claim every upper-memory block the provider will give
+InitUmbHeap. Claim every upper-memory block the provider will give
   and add each one to `UmbHeap`.
 
   THE LOOP TERMINATES ON A FAILED ALLOCATION, not on a count. `New(UMB, Init)` always
@@ -309,7 +309,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf:010c -- ChangeSystemHeap. Move Turbo Pascal's OWN heap boundary, clamped at
+ChangeSystemHeap. Move Turbo Pascal's OWN heap boundary, clamped at
   both ends, and then let `Heap` take whatever that freed.
 
   IT IS CLAMPED IN LINEAR SPACE, WHICH IS WHY LinealPtr EXISTS. The floor is however
@@ -339,7 +339,7 @@ end;
   the second is what makes this different from ChangeSystemHeap: `SetMemTop` is
   irreversible in a way that moving HeapEnd is not. }
 { --------------------------------------------------------------------------
-  17cf:01d3 -- ShrinkSystemHeap. Move the boundary and then give the memory back to
+ShrinkSystemHeap. Move the boundary and then give the memory back to
   DOS, which is the irreversible half.
 
   IT IS THE RELEASE'S `SetMemTop(HeapEnd)` AFTER ALL, AND FINDING THAT CORRECTED
@@ -383,7 +383,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  17cf:01f1 -- THeap.Init. Build a heap inside a caller-supplied buffer.
+THeap.Init. Build a heap inside a caller-supplied buffer.
 
   IT ROUNDS THE BUFFER UP TO A PARAGRAPH AND THE END DOWN TO ONE, which is what makes
   every pointer in the heap normalisable: `HHeapEnd := Ptr(Seg(HHeapEnd^), 0)` throws
@@ -433,7 +433,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf -- THeap.HGetMem and HFreeMem, and the pair around them.
+THeap.HGetMem and HFreeMem, and the pair around them.
 
   EVERY ONE OF THE FIVE MEMORY OPERATIONS IS WRAPPED IN BeginOperation/EndOperation,
   and the call counts prove it before a byte is read: `CALLF [DI+24]` appears FIVE
@@ -495,7 +495,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf -- the four-pointer swap, in both directions, and the guard around it.
+the four-pointer swap, in both directions, and the guard around it.
 
   THE CALL COUNTS CONFIRM `EndOperation`'s TWO BRANCHES. TransferFromSystem is called
   FOUR times in the segment and TransferToSystem TWICE, and the release accounts for
@@ -581,7 +581,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  17cf:0698 -- TUmbHeap.Init. Ask for an upper-memory block and build a heap in it.
+TUmbHeap.Init. Ask for an upper-memory block and build a heap in it.
 
   `UMBAllocate(Buf, 1000000)` ASKS FOR A MEGABYTE AND TAKES WHAT IT GETS. Upper memory
   comes in whatever blocks the provider has left, so the request is deliberately
@@ -619,7 +619,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  17cf:071b -- THeapColl.Init. A heap made of other heaps: no buffer of its own, and
+THeapColl.Init. A heap made of other heaps: no buffer of its own, and
   a TCollection to keep the members in.
 
   `EmptyInit` RATHER THAN `Init`, which is the point of having two constructors. A
@@ -638,7 +638,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf -- THeapColl.Done, and the NESTED PROCEDURE is why the segment has more
+THeapColl.Done, and the NESTED PROCEDURE is why the segment has more
   frames than the release has routines.
 
   `HeapColl.ForEach(@DoFree)` TAKES THE ADDRESS OF A LOCAL PROCEDURE, so `DoFree` is
@@ -685,7 +685,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  17cf -- THeapColl's SIX DELEGATING METHODS, and every one is the same shape: a
+THeapColl's SIX DELEGATING METHODS, and every one is the same shape: a
   nested `far` procedure handed to `HeapColl.ForEach` or `.FirstThat`.
 
   THE CLOSURES READ THE ENCLOSING FRAME, which is what makes this work at all. `Get`
@@ -828,7 +828,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf -- the two unit-level initialisers, which is where the heaps get wired
+the two unit-level initialisers, which is where the heaps get wired
   together.
 
   `FullHeap` ENDS UP CONTAINING `UmbHeap` AND `Heap`, in that order, and the order is

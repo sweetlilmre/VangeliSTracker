@@ -62,7 +62,7 @@ var
   SavedExit : Pointer;   {the ExitProc we displaced            }
 
 { --------------------------------------------------------------------------
-  1b54:0000 -- the chain to the previous INT 2Fh handler.
+the chain to the previous INT 2Fh handler.
 
   HAND ASSEMBLER, and it must be: like the timer chain in the program itself,
   this is a five-byte JMP FAR whose OPERAND is the storage. Install patches
@@ -83,7 +83,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b54:0006 -- the INT 2Fh handler.
+the INT 2Fh handler.
 
   HAND ASSEMBLER, verbatim. Pascal cannot express it: it must not touch a
   single register it has not been asked about, it answers in AX/BX/CX/ES/DI
@@ -130,7 +130,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b54:002f -- the ExitProc. Put INT 2Fh back and hand the exit chain on.
+the ExitProc. Put INT 2Fh back and hand the exit chain on.
 
   The old vector is read out of the JMP FAR's own operand bytes, +1 and +3.
   -------------------------------------------------------------------------- }
@@ -152,7 +152,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1b54:0088 -- go resident.
+go resident.
 
   RETF 8: Name at [BP+$0a], Block at [BP+6]. The program calls it as
   Install('DemoVT v1.31 (beta)', @CtrlBlock).

@@ -546,7 +546,7 @@ const
 
 { THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
   the declarations they described are in the block above.
-  DS:$02ca -- the release's `CanFallBack`, "TRUE if fall-back is allowed", and a
+the release's `CanFallBack`, "TRUE if fall-back is allowed", and a
   TYPED constant there as it must be here: 12ba:1325 reads it with `MOV AL,[02ca]`
   and an untyped constant would have folded to an immediate. It is the client's
   standing permission; `MyCanFallBack` at $121e is the working copy PlayStart
@@ -955,7 +955,7 @@ function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         Silent : Boolean) : Word; external;
 
 { --------------------------------------------------------------------------
-  12ba:0000 -- takes six bytes of arguments and does nothing with them.
+takes six bytes of arguments and does nothing with them.
 
   `PUSH BP / MOV BP,SP / LEAVE / RET 6`, and the RET is NEAR, so this is not a
   procedural-type slot: a `TTickProc` is far. It is the same do-nothing shape as
@@ -973,7 +973,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0007 -- UnCanal. Mix one channel into its own buffer.
+UnCanal. Mix one channel into its own buffer.
 
   `Rest` doubles as the argument and the result: the kernel is told how many
   samples are still owed and reports how many are STILL owed after it ran, so
@@ -1020,7 +1020,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0187 -- step the event ring on by one row and tally what is in it.
+step the event ring on by one row and tally what is in it.
 
   A NEAR procedure taking nothing, with one Pointer local at [BP-4].
 
@@ -1091,7 +1091,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ce:0202 -- THE WIDE ROW, NEW IN v1.51, and it is the 8-channel ring above it
+THE WIDE ROW, NEW IN v1.51, and it is the 8-channel ring above it
   done again for thirty-two.
 
   IT IS A SECOND RING AND NOT A REPLACEMENT. 0183 and 0202 sit back to back and
@@ -1156,7 +1156,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  12ba:0202 -- fill one slot of the GUS event ring.
+fill one slot of the GUS event ring.
 
   Near, `RET $14`, and the seven arguments are `TriggerVoice`'s own list minus
   its `Voice`, which is used here to index the row rather than being stored.
@@ -1188,7 +1188,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0275 -- post a voice event, merging into whatever is already there.
+post a voice event, merging into whatever is already there.
 
   Near, `RET 8`, the same `with` on the same slot as 12ba:0202 -- but only the
   first four of the event's fields, so a merge never touches the three sample
@@ -1233,7 +1233,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:02ea -- advance the event ring by one row, apply it, wipe it.
+advance the event ring by one row, apply it, wipe it.
 
   Near, no arguments. Advance, apply, then wipe -- so a row is always clean by
   the time the ring comes round to it again, which is exactly why 12ba:0275's
@@ -1269,7 +1269,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:03cc -- a sample descriptor into GUS voice control. NOT TRANSCRIBED.
+a sample descriptor into GUS voice control. NOT TRANSCRIBED.
 
   664 bytes, the largest routine in the segment so far, and docs/04-units.md
   covers only its first three statements. What IS established:
@@ -2025,7 +2025,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0b29 -- the software mixing path, once per tick. IN PROGRESS.
+the software mixing path, once per tick. IN PROGRESS.
 
   This is what drives `UnCanal` and the filters, per channel, and it is the
   other half of the unit: 12ba holds two independent output paths and the driver
@@ -2550,7 +2550,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:1008 -- ProcessTickEntry. FAR, and the release exports it under that name.
+ProcessTickEntry. FAR, and the release exports it under that name.
 
   The whole tick, from the outside: unless execution is suppressed, either run the
   sequencer or -- if nothing is playing -- park the tick counter at 1, and then
@@ -2617,7 +2617,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:10a1 -- start playing a module. IN PROGRESS.
+start playing a module. IN PROGRESS.
 
   `CLI`-guarded from its first instruction to each of its exits, because it
   rewrites the state the timer handler reads. The release exports the equivalent as

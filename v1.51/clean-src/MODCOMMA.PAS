@@ -346,7 +346,7 @@ procedure TickVolSlide; forward;
 
 
 { --------------------------------------------------------------------------
-  142f:0000 -- command 0, ARPEGGIO. Precompute the three periods it rotates
+command 0, ARPEGGIO. Precompute the three periods it rotates
   through; TickArpeggio just cycles them.
 
   THE TWO TABLE LOOKUPS ARE THE WHOLE ROUTINE, and they are why 1650 exists:
@@ -485,7 +485,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:00cc -- commands 1 and 2, TONE PORTAMENTO up and down. A non-zero
+commands 1 and 2, TONE PORTAMENTO up and down. A non-zero
   parameter sets the step; a zero parameter means "the same as last time", and if
   the channel was in FINE portamento it is redirected to the fine version instead
   -- which is why the command byte is rewritten before the call.
@@ -595,7 +595,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0240 -- note portamento, per tick. Step towards the target and stop when
+note portamento, per tick. Step towards the target and stop when
   it is reached, in either direction.
 
   IT IS THE RELEASE'S BODY INSTRUCTION FOR INSTRUCTION, which is the closest
@@ -639,7 +639,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:0273 -- command 4, VIBRATO. Set the width and the depth from the two
+command 4, VIBRATO. Set the width and the depth from the two
   nibbles, and reset the position if the note is a new one.
 
   IT CONFIRMS FOUR MORE `TCanal` FIELDS, all of which had been carried as
@@ -680,7 +680,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0307 -- vibrato, per tick. The release's body instruction for instruction,
+vibrato, per tick. The release's body instruction for instruction,
   including the sine table, and it is assembler for a reason worth reading.
 
   THREE WAVEFORMS SHARE ONE PIECE OF ARITHMETIC. VibWave 0 is a SINE, looked up
@@ -783,7 +783,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:035d, 035e, 035f -- THREE DO-NOTHING TICK ROUTINES, one byte each.
+THREE DO-NOTHING TICK ROUTINES, one byte each.
 
   A bare `RET` with no parameter count, so all three take no arguments and are
   Tick routines rather than Start ones. The release has exactly three consecutive
@@ -810,7 +810,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  147d:0369 -- SAMPLE OFFSET, NEW IN v1.51, and it lands exactly where the 1.31b note
+SAMPLE OFFSET, NEW IN v1.51, and it lands exactly where the 1.31b note
   above said it would: between `TickNPI1` and `TickSampleOffs`, with `TickVib_VSlide`'s
   own unreachable trailing `RET` accounting for the third `C3` in the run.
 
@@ -856,7 +856,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  142f:0360 -- command A, VOLUME SLIDE. One nibble slides up and the other down,
+command A, VOLUME SLIDE. One nibble slides up and the other down,
   and a zero parameter means "the same as last time" as with the portamentos.
 
   IT CONFIRMS THE LAST TWO UNANCHORED FIELDS: VolumeIncr at +$21 (written at 038e
@@ -904,7 +904,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:03cd -- volume slide, per tick. CONFIRMED at this address by the two jumps
+volume slide, per tick. CONFIRMED at this address by the two jumps
   at 0352 and 0359 and the call at 03be, all three of which the release spells
   `TickVolSlide`. The prologue scanner never found it because it is frameless.
 
@@ -939,7 +939,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:03ed -- command B, JUMP TO A PATTERN POSITION. Set the order position from
+command B, JUMP TO A PATTERN POSITION. Set the order position from
   the parameter and start at row 1, unless the position is past the end of the
   range, in which case $FFFF stops the song.
   -------------------------------------------------------------------------- }
@@ -954,7 +954,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0417 -- command C, SET VOLUME. Clamped to 64, and note the clamp is
+command C, SET VOLUME. Clamped to 64, and note the clamp is
   written back into the NOTE and not just used: 0427 stores $40 into
   `N.Parameter` before 042f reads it again. `N` is a `var` parameter, so that is
   visible to the caller.
@@ -1004,7 +1004,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0490 -- command F, SET TEMPO. ProTracker overloads one command: a value
+command F, SET TEMPO. ProTracker overloads one command: a value
   above $30 is a BPM and anything else is a tick count, which is why the two arms
   write different variables and different widths.
   -------------------------------------------------------------------------- }
@@ -1019,7 +1019,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:04c3 -- command E0x, SET THE OUTPUT FILTER, and only if the client has
+command E0x, SET THE OUTPUT FILTER, and only if the client has
   allowed the pattern to touch it.
 
   `MOV AL,0 / JZ +1 / INC AX` IS THE BOOLEAN EXPRESSION, not a branch. That is how
@@ -1266,7 +1266,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0619 -- fine volume slide, per tick, and it is one instruction: fall into
+fine volume slide, per tick, and it is one instruction: fall into
   the coarse routine, which refuses to act while the fine flag is set. So a fine
   slide moves on the row and never on a tick, and this exists only to give the
   dispatch table something to point at.
@@ -1332,7 +1332,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  147d:068a -- THE OKTALIZER ARPEGGIO, NEW IN v1.51, and it takes the source position
+THE OKTALIZER ARPEGGIO, NEW IN v1.51, and it takes the source position
   1.31b's `StartRingEvent` used to hold. `CommandStart` maps BOTH command $21 and
   command $22 -- `mcOktArp` and `mcOktArp2` -- to this one address.
 
@@ -1380,7 +1380,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  147d:0750 -- the Oktalizer arpeggio, per tick, and it is a FOUR-step cycle where
+the Oktalizer arpeggio, per tick, and it is a FOUR-step cycle where
   the ProTracker one is three: 1 -> Arp1, 2 -> Arp2, 3 -> Arp1 again, then Arp0 and
   reset. The third step repeating Arp1 is what makes it Oktalizer's.
 
@@ -1418,11 +1418,11 @@ end;
 
 
 { --------------------------------------------------------------------------
-  147d:0785 -- SCREAM TRACKER'S Qxy, NEW IN v1.51 AND THE REASON THE COMMAND EXISTS.
+SCREAM TRACKER'S Qxy, NEW IN v1.51 AND THE REASON THE COMMAND EXISTS.
   `CommandStart` maps command $23, `mcS3mRetrigNote`, here. It decodes the volume
   half of the effect, masks the parameter down to the tick count, and then calls
   `StartRetrigNote` with the same three arguments -- 147d:0811's `E8 A5 FD` reaches
-  05b9 -- so the plain retrigger does the counting and this routine only decides what
+so the plain retrigger does the counting and this routine only decides what
   happens to the volume when it fires.
 
   TWO TABLES AND A SELECTOR. `RetMult` is consulted first; where its entry is ZERO
@@ -1462,7 +1462,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  147d:0818 -- Qxy per tick. Run the plain retrigger's counter first, and if it fired
+Qxy per tick. Run the plain retrigger's counter first, and if it fired
   this tick, change the volume.
 
   `MUL AH` AND A FLOOR OF SIXTEEN. The multiply is byte by byte into AX, and the
@@ -1638,7 +1638,7 @@ const
   );
 
 { --------------------------------------------------------------------------
-  142f:063f -- CommandTick. Five instructions: range-check the command, index the
+CommandTick. Five instructions: range-check the command, index the
   table, and call through it. SI already points at the channel and BX holds the
   command number DOUBLED, both set up by the caller at 12ba:0d75.
 
@@ -1672,7 +1672,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:064b -- CommandStart. The row-start half of the unit: fold the new note into
+CommandStart. The row-start half of the unit: fold the new note into
   the channel, then dispatch to whichever Start routine the command wants. 565
   bytes, the largest routine in the segment, and almost all of it is the `case`.
 

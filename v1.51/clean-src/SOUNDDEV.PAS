@@ -578,7 +578,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:005d -- SetPeriodicProc
+SetPeriodicProc
 
   Installs the routine every poll path funnels into. The store is an asm block
   rather than a Pascal assignment because it has to be ATOMIC against the
@@ -606,7 +606,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:007b -- OriginalHwTimer. FRAMELESS: no parameters, a bare RET.
+OriginalHwTimer. FRAMELESS: no parameters, a bare RET.
 
   HAND ASSEMBLER, verbatim. Puts PIT counter 0 back the way the BIOS left it:
   mode 3, square wave, reload 0 meaning a full 65536. That is 18.2 Hz, which
@@ -625,7 +625,7 @@ asm
 end;
 
 { ==========================================================================
-  1a17:0086 -- RestoreTimer. Near and private.
+RestoreTimer. Near and private.
 
   Gives IRQ 0 back. Guarded by its own flag so calling it twice is harmless,
   which matters because both EndSampling and StartSampling reach it.
@@ -646,7 +646,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:00a9 -- StartSampling. Far; one of the two entry points VTMain reaches.
+StartSampling. Far; one of the two entry points VTMain reaches.
 
   Resets every piece of output state, fills the buffer with silence, and only
   then opens the device.
@@ -696,7 +696,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:013e -- EndSampling. Far.
+EndSampling. Far.
 
   THE BUFFER IS SILENCED BEFORE THE DEVICE IS CLOSED, and before interrupts
   are even disabled. Whatever the card is still playing out of that memory
@@ -718,7 +718,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:0176 -- SetBufferAsker
+SetBufferAsker
 
   A plain far-pointer store, but between CLI and STI: the queue drains from an
   interrupt, and a half-written pointer here would be called.
@@ -735,7 +735,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:018c -- SetDevice
+SetDevice
 
   Switching drivers while the player is running has to stop the old one
   first, because the driver owns the timer hook. When nothing is running,
@@ -766,7 +766,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:0248 -- LocateDevice, with NotInStr nested inside it at 1a17:01d8.
+LocateDevice, with NotInStr nested inside it at 1a17:01d8.
 
   Finds a device by the identification string at the head of its record. This
   is what VTMain uses to turn a name out of VT.CFG into a driver.
@@ -822,7 +822,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:02ba -- InitDevice
+InitDevice
 
   Links the driver onto the front of the list and, if nothing has been
   selected yet, selects it. That last part is why load order decides the
@@ -848,7 +848,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:02fb -- GetRealFreq
+GetRealFreq
 
   Answers "if you ask the PIT for this rate, what will you actually get?"
 
@@ -1010,7 +1010,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:053c -- InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
+InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
   invasive thing in the segment.
 
   It installs the two null callbacks and then CARVES THE DMA BUFFER OUT OF
@@ -1101,7 +1101,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:06ea -- GetDMACount. Near and private.
+GetDMACount. Near and private.
 
   A one-line wrapper: hands the channel to 1b24's GetDMACount and passes the
   answer back. The release writes it as
@@ -1119,7 +1119,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:06ff -- GetPlayPos. Far; the only entry point in this segment that
+GetPlayPos. Far; the only entry point in this segment that
   the DEMO reaches rather than the player. 1000:0288 calls it as
   `MarkPos := GetPlayPos`, masks the offset down to a multiple of four, and
   uses it to remember where the player had got to.

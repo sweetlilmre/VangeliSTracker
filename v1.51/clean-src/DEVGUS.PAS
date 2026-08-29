@@ -165,7 +165,7 @@ implementation
   different units, and both are now referenced where they live. }
 
 { --------------------------------------------------------------------------
-  1084:0000 -- the timer callback. Runs on somebody else's stack, with DS
+the timer callback. Runs on somebody else's stack, with DS
   unknown.
 
   HAND ASSEMBLER, verbatim, and it could not be Pascal: it loads DS from a
@@ -218,7 +218,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:004c -- THE POLL, slot +$2a.
+THE POLL, slot +$2a.
 
   One increment. The whole of what a GUS driver has to do per tick, because
   the card is playing from its own memory and needs nothing from the host.
@@ -293,7 +293,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0055 -- slot +$16, the device name. It returns an EMPTY STRING.
+slot +$16, the device name. It returns an EMPTY STRING.
 
   This looked for a long time like "clears one byte through a far pointer",
   because that is literally what the four instructions do:
@@ -316,7 +316,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0061 -- slot +$1a, the probe. Hands the question to the hardware layer
+slot +$1a, the probe. Hands the question to the hardware layer
   and passes the answer straight back.
 
   TRUE means the card answered. No caller in the program tests the result --
@@ -328,7 +328,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0072 -- slot +$1e, start.
+slot +$1e, start.
 
   Reset the card, install this unit's timer entry as the driver's callback,
   and program the GF1's own timer from the sample rate.
@@ -377,7 +377,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:00d5 -- slot +$32, stop. Two calls into the hardware layer, in the
+slot +$32, stop. Two calls into the hardware layer, in the
   reverse order to Start's.
   -------------------------------------------------------------------------- }
 procedure DevEnd; far;
@@ -387,7 +387,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:00e4 -- slot +$26, "what rate can you actually manage?"
+slot +$26, "what rate can you actually manage?"
 
   Returns what it was given. The GUS resamples every voice in hardware, so
   any rate the caller names is one it can play. A driver that could not would
@@ -413,7 +413,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0101 -- fill in the record and hand it to the player core.
+fill in the record and hand it to the player core.
 
   Eight far addresses written straight into DS:$0076..DS:$0095. That range is
   DS:$0060 + $16 through + $35, which is what fixes the driver layout -- see

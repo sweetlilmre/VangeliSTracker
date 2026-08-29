@@ -78,7 +78,7 @@ function FilterChunkWord(var Buf; Len, Offs : Word; Method : TFilterMethod;
 implementation
 
 { --------------------------------------------------------------------------
-  1544:0000, 1544:0010, 1544:002e -- the three kernels.
+the three kernels.
 
   HAND ASSEMBLER, verbatim, and they cannot be anything else: all three are
   NEAR routines entered with ES:DI, BX, CX and SI already loaded by the
@@ -153,7 +153,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1544:004c -- pick a kernel and run it.
+pick a kernel and run it.
 
   HAND ASSEMBLER, verbatim. The whole routine is register setup and three
   near CALLs, and the result is whatever BX ended up as.

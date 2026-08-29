@@ -200,7 +200,7 @@ var
 implementation
 
 { --------------------------------------------------------------------------
-  14b7:0000 -- wipe the block and stamp it.
+wipe the block and stamp it.
 
   Plain Pascal in the binary. The whole body is a FillChar and a byte store,
   and the prologue is the compiler's own (`PUSH BP / MOV BP,SP` ... `LEAVE`)

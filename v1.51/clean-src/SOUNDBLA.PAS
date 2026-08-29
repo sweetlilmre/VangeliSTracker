@@ -331,7 +331,7 @@ end;
 
 { 005b..0076.  RETF 2.  Hand-written, and transcribed VERBATIM per the standing
   rule. It names its parameter, so it gets a frame -- `PUSH BP / MOV BP,SP` at
-  005b -- which is why `t` is reachable as [BP+06].
+which is why `t` is reachable as [BP+06].
 
   Equivalent Pascal, REFERENCE ONLY, never to be substituted for the asm:
     BX := t;  DX := DSPWritePort;

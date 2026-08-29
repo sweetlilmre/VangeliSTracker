@@ -162,7 +162,7 @@ var
   variables, which pushed every unit after it down the variable half of DGROUP. }
 
 { --------------------------------------------------------------------------
-  1065:0000 -- slot +$16. Empty, and takes nothing.
+slot +$16. Empty, and takes nothing.
 
   1084's version of this slot takes a far pointer and clears a byte through
   it; this one ignores whatever is passed. Both end in a plain RETF rather
@@ -174,7 +174,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0005 -- the serial interrupt. FRAMELESS, ends in IRET.
+the serial interrupt. FRAMELESS, ends in IRET.
 
   HAND ASSEMBLER, verbatim. It cannot be a Pascal `interrupt` procedure: it
   loads DS from a constant and saves a hand-picked subset of registers in a
@@ -252,7 +252,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1065:0039 -- slot +$1a, the probe. Returns 1, unconditionally.
+slot +$1a, the probe. Returns 1, unconditionally.
 
   SLOT +$1a IS AN ERROR CODE, and zero is success -- 109c:0021 selects a
   driver only when the probe returns zero. So returning 1 unconditionally
@@ -281,7 +281,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0046 -- slot +$1e, start the clock.
+slot +$1e, start the clock.
 
   Compiler output with Port[] for the register work.
 
@@ -343,7 +343,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:00f3 -- slot +$26, "what rate can you manage?"
+slot +$26, "what rate can you manage?"
 
   Returns what it was given, like the GUS. Nothing is played, so any rate is
   one this driver can honour -- the answer costs nothing and keeps the core
@@ -366,7 +366,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0110 -- slot +$32, stop the clock and hand the port back.
+slot +$32, stop the clock and hand the port back.
 
   Compiler output. Everything Start saved is restored, in the order the chip
   needs: modem control, then DLAB up to reach the divisor, the divisor, then
@@ -408,7 +408,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0172 -- fill in the record and hand it to the player core.
+fill in the record and hand it to the player core.
 
   The same shape as 1084:0101, eight far addresses into DS:$0034..DS:$0053,
   which is DS:$001e + $16 .. + $35. That is the second independent

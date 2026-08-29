@@ -255,7 +255,7 @@ var
   RestartChannels. }
 
 { --------------------------------------------------------------------------
-  1723:0000 .. 1723:0065 -- the GF1 register interface.
+the GF1 register interface.
 
   Hand assembler -- see the note on the five routines below.
 
@@ -379,7 +379,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1723:007d -- settling delay. FRAMELESS: no parameters, no frame, a bare RET.
+settling delay. FRAMELESS: no parameters, no frame, a bare RET.
 
   HAND ASSEMBLER, verbatim. Seven reads of the base port with every result
   thrown away. The GF1 needs time between register accesses and this is how
@@ -401,7 +401,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1723:0089 -- copy a sample into the card's own DRAM.
+copy a sample into the card's own DRAM.
 
   HAND ASSEMBLER, verbatim, and it has to be: it walks the source with LODSB
   through a reloaded DS, which Pascal cannot express.
@@ -487,7 +487,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0100 / 1723:0140 / 1723:0180 -- the two GF1 timers.
+the two GF1 timers.
 
   Compiler output. Registers $46 and $47 hold the counts, $45 is the timer
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
@@ -589,7 +589,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0201 -- the card's interrupt handler. FRAMELESS, ends in IRET.
+the card's interrupt handler. FRAMELESS, ends in IRET.
 
   HAND ASSEMBLER, verbatim. It cannot be a Pascal `interrupt` procedure: it
   masks its own line at the 8259, re-enables interrupts in the middle, and
@@ -668,7 +668,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1723:025a / 1723:029f -- take the interrupt line, and give it back.
+take the interrupt line, and give it back.
 
   Compiler output. Both are guarded by DS:$0599 so a second InitGusIRQ does
   nothing and a second DoneGusIRQ does nothing.
@@ -697,7 +697,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:02d3 -- mix control and the IRQ latch. Near, private.
+mix control and the IRQ latch. Near, private.
 
   Compiler output, held under CLI with the flags saved and restored rather
   than blindly re-enabled -- so it is safe to call from inside a handler.
@@ -742,7 +742,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0357 -- reset the card and every voice.
+reset the card and every voice.
 
   Compiler output. The seven FillChar calls are what fix the table sizes: two
   of $20 bytes and five of $80, over 32 voices.
@@ -829,7 +829,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:045a -- is there really a card at GUSPort? Near, private.
+is there really a card at GUSPort? Near, private.
 
   Compiler output, under CLI throughout.
 
@@ -889,7 +889,7 @@ Fin:
 end;
 
 { --------------------------------------------------------------------------
-  1723:04f1 -- find a card.
+find a card.
 
   Compiler output. If GUSPort was configured, probe that and nothing else;
   otherwise walk the twelve jumper positions and take the first that answers.
@@ -935,7 +935,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0539 -- a byte address into the GF1's split form. Near, private.
+a byte address into the GF1's split form. Near, private.
 
   Compiler output.
 
@@ -957,7 +957,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0565 -- set a voice's pan. Near, private.
+set a voice's pan. Near, private.
 
   Compiler output. $FF means "leave it alone" and anything above $7F is
   clamped to $7F, so the caller can pass a don't-care without a separate
@@ -1002,7 +1002,7 @@ const
   );
 
 { --------------------------------------------------------------------------
-  1723:0565 -- set a voice's volume, ramping to it rather than jumping.
+set a voice's volume, ramping to it rather than jumping.
 
   THIS WAS TRANSCRIBED AS `SetPan` AND IT IS NOTHING OF THE KIND. The old
   version was seven lines against the original's 253 bytes, took its
@@ -1056,7 +1056,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0662 -- push one voice's stored addresses at the card. Near, private.
+push one voice's stored addresses at the card. Near, private.
 
   Compiler output. Reads the three tables, converts each to the GF1's split
   form, and writes the register pairs: $0A/$0B current, $04/$05 end,
@@ -1098,7 +1098,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:077a -- THE DEFERRED SWEEP. Installed as the timer 1 callback by
+THE DEFERRED SWEEP. Installed as the timer 1 callback by
   TriggerVoice, and where every voice change actually reaches the card.
 
   Two passes over the active flags, and the split matters.
@@ -1205,7 +1205,7 @@ begin
     end;
 
   { ------------------------------------------------------------------
-    1911:0837..0888 -- A THIRD PASS, WHERE v1.31b HAD SIXTY BYTES OF HAND
+A THIRD PASS, WHERE v1.31b HAD SIXTY BYTES OF HAND
     ASSEMBLER.
 
     v1.31b ended this routine by kicking ONE voice: it took the first entry of
@@ -1235,7 +1235,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:08e6 -- start a voice with a loop. THE ENTRY 12ba's ring flushes to.
+start a voice with a loop. THE ENTRY 12ba's ring flushes to.
 
   Compiler output, and it programs NOTHING. It stores the three addresses,
   raises the active flag, records the pan, and points the timer 1 callback at
@@ -1318,7 +1318,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0980 -- set a live voice's frequency and pan, without restarting it.
+set a live voice's frequency and pan, without restarting it.
 
   Compiler output. Does nothing at all if the voice is not already active,
   which is what lets the mixer send pitch changes for voices that may have
@@ -1333,7 +1333,7 @@ end;
   in a table and the write skipped when it has not moved.
   -------------------------------------------------------------------------- }
 { --------------------------------------------------------------------------
-  1723:0980 -- set a running voice's volume, pitch and pan.
+set a running voice's volume, pitch and pan.
 
   FOUR PARAMETERS, NOT THREE. This was transcribed as
   `StartVoice(Freq, Pan, Voice)` with the volume and the pan sharing one
@@ -1377,7 +1377,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:0a6a -- how many voices, and what that costs in sample rate.
+how many voices, and what that costs in sample rate.
 
   Compiler output. The GF1 divides one fixed clock between however many
   voices are enabled, so asking for fewer voices buys a higher rate:

@@ -73,7 +73,7 @@ var
   SavedExit : Pointer;
 
 { --------------------------------------------------------------------------
-  1931:0000 -- the exit handler.
+the exit handler.
 
   Plain Pascal. The ExitProc chain is Turbo Pascal's own convention: put back
   whatever was there before, do your cleanup, and the runtime walks on to it.
@@ -87,7 +87,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1931:0029 -- open the console, find the shell, chain the exit handler.
+open the console, find the shell, chain the exit handler.
 
   Plain Pascal. The frame is `ENTER $200,0`, which is two 256-byte String
   temporaries and nothing else -- they belong to the COMSPEC expression

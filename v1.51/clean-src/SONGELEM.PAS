@@ -472,7 +472,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:005d -- FreeContents, and its three `HFreeMem` calls are the segment's first three
+FreeContents, and its three `HFreeMem` calls are the segment's first three
   `[DI+0c]` sites, at `00ca`, `010e` and `0123`.
 
   `IF NOT UsingGUS` GUARDS THE SAMPLE BUT NOT THE RECORD. When the Gravis holds the
@@ -505,7 +505,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:012a -- Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
+Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
   requadruple the sample if LowQuality is set, and hand it to the Gravis if there is one.
 
   `ENTER $004` IS `l : LONGINT` and it anchors the routine.
@@ -648,7 +648,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:037a -- Desample. Halve a sample's rate in place, then give the freed half back.
+Desample. Halve a sample's rate in place, then give the freed half back.
 
   **THIS IS A DESTRUCTIVE OPTIMISATION AND `LowQuality` IS ITS SWITCH.** Averaging pairs
   of samples halves the memory a module needs and costs an octave of top end, which on a
@@ -708,7 +708,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:0583 -- Resample. The opposite trade: spend memory to make a very short looped
+Resample. The opposite trade: spend memory to make a very short looped
   sample cheaper to play.
 
   `Len < 128` AND `Repl > 0` IS THE WHOLE CONDITION, and it is deliberately the mirror of
@@ -813,7 +813,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:08e2 -- SetFullTrack. Take 256 full notes and compress them into the two short
+SetFullTrack. Take 256 full notes and compress them into the two short
   arrays, discarding the blank lead-in and anything past the last real note.
 
   `ENTER $606` IS THE ROUTINE'S FINGERPRINT: `MNote` 1026 + `MComm` 514 + `i` 2 = 1542.
@@ -882,7 +882,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:0ab8 -- GetNote. One line of one track, expanded back into a full note.
+GetNote. One line of one track, expanded back into a full note.
 
   **THIS IS THE ROUTINE WITH NO FRAME AT ALL** -- `PUSH BP` rather than `ENTER` -- which is
   how it is told apart from `ChangeNote`, whose `Track : TFullTrack` local would cost 1,536

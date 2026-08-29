@@ -409,7 +409,7 @@ var
   See docs/06-transcription.md, "one DGROUP, many units". }
 
 { --------------------------------------------------------------------------
-  1000:00f8 -- print the banner, once. Guarded by DS:$09e8, because both the
+print the banner, once. Guarded by DS:$09e8, because both the
   body and PlayModule call it.
   -------------------------------------------------------------------------- }
 procedure ShowBanner;
@@ -426,7 +426,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1000:016b -- the chain to whatever held INT 1Ch before us.
+the chain to whatever held INT 1Ch before us.
 
   HAND ASSEMBLER, and it has to be: this is not a routine that is called, it
   is a five-byte JMP FAR whose OPERAND is patched. HookTimer writes the old
@@ -452,7 +452,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1000:0171 -- poll the sound driver four times, non-reentrant.
+poll the sound driver four times, non-reentrant.
 
   Four calls, not a loop: the binary has the LES/CALLF pair written out four
   times over. DS:$0002 keeps the timer out of itself when a poll runs long.
@@ -480,7 +480,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1000:01a5 -- the INT 1Ch handler. THIS is what drives the music.
+the INT 1Ch handler. THIS is what drives the music.
 
   HAND ASSEMBLER, verbatim. It cannot be a Pascal `interrupt` procedure: it
   ends in a JMP FAR to the chain stub rather than an IRET, so the previous
@@ -512,7 +512,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1000:01bd -- FUNCTION 0, the one every Psycho Neurosis part calls
+FUNCTION 0, the one every Psycho Neurosis part calls
   "MusicStart".
 
   What it actually does is hook INT 1Ch. The music starts because the timer
@@ -559,7 +559,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1000:020a -- FUNCTION 1, "MusicStop": put INT 1Ch back and clear the stub.
+FUNCTION 1, "MusicStop": put INT 1Ch back and clear the stub.
 
   Note that neither this nor HookTimer touches the sound hardware. Silence is
   a consequence of the driver no longer being polled.
@@ -591,7 +591,7 @@ begin
 end;
 
 { ==========================================================================
-  1000:024c -- THE DISPATCHER.
+THE DISPATCHER.
 
   This is the routine every Psycho Neurosis part far-calls. Its address is
   published at CB+$121 (DS:$23e7) by the body, and the demo finds it through
@@ -671,7 +671,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1000:02b5 -- load and play one module. Published at DS:$009a as a far
+load and play one module. Published at DS:$009a as a far
   pointer, so a unit not yet read is what calls it.
 
   RETF 8: two String parameters, both copied into String[79] locals.
@@ -690,7 +690,7 @@ end;
   extra copies. Same class as the invented `String` locals in `1b54` and `164b`: **a
   frame is explained by the parameters before it is explained by declarations.** }
 { --------------------------------------------------------------------------
-  1000:02c0 -- THE FAR ENTRY, NEW IN v1.51. Seven bytes: `PUSH AX / CALLF Dispatch /
+THE FAR ENTRY, NEW IN v1.51. Seven bytes: `PUSH AX / CALLF Dispatch /
   RETF`, with the RETF the compiler's own.
 
   IT EXISTS TO MOVE THE FUNCTION NUMBER FROM A REGISTER TO THE STACK. `Dispatch`
@@ -706,7 +706,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  1000:02c7 -- STOP EVERYTHING, NEW IN v1.51, and it is what the main body calls
+STOP EVERYTHING, NEW IN v1.51, and it is what the main body calls
   before `EndSampling` at 1000:06b7.
 
   FOUR ADDRESSES IDENTIFIED IT AND THE LINKER MAP IS WHAT NAMED THEM: $0d1c is `Song`,
@@ -875,7 +875,7 @@ begin
 end;
 
 { ==========================================================================
-  1000:04e0 -- the body. The init chain that precedes it is at 1000:04b3:
+the body. The init chain that precedes it is at 1000:04b3:
 
       1ba1:0000  the RTL      193a:0488   1931:0029   17cf:0a93
       14b7:0000  12ba:141e    11bb:0f2e   1084:0101   1065:0172

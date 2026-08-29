@@ -104,7 +104,7 @@ const
   Page8  : array[0..3] of Word = ($0087, $0083, $0081, $0082);
 
 { --------------------------------------------------------------------------
-  1b24:0000 -- let an IRQ through.
+let an IRQ through.
 
   HAND ASSEMBLER, verbatim: IN and OUT are not expressible in Pascal.
 
@@ -155,7 +155,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0044 -- shut an IRQ out.
+shut an IRQ out.
 
   HAND ASSEMBLER, verbatim. The mirror of the above, except that it does NOT
   re-mask the cascade when disabling a slave IRQ -- and must not, because
@@ -172,7 +172,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1b24:007e -- is this IRQ currently getting through?
+is this IRQ currently getting through?
 
   HAND ASSEMBLER, verbatim.
 
@@ -195,7 +195,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1b24:00d7 -- point an IRQ's vector somewhere, and hand back the old one.
+point an IRQ's vector somewhere, and hand back the old one.
 
   Plain Pascal in the binary: `ENTER $0a,0`, locals, and two calls into the
   Dos unit (1b6f:007b GetIntVec, 1b6f:0093 SetIntVec).
@@ -231,7 +231,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0128 -- program a 16-bit DMA channel. FRAMELESS.
+program a 16-bit DMA channel. FRAMELESS.
 
   HAND ASSEMBLER, verbatim, and it could not be anything else: it takes no
   parameters and builds no frame. Everything arrives in registers, put there
@@ -297,7 +297,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0172 -- program an 8-bit DMA channel. FRAMELESS.
+program an 8-bit DMA channel. FRAMELESS.
 
   HAND ASSEMBLER, verbatim. The same sequence against the first controller's
   ports, and WITHOUT the halving -- an 8-bit channel counts bytes, so the
@@ -360,7 +360,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b24:01b9 -- how far has a 16-bit transfer got? FRAMELESS, channel in AH,
+how far has a 16-bit transfer got? FRAMELESS, channel in AH,
   answer in AX.
 
   HAND ASSEMBLER, verbatim. Clear the flip-flop, then two reads from the
@@ -384,7 +384,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b24:01d5 -- how far has an 8-bit transfer got? FRAMELESS.
+how far has an 8-bit transfer got? FRAMELESS.
 
   HAND ASSEMBLER, verbatim, and the most interesting routine in the unit.
 
@@ -439,7 +439,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b24:020d, 1b24:0222, 1b24:0237 -- pick a controller by channel number.
+pick a controller by channel number.
 
   HAND ASSEMBLER, verbatim. Three identical shapes, differing only in which
   pair of kernels they call. Channel arrives in AH.
@@ -527,7 +527,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  1b24:024c, 1b24:0267, 1b24:02f0 -- the Pascal-callable faces.
+the Pascal-callable faces.
 
   HAND ASSEMBLER, verbatim: each one is nothing but moving parameters into
   the registers the kernels expect, and a far call.
@@ -550,7 +550,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  1b24:0276 -- take a Pointer and a byte count, do the rest.
+take a Pointer and a byte count, do the rest.
 
   Plain Pascal in the binary. Two things happen: the far pointer is split
   into a DMA page and a 16-bit address, and the count is decremented, because
