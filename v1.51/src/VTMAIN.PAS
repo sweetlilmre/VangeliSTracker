@@ -929,7 +929,7 @@ begin
     routine, so writing it and pointing nothing at it emitted no bytes at all and left
     a seven-byte hole exactly where 1000:02c0 is. The second assignment below is what
     brings it into the image. }
-  CtrlBlock.Dispatch   := @Dispatch;              { 1000:05f4  -> CB+$121   }
+  CtrlBlock.CtrlEntryPoint := @Dispatch;              { 1000:05f4  -> CB+$121   }
   CtrlBlock.RegEntryPoint := @DispatchEntry;         { 1000:0601  -> CB+$129   }
 
   Install(SelfName, @CtrlBlock);                  { 1000:05a3  1b54:0088 }

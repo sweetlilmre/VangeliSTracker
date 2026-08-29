@@ -119,7 +119,8 @@ type
       whichever calling convention suits it, and an old client keeps working.
 
       $129..$12C is exactly four bytes, so the filler it replaces was the right size
-      and the wrong name. }
+      and the wrong name.
+
       CDVT.H describes the stub byte for byte: "Far pointer to the servicing
       routine that gets the parameter in AX. It's just a PUSH AX; CALL FAR
       entryPointSeg:Off; RETF". }
@@ -136,7 +137,8 @@ type
       pattern -- into the ring the first of these is published from, and 091d stores
       `SeqPlaying`, the position in the order list. The transcription had the pair
       the other way round before 12ce:090b was read; the ring alone could not say
-      which byte was which, because it only ever moves them. }
+      which byte was which, because it only ever moves them.
+
       The bindings call them `Pos` and `Seq`, in that order -- a third witness to
       the pairing, and it agrees. }
     Pos : Byte;              { CB+$1AD  the row inside the pattern           }
@@ -160,7 +162,8 @@ type
     { CB+$206 -- A MASTER VOLUME, and 12ba:0e66 is what says so: every channel's
       volume is multiplied by it and the high byte taken, so $FF is unity and a
       client can attenuate the whole mix by writing here. This unit only knows
-      that Reset sets it to $FF, which is why it was called `Mark`. }
+      that Reset sets it to $FF, which is why it was called `Mark`.
+
       The bindings call it `SoundVolume`, 0-255: "Put your favourite volume here.
       You can perform fades and the like." }
     SoundVolume : Byte;      { CB+$206                                      }
@@ -179,7 +182,8 @@ type
 
       IT WAS THE LAST TWO BYTES OF DGROUP, TOO. Declared as a var in VTGlobal it sat
       between VTShell's block and SoundDevices', which put every SoundDevices and
-      VTResid variable two bytes high -- 53 operands in one unit, 13 in another. }
+      VTResid variable two bytes high -- 53 operands in one unit, 13 in another.
+
       AND THE BINDINGS CONFIRM IT WORD FOR WORD: "Set to 1 to force DVT to exit
       after your program exits". The reading here was reached from three reads and
       no writes, and the record of that is worth keeping -- the shape argued the

@@ -780,9 +780,10 @@ const
 
     THE FIRST OF THE TWO IS THE SAMPLE MAGIC, and this file's own address map named
     it before it was declared -- line 53 records `'SCRS'  DS:$046c`. Scream Tracker 3
-    stamps every instrument header with it at +$4c, and this loader reads that byte
-    range as `Filler3` and never checks it. Declared and unchecked is what the
-    original is; transcribed as found.
+    stamps every instrument header with it at +$4c, and the record above now names
+    that field `Magic` -- but nothing reads it. The constant is declared and never
+    compared against anything. Declared and unchecked is what the original is;
+    transcribed as found.
 
     THE SECOND IS 'SCRM' AGAIN. Turbo Pascal emits one typed constant per
     declaration, so the author wrote it twice. }
@@ -826,8 +827,8 @@ begin
   if S3M.Volume = $40 then
     S3M.Volume := $3F;
 
-  Song.InitialTempo := S3M.Speed;
-  Song.InitialBPM   := S3M.Tempo;
+  Song.InitialTempo := S3M.Tempo;
+  Song.InitialBPM   := S3M.BPM;
   Song.Volume       := S3M.Volume * 4 + 3;
   Song.NumChannels  := $10;
 
