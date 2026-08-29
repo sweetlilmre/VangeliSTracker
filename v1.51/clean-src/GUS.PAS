@@ -292,6 +292,12 @@ the GF1 register interface.
   why SetGusRegister8 and SetGusRegister16 differ only in which of $104 and $105
   they finish on -- INC DX for the word port, ADD DX,2 for the byte port.
 
+  **AND THIS IS NOT THE ONLY WINDOW ON THE CARD.** base+8 and base+9 are a
+  second select-and-data pair reaching a different set of registers, the GF1's
+  interrupt control, and the timer routines further down use it. A reader who
+  takes the four ports above for the whole story will meet those two lines and
+  think the code is wrong. It is not; see the note above GUSInitTimer1.
+
   ----------------------------------------------------------------------------
   THESE FIVE ARE ASSEMBLER, AND THE REASON IS WORTH RECORDING.
 

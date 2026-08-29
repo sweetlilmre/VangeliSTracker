@@ -1082,6 +1082,16 @@ begin
       in, then DS -- and every field reference inside the block reloads it with
       `LES DI,[BP-4]`, which is what 01cb and 01d5 do. So the `ENTER 4,0` at
       0187 is the with-slot and this routine declares NO local at all. }
+    { **THIS IS WHERE THE MUSIC SIGNALS THE DEMO**, and it is three lines.
+
+      A composer writes effect `8xx` on a note. ModCommands.StartRingEvent
+      stores xx into the channel and flags it; SeqTick copies both into this
+      ring; and here, one tick later, the semaphore that xx names is
+      incremented. The demo polls that semaphore and sees the beat arrive.
+
+      So the whole synchronisation mechanism of the program -- the reason it
+      exists rather than being an ordinary player -- passes through this
+      `Inc`. Everything else is buffers and mixing. }
     with NoteRing[EventSlot, EventChan] do
       if Pending <> 0 then
         Inc(CtrlBlock.Semaphores[Sem])
