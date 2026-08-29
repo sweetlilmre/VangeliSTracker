@@ -451,6 +451,13 @@ end;
 
   Below 4 goes to the 8-bit controller, above 4 to the 16-bit one.
   -------------------------------------------------------------------------- }
+{ **HOW FAR HAS THE CARD GOT?** The 8237 counts DOWN as it transfers, so the
+  value read here is how much of the buffer is still to go. That is what lets
+  the player know where the hardware is reading and refill the part it has
+  already passed, without any interrupt from the card itself.
+
+  The same channel guard as the two routines below -- see the block there for
+  why 2 and 4 are refused. }
 procedure GetDMACountAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:020d  the floppy                            }
@@ -465,13 +472,38 @@ asm
 @@Out:
 end;
 
+{ ===========================================================================
+  **CHOOSING A DMA CONTROLLER, AND REFUSING TWO CHANNELS THAT MUST NOT BE USED.**
+  Both this routine and DMAResetAsm below open with the same four instructions,
+  and all four are about the shape of a PC rather than about sound.
+
+  A PC has TWO DMA controllers. The original 8-bit one owns channels 0..3; a
+  second, 16-bit one was added with the AT and owns 5..7. They have different
+  port addresses and different register widths, so the channel number decides
+  which set of ports to write -- that is what `JC @@Eight` is doing, taking
+  anything below 4 to the 8-bit path.
+
+  CHANNEL 4 IS NOT A CHANNEL. It is the cascade: the 8-bit controller is wired
+  into it so that the two chips can work together, and programming it would
+  disconnect the first controller from the bus. Refused.
+
+  CHANNEL 2 IS THE FLOPPY DISK CONTROLLER, on every PC ever built. A sound card
+  jumpered to channel 2 would work until the moment something touched a disk,
+  and then one of the two would lose its transfer. Refused as well.
+
+  So a caller asking for 2 or 4 gets silence rather than an error -- `JZ @@Out`
+  goes to the routine's end and nothing is programmed. That is the same
+  fail-quietly choice the card detection makes: this runs under an interrupt on
+  hardware that may be configured any way at all, and a wrong jumper setting
+  should cost the sound rather than the machine.
+  =========================================================================== }
 procedure DMASetAsm; far; assembler;
 asm
-  CMP  AH, 2
-  JZ   @@Out
-  CMP  AH, 4
-  JZ   @@Out
-  JC   @@Eight
+  CMP  AH, 2             { 1b24:0222  the floppy controller's channel        }
+  JZ   @@Out             { 1b24:0225  refuse it                              }
+  CMP  AH, 4             { 1b24:0227  the cascade, not a usable channel      }
+  JZ   @@Out             { 1b24:022a  refuse that too                        }
+  JC   @@Eight           { 1b24:022c  below 4: the 8-bit controller          }
   CALL DMA16Set
   JMP  @@Out
 @@Eight:
@@ -479,6 +511,7 @@ asm
 @@Out:
 end;
 
+{ The same guard as DMASetAsm above, for the same two reasons. }
 procedure DMAResetAsm; far; assembler;
 asm
   CMP  AH, 2
