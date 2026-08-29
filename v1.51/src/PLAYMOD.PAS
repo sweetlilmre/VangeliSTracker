@@ -447,16 +447,16 @@ const
   ChanRec          : PModRawChan   = nil;      { DS:$030c                       }
   OutPtr           : Pointer       = nil;      { DS:$0310                       }
   ModRec           : PSampleBuffer = nil;      { DS:$0314                       }
-  Fill0318         : Word          = 0;        { DS:$0318  UNIDENTIFIED         }
+  Fill0320         : Word          = 0;        { DS:$0320  UNIDENTIFIED         }
   PrevTick         : Word          = 0;        { DS:$0322 in v1.51              }
 
   CanalPtr         : PCanal        = nil;      { DS:$031c                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
-  Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
+  Fill032C         : LongInt       = 0;        { DS:$032c  UNIDENTIFIED         }
   { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
     A separate `TickSpan` was declared for the tempo loop's span last commit and it
     put this unit's block four bytes over; the original has only six bytes between
-    Fill0324 and StepVal, not eight. The same address serves both: 12ce:0f2f stores
+    Fill032C and StepVal, not eight. The same address serves both: 12ce:0f2f stores
     the span into [0330] and 12ce:11b1 reads [0330] as the channel index in the
     volume pass. The first use is finished before the second begins.
 
@@ -464,7 +464,7 @@ const
     $02f6 and $0328 record the other two, both found the same way. It is the
     release's habit, not an accident, and it is why neutral names are right here. }
   TmpVal           : Word          = 0;        { DS:$0330 in v1.51  TWO JOBS    }
-  Fill032A         : Word          = 0;        { DS:$0332  UNIDENTIFIED         }
+  Fill0332         : Word          = 0;        { DS:$0332  UNIDENTIFIED         }
 
   { 1.39b's `t`, the tempo loop's counter. It IS its own variable -- 12ce:0f45's
     `DEC word [0334]` and 0fa5's `CMP [0334],1` are two bytes the span's address

@@ -402,7 +402,11 @@ var
     the stack, because the stack's size is settled by an instruction and this is not.
     See `filler-is-not-a-finding` in the kit: a filler beside something measured is
     the next thing to identify, not background. }
-  Fill3F1A          : array[1..DevStkSize - 2] of Byte;
+  { **DS:$6276, AND THE NAME USED TO SAY $3F1A** -- an address from 1.31b that this
+    build never had, carried in the identifier where nothing checks it. Renamed after
+    the linker map was read: a filler's name is the one place an address goes
+    unverified, because no instruction and no comparison ever names it. }
+  Fill6276          : array[1..DevStkSize - 2] of Byte;
 
   { $4302/$4304 -- the caller's stack, saved across the poll, because the poll
     switches to the stack above. The release calls them `DevSS` and `DevSP`. }

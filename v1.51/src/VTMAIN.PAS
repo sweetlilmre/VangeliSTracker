@@ -364,10 +364,10 @@ var
     the gap. It used to be quoted at DS:$1208, which is PlayMod's `UserVols`. }
   Str1208   : String;    { DS:$0cd6 }
 
-  { DS:$0dd6 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
+  { DS:$0e9e -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
     `Dir` at $0dda. Nothing references them. Filler, so the SIZE is right and the
     missing name is stated rather than invented. }
-  Fill0DD6  : LongInt;   { DS:$0dd6 }
+  Fill0E9E  : LongInt;   { DS:$0e9e }
   { ~~Obj0E38 : TObject~~ and ~~Var0F82 : TCollection~~ ARE GONE. They were
     VTCmd's own `Cmd` and `SongColl`, and declaring stand-ins here is what kept
     both CMDLINE and VTCMD out of the linked image -- see the body at 1000:05bb.
