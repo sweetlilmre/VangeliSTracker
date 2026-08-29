@@ -268,7 +268,32 @@ var
   up are readable as they stand, which is why the test is `< $40` and not a
   blanket OR.
   -------------------------------------------------------------------------- }
-{ THESE FIVE ARE ASSEMBLER, AND THE REASON IS WORTH RECORDING.
+{ **THE GF1's PORT MAP, WHICH IS WHAT ALL FIVE ROUTINES BELOW ARE DOING.**
+  The card answers on a base address -- GUSPort, jumpered, one of twelve -- and
+  everything is reached at a fixed offset from it:
+
+      base+$102   voice select     which of the 32 voices the next access means
+      base+$103   register select  which of the GF1's registers
+      base+$104   data, 16-bit     the register's value as a word
+      base+$105   data, 8-bit      the same register's value as a byte
+
+  So writing to a register is always two steps: say which register, then send
+  the value. There is no single instruction that does both, and no way to
+  address a register directly. THAT is why the register numbers named at the top
+  of this unit -- grVoiceControl and the rest -- are values written to $103
+  rather than addresses of anything.
+
+  And it is why voice-indexed work looks the way it does: SetGusVoice writes
+  $102 once, and every register access after it applies to that voice until the
+  next one. A caller that forgets to select a voice will read and write another
+  voice's registers with no error of any kind.
+
+  The 8-bit and 16-bit data ports are the SAME register seen two ways, which is
+  why SetGusRegister8 and SetGusRegister16 differ only in which of $104 and $105
+  they finish on -- INC DX for the word port, ADD DX,2 for the byte port.
+
+  ----------------------------------------------------------------------------
+  THESE FIVE ARE ASSEMBLER, AND THE REASON IS WORTH RECORDING.
 
   They were Pascal here until verify.py could not even find the unit's first
   instruction. Turbo Pascal's `Port[]` pseudo-array compiles to a bare
@@ -291,6 +316,8 @@ var
   This corrects a rule recorded in docs/06-transcription.md: port code is
   faithfully Pascal only when the port number is CONSTANT. }
 
+{ Choose which voice the following register accesses apply to. It stays chosen
+  until this is called again -- see the port map above. }
 procedure SetGusVoice(N : Byte); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0003 }
@@ -1209,13 +1236,46 @@ end;
   backwards list made this look like `LastVolumes[Voice] := Pan` because [BP+08]
   was where Pan sat.
   -------------------------------------------------------------------------- }
+{ **TriggerVoice DOES NOT START THE VOICE**, and that is the whole design of
+  GUS playback here. It writes the frequency and pan, records what the voice
+  SHOULD be doing in five parallel arrays, sets a flag, and arms a timer. The
+  voice itself is started later, by RestartChannels, from the timer interrupt.
+
+  The reason is that the GF1 restarts a voice by being written a start address,
+  an end address and a control byte, and a voice restarted at the wrong moment
+  clicks. Deferring the work to a timer puts every restart on the same regular
+  boundary rather than wherever the sequencer happened to reach it, and lets
+  several voices retrigger together in one pass.
+
+  So the five arrays are not caches of what the card holds -- they are a
+  DESCRIPTION OF WHAT IT SHOULD HOLD, and `VoicesChanged` is the difference
+  between the two. A reader looking for the code that starts a note will not
+  find it here.
+
+    LastVoiceStart  where the sample begins in GUS DRAM
+    LastLoopStart   where its loop returns to
+    LastVoiceEnd    where it ends
+    LastVolumes     the volume it should ramp to
+    VoicesChanged   set here, cleared by RestartChannels once it has acted
+
+  **AND THAT IS WHY THE FIVE UPDATES RUN WITH INTERRUPTS OFF.** The timer that
+  will read these arrays can fire between any two of them. Without the CLI it
+  could see a voice already flagged as changed while three of its five values
+  still describe the previous note -- and it would start a sample that never
+  existed, with one note's start address and another's end. PUSHF/POPF rather
+  than CLI/STI because the caller's interrupt state has to come back as it was:
+  this runs inside the sequencer, which may itself already be in a critical
+  section. }
 procedure TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan : Byte;
                          StartA, LoopA, EndA : LongInt);
 begin
-  SetGusVoice(Voice);                      { 1723:08ed }
-  ChangeVoiceParams(Voice, 0, Freq, Pan);  { 1723:0901 }
+  SetGusVoice(Voice);                      { 1723:08ed  all register writes
+                                             below apply to this voice }
+  ChangeVoiceParams(Voice, 0, Freq, Pan);  { 1723:0901  volume 0: silent until
+                                             the restart ramps it up }
 
-  asm PUSHF; CLI end;                { 1723:0904 }
+  asm PUSHF; CLI end;                { 1723:0904  the five updates are one
+                                       transaction -- see above }
   LastVoiceStart[Voice]  := StartA;  { 1723:0916  DS:$371a }
   LastLoopStart[Voice] := LoopA;     { 1723:092e  DS:$379a }
   LastVoiceEnd[Voice]  := EndA;      { 1723:0946  DS:$381a }
@@ -1223,8 +1283,12 @@ begin
   LastVolumes[Voice] := Vol;         { 1723:0964  DS:$389a }
   asm POPF end;                      { 1723:0968 }
 
+  { Arm the timer that will do the actual restart. The routine pointer is
+    installed each time rather than once, so whatever the timer last ran does
+    not decide what happens now. }
   GUSTimer1RutPtr := @RestartChannels;  { 1723:096f  DS:$058a }
-  GUSInitTimer1($F6);                   { 1723:0979 }
+  GUSInitTimer1($F6);                   { 1723:0979  $F6 is the countdown, not
+                                          a register number }
 end;
 
 { --------------------------------------------------------------------------
