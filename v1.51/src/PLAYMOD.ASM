@@ -187,14 +187,48 @@ DumpRaw:
                 ADD     AX,OFFSET DumpLoop      ; 14d3
                 JMP     AX                      ; 14d6
 
+; THE RELEASE'S OWN ACCOUNT OF THIS LOOP SURVIVES, and lines marked [1.39b]
+; below are its author's words in translation, not ours. LIB/PLAYMOD.PAS carries
+; the same kernel as `UnCanal`'s inline `@@dlLoop` -- commented out with (* *)
+; and preserved, annotated line by line in Spanish. See docs/08-release-comments.md.
+;
+; The register contract it states for the loop:
+;
+;     [1.39b] "The loop. Entered with: DL = volume, BL = fractional part of the
+;              increment, BP = integer part of the increment, BH = fractional
+;              part of the position within the sample, SI = integer part of the
+;              position within the sample, ES = segment of the buffer, DI =
+;              offset within the buffer, CX = number of samples to produce."
+;
+; **THE REGISTERS MOVED AND THE SHAPE DID NOT.** v1.51 keeps the volume in CL
+; rather than DL, the step in BP:DX rather than BL:BP, and the stride in BX
+; rather than in a self-modified immediate -- so the contract above is the
+; earlier version's, and it is quoted for the SEQUENCE it describes rather than
+; for the register names.
+;
+; ONE OF ITS COMMENTS DELIBERATELY HAS NO HOME HERE. After `ADC SI,BP` the
+; release tests `JC @@dlSplLoop` -- "[1.39b] Carry means it has certainly passed
+; the limit" -- and then checks the loop-return point. This kernel has no such
+; test: `UnCanal` bounds every call by the distance to the next boundary and
+; subtracts a loop length between calls, so the run is straight-line by
+; construction. The release's carry and loop-wrap notes describe a routine v1.51
+; does not have, and they are left out rather than placed where they would read
+; as true.
 DumpLoop:                                       ; 14d8
                 REPT    8
-                MOV     AL,[SI]
-                IMUL    CL
-                MOV     WORD PTR ES:[DI],AX
-                ADD     DI,BX
-                ADD     BP,4321h
-                ADC     SI,DX
+                MOV     AL,[SI]                 ; [1.39b] read the sample for
+                                                ;   this position
+                IMUL    CL                      ; [1.39b] multiply by the volume
+                MOV     WORD PTR ES:[DI],AX     ; [1.39b] store it in the buffer
+                ADD     DI,BX                   ; on to the next slot; BX is the
+                                                ;   interleave stride
+                ADD     BP,4321h                ; [1.39b] add the fractional
+                                                ;   increment. 4321h IS A
+                                                ;   PLACEHOLDER -- DumpRaw
+                                                ;   patches all eight copies
+                ADC     SI,DX                   ; [1.39b] add the integer
+                                                ;   increment, carrying the
+                                                ;   fraction into it
                 ENDM
 
                 DEC     CH                      ; 1550
@@ -207,6 +241,18 @@ DumpLoop:                                       ; 14d8
 ;  position is still advanced, eleven bytes per sample instead of fifteen.
 ; --------------------------------------------------------------------------
                 PUBLIC  EmptyRaw
+; [1.39b] "The loop for an empty sample. It cannot be removed, because it has
+;          to at least fill the buffer with zeros."
+;
+; That is the whole reason this routine exists, and it is not deducible from the
+; bytes: a silent channel still has to WRITE its silence, because the buffer is
+; summed rather than cleared.
+;
+; **IT ADVANCES THE POSITION TOO, WHERE THE RELEASE'S DOES NOT.** 1.39b's
+; `@@Desactivado` is three instructions -- store the zero, step the buffer
+; pointer, `LOOP` -- and keeps no sample position at all. This one carries the
+; same `ADD BP / ADC SI` pair as DumpLoop, so a channel that falls silent and
+; resumes comes back where it would have been rather than where it stopped.
 EmptyRaw:
                 MOV     WORD PTR CS:[EmptyLoop+EmptyPatchOfs+EmptyLoopSize*0],DX
                 MOV     WORD PTR CS:[EmptyLoop+EmptyPatchOfs+EmptyLoopSize*1],DX
@@ -248,7 +294,8 @@ EmptyRaw:
 
 EmptyLoop:                                      ; 15a3
                 REPT    8
-                MOV     WORD PTR ES:[DI],AX
+                MOV     WORD PTR ES:[DI],AX     ; [1.39b] store the zero in the
+                                                ;   buffer
                 ADD     DI,BX
                 ADD     BP,4321h
                 ADC     SI,DX
