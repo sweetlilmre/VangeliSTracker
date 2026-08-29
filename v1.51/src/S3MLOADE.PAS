@@ -76,16 +76,33 @@ type
     lengths are in the header. }
   TS3MFile = record
     Name        : array[1..28] of Char;  { +$00                              }
-    Filler1     : array[1..4] of Byte;   { +$1c  the $1A marker and the type  }
+    { **NAMED FROM docs/07-s3m-format.md**, which is the point of that document.
+      Nothing here reads these four; the OFFSETS either side are measured, and the
+      spec's field list fills the gap exactly. }
+    EofMark     : Byte;                  { +$1c  $1A, so TYPE stops here      }
+    FileType    : Byte;                  { +$1d  16 = an ST3 module           }
+    Reserved1E  : Word;                  { +$1e                               }
     OrdNum      : Word;                  { +$20  read at 0b2e                 }
     InsNum      : Word;                  { +$22                               }
     PatNum      : Word;                  { +$24                               }
-    Filler2     : array[1..6] of Byte;   { +$26                               }
+    Flags       : Word;                  { +$26  mostly legacy; see the doc    }
+    CwtV        : Word;                  { +$28  created-with tracker/version  }
+
+    { **+$2a IS THE SAMPLE SIGNEDNESS FIELD**, and naming it is worth more than the
+      other five put together: 1 means signed samples, 2 unsigned. This loader reads
+      every sample as ShortInt whatever it holds -- 1664:0b8a's `CBW` is what proved
+      that -- so an unsigned module plays wrong and the field that says so is right
+      here, unread. A gap you have named is a decision you can see. }
+    Ffi         : Word;                  { +$2a  1 = signed, 2 = unsigned      }
     Magic       : array[1..4] of Char;   { +$2c  'SCRM'                       }
     Volume      : Byte;                  { +$30                               }
     Speed       : Byte;                  { +$31                               }
     Tempo       : Byte;                  { +$32                               }
-    Filler3     : array[1..13] of Byte;  { +$33                               }
+    MasterVol   : Byte;                  { +$33  bit 7 is stereo              }
+    UltraClick  : Byte;                  { +$34  GUS click-removal channels    }
+    DefaultPan  : Byte;                  { +$35  252 = a pan table follows     }
+    Reserved36  : array[1..8] of Byte;   { +$36                               }
+    Special     : Word;                  { +$3e  custom data parapointer       }
     Channels    : array[1..32] of Byte;  { +$40  bit 3 is the pan side        }
   end;
 
@@ -102,12 +119,28 @@ type
     LoopBeg  : LongInt;               { +$14                                 }
     LoopEnd  : LongInt;               { +$18                                 }
     Vol      : Byte;                  { +$1c                                 }
-    Filler1  : array[1..2] of Byte;   { +$1d                                 }
+    Reserved1D : Byte;                { +$1d                                 }
+    Pack       : Byte;                { +$1e  1 = DP30ADPCM, unused by ST3.01 }
     Flags    : Byte;                  { +$1f  zero means no loop             }
     C2Spd    : Word;                  { +$20                                 }
-    Filler2  : array[1..14] of Byte;  { +$22                                 }
+    { C2Spd IS FOUR BYTES IN THE FILE and two here, because 1664 reads a Word --
+      the spec's own note is that ST3 only uses the lower sixteen bits. The upper
+      half is the first of these. }
+    C2SpdHi    : Word;                { +$22                                 }
+    Reserved24 : LongInt;             { +$24                                 }
+
+    { THE THREE `Int:` FIELDS ARE IN-MEMORY ONLY. ST3 uses them while a module is
+      loaded and they are meaningless in a file, which is exactly why a loader can
+      leave them unread -- but named, that is a fact about the format rather than a
+      gap in the transcription. }
+    IntGusPos  : Word;                { +$28  sample address in GUS RAM / 32  }
+    IntSbFlags : Word;                { +$2a  SoundBlaster loop expansion     }
+    IntLastUsed: LongInt;             { +$2c  last used position, SB only     }
     Name     : array[1..25] of Char;  { +$30  StrASCIIZ over $19 at 0775     }
-    Filler3  : array[1..7] of Byte;   { +$49  and the 'SCRS' marker          }
+    { The name is 28 bytes in the file and 1664 reads 25 of them, so three remain
+      before the marker. }
+    NameTail   : array[1..3] of Char; { +$49                                 }
+    Magic      : array[1..4] of Char; { +$4c  'SCRS'                          }
   end;
 
   { The two paragraph-pointer tables, each read straight off the stream. }

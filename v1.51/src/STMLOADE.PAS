@@ -115,14 +115,16 @@ type
       to 13 -- so 14 and 15 are unaccounted for. Thirty bytes puts the order
       table at $30 + 31*30 = $3d2, and that is exactly the immediate our build
       emitted where the original has $410. }
-    Filler0   : Word;                  { +$0e                                }
+    { The format's in-memory sample pointer, meaningless in a file -- which is why
+      it can go unread and why the record is 32 bytes and not 30. }
+    IntPos    : Word;                  { +$0e                                }
     Len       : Word;                  { +$10  read at 15d0:0448            }
     LoopStart : Word;                  { +$12  read at 15d0:0465            }
     LoopEnd   : Word;                  { +$14  read at 15d0:0472            }
     Vol       : Byte;                  { +$16  read at 15d0:04c1            }
-    Filler1   : Byte;                  { +$17                                }
+    Reserved17: Byte;                  { +$17                                }
     C2Spd     : Word;                  { +$18  read at 15d0:04d3            }
-    Filler2   : array[1..4] of Byte;   { +$1a                                }
+    Reserved1A: array[1..4] of Byte;   { +$1a  in-memory only                }
     ParaLen   : Word;                  { +$1e                                }
   end;
 
@@ -149,11 +151,20 @@ type
   TStmFile = record
     Name        : array[1..20] of Char;
     Magic       : array[1..8] of Char;  { +$14  '!Scream!'                    }
-    Filler1     : array[1..4] of Byte;  { +$1c  type and version              }
+    { **NAMED FROM THE FORMAT'S OWN LAYOUT, NOT FROM A SPIKE.** docs/07-s3m-format.md
+      exists for S3M and has no counterpart for STM, so these three carry less weight
+      than S3MLOADE's equivalents: they are the widely-published Scream Tracker 2
+      header and 1.39b's own record agrees on their EXTENT (`fill1 : LONGINT`) while
+      naming none of them. Offsets measured, names sourced weakly -- said here rather
+      than left to be assumed. }
+    EofMark     : Byte;                 { +$1c  $1A                           }
+    FileType    : Byte;                 { +$1d  2 = a module                  }
+    VerMajor    : Byte;                 { +$1e                                }
+    VerMinor    : Byte;                 { +$1f                                }
     Tempo       : Byte;                 { +$20  the HIGH nibble is the tempo  }
     NumPatterns : Byte;                 { +$21                                }
     Volume      : Byte;                 { +$22                                }
-    Filler2     : array[1..13] of Byte; { +$23                                }
+    Reserved23  : array[1..13] of Byte; { +$23  reserved by the format        }
     Instruments : array[1..31] of TStmFileInstrument;   { +$30                }
     { BASE ONE, AND THE DISPLACEMENT IS WHAT SAYS SO. The scan reads the table
       with the immediate $40f where the table itself begins at $410. Turbo

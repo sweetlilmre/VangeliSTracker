@@ -125,10 +125,10 @@ const
     ModOffset  DS:$03c0  is four bytes below SongUnit's `SongLoaders` at $03c4, so it
                is SONGUNIT's, and 14b9:0242 -- which pushes it into `St.Seek` -- is
                that unit's own `LoadFName`. Now a typed constant there.
-    Rut_0bc6   DS:$0bc6  is between SoundDevices' `DMAChannel` at $0bc4 and its
+    NxOption   DS:$0bc6  is between SoundDevices' `DMAChannel` at $0bc4 and its
                `IsDmaDevice` at $0bc7, so it is SOUNDDEVICES'. 109c sets it from the
-               `nx` switch and nothing anywhere reads it, which is why it still has
-               no name.
+               `nx` switch and nothing anywhere reads it, so it is named for the
+               switch rather than for a behaviour nothing demonstrates.
 
   So this unit is now entirely typed constants, with no variables at all -- which is
   what the release's `VTGLOBAL.PAS` is too, apart from a `StdErr` text file and a

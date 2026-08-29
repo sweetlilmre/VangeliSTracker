@@ -158,15 +158,27 @@ const
     thing before an aligned field becomes a real declaration the moment something
     follows it. }
   Fill0003  : Byte = 0;  { DS:$0003  1.31b's alignment pad, now explicit }
-  Rut_0004  : Boolean = False;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
+  { **NAMED FOR WHAT IT GUARDS, WHICH IS THE ONLY THING THAT CAN NAME IT.** There is
+    one writer -- 1000:03c8, immediately after `Song.LoadFName` returns -- and one
+    reader, 1000:02f7, which decides whether `StopModule` calls `Song.Done`. That pair
+    says the byte means "the song object owns a file", and nothing in the image says
+    more. An address is not a name; a writer and a reader together are. }
+  SongOpen  : Boolean = False;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
 
   { DS:$0005 -- A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
     $0006 and Guard is at $0002, so those four bytes are accounted for exactly: a byte
     at $0003, then two flags. 1000:02ca reads this one with `CMP byte [0005],0 / JZ`,
     guarding a block that reloads three words from another unit's data. Declared
     rather than left as the compiler's alignment, because a pad and a variable are the
-    same byte until something reads it. }
-  Rut_0005  : Boolean = False;  { DS:$0005  read at 1000:02ca }
+    same byte until something reads it.
+
+    **THE NAME COMES FROM THE PAIRING, NOT FROM THE SET.** It is written at 1000:03df
+    inside `if Song.Status <= 2` -- so only when the song actually started -- and read
+    to decide whether the timer needs UNHOOKING, the DMA buffer silencing and the
+    requested range restoring. Everything it guards is a teardown of something the
+    start-up did, which is what makes "started" the right word rather than "playing":
+    the byte stays set after the module ends. }
+  PlayerStarted : Boolean = False;  { DS:$0005  read at 1000:02ca }
 
   { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
@@ -701,7 +713,7 @@ end;
   mid-scale; SoundDevices' own `StartSampling` does the same thing at 1bff:00f7. }
 procedure StopModule;
 begin
-  if Rut_0005 then                                { 1000:02ca }
+  if PlayerStarted then                                { 1000:02ca }
   begin
     UnhookTimer;                                  { 1000:02d1 }
     FillChar(DMABuffer^, DMABufferSize, $80);     { 1000:02d4 }
@@ -713,7 +725,7 @@ begin
     ReqLen   := VTSongLen                         { 1000:02f1 }
   end;
 
-  if Rut_0004 then                                { 1000:02f7 }
+  if SongOpen then                                { 1000:02f7 }
     Song.Done                                     { 1000:02fe }
 end;
 
@@ -769,7 +781,7 @@ begin
   StartSampling;                                  { 1000:0359  1a17:00a9 }
   Song.LoadFName(Name);                         { 1000:0368 }
 
-  Rut_0004 := True;                               { 1000:03c8 }
+  SongOpen := True;                               { 1000:03c8 }
 
   PlayModule := False;                            { 1000:03cd }
   if Song.Status <= 2 then                        { 1000:03d1 }
@@ -791,7 +803,7 @@ begin
       and clearing it is what a new module needs; writing `FillChar(CtrlBlock, ...)`
       with a length of $100 would say the same thing to the compiler and something
       false to a reader. }
-    Rut_0005 := True;                             { 1000:03df }
+    PlayerStarted := True;                             { 1000:03df }
 
     FillChar(CtrlBlock.Filler1,
              SizeOf(CtrlBlock.Filler1), 0);       { 1000:03e4 }
@@ -839,7 +851,7 @@ begin
   end;
 
   { ~~AND `Song.Done` STOOD HERE~~ -- it is StopModule's last statement now, guarded by
-    `Rut_0004` rather than run unconditionally. 1000:0471 is the epilogue and it
+    `SongOpen` rather than run unconditionally. 1000:0471 is the epilogue and it
     follows `ShrinkSystemHeap` directly. }
 end;
 
@@ -944,11 +956,17 @@ begin
     complaint about not finding one, and DoSongColl is not called at all from here.
     Its shell-out path still runs, because `InterpretSwitch` calls it too.
 
-    **`Rut_4821` GUARDS THE COMPLAINT TOO, WHICH IS THE THIRD READER OF A FLAG NOTHING
-    WRITES.** VTCMD tests it twice inside DoSongColl and this is the other one:
-    1000:069a is `CMP byte [4821],0 / JNZ` between the `Complain` test and the
-    WriteLn. Three reads, no writes anywhere in the image -- a switch wired up and
-    never given a way to be turned on. See VTGlobal's declaration. }
+    **`CtrlBlock.StopWant` GUARDS THE COMPLAINT TOO, AND THIS IS ITS THIRD READER.**
+    VTCMD tests it twice inside DoSongColl and this is the other one: 1000:069a is
+    `CMP byte [4821],0 / JNZ` between the `Complain` test and the WriteLn. Every one
+    of the three asks the same question -- has something asked us to stop -- and a
+    program that is stopping does not complain about what it did not play.
+
+    THIS PARAGRAPH SAID TWICE THAT NOTHING WRITES $4821. It is CB+$207, a published
+    control-block field, and the writers are outside this image: the whole point of
+    the block is that another program reaches into it. Three reads and no writes is
+    not an unfinished switch -- it is exactly what an INPUT looks like, and the shape
+    that should have named it. See VTCtrl's declaration. }
   if (SongColl.Count <> 0) and DoSongColl(Cmd.FileDir) and Complain
      and not CtrlBlock.StopWant then                        { 1000:0679..06a0        }
     WriteLn(NoSong);                              { 1000:06a1              }

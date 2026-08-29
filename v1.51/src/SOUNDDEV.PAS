@@ -170,7 +170,7 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
   declared in a unit whose own block is nowhere near these addresses, and this file
   already carried the neighbours either side of every one of them:
 
-      $0bc6  Rut_0bc6      was VTGLOBAL's     $0bca  TickSnapshot  was PLAYMOD/VTMAIN's
+      $0bc6  NxOption      was VTGLOBAL's     $0bca  TickSnapshot  was PLAYMOD/VTMAIN's
       $0bcc  TicksPerSecond was PLAYMOD's and DEVGUS's -- declared TWICE
       $0bd0  WordAtBD0     was VTMAIN's
 
@@ -241,9 +241,17 @@ const
   DMAChannel        : Word         = 255;    { DS:$0bc4                       }
 
   { DS:$0bc6 -- WAS DECLARED IN VTGLOBAL. 109c:06d3 sets it from the `nx` switch and a
-    scan of every segment finds NO READER anywhere in the program, so it still has no
-    name. Its address is what puts it here: $0bc4 and $0bc7 are both this unit's. }
-  Rut_0bc6          : Boolean      = False;  { DS:$0bc6                       }
+    scan of every segment finds NO READER anywhere in the program. Its address is what
+    puts it here: $0bc4 and $0bc7 are both this unit's.
+
+    **NAMED FOR ITS WRITER BECAUSE IT HAS NOTHING ELSE.** Every other name in this
+    reconstruction comes from what a value is USED for, and with no reader there is no
+    use to name it after -- so this one is named after the switch that sets it, and
+    the name is deliberately shaped to say so. `NxOption` claims exactly what can be
+    demonstrated: the command line said `nx`. It does NOT claim to know what `nx` was
+    going to do, and a behavioural name here -- `NoExtended`, `NoXms` -- would be an
+    invention dressed as a measurement. A half-finished feature should read as one. }
+  NxOption          : Boolean      = False;  { DS:$0bc6  set by `nx`, unread  }
 
   IsDmaDevice       : Boolean      = False;  { DS:$0bc7  picks @@Prepare's path }
 

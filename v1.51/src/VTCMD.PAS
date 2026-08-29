@@ -615,10 +615,12 @@ end;
 
 { 109c:06d3 -- the `nx` switch, and the same three instructions as CmdNoBanner but
   writing `[0bc6]`. **Nothing in any segment reads that byte**, so there is no behaviour
-  to name the routine after; a switch that was wired up and left unfinished. }
-procedure Rut_06d3;
+  to name the routine after; a switch that was wired up and left unfinished. Named for
+  the switch, like every other handler in this file -- which is the honest answer when
+  the only thing demonstrable about a routine is the token that reaches it. }
+procedure CmdNx;
 begin
-  Rut_0bc6 := True
+  NxOption := True
 end;
 
 
@@ -831,7 +833,7 @@ begin
   else if CmpSwitch(Token, 'sl'  ) then CmdInitSongLen    (TokenParam(Token))
   else if CmpSwitch(Token, 'sr'  ) then CmdInitRepStart   (TokenParam(Token))
   else if CmpSwitch(Token, 'sh'  ) then CmdInitShell      (TokenParam(Token))
-  else if CmpSwitch(Token, 'nx'  ) then Rut_06d3
+  else if CmpSwitch(Token, 'nx'  ) then CmdNx
   else if CmpSwitch(Token, 'nb'  ) then CmdNoBanner
   else if CmpSwitch(Token, 'd'   ) then CmdInitDevice     (TokenParam(Token))
   else if CmpSwitch(Token, 'f'   ) then CmdInitFreq       (TokenParam(Token))
