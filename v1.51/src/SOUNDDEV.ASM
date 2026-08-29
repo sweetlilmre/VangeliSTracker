@@ -51,6 +51,13 @@
                 EXTRN   ActualBuffer    : DWORD
                 EXTRN   BytesPerSample  : BYTE
                 EXTRN   ClockAccum      : WORD
+; StackSize IS THE RELEASE'S OWN NAME AND ITS OWN VALUE. LIB/SOUNDDEV.ASM
+; declares StackSize EQU 1000 and reaches the stack's top with
+; MOV SP,OFFSET DevStack + StackSize at all four of its switches. TASM
+; cannot see the Pascal DevStkSize, so the constant is declared here as the
+; release declares it, with the same name and the same number.
+StackSize       EQU     1000
+
                 EXTRN   DevStack        : BYTE
                 EXTRN   DMABuffer       : DWORD
                 EXTRN   DMABufferPtr    : DWORD
@@ -132,7 +139,7 @@ SharedPoll:
 ; 3F1Ah was where that build's stack ended; this build's is elsewhere, and the
 ; instruction assembles identically either way. Computed from the symbol now --
 ; see `transcribe-the-meaning-not-the-constant` in the kit.
-        MOV     SP,OFFSET DevStack + 1000 ; 102b  its top; DevStkSize
+        MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
