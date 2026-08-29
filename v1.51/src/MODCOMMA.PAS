@@ -128,12 +128,12 @@ type
       12ba:0a8a copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
       +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
       the first to index the published control block. }
-    { ~~RingChan AND RingNote~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
+    { ~~RingSem AND RingPending~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
       147d:05d8 is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
       MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
       147d:05b9 stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
-    RetrigCt   : Byte;          { +$24  was RingChan in 1.31b                 }
-    RetrigVal  : Byte;          { +$25  was RingNote in 1.31b                 }
+    RetrigCt   : Byte;          { +$24  was RingSem in 1.31b                 }
+    RetrigVal  : Byte;          { +$25  was RingPending in 1.31b                 }
     DoRetrig  : Boolean;       { +$26                                        }
 
     { +$27 and +$28: 147d:0369 is `StartSampleOffs`, reached from `CommandStart` on
@@ -162,8 +162,8 @@ type
       THE LESSON IS THE ONE THE SOUNDDEV CORRECTION TAUGHT LAST WEEK: an address that
       two readings both claim is not a contradiction to be argued out, it is a
       MISSING MEASUREMENT. Both readings were right about their own version. }
-    RingChan   : Byte;          { +$2c                                        }
-    RingNote   : Byte;          { +$2d   46 bytes in all                      }
+    RingSem   : Byte;          { +$2c                                        }
+    RingPending   : Byte;          { +$2d   46 bytes in all                      }
   end;
 
 { --------------------------------------------------------------------------
@@ -1414,11 +1414,11 @@ end;
   142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
   counterpart in the release at all.
 
-  It stores the parameter into `Can.RingChan` and 1 into `Can.RingNote`, and 12ba
+  It stores the parameter into `Can.RingSem` and 1 into `Can.RingPending`, and 12ba
   does the rest: 12ba:0a58..0a8d copies both into `NoteRing[EventSlot, chan]` and
-  then clears `RingNote` again, and 12ba:0187 tallies the ring into the control
-  block the INT 2Fh interface publishes. So `RingNote` is "an event is waiting" and
-  `RingChan` is its payload -- **this is how a tune signals the demo**, which is the
+  then clears `RingPending` again, and 12ba:0187 tallies the ring into the control
+  block the INT 2Fh interface publishes. So `RingPending` is "an event is waiting" and
+  `RingSem` is its payload -- **this is how a tune signals the demo**, which is the
   one thing a demo player needs that a tracker does not. `VangeliSTracker/LIB` has
   nothing like it, and it is the clearest single piece of evidence that DemoVT is a
   purpose-built fork rather than a subset build.
@@ -1445,13 +1445,13 @@ end;
   ITS CASE ARM IS ALSO LAST IN THE CHAIN. The other sixteen arms run in the release's
   own order; this one is appended after them, which is what an arm ADDED to an
   existing `case` looks like. Named `StartRingEvent` for its role, matching the
-  `RingChan`/`RingNote` fields it writes -- the release's `mcNPI1` supplies the
+  `RingSem`/`RingPending` fields it writes -- the release's `mcNPI1` supplies the
   command's name but would be a terrible name for a routine that does something.
   -------------------------------------------------------------------------- }
 procedure StartRingEvent(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
-  Can.RingChan := N.Parameter;                     { 0860..0871              }
-  Can.RingNote := 1                                { 0872..0875              }
+  Can.RingSem := N.Parameter;                     { 0860..0871              }
+  Can.RingPending := 1                                { 0872..0875              }
 end;
 
 { --------------------------------------------------------------------------

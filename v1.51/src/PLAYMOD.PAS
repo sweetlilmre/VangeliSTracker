@@ -149,9 +149,14 @@ type
   TVolumes = array[1..MaxChannels] of Byte;
 
   PRingEntry = ^TRingEntry;
+  { **THE TWO FIELDS ARE A SEMAPHORE NUMBER AND A PENDING FLAG**, and they were
+    `Chan`/`Note` until DEMOVT.DOC named what they feed. Command 8's parameter
+    selects one of 256 semaphores; this carries it from the pattern row to
+    12ba:0187, which increments `CtrlBlock.Semaphores[Sem]`. Nothing here is a
+    channel -- `Chan` indexing a 256-entry array should have been the tell. }
   TRingEntry = record
-    Chan : Byte;                { +$00  indexes CtrlBlock                    }
-    Note : Byte;                { +$01  nonzero means the entry is live      }
+    Sem     : Byte;             { +$00  which semaphore command 8 asked for  }
+    Pending : Byte;             { +$01  nonzero means the entry is live      }
   end;
   TRingRow = array[0..7] of TRingEntry;      { 16 bytes                      }
 
@@ -775,7 +780,7 @@ type
   { For calling the driver record's +$26 through its Pointer field, the way
     SOUNDDEV already does with `TInitDevProc`. That one is a procedure; this one
     returns the rate the device settled on, which 12ba:0d44 stores. }
-  { ~~TWideEntry AND TWideRow ARE DECLARED HERE~~ -- they are VTCtrl's now, because
+  { ~~TChanData AND TChansData ARE DECLARED HERE~~ -- they are VTCtrl's now, because
     the published row and this ring have to be one type for the copies below to be
     ASSIGNMENTS rather than Move calls. See the declaration there. }
 
@@ -809,7 +814,7 @@ var
     12ce:021a is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
     flag grid is 32 bytes a row; and 0206..0211 is `INC / CMP 18 / SUB 19`, so
     there are 25 rows exactly as the narrow ring has. }
-  WideRing        : array[0..RingRows - 1] of TWideRow;
+  WideRing        : array[0..RingRows - 1] of TChansData;
   WideHit         : array[0..RingRows - 1, 1..WideChans] of Byte;
 
   { One byte each per row, and they are TWO arrays and not a record of two: 12ce:0263
@@ -1026,8 +1031,8 @@ begin
       `LES DI,[BP-4]`, which is what 01cb and 01d5 do. So the `ENTER 4,0` at
       0187 is the with-slot and this routine declares NO local at all. }
     with NoteRing[EventSlot, EventChan] do              { 01b3..01ca             }
-      if Note <> 0 then                             { 01cb..01d4             }
-        Inc(CtrlBlock.Filler1[Chan])                { 01d5..01e2             }
+      if Pending <> 0 then                          { 01cb..01d4             }
+        Inc(CtrlBlock.Semaphores[Sem])              { 01d5..01e2             }
   end;
 
   FillChar(NoteRing[EventSlot], SizeOf(TRingRow), 0)    { 01ea..01ff             }
@@ -1078,14 +1083,14 @@ begin
   { AN ASSIGNMENT, NOT A `Move`, AND THE HELPER IS WHAT SAYS SO -- 022b calls SYSTEM's
     $09f7 where a written `Move` gets $0fb2. Same rule this file already records for
     `Volume := UserVols`. }
-  CtrlBlock.WideNotes := WideRing[WideSlot];        { 0216..022f             }
+  CtrlBlock.ChansData := WideRing[WideSlot];        { 0216..022f             }
 
   for WideChan := 1 to WideChans do                 { 0230..0237, 0258..025e }
     if WideHit[WideSlot, WideChan] <> 0 then        { 023c..024e             }
-      CtrlBlock.ChanHit[WideChan] := 1;             { 024f..0257             }
+      CtrlBlock.ChansTrig[WideChan] := 1;             { 024f..0257             }
 
-  CtrlBlock.NotePlaying := WideNoteRing[WideSlot];   { 025f..0269             }
-  CtrlBlock.SeqPlaying  := WideSeqRing[WideSlot];    { 026a..0274             }
+  CtrlBlock.Pos := WideNoteRing[WideSlot];   { 025f..0269             }
+  CtrlBlock.Seq  := WideSeqRing[WideSlot];    { 026a..0274             }
 
   WideRing[WideSlot] := WideRing[WidePrev];        { 0275..0296             }
 
@@ -1571,11 +1576,15 @@ end;
 
   THE SEEK INTERFACE. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
   `+$204` and `+$205` -- inside the 768-byte structure published over INT 2Fh,
-  and `VTCtrl` already names them `SeekWant`, `SeekPos` and `SeekRow`. So a
-  resident client can ask the player to jump: set the position and row, raise the
-  flag, and the next time the sequencer crosses a pattern boundary it honours the
-  request and clears the flag. It is the only part of the control block a client
-  WRITES rather than reads. Psycho Neurosis never uses it.
+  and `VTCtrl` names them `JumpNewPos`, `JumpPosSeq` and `JumpPosNote`, which are
+  the client bindings' own names for them. So a resident client can ask the player
+  to jump: set the position and row, raise the flag, and the next time the
+  sequencer crosses a pattern boundary it honours the request and clears the flag.
+
+  IT IS NOT THE ONLY FIELD A CLIENT WRITES, which is what stood here. The
+  bindings mark a whole region as the client's -- these three, `SoundVolume` and
+  `Abort` -- and the demo documentation adds that a client may write the
+  semaphores too, "usually cleaning them". Psycho Neurosis never uses any of it.
 
   AND THE ROTATION IS DISABLED. `INC AX` at 06bf is immediately followed by
   `AND AX,0`, so the next slot is always slot zero: the two-slot rotation of
@@ -1587,11 +1596,11 @@ procedure NextPattern(var Song : TSong);
 begin
   NullProcedure($FFFF, 0, 0);                        { 0697..069f            }
 
-  if CtrlBlock.SeekWant <> 0 then                    { 06a0..06a6            }
+  if CtrlBlock.JumpNewPos <> 0 then                    { 06a0..06a6            }
   begin
-    CtrlBlock.SeekWant := 0;                         { 06a7..06ab            }
-    NextSeq := CtrlBlock.SeekPos;                    { 06ac..06b3            }
-    NextNote := CtrlBlock.SeekRow                     { 06b4..06bb            }
+    CtrlBlock.JumpNewPos := 0;                         { 06a7..06ab            }
+    NextSeq := CtrlBlock.JumpPosSeq;                    { 06ac..06b3            }
+    NextNote := CtrlBlock.JumpPosNote                     { 06b4..06bb            }
   end;
 
   NextIdx := (NoteHd + 1) and 0;                  { 06bc..06c5            }
@@ -1858,13 +1867,13 @@ begin
       NoteProcessed^.Tempo := CurSpeed;                   { 0a4d..0a57            }
 
       { 0a58..0a72 -- publish the channel's event into the note ring, where
-        12ba:0187 will tally it into the control block. The ring is indexed by
+        12ba:0187 will increment the semaphore it names. The ring is indexed by
         the CONSUMER's slot, DS:$02ec, not the event ring's. }
-      NoteRing[EventSlot, ChanIdx - 1].Note :=
-        CurCanal^.RingNote;                          { 0a58..0a72            }
-      NoteRing[EventSlot, ChanIdx - 1].Chan :=
-        CurCanal^.RingChan;                          { 0a73..0a8d            }
-      CurCanal^.RingNote := 0                        { 0a8e..0a96            }
+      NoteRing[EventSlot, ChanIdx - 1].Pending :=
+        CurCanal^.RingPending;                       { 0a58..0a72            }
+      NoteRing[EventSlot, ChanIdx - 1].Sem :=
+        CurCanal^.RingSem;                           { 0a73..0a8d            }
+      CurCanal^.RingPending := 0                        { 0a8e..0a96            }
     end;                                             { 0a97..0aa1  for end   }
 
     { 0aa2..0ad6 -- how many samples this row is worth.
@@ -2033,7 +2042,7 @@ begin
     CtrlBlock + $125, immediately after the dispatch pointer. Together with the
     per-channel counters 12ba:0187 bumps, that is live state any INT 2Fh client
     can read. Psycho Neurosis never does. }
-  Inc(CtrlBlock.Ticks32);                            { 0ede..0ee7            }
+  Inc(CtrlBlock.TickCounter);                            { 0ede..0ee7            }
 
   { **MOVED UP IN v1.51** -- 1.31b assigns this 170 bytes further down, immediately
     before the hand-written loop that reads it. Nothing between the two positions
@@ -2215,11 +2224,11 @@ begin
 
       Equivalent Pascal, REFERENCE ONLY:
 
-          RawPtr^.Volume := RawPtr^.Volume * CtrlBlock.MasterVol shr 8 }
+          RawPtr^.Volume := RawPtr^.Volume * CtrlBlock.SoundVolume shr 8 }
     asm
       LES     SI, RawPtr                 { 0e5e                              }
       MOV     AL, ES:[SI+$1d]            { 0e62  Volume                      }
-      MOV     BL, CtrlBlock.MasterVol    { 0e66                              }
+      MOV     BL, CtrlBlock.SoundVolume    { 0e66                              }
       MUL     BL                         { 0e6a                              }
       MOV     ES:[SI+$1d], AH            { 0e6c  the high byte = shr 8        }
     end;
@@ -2539,8 +2548,10 @@ begin
   end;
 
   { NEW IN v1.51, and it is the first thing PlayStart does after the CLI. Publishing
-    the channel count is what makes the thirty-two ChanHit flags above it readable --
-    without it a client cannot tell an idle channel from one the song does not have. }
+    the channel count is what makes the thirty-two `ChansTrig` flags above it
+    readable -- without it a client cannot tell an idle channel from one the song
+    does not have. The bindings describe them as being for VU meters, which is
+    exactly what needs to know how many bars to draw. }
   CtrlBlock.NumChannels := Song.NumChannels;       { 1408..1411              }
 
   PlayingSong := @Song;                            { 1412..141f              }

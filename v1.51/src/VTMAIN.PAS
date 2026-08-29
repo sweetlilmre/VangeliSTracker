@@ -790,32 +790,40 @@ begin
 
     { **NEW IN v1.51 -- THE CONTROL BLOCK IS RESET FOR THE NEW MODULE, and every
       address in the block confirms TCtrlBlock's layout from the outside.** $461a is
-      CtrlBlock itself; $471a is CB+$100, the thirty-two ChanHit flags; $4747 is
-      CB+$12D, the 128-byte wide row; $473f is CB+$125, Ticks32; $47c7 and $47c8 are
-      CB+$1AD and CB+$1AE; $481d is CB+$203, SeekWant. Six fields that were measured
-      one at a time in PlayMod and VTCtrl, all landing where this routine puts them.
+      CtrlBlock itself; $471a is CB+$100, the thirty-two `ChansTrig` flags; $4747 is
+      CB+$12D, the 128-byte `ChansData` row; $473f is CB+$125, `TickCounter`; $47c7
+      and $47c8 are CB+$1AD and CB+$1AE; $481d is CB+$203, `JumpNewPos`. Six fields
+      measured one at a time in PlayMod and VTCtrl, all landing where this routine
+      puts them -- and all six now confirmed by the client bindings the v1.5
+      distribution ships.
 
       THE TWO INDICES START AT ONE, NOT ZERO, which is the same convention
       NotePlaying and SeqPlaying carry inside TPlayingNote -- row 1 of order position
       1, not a zero that would read as "before the start".
 
-      Filler1 IS CLEARED BY NAME. Its 256 bytes are the 1.31b-era per-channel tally,
-      and clearing it is what a new module needs; writing `FillChar(CtrlBlock, ...)`
-      with a length of $100 would say the same thing to the compiler and something
-      false to a reader. }
+      THE 256 BYTES ARE THE SEMAPHORE ARRAY, and DEMOVT.DOC names this very
+      instruction: "When DemoVT is started, all semaphores are set to zero." A
+      client that polls a semaphore must not see the previous module's count.
+
+      This paragraph called them "the 1.31b-era per-channel tally" and cleared
+      them under the name `Filler1`, which is what a correct transcription of an
+      un-understood field looks like: the byte count right, the site right, the
+      meaning absent. Cleared BY NAME regardless, because `FillChar(CtrlBlock, ...)`
+      with a length of $100 says the same thing to the compiler and something false
+      to a reader -- and that much was right both before and after. }
     PlayerStarted := True;                             { 1000:03df }
 
-    FillChar(CtrlBlock.Filler1,
-             SizeOf(CtrlBlock.Filler1), 0);       { 1000:03e4 }
-    FillChar(CtrlBlock.ChanHit,
-             SizeOf(CtrlBlock.ChanHit), 0);       { 1000:03f3 }
-    FillChar(CtrlBlock.WideNotes,
-             SizeOf(CtrlBlock.WideNotes), 0);     { 1000:0401 }
+    FillChar(CtrlBlock.Semaphores,
+             SizeOf(CtrlBlock.Semaphores), 0);       { 1000:03e4 }
+    FillChar(CtrlBlock.ChansTrig,
+             SizeOf(CtrlBlock.ChansTrig), 0);       { 1000:03f3 }
+    FillChar(CtrlBlock.ChansData,
+             SizeOf(CtrlBlock.ChansData), 0);     { 1000:0401 }
 
-    CtrlBlock.Ticks32     := 0;                   { 1000:0410 }
-    CtrlBlock.NotePlaying := 1;                   { 1000:0418 }
-    CtrlBlock.SeqPlaying  := 1;                   { 1000:041d }
-    CtrlBlock.SeekWant    := 0;                   { 1000:0422 }
+    CtrlBlock.TickCounter     := 0;                   { 1000:0410 }
+    CtrlBlock.Pos := 1;                   { 1000:0418 }
+    CtrlBlock.Seq  := 1;                   { 1000:041d }
+    CtrlBlock.JumpNewPos    := 0;                   { 1000:0422 }
     PlayStart(Song);                         { 1000:0381 }
     asm
       MOV  DI, OFFSET Heap   { 1000:0386                                  }
@@ -922,7 +930,7 @@ begin
     a seven-byte hole exactly where 1000:02c0 is. The second assignment below is what
     brings it into the image. }
   CtrlBlock.Dispatch   := @Dispatch;              { 1000:05f4  -> CB+$121   }
-  CtrlBlock.DispatchAX := @DispatchEntry;         { 1000:0601  -> CB+$129   }
+  CtrlBlock.RegEntryPoint := @DispatchEntry;         { 1000:0601  -> CB+$129   }
 
   Install(SelfName, @CtrlBlock);                  { 1000:05a3  1b54:0088 }
 
@@ -956,7 +964,7 @@ begin
     complaint about not finding one, and DoSongColl is not called at all from here.
     Its shell-out path still runs, because `InterpretSwitch` calls it too.
 
-    **`CtrlBlock.StopWant` GUARDS THE COMPLAINT TOO, AND THIS IS ITS THIRD READER.**
+    **`CtrlBlock.Abort` GUARDS THE COMPLAINT TOO, AND THIS IS ITS THIRD READER.**
     VTCMD tests it twice inside DoSongColl and this is the other one: 1000:069a is
     `CMP byte [4821],0 / JNZ` between the `Complain` test and the WriteLn. Every one
     of the three asks the same question -- has something asked us to stop -- and a
@@ -968,7 +976,7 @@ begin
     not an unfinished switch -- it is exactly what an INPUT looks like, and the shape
     that should have named it. See VTCtrl's declaration. }
   if (SongColl.Count <> 0) and DoSongColl(Cmd.FileDir) and Complain
-     and not CtrlBlock.StopWant then                        { 1000:0679..06a0        }
+     and not CtrlBlock.Abort then                        { 1000:0679..06a0        }
     WriteLn(NoSong);                              { 1000:06a1              }
 
   StopModule;                                     { 1000:06b7              }

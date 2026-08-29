@@ -665,7 +665,7 @@ begin
     included -- the `JMP` at `0752` reaches `0803`, which is `MOV AL,[BP-1] / LEAVE /
     RETF 4`. The result is already True by then, so the flag makes this succeed
     without doing anything. See the note on the variable in VTGlobal. }
-  if CtrlBlock.StopWant then Exit;
+  if CtrlBlock.Abort then Exit;
 
   { ~~THE EMPTY CASE JUST RETURNED TRUE~~ -- IN v1.51 IT RUNS THE SHELL.
     `1086:075c..0799` is the Turbo Pascal `Exec` idiom in full, and every part of it
@@ -714,7 +714,7 @@ begin
         Short-circuit `or` puts both false-paths on the same label, which is what
         Turbo Pascal 6's default boolean evaluation -- B-minus -- emits. }
       for i := 0 to SongColl.Count - 1 do
-        if CtrlBlock.StopWant or
+        if CtrlBlock.Abort or
            not DoAllMODs(Path, PString(SongColl.At(i))^, OneMODProc) then goto Fin;
       DoSongColl := True;
 

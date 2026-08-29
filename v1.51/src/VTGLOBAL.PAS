@@ -103,7 +103,7 @@ const
   NoBanner          : Boolean       = False;         { DS:$09e8  MEASURED      }
 
 { ~~A NEW BOOLEAN AT DS:$4821 WHOSE OWNER IS NOT YET PROVEN~~ -- **IT IS
-  `VTCtrl.CtrlBlock.StopWant`, AND THE ARITHMETIC IS ONE SUBTRACTION.** $4821 minus
+  `VTCtrl.CtrlBlock.Abort`, AND THE ARITHMETIC IS ONE SUBTRACTION.** $4821 minus
   CtrlBlock's $461a is $207, inside the published control block, one byte after
   MasterVol and four after SeekWant.
 

@@ -116,14 +116,22 @@ type
       table at $30 + 31*30 = $3d2, and that is exactly the immediate our build
       emitted where the original has $410. }
     { The format's in-memory sample pointer, meaningless in a file -- which is why
-      it can go unread and why the record is 32 bytes and not 30. }
+      it can go unread and why the record is 32 bytes and not 30. 1.39b leaves the
+      same two bytes as `fill1` and does not name them either, so this name has the
+      published layout behind it and nothing else. }
     IntPos    : Word;                  { +$0e                                }
     Len       : Word;                  { +$10  read at 15d0:0448            }
     LoopStart : Word;                  { +$12  read at 15d0:0465            }
     LoopEnd   : Word;                  { +$14  read at 15d0:0472            }
     Vol       : Byte;                  { +$16  read at 15d0:04c1            }
     Reserved17: Byte;                  { +$17                                }
+    { 1.39b calls this one `NAdj` and feeds it straight into an instrument's
+      `DAdj`, its rate adjust -- so the ROLE is corroborated by the sibling loader
+      even though the name is not. `C2Spd` is the format's own term for it. }
     C2Spd     : Word;                  { +$18  read at 15d0:04d3            }
+    { 1.39b covers these four AND `ParaLen` with one `fill2 : ARRAY[1..6]`, so it
+      never reads the paragraph length that 15d0 does. The sibling loader bounds
+      the region and says nothing about what is in it. }
     Reserved1A: array[1..4] of Byte;   { +$1a  in-memory only                }
     ParaLen   : Word;                  { +$1e                                }
   end;
@@ -151,16 +159,26 @@ type
   TStmFile = record
     Name        : array[1..20] of Char;
     Magic       : array[1..8] of Char;  { +$14  '!Scream!'                    }
-    { **NAMED FROM THE FORMAT'S OWN LAYOUT, NOT FROM A SPIKE.** docs/07-s3m-format.md
-      exists for S3M and has no counterpart for STM, so these three carry less weight
-      than S3MLOADE's equivalents: they are the widely-published Scream Tracker 2
-      header and 1.39b's own record agrees on their EXTENT (`fill1 : LONGINT`) while
-      naming none of them. Offsets measured, names sourced weakly -- said here rather
-      than left to be assumed. }
+    { **NAMED FROM THE FORMAT'S OWN LAYOUT, AND THE SOURCES ARE WEAKER HERE THAN IN
+      S3MLOADE.** There is no STM counterpart to docs/07-s3m-format.md and there is
+      nothing to write one from: neither the v1.39b tree nor the v1.5 distribution
+      carries an STM description. DOC/FORMATO.TXT is a 1993 FidoNet message with the
+      ProTracker MOD layout in it -- so the authors did work from circulated format
+      documents, and this is the only one they kept.
+
+      What corroboration exists is 1.39b/LIB/STMLOADE.PAS, the same authors' loader
+      for the same format. It agrees on the EXTENT of these four (`fill1 : LONGINT`)
+      and names none of them. Offsets measured, names from the published layout --
+      said here rather than left to be assumed. }
     EofMark     : Byte;                 { +$1c  $1A                           }
     FileType    : Byte;                 { +$1d  2 = a module                  }
     VerMajor    : Byte;                 { +$1e                                }
     VerMinor    : Byte;                 { +$1f                                }
+    { THE HIGH NIBBLE IS THE TEMPO, and this is measured twice over. The consumer
+      below is `Stm.Tempo shr 4`, read off this image; 1.39b's own loader closes on
+      `Song.InitialTempo := Hdr.Tempo SHR 4` at line 368. Two independent
+      implementations by the same authors, agreeing -- which is better evidence than
+      a format document would have been, because both are code that ran. }
     Tempo       : Byte;                 { +$20  the HIGH nibble is the tempo  }
     NumPatterns : Byte;                 { +$21                                }
     Volume      : Byte;                 { +$22                                }
