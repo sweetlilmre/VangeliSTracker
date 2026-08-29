@@ -398,18 +398,49 @@ var
     1bff:102b sets SP to $6274, and a stack pointer starts two below its top -- so
     DevStack begins at $6274 - 998 = $5e8e, and $665c - $5e8e is 1998, not 2000.
     A thousand of those are the stack; 998 are the filler below; and the two the block
-    is short are these, before it. Unnamed, like the filler. }
+    is short are these, before it. Unnamed, like the filler.
+
+    THESE TWO BYTES ARE THE OTHER HALF OF THE QUESTION BELOW. They exist only because
+    the stack is placed two bytes late; on the other reading of the span there is no
+    gap here at all and the stack starts where they are. }
   Fill5E8C          : Word;
 
   { The poll's own stack, 1000 bytes -- see the note above and 1bff:102b. }
   DevStack          : array[1..DevStkSize] of Byte;
 
-  { **UNNAMED, AND ONLY ITS SIZE IS MEASURED.** DevStack is 1000 bytes and SavedSS is
-    2000 bytes past its start, so a thousand bytes sit between them that nothing in
-    the transcribed tree reads or writes. Declared as filler rather than folded into
-    the stack, because the stack's size is settled by an instruction and this is not.
-    See `filler-is-not-a-finding` in the kit: a filler beside something measured is
-    the next thing to identify, not background. }
+  { **UNNAMED, AND THE RELEASE SHARPENS THE QUESTION WITHOUT ANSWERING IT.** 1.39b's
+    LIB/SOUNDDEV.PAS declares the whole region in four lines --
+
+        CONST DevStkSize = 1000;
+        VAR   DevStack : ARRAY[1..DevStkSize] OF BYTE;
+              DevSS    : WORD;
+              DevSP    : WORD;
+
+    -- with NOTHING between the stack and the saved pair. v1.51 has two thousand
+    bytes where the release has one, and the surplus is exactly DevStkSize again.
+
+    AND THE SP CONSTANT DISAGREES BY TWO. The release's assembler writes
+    `MOV SP,OFFSET DevStack + StackSize` at all four of its stack switches, with
+    `StackSize EQU 1000` -- the top of the array, expressed as its own size. Ours
+    needs `+ 998` to reach the measured $6274, which is the same address expressed
+    two bytes short of a round number. **A constant that has to be written as
+    998 where the original writes it as its own size is a sign the base is
+    misplaced, not that the arithmetic is odd.**
+
+    SO THERE ARE TWO READINGS AND THIS BUILD CANNOT SEPARATE THEM. Either the
+    stack begins where it is placed here and 998 unnamed bytes follow it, or it
+    begins two bytes earlier, `+ StackSize` lands on $6274 exactly as the release
+    writes it, and the surplus is a SECOND thousand-byte block -- which would sit
+    where 1.39b puts nothing at all.
+
+    NEITHER CAN BE TESTED BY REBUILDING. Every byte in the span is uninitialised, so
+    both layouts emit the same nothing and every instrument in the kit agrees with
+    both. Only a reader could decide it, and the transcribed tree has none: one
+    stack switch, at 1bff:102b, and no instruction anywhere touches the surplus.
+
+    Left as it stands rather than restructured on the tidier reading, because tidier
+    is not evidence. Recorded here so the next reader starts from the discrepancy
+    instead of rediscovering it. See `filler-is-not-a-finding` in the kit. }
   { **DS:$6276, AND THE NAME USED TO SAY $3F1A** -- an address from 1.31b that this
     build never had, carried in the identifier where nothing checks it. Renamed after
     the linker map was read: a filler's name is the one place an address goes

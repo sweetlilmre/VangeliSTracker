@@ -72,7 +72,15 @@ const
   { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME. The addresses either side
     are measured and the block is contiguous, so the bytes exist; nothing in the tree
     reads or writes them. Declared as filler rather than invented as a variable, which
-    keeps the SIZE honest and says plainly that the name is missing. }
+    keeps the SIZE honest and says plainly that the name is missing.
+
+    **AND THE RELEASE HAS NOTHING TO SAY HERE**, which is worth recording so the
+    search is not run twice. The technique that named PlayMod's four unknowns --
+    match a routine's typed-constant block against 1.39b's, in declaration order --
+    has nothing to match against: 1.39b's LIB/DEVGUS.PAS declares exactly one typed
+    constant in the whole unit, the `DevData : TSoundDevice` driver record. Its GUS
+    driver keeps no state of its own. These bytes and the five below are v1.51's, and
+    only a reader in this image can name them. }
   Fill0016 : LongInt = 0;
 
   Busy     : Byte    = 0;   { DS:$001a in v1.51  the handler's guard          }

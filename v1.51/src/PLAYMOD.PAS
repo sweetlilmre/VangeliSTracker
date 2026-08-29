@@ -443,21 +443,51 @@ const
     run, whether this row started a sample that a 9xx could still be moved. }
   NewSample        : Boolean       = False;    { DS:$030e                       }
 
-  { DS:$0310 in v1.51 -- UNIDENTIFIED, and still the only non-zero one: a Word holding
-    1 that nothing in the transcribed tree reads or writes. `NewSample` above went in
-    ahead of it, which is what moved it from 1.31b's $0308. Named by address. }
-  Word0310         : Word          = 1;
+  { **`FirstTick`, AND THE RELEASE NEVER READS IT EITHER.** This was the only non-zero
+    unknown left -- a Word holding 1 that nothing in the transcribed tree touches --
+    and 1.39b names it: `FirstTick : BOOLEAN = TRUE`, the first of FillChannels' own
+    typed constants, declared at LIB/PLAYMOD.PAS:954 and read at NO line in that file.
+    The one apparent use, `Song.FirstTick` at 1072, is the song object's field and a
+    different thing entirely.
+
+    SO THE PUZZLE WAS NEVER "WHAT READS THIS" -- nothing does, in either version, and
+    a typed constant is emitted whether or not it is read. What identified it was the
+    ORDER: five of FillChannels' constants in a row, in the release's declaration
+    order, and this is the first of them.
+
+    THE WIDTH IS OURS AND THE RELEASE'S IS A BOOLEAN. Two bytes here hold `01 00`
+    where a Boolean would hold `01`, and the DGROUP layout check covers this address,
+    so v1.51 really does spend two bytes. Whether it widened the constant or pads
+    after it cannot be told apart with no reader, and the note says so rather than
+    picking. }
+  FirstTick        : Word          = 1;
 
   MixChan          : Word          = 0;        { DS:$030a                       }
   ChanRec          : PModRawChan   = nil;      { DS:$030c                       }
   OutPtr           : Pointer       = nil;      { DS:$0310                       }
   ModRec           : PSampleBuffer = nil;      { DS:$0314                       }
-  Fill0320         : Word          = 0;        { DS:$0320  UNIDENTIFIED         }
-  PrevTick         : Word          = 0;        { DS:$0322 in v1.51              }
+  { **THE WHOLE OF ProcessTick's CONSTANT BLOCK IS HERE, IN THE RELEASE'S ORDER**,
+    and matching it end to end is what named the four unknowns in this run. 1.39b's
+    LIB/PLAYMOD.PAS:1024 declares, after an untyped SizeOf:
+
+        incr : INTEGER   OTempoCt : WORD   Can : PCanal   Raw : PModRawChan
+        NoteHzFreq : LONGINT   i : WORD   j : WORD   t : WORD   step : LONGINT
+        FBCount : WORD   NumChannels : BYTE
+
+    Every width matches ours, in sequence, with no slack -- and FOUR OF THEM ARE
+    DEAD IN THE RELEASE TOO. `incr`, `NoteHzFreq`, `FBCount` and `j` occur exactly
+    once each in the whole of 1.39b's PlayMod: their own declarations. They are
+    leftovers of an earlier ProcessTick, and they were leftovers in 1993.
+
+    THAT IS WHY NO AMOUNT OF READING THIS IMAGE COULD NAME THEM. A variable nothing
+    reads has no witness in the code, and these have none in either version. The
+    sequence is the only evidence there is, and it is enough because it is exact. }
+  Incr             : Integer       = 0;        { the release's `incr`, unread    }
+  PrevTick         : Word          = 0;        { the release's `OTempoCt`        }
 
   CanalPtr         : PCanal        = nil;      { DS:$031c                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
-  Fill032C         : LongInt       = 0;        { DS:$032c  UNIDENTIFIED         }
+  NoteHzFreq       : LongInt       = 0;        { unread here and in 1.39b       }
   { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
     A separate `TickSpan` was declared for the tempo loop's span last commit and it
     put this unit's block four bytes over; the original has only six bytes between
@@ -469,7 +499,10 @@ const
     $02f6 and $0328 record the other two, both found the same way. It is the
     release's habit, not an accident, and it is why neutral names are right here. }
   TmpVal           : Word          = 0;        { DS:$0330 in v1.51  TWO JOBS    }
-  Fill0332         : Word          = 0;        { DS:$0332  UNIDENTIFIED         }
+  { The release's `j`, the second of ProcessTick's two Word indices -- `TmpVal` above
+    is its `i`. Neither version reads it, so there is no role to name it for and it
+    keeps a name that claims only what the sequence shows. }
+  UnusedIdx        : Word          = 0;
 
   { 1.39b's `t`, the tempo loop's counter. It IS its own variable -- 12ce:0f45's
     `DEC word [0334]` and 0fa5's `CMP [0334],1` are two bytes the span's address
@@ -487,10 +520,11 @@ const
     `SHR AX,0Ch` on the low word alone; a LongInt shift would be an RTL call, so the
     source has to narrow it first. }
   StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
-  { A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends pin it: StepVal
-    occupies $0336..$0339 and TickChans is at $033c, so two bytes are left over and
-    not four. }
-  Fill033A         : Word          = 0;        { DS:$033a  UNIDENTIFIED         }
+  { A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends pinned it before the
+    release confirmed it: StepVal occupies four bytes and TickChans follows two later,
+    not four. 1.39b calls it `FBCount` -- a fall-back counter, beside `CanFallBack`
+    and `FBTicks` elsewhere in the unit -- and never reads it. }
+  FBCount          : Word          = 0;
   TickChans        : Byte          = 0;        { DS:$0332                       }
 
 { THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
