@@ -949,6 +949,15 @@ var
     ChanAdd    Word, NumChannels * 2, the stride between output samples
     Silent     Boolean, 1.31's single kernel doing 1.39b's two jobs
   -------------------------------------------------------------------------- }
+{ **`units.py` REPORTS THIS UNIT AS MISMATCHED, AND THAT IS THE INSTRUMENT'S
+  LIMIT RATHER THAN A DEFECT.** It compares .TPU files, and this unit's code is
+  partly in the .OBJ linked below -- so the TPU holds a call to something that
+  is not in it, and the comparison diverges at the first such site. SoundDevices
+  reports the same for the same reason, and they are the only two units in the
+  tree with an external module.
+
+  THE LINKED IMAGE IS THE CHECK THAT COUNTS, and it reports zero differing bytes.
+  A per-unit tool cannot see a unit that is not all in one place. }
 {$L PLAYMOD.OBJ}
 function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         SrcLimit, Max, ChanAdd : Word;
