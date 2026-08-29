@@ -95,9 +95,15 @@ type
       here, unread. A gap you have named is a decision you can see. }
     Ffi         : Word;                  { +$2a  1 = signed, 2 = unsigned      }
     Magic       : array[1..4] of Char;   { +$2c  'SCRM'                       }
+    { **$31 AND $32 CARRY 1.39b's NAMES, NOT THE SPECIFICATION'S.** The spec calls
+      them "initial speed" and "initial tempo"; the release's own S3M loader calls
+      them `Tempo` and `BPM`, and its STM loader assigns the matching pair. The
+      consumers at the foot of this unit settle which vocabulary belongs here --
+      `Song.InitialTempo := S3M.Tempo` and `Song.InitialBPM := S3M.BPM` read as one
+      thought, where the spec's names made the same two lines cross over. }
     Volume      : Byte;                  { +$30                               }
-    Speed       : Byte;                  { +$31                               }
-    Tempo       : Byte;                  { +$32                               }
+    Tempo       : Byte;                  { +$31  ticks per row                 }
+    BPM         : Byte;                  { +$32  the spec's "initial tempo"    }
     MasterVol   : Byte;                  { +$33  bit 7 is stereo              }
     UltraClick  : Byte;                  { +$34  GUS click-removal channels    }
     DefaultPan  : Byte;                  { +$35  252 = a pan table follows     }
@@ -121,7 +127,11 @@ type
     Vol      : Byte;                  { +$1c                                 }
     Reserved1D : Byte;                { +$1d                                 }
     Pack       : Byte;                { +$1e  1 = DP30ADPCM, unused by ST3.01 }
-    Flags    : Byte;                  { +$1f  zero means no loop             }
+    { 1.39b DECLARES THIS ONE `Looped : BOOLEAN`, and that is a stronger claim
+      than `Flags` -- it says what the byte is for rather than what shape it has.
+      It is also what this loader does with it: the only reader is the loop test
+      below. The spec lists other bits; nothing here looks at them. }
+    Looped   : Boolean;               { +$1f                                 }
     C2Spd    : Word;                  { +$20                                 }
     { C2Spd IS FOUR BYTES IN THE FILE and two here, because 1664 reads a Word --
       the spec's own note is that ST3 only uses the lower sixteen bits. The upper
@@ -596,11 +606,12 @@ begin
             swaps the two blocks in the segment. }
           if Instrument.Len > 0 then
             begin
-              { `<> 0` WITH THE WORK FIRST. 07f7 is `JE` to the zeroing block,
-                and Turbo Pascal jumps if FALSE, so the tested condition is
-                `Hdr.Flags <> 0`. Written the other way the two blocks swap
-                places -- eighteen bytes moved, nothing computed differently. }
-              if Hdr.Flags <> 0 then
+              { THE WORK COMES FIRST. 07f7 is `JE` to the zeroing block, and
+                Turbo Pascal jumps if FALSE, so the tested condition is the
+                positive one. Written the other way the two blocks swap places --
+                eighteen bytes moved, nothing computed differently. A `Boolean`
+                tested bare and a `Byte` tested `<> 0` compile identically. }
+              if Hdr.Looped then
                 begin
                   { THE SECOND STATEMENT REUSES THE FIRST'S RESULT. 0908
                     subtracts the pair at -$18, which is Instrument.Reps just
