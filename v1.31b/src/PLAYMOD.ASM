@@ -153,6 +153,33 @@ EmptyPatchOfs   EQU     7
 ;  (the register contract is the release's own comment, LIB/PLAYMOD.ASM 49..54)
 ; --------------------------------------------------------------------------
                 PUBLIC  DumpRaw
+; ===========================================================================
+; DumpRaw -- mix one channel's samples into the buffer, resampling as it goes.
+;
+;   IN   AL      how many samples to produce
+;        CH      the integer part of the step
+;        DX      the fractional part of the step (patched into the body)
+;        BX      the interleave stride between output slots
+;        CL      the volume
+;        DS:SI   the current position in the sample
+;        ES:DI   the current position in the output buffer
+;        BP      the running fractional position
+;
+;   MODIFIES AX, CH, SI, DI, BP, and eight immediates INSIDE ITS OWN BODY
+;
+; **IT MODIFIES ITSELF, AND THAT IS THE FIRST THING TO KNOW.** The fractional
+; step is not held in a register during the loop -- there are not enough -- so it
+; is written into the eight `ADD BP,imm16` instructions before the loop runs. The
+; routine is therefore NOT re-entrant and cannot be in ROM, and the immediate
+; sitting in the image, 4321h, is a placeholder that never executes.
+;
+; The entry computation below runs ceil(n/8) passes and JUMPS INTO the body far
+; enough along that the first pass produces only the samples wanted; `NEG AL /
+; AND AL,7` turns "how many do I want" into "how many do I skip" without a
+; subtraction or a branch. That is also why DumpLoopSize must be an EQU: the
+; eight copies have to stay identical in length or the computed entry lands
+; mid-instruction.
+; ===========================================================================
 DumpRaw:
 ; 148f..14b6 -- write the fractional step into all eight copies of the
 ; `ADD BP,imm16` in the unrolled body. The immediate left in the image is 4321h,
@@ -187,14 +214,48 @@ DumpRaw:
                 ADD     AX,OFFSET DumpLoop      ; 14d3
                 JMP     AX                      ; 14d6
 
+; **THE RELEASE'S OWN ACCOUNT OF THIS LOOP SURVIVES, COMMENTED OUT.**
+; LIB/PLAYMOD.PAS carries this same kernel inside `UnCanal` as inline assembler,
+; wrapped in a `(* *)` block roughly ten thousand characters long and annotated
+; line by line in Spanish. Lines marked [1.39b] below are its author's words in
+; translation, not ours.
+;
+; The register contract it states:
+;
+;     [1.39b] "The loop. Entered with: DL = volume, BL = fractional part of the
+;              increment, BP = integer part of the increment, BH = fractional
+;              part of the position within the sample, SI = integer part of the
+;              position within the sample, ES = segment of the buffer, DI =
+;              offset within the buffer, CX = number of samples to produce."
+;
+; THE REGISTERS MOVED AND THE SHAPE DID NOT. This kernel keeps the volume in CL
+; rather than DL, the step in BP:DX rather than BL:BP, and the stride in BX
+; rather than a self-modified immediate -- so the contract is quoted for the
+; SEQUENCE it describes rather than for its register names. The body below is
+; instruction for instruction what v1.51 has, which is why the same notes fit
+; both trees.
+;
+; ONE OF ITS COMMENTS DELIBERATELY HAS NO HOME HERE. After `ADC SI,BP` the
+; release tests `JC` -- "[1.39b] Carry means it has certainly passed the limit"
+; -- and then checks the loop-return point. This kernel has no such test:
+; UnCanal bounds every call by the distance to the next boundary and subtracts a
+; loop length between calls, so the run is straight-line by construction. Placing
+; that comment here would read as true and would not be.
 DumpLoop:                                       ; 14d8
                 REPT    8
-                MOV     AL,[SI]
-                IMUL    CL
-                MOV     WORD PTR ES:[DI],AX
-                ADD     DI,BX
-                ADD     BP,4321h
-                ADC     SI,DX
+                MOV     AL,[SI]                 ; [1.39b] read the sample for
+                                                ;   this position
+                IMUL    CL                      ; [1.39b] multiply by the volume
+                MOV     WORD PTR ES:[DI],AX     ; [1.39b] store it in the buffer
+                ADD     DI,BX                   ; on to the next slot; BX is the
+                                                ;   interleave stride
+                ADD     BP,4321h                ; [1.39b] add the fractional
+                                                ;   increment. 4321h IS A
+                                                ;   PLACEHOLDER -- DumpRaw
+                                                ;   patches all eight copies
+                ADC     SI,DX                   ; [1.39b] add the integer
+                                                ;   increment, carrying the
+                                                ;   fraction into it
                 ENDM
 
                 DEC     CH                      ; 1550
