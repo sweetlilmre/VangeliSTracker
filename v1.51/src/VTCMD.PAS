@@ -429,6 +429,31 @@ end;
   256 is the value `String` parameter's frame copy, and what follows is the locals.
   =========================================================================== }
 
+{ ===========================================================================
+  **THE SWITCH HANDLERS, AND WHY MOST OF THEM GET NO COMMENT OF THEIR OWN.**
+  Everything from here to the end of this section is one handler per command-line
+  switch, called from InterpretSwitch when it recognises the switch's name. They
+  come in exactly two shapes:
+
+      procedure CmdSomething(s : String)    the switch carries a value
+      procedure CmdSomething(f : Boolean)   the switch is on or off
+
+  and the body of most of them is a single assignment into a global that
+  something else reads later. `CmdForceLoop` sets `ForceLoopMod`; `CmdLowQuality`
+  sets `LowQuality`. There is nothing to say about those that the line does not
+  already say, and a header on each would be noise pretending to be
+  documentation.
+
+  SO THE ONES WITH COMMENTS BELOW ARE THE ONES WITH SOMETHING TO SAY -- a clamp,
+  a parse that can fail, a switch whose effect is not where you would look for
+  it. If a handler has no comment, it is because it needs none.
+
+  THE STRING HANDLERS ALL BEGIN THE SAME WAY: `if s = '' then Exit`. A switch
+  given without a value leaves its global untouched rather than setting it to
+  zero, so `-freq` on its own is not an error and not a change. That is the
+  convention; each one repeats it rather than sharing a helper.
+  =========================================================================== }
+
 { 109c:03fb -- ENTER $100, so no locals at all, and it is the only one. }
 procedure CmdInitDevice(s : String);
 begin
