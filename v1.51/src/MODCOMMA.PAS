@@ -422,10 +422,45 @@ end;
   the author, where this reconstruction had to derive it per routine from the
   prologue each one lacks.
 
+  **SO EVERY `[SI+n]` IN THIS FILE IS A FIELD OF TCanal, AND THIS IS THE KEY.**
+  Without it each handler reads as arithmetic on anonymous offsets; with it they
+  read as what they are. The record is declared above; these are its offsets:
+
+      +$00  Note        the note being played (TFullNote, 6 bytes)
+      +$06  Instrument  pointer to the sample's TInstrumentRec
+      +$0a  Volume
+      +$0b  Period      what the mixer converts into a step
+      +$0d  RealPeriod  Period after the instrument's tuning is applied
+      +$0f  PeriodIncr  portamento step; SIGNED, and the sign is the direction
+      +$11  PeriodDest  portamento target
+      +$13  ArpCt       arpeggio phase, 0..2
+      +$14  Arp0        the three arpeggio periods
+      +$16  Arp1
+      +$18  Arp2
+      +$1a  VibWave     vibrato waveform and position -- NOT confirmed by use;
+      +$1b  VibPos      TickVibrato is a stub, so these two are placed by their
+                        neighbours rather than by an instruction
+
+  The last pair carries a warning on purpose. Everything above it is anchored by
+  an instruction that reads or writes it; those two are not, and a reader should
+  treat them as the best available reading rather than as measured fact.
+
+  A HANDLER MAY NOT ASSUME ANY OTHER REGISTER. SI is the contract; AX, BX, CX
+  and DX are scratch, and each routine leaves through @@Fin, which is the RET
+  Pascal appends rather than an instruction of this file's own.
+
   `@@Fin` IS THE EPILOGUE. Both `JMP @@Fin`s land on 142f:00cb, which is the `RET`
   the compiler appends -- there is no instruction of our own at that label. Written
   with a written `RET` instead, TP would emit a second one.
   -------------------------------------------------------------------------- }
+{ **ARPEGGIO IS A CHORD FAKED BY ONE VOICE.** [1.39b] "Rotate through three
+  notes rapidly." A channel can play one pitch at a time, so it plays three in
+  turn -- one per tick, fifty times a second -- and the ear hears a chord rather
+  than three separate notes. The three periods were worked out when the command
+  started; this routine only decides which of them is current.
+
+  That is why the counter runs 1, 2, 0 and not 0, 1, 2: it is incremented BEFORE
+  it is tested, so the first tick after the command lands on Arp0. }
 procedure TickArpeggio; assembler;
 asm
         { Can.ArpCt := Can.ArpCt + 1, then rotate on its value: 1 -> Arp0,

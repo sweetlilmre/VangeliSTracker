@@ -236,8 +236,39 @@ begin
     already right, and only an interrupt entry has to establish it.
 
     The guard is PollBusy, not Busy. The two now run at different times and each
-    needs its own. }
+    needs its own.
+
+    **THERE ARE TWO POLLS IN THIS PROGRAM AND THEY ARE NEARLY THE SAME ROUTINE.**
+    Reading them side by side is the fastest way to understand either:
+
+                      SoundDevices.SharedPoll      DevGus.Poll (here)
+      reached from    a timer interrupt            a Pascal call
+      saves registers PUSHA, ES, DS -- it          nothing: the compiler's
+                      borrowed them                own prologue covers it
+      loads DS        MOV AX,SEG @DATA             not needed; DS is right
+      guard           Busy, in the CODE segment    PollBusy, in DGROUP -- DS
+                      because DS is not trusted    is already trusted here
+                      yet
+      stack           SoundDevices.DevStack        SoundDevices.PollStack
+      saves SS:SP to  SavedSS / SavedSP            SavedSS / SavedSP -- THE
+                                                   SAME PAIR
+
+    The last line is the one that matters. Both save into the same two words, so
+    if either could run inside the other the second save would destroy the
+    first and the outer routine would return onto a stack that no longer
+    exists. Nothing enforces that at the machine level; the two guards do, and
+    that is what they are for.
+
+    NOT SAVING REGISTERS IS CORRECT HERE, not an omission. An interrupt arrives
+    uninvited and must leave no trace; a `far` procedure is called by code that
+    already expects Pascal's conventions, and the compiler's own prologue and
+    epilogue handle the rest. }
   asm
+  { **A TEST AND TWO JUMPS WHERE ONE WOULD DO.** `JBE @@Take / JMP @@Out` is a
+    short conditional jump forward over a long unconditional one -- written the
+    obvious way round, as `JA @@Out`, the target would be out of a short jump's
+    reach and the assembler would have to grow the instruction. The compiler
+    does the same thing throughout this tree; here it is hand-written to match. }
   CMP  PollBusy, 0    { 106e:0027                                        }
   JBE  @@Take         { 106e:002c                                        }
   JMP  @@Out          { 106e:002e                                        }
