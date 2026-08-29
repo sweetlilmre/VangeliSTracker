@@ -1127,6 +1127,37 @@ procedure TickFPortUpDown; assembler;
 asm
 end;
 
+{ ===========================================================================
+  **THE EMPTY TICK HANDLERS, AND THEY ARE EMPTY ON PURPOSE.** Everything from
+  here to TickNPI2 is `asm end;` with no instruction in it, and a reader is
+  entitled to assume that means unfinished. It does not.
+
+  A command has two entry points: a Start routine that runs once when the note
+  begins, and a Tick routine that runs on every tick afterwards. Most effects
+  need both -- a portamento has to move the pitch each tick. But a command that
+  merely SETS SOMETHING has nothing left to do once it has set it:
+
+      TickGlissCtrl   glissando control -- chooses a mode, then nothing
+      TickVibCtrl     picks the vibrato waveform
+      TickFineTune    adjusts the pitch once
+      TickJumpLoop    acts on the pattern, not on the channel
+      TickTremCtrl    picks the tremolo waveform
+      TickNPI2        [1.39b] "Do Nothing (as far as I know)"
+
+  So the routine exists to fill a slot in the dispatch table and to be called
+  and return. Removing it is not possible: the table is indexed by command
+  number, and a missing entry would shift every command after it.
+
+  THE COST OF THE DESIGN IS PAID HERE, AND IT IS WORTH IT. A dispatch table with
+  no gaps means the tick loop never tests whether a command HAS a tick routine
+  -- it calls through the table unconditionally, thousands of times a second,
+  and an empty routine costs a call and a return. The alternative is a test on
+  every channel on every tick to save that.
+
+  ONE OF THEM IS DIFFERENT AND IS MARKED WHERE IT SITS. TickRetrigNote below is
+  empty because the effect is NOT IMPLEMENTED in this version, which is a
+  different fact from having nothing to do. See its own note.
+  =========================================================================== }
 procedure TickGlissCtrl; assembler;
 asm
 end;
@@ -1266,6 +1297,21 @@ procedure TickNoteCut; assembler;
 asm
 end;
 
+{ **THESE THREE ARE EMPTY FOR A DIFFERENT REASON: THEY ARE NOT IMPLEMENTED.**
+  Unlike the group above, these are effects with real per-tick work that this
+  version does not do.
+
+    TickNoteDelay   [1.39b] "Wait a little before starting note." A delay has
+                    to count ticks, so an empty tick routine means a delayed
+                    note simply plays at once.
+    TickPattDelay   the release did not know what it did either -- see the
+                    enumeration in SongElements.
+    TickFunkIt      [1.39b] "No idea, but sounds funny."
+
+  A MODULE USING ANY OF THEM WILL PLAY, AND PLAY WRONG. Nothing errors: the
+  dispatch finds a routine, calls it, and it returns having done nothing. That
+  is the failure mode to expect if a module sounds subtly out of time, and it
+  is silent by construction. }
 procedure TickNoteDelay; assembler;
 asm
 end;
@@ -1278,6 +1324,9 @@ procedure TickFunkIt; assembler;
 asm
 end;
 
+{ Command zero: [1.39b] "Just play the note, without any special option." There
+  is nothing to do on a tick and nothing to do at the start either, which is why
+  this is the only handler whose emptiness needs no explanation. }
 procedure TickNone; assembler;
 asm
 end;
