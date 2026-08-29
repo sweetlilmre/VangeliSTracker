@@ -117,20 +117,56 @@ StackSize       EQU     1000
 ; One byte, and it was the last difference in the whole module.
                 DB      0
                 PUBLIC  SharedPoll
+; ===========================================================================
+; SharedPoll -- the timer's entry into the player.
+;
+;   IN   nothing. It is reached from an interrupt, so it may run at ANY point
+;        in any other code, including inside this unit.
+;   OUT  nothing. Every register is restored.
+;
+; **THREE THINGS ARE TRUE OF AN INTERRUPT AND OF NOTHING ELSE**, and all three
+; shape this routine:
+;
+;   1. It borrows whatever registers the interrupted code was using, so it saves
+;      all of them -- PUSHA plus the two segment registers -- and not just the
+;      ones it happens to touch.
+;   2. It cannot assume DS. The interrupted code had its own, so DS is loaded
+;      from SEG @DATA before any variable is read.
+;   3. It can arrive again before it has finished. That is what the guard is
+;      for, and why the guard cannot live in DGROUP.
+;
+; THE GUARD IS IN THE CODE SEGMENT, WHICH IS THE POINT OF IT. It is read and
+; set at 1010 and 101a, before SS and DS are trusted -- CS is the only segment
+; register an interrupt can rely on, because the processor set it. A guard in
+; DGROUP would need DS to already be right, which is the thing being
+; established.
+; ===========================================================================
 SharedPoll:
-        PUSHA                             ; 1008  save everything
+        PUSHA                             ; 1008  every general register: this
+                                          ;       runs on borrowed time
         PUSH    ES                        ; 1009
         PUSH    DS                        ; 100a
         MOV     AX,SEG @DATA              ; 100b  the original: MOV AX,1caa
-        MOV     DS,AX                     ; 100e
+        MOV     DS,AX                     ; 100e  DS is ours from here on
 
-        MOV     AL,BYTE PTR CS:[@@Guard]  ; 1010  already inside?
-        DB      22h, 0C0h                 ; 1014  AND AL,AL
-        JNZ     @@Out                     ; 1016  yes -- do nothing
+        MOV     AL,BYTE PTR CS:[@@Guard]  ; 1010  already inside? CS: because
+                                          ;       nothing else is safe yet
+        DB      22h, 0C0h                 ; 1014  AND AL,AL -- hand-encoded, see
+                                          ;       below
+        JNZ     @@Out                     ; 1016  re-entered: do nothing at all
         NOP                               ; 1018  jump-sizing padding
         NOP                               ; 1019  ditto
         INC     BYTE PTR CS:[@@Guard]     ; 101a  take the guard
 
+; **AND NOW THE STACK, WHICH IS THE OTHER THING AN INTERRUPT CANNOT TRUST.** The
+; interrupted code's stack may have only a few bytes left; the work below calls
+; into the driver and the mixer and needs a thousand. So the caller's SS:SP is
+; saved and the routine switches to its own -- see DevStack in SOUNDDEV.PAS.
+;
+; DevGus does the same thing a few instructions differently, behind its own
+; guard, on its own stack. Two stacks, two guards, and the pair of them are why
+; neither routine may nest inside the other: both save into SavedSS/SavedSP, and
+; a second save would overwrite the first.
         MOV     [SavedSS],SS              ; 101f  save the caller's stack
         MOV     [SavedSP],SP              ; 1023
         MOV     AX,DS                     ; 1027
@@ -141,6 +177,13 @@ SharedPoll:
 ; see `transcribe-the-meaning-not-the-constant` in the kit.
         MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
+; TWO INSTRUCTIONS ARE WRITTEN AS BYTES, AND THE REASON IS THE DIRECTION BIT.
+; `AND AL,AL` and `XOR AL,AL` can each be encoded two ways -- register-to-
+; register operations carry a bit saying which operand the assembler treats as
+; the destination, and both encodings do the same thing. The original used one;
+; TASM emits the other. DB is the only way to keep the byte. See
+; `direction-bit-names-basm` in the kit, which is the same fact used in reverse
+; to tell hand-written assembler from compiler output.
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
 ; [1.39b] "Signal that the device is not idling, and fill a bit more of the DMA
 ; buffer." -- the release's own words for this store and the two calls below it.
@@ -159,17 +202,35 @@ SharedPoll:
         CALL    @@Prepare                 ; 1033
         CALL    DWORD PTR [PeriodicProc]  ; 1036  the installed callback
 
-        MOV     SS,[SavedSS]              ; 103a  back to the caller's
-        MOV     SP,[SavedSP]              ; 103e
-        DEC     BYTE PTR CS:[@@Guard]     ; 1042  release the guard
+; **THE ORDER OF THESE TWO MATTERS AND THE PROCESSOR HELPS.** Writing SS leaves
+; a window in which SS is the caller's and SP is still ours -- an interrupt in
+; that gap would push onto an address that is the sum of two different stacks.
+; The 8086 and everything after it inhibit interrupts for one instruction after
+; a MOV into SS, exactly so that the SP load can follow safely. It only works
+; because the two are ADJACENT: put anything between them and the guarantee is
+; gone.
+        MOV     SS,[SavedSS]              ; 103a  back to the caller's...
+        MOV     SP,[SavedSP]              ; 103e  ...and this must come next
+        DEC     BYTE PTR CS:[@@Guard]     ; 1042  release the guard, CS: again
+
+; @@Out IS REACHED TWO WAYS and that is why it is here rather than at the end of
+; the work. A re-entrant call jumps straight to it from 1016, having taken no
+; guard and switched no stack -- so the restore above must NOT run for it, and
+; everything below is common to both paths.
 @@Out:
-        POP     DS                        ; 1047
+        POP     DS                        ; 1047  in reverse order of the pushes
         POP     ES                        ; 1048
         POPA                              ; 1049
-        RETF                              ; 104a  far -- it is a slot
+        RETF                              ; 104a  far: the caller reached this
+                                          ;       through a pointer, not a name
 @@Guard:
-        DB      0                         ; 104b  THE GUARD. See above.
-        DB      0C3h                      ; 104c  trailing byte, verbatim
+        DB      0                         ; 104b  THE GUARD, and it lives in the
+                                          ;       CODE segment on purpose -- see
+                                          ;       the routine header
+        DB      0C3h                      ; 104c  a trailing byte with no
+                                          ;       instruction reaching it,
+                                          ;       transcribed because it is
+                                          ;       there
 
 ; ==========================================================================
 ; 1a17:104d .. 1a17:10c3 -- the DSP writers and the output selectors.
