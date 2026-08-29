@@ -244,6 +244,29 @@ SharedPoll:
 ; ==========================================================================
                 PUBLIC  SelectOutput
 SelectOutput:
+; ===========================================================================
+; **THE SOUNDBLASTER WRITE PROTOCOL, WHICH EVERY BLOCK BELOW REPEATS.** The DSP
+; is slower than the processor, so a byte may only be written when it says it
+; is ready:
+;
+;   1. read the write port
+;   2. if bit 7 is set the DSP is busy -- read again
+;   3. when it clears, write the byte
+;
+; That is the whole handshake, and the three blocks here are that loop with
+; different payloads: a command, then a sample, then the next.
+;
+; **THE WAIT IS BOUNDED AND GIVES UP BY WRITING ANYWAY.** BX is loaded with a
+; timeout, decremented each turn, and `JZ` on exhaustion jumps to the SEND, not
+; to an error path. That is deliberate: a card that never clears its busy bit
+; would otherwise hang the machine inside an interrupt, and one late sample is a
+; click where a hung timer is a dead program. The timeout is a variable --
+; SbCmdTimeout for a command, SbSplTimeout for a sample -- so the two can differ.
+;
+; EVERY INSTRUCTION IS WRITTEN AS BYTES because this run has to reproduce the
+; original's encodings exactly, and TASM would choose differently for several of
+; them. The mnemonic beside each DB is what it assembles to.
+; ===========================================================================
 ; 104d -- wait for the DSP, then send command 10h. Reached from OutSlot1 and
 ; jumps back into the chain at 0f73.
 @@Prim1:
@@ -252,13 +275,15 @@ SelectOutput:
     DB 8Bh, 1Eh              ; 1051  MOV  BX,[SbCmdTimeout]
     DW OFFSET SbCmdTimeout
 @@Wait1:
-    DB 4Bh                   ; 1055  DEC  BX -- a bounded wait
-    JZ      @@Send1          ; 1056  gave up; send anyway
-    DB 0ECh                  ; 1058  IN   AL,DX
-    DB 0A8h, 80h             ; 1059  TEST AL,80h -- busy?
-    JNZ     @@Wait1          ; 105b
+    DB 4Bh                   ; 1055  DEC  BX -- one turn of the timeout
+    JZ      @@Send1          ; 1056  exhausted: send ANYWAY, see above
+    DB 0ECh                  ; 1058  IN   AL,DX -- the DSP's status
+    DB 0A8h, 80h             ; 1059  TEST AL,80h -- bit 7 set means busy
+    JNZ     @@Wait1          ; 105b  still busy: go round again
 @@Send1:
-    DB 0B0h, 10h             ; 105d  MOV  AL,10h -- direct DAC write
+    DB 0B0h, 10h             ; 105d  MOV  AL,10h -- DSP command 10h, "direct
+                             ;       DAC write": the next byte written is a
+                             ;       sample, played immediately
     DB 0EEh                  ; 105f  OUT  DX,AL
     DB 0E9h, 10h, 0FFh       ; 1060  JMP 0f73, the mix step -- kept as a
                              ;       literal for now; in one module it could
@@ -267,7 +292,16 @@ SelectOutput:
 
 ; 1063 -- wait again, then write the sample byte.
 @@Prim3:
-    DB 80h, 0F4h, 80h        ; 1063  XOR  AH,80h -- to unsigned
+; **XOR AH,80h IS A FORMAT CONVERSION, NOT ARITHMETIC.** Everything upstream of
+; here carries samples as SIGNED bytes, -128..127, because that is what mixing
+; wants: silence is zero and sums cancel. The SoundBlaster's direct DAC wants
+; UNSIGNED, 0..255, with silence at 128. Flipping the top bit converts between
+; the two in one instruction and in either direction -- it is the same operation
+; both ways, which is why there is no matching instruction anywhere to undo it.
+;
+; This is also why SOUNDDEV.PAS fills the DMA buffer with $80 rather than zero:
+; on this side of the conversion, $80 IS silence.
+    DB 80h, 0F4h, 80h        ; 1063  XOR  AH,80h -- signed to unsigned
     DB 8Bh, 16h              ; 1066  MOV  DX,[DSPWritePort]
     DW OFFSET DSPWritePort
     DB 8Bh, 1Eh              ; 106a  MOV  BX,[SbSplTimeout]
@@ -310,8 +344,29 @@ SelectOutput:
 ; A LABEL EMITS NO BYTES. SOUNDDEV verified identical before this and must
 ; after; that is the check, not an argument.
                 PUBLIC  DevInitSbDMA
+; ===========================================================================
+; DevInitSbDMA -- choose the output path once, by writing addresses into slots.
+;
+;   IN   [BP+8]  stereo flag; [BP+6] is present and ignored
+;   OUT  nothing. MixRut and OutSlot0..2 hold routine addresses afterwards.
+;
+; **THIS IS A DISPATCH TABLE BEING FILLED IN, AND IT IS WHY THE OUTPUT PATH HAS
+; NO TESTS IN IT.** The alternative would be to ask "stereo or mono?" and
+; "which card?" on every sample, inside an interrupt, thousands of times a
+; second. Instead the question is answered once here and the ANSWERS ARE
+; ADDRESSES: each slot is a variable holding the entry point of the routine that
+; step should use, and the chain simply calls through them.
+;
+; So a reader looking for the code that decides how a sample is written will not
+; find it in the output path. It is here, and it ran at initialisation.
+;
+; The addresses are written as OFFSET SetGains + a displacement because the
+; targets are labels inside another routine, which an assembler will not let
+; this one name directly.
+; ===========================================================================
 DevInitSbDMA:
-    DB 0C8h, 00h, 00h, 00h   ; 1090  ENTER 0,0
+    DB 0C8h, 00h, 00h, 00h   ; 1090  ENTER 0,0 -- hand-written; a PROC would
+                             ;       emit its own and the bytes must match
     DB 8Ah, 46h, 08h         ; 1094  MOV  AL,[BP+8] -- the first argument
     DB 22h, 0C0h             ; 1097  AND  AL,AL
     JNZ     @@Stereo         ; 1099
@@ -321,7 +376,12 @@ DevInitSbDMA:
 @@Stereo:
     DB 0B8h                  ; 10a0  MOV  AX,imm16 ...
     DW OFFSET SetGains + 06B6h    ;     ... 0dfc, stereo
-    JMP     @@Install        ; 10a3  EB 00 -- a jump of zero, verbatim
+    JMP     @@Install        ; 10a3  EB 00 -- A JUMP TO THE NEXT INSTRUCTION.
+                             ;       It does nothing and it is in the original,
+                             ;       so it is here. Almost certainly the mono
+                             ;       arm above and this one were once further
+                             ;       apart and the assembler still emitted the
+                             ;       branch after they were brought together
 @@Install:
     DB 0A3h                  ; 10a5  MOV  [MixRut],AX
     DW OFFSET MixRut
