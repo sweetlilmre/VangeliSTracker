@@ -170,8 +170,8 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
   declared in a unit whose own block is nowhere near these addresses, and this file
   already carried the neighbours either side of every one of them:
 
-      $0bc6  NxOption      was VTGLOBAL's     $0bca  TickSnapshot  was PLAYMOD/VTMAIN's
-      $0bcc  TicksPerSecond was PLAYMOD's and DEVGUS's -- declared TWICE
+      $0c6e  NxOption      was VTGLOBAL's     $0c72  TickSnapshot  was PLAYMOD/VTMAIN's
+      $0c74  TicksPerSecond was PLAYMOD's and DEVGUS's -- declared TWICE
       $0bd0  WordAtBD0     was VTMAIN's
 
   `TicksPerSecond` is the interesting one: it holds **50**, which is the release's own
@@ -190,7 +190,7 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
   declares it as an untyped constant.
 
   THE PADS ARE TP WORD-ALIGNING EACH CONSTANT, the same rule as everywhere else in this
-  layout: $0b95 after NumDevices, $0ba7 after DeviceIdling, $0bb7, $0bc3, $0bcf and
+  layout: $0b95 after NumDevices, $0ba7 after DeviceIdling, $0c4e, $0bc3, $0bcf and
   $0be3. Every one of them lands the following constant on an address an instruction
   already named.
   ========================================================================== }

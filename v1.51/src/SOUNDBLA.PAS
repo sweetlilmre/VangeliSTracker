@@ -131,8 +131,8 @@ const
   THE CONFIGURATION SETTINGS. These four were this file's whole contents while
   it was a declared stub, because `11bb`'s config keys and `109c`'s switches
   both write them. Their addresses are unchanged, and they now sit in the
-  release's declaration order -- which the spacing corroborates: SbPort $0b14,
-  SbIrq $0b16, SbDMAChan $0b18, SbDefTimeout $0b1a, SbHiSpeed $0b1c is the
+  release's declaration order -- which the spacing corroborates: SbPort $0bbc,
+  SbIrq $0bbe, SbDMAChan $0bc0, SbDefTimeout $0bc2, SbHiSpeed $0bc4 is the
   release's list with no gaps.
   -------------------------------------------------------------------------- }
 const
@@ -178,12 +178,12 @@ var
   00af) and `DoHiSpeed` is $0b8c (0284). Laying the release's declaration
   order between them lands on both endpoints with nothing left over:
 
-    $0b7e SbRegDetected  $0b7f SbRegInited  $0b80 SbProDetected
-    $0b81 SbProInited    $0b82 Sb16Detected $0b83 Sb16Inited
-    $0b84 MixerDetected  $0b85 SbWorksOk    <- endpoint
-    $0b86 HSBlockSpecified (Word)           $0b88 Sb16BlockSpecified (Word)
-    $0b8a SbStereo       $0b8b SbFilter     $0b8c DoHiSpeed  <- endpoint
-    $0b8d Sb16Bit        $0b8e TimeConst
+    $0c26 SbRegDetected  $0c27 SbRegInited  $0c28 SbProDetected
+    $0c29 SbProInited    $0c2a Sb16Detected $0c2b Sb16Inited
+    $0c2c MixerDetected  $0c2d SbWorksOk    <- endpoint
+    $0c2e HSBlockSpecified (Word)           $0c30 Sb16BlockSpecified (Word)
+    $0c32 SbStereo       $0c33 SbFilter     $0c34 DoHiSpeed  <- endpoint
+    $0c35 Sb16Bit        $0c36 TimeConst
 
   Seven Booleans and two Words between two fixed points, arriving exactly.
   Same instrument as the port block above: the layout is unmeasurable byte by

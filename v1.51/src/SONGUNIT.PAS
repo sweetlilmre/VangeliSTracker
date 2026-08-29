@@ -410,7 +410,7 @@ type
   BEFORE this constant, at the point the TYPE is declared. Declared up beside
   `MaxSequence`, ahead of the type, ModOffset came out first and the two swapped.
   Costs no code either way; `demovt/dgroup.py` is the only thing that can see it. }
-{ DS:$03c0 -- `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
+{ DS:$042c -- `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
   address is inside this unit's block, which runs $03c0..$03cb unbroken up to
   ModLoader's, and a `var` puts it in the other DGROUP region entirely so none of its

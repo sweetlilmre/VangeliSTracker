@@ -45,7 +45,7 @@ uses
       $0898 rather than $0897 -- **TP WORD-ALIGNS EACH TYPED CONSTANT.** The same rule
       explains three more paddings in the image: $0897 here, $08c1 before VT1stPattern,
       and $0003 before VTMAIN's SelfName. Four cases, one rule.
-    * `ShellParam` at $08c8 + 128 = $0948 = StringsFName, and $0948 + 80 = $0998 =
+    * `ShellParam` at $09f0 + 128 = $0948 = StringsFName, and $0948 + 80 = $0998 =
       ModPath, and $0998 + 80 = $09e8 = NoBanner. Three consecutive widths closing on
       three independently known addresses.
 

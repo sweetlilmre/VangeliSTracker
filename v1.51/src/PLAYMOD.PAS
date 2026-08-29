@@ -373,7 +373,7 @@ const
     high byte and cannot be the array's first element. Declared `array[1..8]` at $02e2
     the displacement is identical -- `[$02e2 - 1 + Chan]` is `[$02e1 + Chan]` -- which
     is why nine bytes where there are eight was invisible to `verify.py`. Exactly the
-    mistake recorded for `RawChannels`: "$1384 IS THE BASE-1 BASE, not the address".
+    mistake recorded for `RawChannels`: "$13A6 IS THE BASE-1 BASE, not the address".
 
     $40 and $b0 are a third of the way in from each side, in the pattern
     L R R L L R R L, which is the Amiga's own channel assignment. The release keeps pan
@@ -558,7 +558,7 @@ const
       ForceLoopMod   $02c9   the `ForceLoopMod` key      11bb:0b0e
       FilterOn       $02cb   the `FilterOn` key
       FilterOff      $02cc   the `FilterOff` key
-      MaxOutputFreq  $02ce   the `MaxFreq` key
+      MaxOutputFreq  $02d4   the `MaxFreq` key
       TicksPerSecond $0bcc   the `TicksPerSec` key
 
   Moving a declaration from the implementation section to the interface cannot change
@@ -602,8 +602,8 @@ const
   Canales, BuffGive, Buffers and SizeOfABuffer.
 
   FIVE OF THE ADDRESSES BELOW ARE BASE-1 BASES rather than the arrays themselves, and
-  this file already records the rule: `$11ee` is SplBuf's, `$1207` UserVols', `$120f`
-  Permisos', `$123a` Canales' and `$1384` RawChannels'. An instruction naming one of
+  this file already records the rule: `$11ee` is SplBuf's, `$12E0` UserVols', `$12e0`
+  Permisos', `$1260` Canales' and `$13A6` RawChannels'. An instruction naming one of
   those is indexing the array, not touching the byte.
 
   Only the first five need to be visible: `UserVols` because 1000:0311 fills it, and the

@@ -65,8 +65,15 @@ const
     `var`s they went to the variable half instead, six bytes that pushed every unit
     after this one down; and the six they should occupy were being counted as the tail
     of the program's `SelfName`, which is why that was read as String[25] and is really
-    String[19]. Frac at $0018, a pad at $0019, OldVec at $001a..$001d, `Driver` at $001e:
-    the arithmetic closes with nothing over. }
+    String[19]. Frac ($0204), a pad ($0205), OldVec ($0206..$0209), `Driver` at $020a:
+    the arithmetic closes with nothing over.
+
+    THE FIVE ADDRESSES ABOVE WERE v1.31b's UNTIL THE LINKER WAS ASKED, and so
+    were the two instruction addresses this paragraph cites -- 1065 is a v1.31b
+    segment. The ARGUMENT is untouched: the widths, the order, and the reasoning
+    about the initialised half of DGROUP all hold. Only the numbers moved, which
+    is what makes prose like this dangerous -- it stayed persuasive while every
+    figure in it was wrong. }
   { NEW IN v1.51, AND THEY OPEN THE BLOCK. v1.31b has these as UNTYPED
     constants -- `ComPort = $3F8; ComIrq = 4;` -- which occupy no DGROUP and
     compile to immediates: 1065:0013 is `MOV DX,03F8`. v1.51 makes both

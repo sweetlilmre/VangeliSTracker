@@ -296,8 +296,8 @@ var
 
   The order below is the original's, taken from those operands:
 
-      $0c6e ChainPtr   $0c72 Complain   $0c74 Song (94 bytes)   $0cd2 SavedCD
-      $0cd6 Str1208 (256)               $0dd6 four bytes unidentified
+      $0d16 ChainPtr   $0d1a Complain   $0d1c Song (94 bytes)   $0d9a SavedCD
+      $0d9e Str1208 (256)               $0dd6 four bytes unidentified
       $0dda Dir        $0e1e Name       $0e28 Ext -> VTSilenc's block at $0e2e
 
   `Song` used to be declared LAST and is second; `Str1208` was carrying `DS:$1208`,

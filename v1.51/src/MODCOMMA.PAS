@@ -192,7 +192,7 @@ type
 
       NextSeq    $034c   was PlayPos    the order position being played
       NextNote   $034a   was PlayRow    the row; $FFFF means past the end
-      MySongLen  $0340   was OrderLen   the last order position in the range
+      MySongLen  $034A   was OrderLen   the last order position in the range
 
   ~~DECLARED `var`, NOT AS TYPED CONSTANTS.~~ **WITHDRAWN, AND THE ARGUMENT FOR IT WAS
   WRONG IN ITS PREMISE.** The note said "a `var` and a typed constant compile to
@@ -211,12 +211,12 @@ type
   unit's block runs $0334..$034f. Laying the release's declaration order into it lands
   every one of the sixteen on an address some instruction in the tree already named:
 
-      $0334 MyLoopMod          $0335 PermitFilterChange   $0336 TempoDiv    = 125
-      $0338 CurTempo    = 125  $033a TempoAccum           $033c RangeStart
-      $033e RangeEnd          $0340 MySongLen            $0342 ReqStart
-      $0344 ReqEnd            $0346 ReqLen               $0348 FilterIsOn
-      $0349 CurSpeed    = 6    $034a NextNote      = 1     $034c NextSeq     = 1
-      $034e TickInRow
+      $033E MyLoopMod          $033F PermitFilterChange   $0340 TempoDiv    = 125
+      $0342 CurTempo    = 125  $0344 TempoAccum           $0346 RangeStart
+      $0348 RangeEnd          $034A MySongLen            $034C ReqStart
+      $034E ReqEnd            $0350 ReqLen               $0348 FilterIsOn
+      $0353 CurSpeed    = 6    $0354 NextNote      = 1     $0356 NextSeq     = 1
+      $0358 TickInRow
 
   **AND NINE OF THEM WERE DECLARED IN PLAYMOD.PAS, WHICH COULD NOT HAVE BEEN RIGHT.**
   Their addresses INTERLEAVE with the three that were already here -- $033c and $033e
