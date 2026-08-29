@@ -289,10 +289,30 @@ DumpLoop:                                       ; 14d8
                 RET                             ; 1554  NEAR -- an internal call
 
 
-; --------------------------------------------------------------------------
-;  As DumpRaw, but writing silence. AX is still the sample count and the source
-;  position is still advanced, eleven bytes per sample instead of fifteen.
-; --------------------------------------------------------------------------
+; ===========================================================================
+; EmptyRaw -- as DumpRaw, but writing silence.
+;
+;   IN   AL      how many samples to produce
+;        CH      the integer part of the step
+;        DX      the fractional part of the step (patched into the body)
+;        BX      the interleave stride
+;        ES:DI   the current position in the output buffer
+;        BP      the running fractional position
+;
+;   OUT  DI and BP advanced; SI advanced as if a sample had been read
+;
+;   MODIFIES AX, CH, DS, SI, DI, BP, and its own eight immediates
+;
+; **IT STILL ADVANCES THE SOURCE POSITION**, which is the only surprising thing
+; about it. Nothing is read -- there is no `MOV AL,[SI]` in the body -- but the
+; `ADD BP / ADC SI` pair is kept, so a channel that goes quiet and comes back
+; resumes where it would have been rather than where it stopped. Eleven bytes
+; per sample instead of fifteen.
+;
+; DS IS OVERWRITTEN AND THAT IS SAFE HERE. `PUSH ES / POP DS` below points DS at
+; the buffer, because with no source to read the segment is wanted only for
+; `ADC SI,DX` to carry into. DumpRaw could not do this.
+; ============================================================================
                 PUBLIC  EmptyRaw
 ; [1.39b] "The loop for an empty sample. It cannot be removed, because it has
 ;          to at least fill the buffer with zeros."
@@ -324,11 +344,20 @@ EmptyRaw:
                 PUSH    ES                      ; 1581
                 POP     DS                      ; 1582
 
-                MOV     CH,AL                   ; 1583
-                ADD     AX,7                    ; 1585
-                SHR     AX,3                    ; 1588
-                XCHG    AL,CH                   ; 158b
-                AND     AX,7                    ; 158d  a WORD here, a byte at 14c5
+; The same part-way entry as DumpRaw -- see the worked example there. Only two
+; things differ, and both are the original's own inconsistency rather than a
+; design: the mask below is a WORD where DumpRaw's is a byte, and the jump at
+; the end is a PUSH/RET where DumpRaw's is a JMP.
+                MOV     CH,AL                   ; 1583  CH := count
+                ADD     AX,7                    ; 1585  round up...
+                SHR     AX,3                    ; 1588  ...then divide by 8
+                XCHG    AL,CH                   ; 158b  CH := passes
+                AND     AX,7                    ; 158d  A WORD HERE, a byte at
+                                                ;       14c5. AH is already zero
+                                                ;       so both give the same
+                                                ;       answer -- one byte apart
+                                                ;       in encoding and no
+                                                ;       difference in effect
                 JZ      SHORT EmptyLoop         ; 1590  SHORT: no JUMPS padding
                 NEG     AL                      ; 1592
                 AND     AL,7                    ; 1594
@@ -338,12 +367,22 @@ EmptyRaw:
                 MUL     AH                      ; 159a
                 ADD     AX,OFFSET EmptyLoop     ; 159c
 
-; 159f..15a2 -- the computed jump, done with a PUSH and a RET instead of the
-; release's `MOV DX,AX / JMP DX`. One byte shorter, and it clears AX on the way,
-; which is the value the loop writes out.
-                PUSH    AX                      ; 159f
-                XOR     AX,AX                   ; 15a0
-                RET                             ; 15a2
+; **A COMPUTED JUMP WRITTEN AS A RETURN.** `PUSH AX / RET` goes wherever AX
+; says, exactly as `JMP AX` would -- RET pops an address and jumps to it, and it
+; does not care that nothing called it. This costs one byte less than the
+; release's `MOV DX,AX / JMP DX`.
+;
+; AND THE BYTE SAVED IS NOT THE POINT. Once the address is on the stack, AX is
+; free, so the XOR between the push and the return is not a spare instruction --
+; it loads the silence this routine is about to write. `MOV WORD PTR ES:[DI],AX`
+; in the body is storing that zero. One register, used for the jump target and
+; then for the payload, with the stack holding the target across the change.
+;
+; A reader who takes this for a return will look for the call that matched it
+; and not find one.
+                PUSH    AX                      ; 159f  the entry address...
+                XOR     AX,AX                   ; 15a0  ...frees AX for the zero
+                RET                             ; 15a2  "return" INTO the body
 
 EmptyLoop:                                      ; 15a3
                 REPT    8
@@ -373,22 +412,48 @@ EmptyLoop:                                      ; 15a3
 ; --------------------------------------------------------------------------
                 PUBLIC  DumpInstrument
 DumpInstrument:
+; **THE FRAME IS THE THING TO GET RIGHT HERE**, because every `[BP+n]` below is
+; a parameter and nothing in the instruction says which. Turbo Pascal pushes
+; left to right and the callee cleans up, so the FIRST parameter is at the
+; HIGHEST offset and the last is nearest BP. With a far call the return address
+; and the saved BP occupy [BP] to [BP+3], so parameters start at [BP+4]:
+;
+;     [BP+16h]  Src        var, 4 bytes   the sample
+;     [BP+12h]  Dest       var, 4 bytes   the buffer
+;     [BP+10h]  Volume     byte, pushed as a word
+;     [BP+0Ch]  Step       longint, 4 bytes -- low word at 0Ch, high at 0Eh
+;     [BP+0Ah]  SrcLimit   word
+;     [BP+08h]  Max        word
+;     [BP+06h]  ChanAdd    word
+;     [BP+04h]  Silent     boolean, pushed as a word
+;
+; ENTER 0,0 RATHER THAN A PROC DIRECTIVE. Written as a TASM PROC the assembler
+; would generate its own prologue and its own parameter names; hand-writing it
+; keeps the bytes the compiler's own frame produces, which is what this has to
+; match. The cost is that the offsets above are a comment and not a symbol, so
+; they are worth checking against this table rather than trusted line by line.
                 ENTER   0,0                     ; 1600  hand-written, not a PROC
-                LES     DI,[BP+16h]             ; 1604  Src
+                LES     DI,[BP+16h]             ; 1604  ES:DI := Src
 
 ; 1607..163d -- decide whether Max samples will run past the boundary. Three
 ; cheap escapes to the long path first: a silent call reads nothing, and a zero
 ; step never moves.
                 MOV     CH,[BP+04h]             ; 1607  Silent
-                AND     CH,CH                   ; 160a
+                AND     CH,CH                   ; 160a  a silent call reads no
+                                                ;       source, so no boundary
+                                                ;       can be crossed
                 JNZ     @@long                  ; 160c
                 NOP                             ; 160e  JUMPS padding
                 NOP                             ; 160f
                 NOP                             ; 1610
 
                 MOV     CX,[BP+0Eh]             ; 1611  Step, high word
-                OR      CX,[BP+0Ch]             ; 1614  ... or low word
-                JZ      @@long                  ; 1617
+                OR      CX,[BP+0Ch]             ; 1614  OR'd with the low word:
+                                                ;       one test for a 32-bit
+                                                ;       zero, and CX is dead
+                                                ;       afterwards either way
+                JZ      @@long                  ; 1617  a zero step never moves,
+                                                ;       so it never runs out
                 NOP                             ; 1619
                 NOP                             ; 161a
                 NOP                             ; 161b
