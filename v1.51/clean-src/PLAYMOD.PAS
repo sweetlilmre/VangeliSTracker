@@ -142,7 +142,7 @@ const
 type
   { THE RELEASE'S NAMED TYPE, AND IT IS LOAD-BEARING. Turbo Pascal only allows a
     whole-array assignment between operands of the SAME named type, and 12ba:075e and
-    12ba:119e are assignments rather than `Move` calls -- see the note at each. Declared
+are assignments rather than `Move` calls -- see the note at each. Declared
     as two anonymous `array[1..8] of Byte` the assignment does not compile at all, which
     is why both sites were read as `Move`. Eight is written out rather than `MaxChannels`
     because that constant is declared further down, after the records that use it. }
@@ -224,7 +224,7 @@ type
   -------------------------------------------------------------------------- }
 type
   { EIGHTEEN BYTES IN v1.51, SIXTEEN IN 1.31b, AND `Freq` IS WHERE THE TWO WENT.
-    12ce:02de is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
+is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
     and 12ce:0305/0309 store a WORD PAIR into +$1 and +$3 from [BP+12] and [BP+14],
     which is a LongInt where 1.31b stored one word. Every field after it moves up
     two, and FlushEventRow's "is this slot free" test at 12ce:0413 is
@@ -273,7 +273,7 @@ const
   RingRows = 25;
 
   { NEW IN v1.51. 12ce:0243's `SHL DI,5` fixes the flag grid at 32 bytes a row and
-    12ce:0258 stops the loop at 20h, so the wide ring carries thirty-two channels
+stops the loop at 20h, so the wide ring carries thirty-two channels
     where `MaxChannels` below still says eight. Both numbers are live at once: the
     8-channel ring at 0183 and the 32-channel one at 0202 run back to back. }
   WideChans = 32;
@@ -526,7 +526,7 @@ const
     cannot account for. }
   TickIter         : Word          = 0;
   { A LONGINT IN v1.51, A WORD IN 1.31b, AND THE ZERO STORE IS WHAT SETTLES IT.
-    12ce:11a5 is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
+is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
     Written as two separate Word variables the second would be `XOR AX,AX /
     MOV [x],AX`, because Turbo Pascal special-cases assigning zero and five bytes
     beat six; it only emits the immediate form for BOTH halves when they are one
@@ -669,13 +669,13 @@ procedure FlushEventRow; far;
 procedure ProcessTickEntry; far;
 
 {stop playing and give the buffers back. Declared here because
-  12ba:127c calls it from inside PlayStart's out-of-memory path, 1,300 bytes
+calls it from inside PlayStart's out-of-memory path, 1,300 bytes
   above it; the release exports it too, as `PROCEDURE PlayStop`. Its body is a
   PLACEHOLDER until the transcription reaches 13d7. }
 procedure PlayStop; far;
 
 {start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
-  1000:0381 is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
+is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
   was read nothing outside this unit was known to reach it, so it was declared
   in the implementation only. The release exports it too, as
   `PROCEDURE PlayStart(VAR Song: TSong)`.
@@ -713,7 +713,7 @@ implementation
   { ~~ONE cursor, shared~~ -- **v1.51 SPLITS IT, AND ADDS THE FULL TEST THAT GOES
     WITH A REAL RING.** 1.31b had SetEvent, PostEvent and FlushEventRow all indexing
     by DS:$02f0. In 1.51 the two producers use $02e8 and the flush uses $02ea, and
-    12ce:0e78 is what makes the pair mean something:
+is what makes the pair mean something:
 
         MOV AX,[02e8] / INC AX / XOR DX,DX / MOV CX,19 / DIV CX / XCHG AX,DX
         CMP AX,[02ea] / JNZ advance / JMP away
@@ -796,7 +796,7 @@ implementation
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
   {AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
-    142f:04da writes that one from the E0x command and nothing reads it; this one is
+writes that one from the E0x command and nothing reads it; this one is
     read by the initialisation section at 12ba:1430 to choose between FilterOn and
     FilterOff. Two variables where the release has one. ModCommands keeps its copy in
     its IMPLEMENTATION section precisely so that this name cannot be shadowed here --
@@ -862,7 +862,7 @@ var
   NoteRing        : array[0..RingRows - 1] of TRingRow;
 
   { NEW IN v1.51 -- THE WIDE RING, and its shape is read off three multipliers.
-    12ce:021a is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
+is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
     flag grid is 32 bytes a row; and 0206..0211 is `INC / CMP 18 / SUB 19`, so
     there are 25 rows exactly as the narrow ring has. }
   WideRing        : array[0..RingRows - 1] of TChansData;
@@ -910,7 +910,7 @@ var
     The client-facing `LoopMod` it was named after is a DIFFERENT variable, at
     $02c8; see its declaration in the interface. }
   { MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
-    142f:04a6 and 142f:04bc write from the F-command. Names unchanged; the release
+and 142f:04bc write from the F-command. Names unchanged; the release
     calls them Tempo and BPMIncrement and the rename is declined there for reasons
     given at the declaration. }
 
@@ -972,7 +972,7 @@ takes six bytes of arguments and does nothing with them.
   same idea rather than the same routine -- the pairing is by ROLE only.
 
   THREE WORDS, NOT A POINTER AND A WORD, and the only call site says so:
-  12ba:0697 pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
+pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
   would be built and pushed differently. The six bytes are the same either way
   in THIS routine -- `RET 6` regardless -- but the caller's bytes are not, which
   is why the declaration matters. Names are placeholders: nothing reads them.
@@ -1228,7 +1228,7 @@ post a voice event, merging into whatever is already there.
   alone by passing $FFFF for the frequency.
   -------------------------------------------------------------------------- }
 { AFreq IS A LONGINT HERE TOO, and the sentinel test is what shows it most plainly:
-  12ce:03ae is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
+is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
   compare done high word first. 1.31b had one `CMP ...,$FFFF`. Written as `-1` and
   not `$FFFFFFFF` because that is what gives the sign-extended byte immediate the
   original has -- the full constant would need four bytes of operand. }
@@ -1983,7 +1983,7 @@ begin
       NoteProcessed^.Tempo := CurSpeed;
 
       {publish the channel's event into the note ring, where
-        12ba:0187 will increment the semaphore it names. The ring is indexed by
+will increment the semaphore it names. The ring is indexed by
         the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
         CurCanal^.RingPending;
@@ -2087,7 +2087,7 @@ begin
   {AND THE SECOND DISABLED ROTATION IN THIS UNIT. `Inc(ModIdx)`
     followed by a clamp to 1 means the index is 1 from the first call onward, so
     only one entry of the module table is ever used -- exactly like the `and 0` at
-    12ba:06c0 pinning the note buffer to slot zero. Two independent pieces of
+pinning the note buffer to slot zero. Two independent pieces of
     machinery for handling more than one of something, both switched off by their
     own next instruction. Transcribed as found. }
   Inc(BuffIdx);
@@ -2503,7 +2503,7 @@ begin
 
     { **NEW IN v1.51 -- THIS IS WHERE THE RETRIGGER ACTUALLY RETRIGGERS.** MODCOMMA
       only ever sets a flag: 147d:05d8 counts ticks and raises `DoRetrig`, and
-      147d:087a clears it again on the next dispatch, so it is true for exactly one
+clears it again on the next dispatch, so it is true for exactly one
       tick. Nothing in that segment restarts a sample -- it cannot, because the sample
       machinery lives here. 12ce:124f is the reader, and `SetNewSample(.., 0)` is the
       restart.
@@ -2594,7 +2594,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:1049 and 12ba:105d -- the two buffer callbacks the sound device asks
+and 12ba:105d -- the two buffer callbacks the sound device asks
   through. Both are FAR functions of no arguments returning a PSampleBuffer,
   which is `SoundDevices.TAskBufferProc`, and both are the release's: it declares
   `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION BufferGiver :

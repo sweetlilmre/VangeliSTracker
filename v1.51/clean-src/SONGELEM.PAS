@@ -77,17 +77,17 @@
   THIRD, THE FAR CALLS COUNT THE ARITHMETIC. Two System helpers appear five times each
   and nowhere else in the segment:
 
-      1ba1:0a2e  x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
+x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
                                               (Len DIV 2 three times, Reps, Repl)
-      1ba1:0a13  x5, all inside Resample   -- and Resample has exactly five LongInt MULs
+x5, all inside Resample   -- and Resample has exactly five LongInt MULs
                                               (Repl*3, Repl*2, Repl*3, Repl*4, Repl*4)
-      1ba1:0fb2  x3 at 0177, 0a83, 0aaf    -- Move, and the release has exactly three:
+x3 at 0177, 0a83, 0aaf    -- Move, and the release has exactly three:
                                               one in Change, two in SetFullTrack
-      1ba1:0fd5  x4 at 08f1, 0901, 0ac7, 0c00
+x4 at 08f1, 0901, 0ac7, 0c00
                                            -- FillChar: two in SetFullTrack, one in
                                               GetNote, one in TPattern.Init
-      1723:0089  x2 at 023b, 02ca          -- DumpToUltrasound, and Change calls it twice
-      1891:0000  x3  /  1891:0031  x3      -- TObject.Init and TObject.Done, three each
+x2 at 023b, 02ca          -- DumpToUltrasound, and Change calls it twice
+x3  /  1891:0031  x3      -- TObject.Init and TObject.Done, three each
 
   **FIVE DIVS AND FIVE MULS, TERM FOR TERM, IS NOT A COINCIDENCE OF SIZE.** It says
   Desample's and Resample's expressions are the release's without a single one added or
@@ -784,7 +784,7 @@ end;
   TTrack.
   =========================================================================== }
 
-{ 165a:081d and 165a:083f. Unlike TInstrument.Done this one calls `HDisposeStr` directly
+{and 165a:083f. Unlike TInstrument.Done this one calls `HDisposeStr` directly
   -- site `0852` -- and does not guard against a nil `Name`, because HDisposeStr does. }
 constructor TTrack.Init;
 begin

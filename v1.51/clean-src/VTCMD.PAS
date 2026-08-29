@@ -57,13 +57,13 @@
 
   THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM:
 
-      116a:0000  AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
-      1b6f:0178  FExpand      x4   Dir, ModPath, DefaultPath, Path
-      1b6f:0241  FSplit       x2
-      1b6f:0000  FindFirst    x1   and 1b6f:003e FindNext x1
-      1a17:0248  LocateDevice x1   from SetVTDevice at 0000
-      1a17:018c  SetDevice    x1   also SetVTDevice
-      12ba:132f  ChangeSamplingRate x1  from SetVTFreq at 0038
+AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
+FExpand      x4   Dir, ModPath, DefaultPath, Path
+FSplit       x2
+FindFirst    x1   and 1b6f:003e FindNext x1
+LocateDevice x1   from SetVTDevice at 0000
+SetDevice    x1   also SetVTDevice
+ChangeSamplingRate x1  from SetVTFreq at 0038
 
   AND `1ba1:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
   `CmdInitFreq` has `VAL(s, i, r);` written TWICE in a row, plainly by accident; 1.31 has
@@ -191,7 +191,7 @@ uses
 
 
 { ===========================================================================
-  109c:0000 and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
+and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
   both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
   count that `census.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
@@ -481,7 +481,7 @@ begin
 end;
 
 
-{ 109c:047c and 109c:04ca -- one port and one IRQ for both cards, because only one of
+{and 109c:04ca -- one port and one IRQ for both cards, because only one of
   them can be present. `off` at 0518's neighbour is the odd one out; see CmdModOffset. }
 procedure CmdSetPort(s : String);
 var
@@ -751,7 +751,7 @@ end;
 
 
 { ===========================================================================
-  109c:07ae onwards -- THE FIVE METHODS, in the release's own implementation order:
+onwards -- THE FIVE METHODS, in the release's own implementation order:
   `TVTCmd`'s override first, then `TVTCmdSwitch`'s four. That order is odd -- the
   descendant before its parent -- and it is the release's, and the original agrees.
   =========================================================================== }
@@ -868,7 +868,7 @@ begin
 end;
 
 
-{ 109c:0c5e and 109c:0c9d -- save and restore the four settings a shelled-to program
+{and 109c:0c9d -- save and restore the four settings a shelled-to program
   might change. `PUSH BP` with no frame, because a `var` parameter needs no copy, and
   `RETF 8` for Self plus the pointer.
 

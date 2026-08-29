@@ -46,14 +46,14 @@ interface
   `LIB/UMBUNIT.PAS` at 65.5%, with nothing else above 7% -- and the unit's four
   routines line up one for one, signature for signature:
 
-      1880:0000  AllocRaw   -> DOSAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
-      1880:005a  FreeRaw    -> DOSFree     (VAR Buf: POINTER)
-      1880:0077  SetUMBLink -> UMBLink
-      1880:0097  Alloc      -> UMBAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
-      1880:00cb  Free       -> UMBFree     (VAR Buf: POINTER)
+AllocRaw   -> DOSAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
+FreeRaw    -> DOSFree     (VAR Buf: POINTER)
+SetUMBLink -> UMBLink
+Alloc      -> UMBAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
+Free       -> UMBFree     (VAR Buf: POINTER)
 
   AND 17cf CONFIRMS TWO OF THEM FROM OUTSIDE. It calls 1880:0097 exactly once and
-  1880:00cb exactly once, which is `TUmbHeap.Init` calling UMBAllocate and
+exactly once, which is `TUmbHeap.Init` calling UMBAllocate and
   `TUmbHeap.Done` calling UMBFree -- the release's HEAPS.PAS says so in those words.
 
   ONE TYPE IS NOT ADOPTED. The release's `UMBLink` takes and returns a `BOOLEAN`; ours
@@ -87,12 +87,12 @@ ask DOS for Size bytes, settle for less rather than fail.
   calls to the runtime's 32-bit shift helpers, and only the DOS calls
   themselves are hand-written.
 
-  1ba1:0a9c and 1ba1:0aa8 are taken to be 32-bit shift right and shift left
+and 1ba1:0aa8 are taken to be 32-bit shift right and shift left
   by CL. The evidence is that they are used here as EXACT INVERSES across one
   allocation -- bytes go in through 0a9c to become paragraphs, paragraphs come
   back out through 0aa8 to become bytes -- and no other reading makes the
   return value mean anything. They are not the multiply and divide helpers at
-  1ba1:0a13 and 1ba1:0a2e, which take a full 32-bit operand in BX:CX.
+and 1ba1:0a2e, which take a full 32-bit operand in BX:CX.
 
   THE PARAGRAPH COUNT IS TRUNCATED, not rounded up: there is no `+15` before
   the shift. Asking for 17 bytes asks DOS for one paragraph and reports 16.
@@ -111,20 +111,20 @@ begin
   Paras := Word(Size shr 4);
   asm
     MOV  BX, Paras
-    MOV  AH, 48h           { 1880:001a  DOS: allocate memory               }
+    MOV  AH, 48h           {DOS: allocate memory               }
     INT  21h
     JNC  @@Got
-    MOV  Paras, BX         { 1880:0020  BX now holds the largest available }
-    MOV  AH, 48h           { 1880:0023  ... so ask for exactly that        }
+    MOV  Paras, BX         {BX now holds the largest available }
+    MOV  AH, 48h           {... so ask for exactly that        }
     INT  21h
     JNC  @@Got
-    MOV  AX, 0             { 1880:0029  give up                            }
+    MOV  AX, 0             {give up                            }
     MOV  Paras, AX
   @@Got:
-    LES  DI, P             { 1880:002f  the ADDRESS of the caller's ptr    }
-    MOV  ES:[DI+2], AX     { 1880:0032  the segment, or 0                  }
+    LES  DI, P             {the ADDRESS of the caller's ptr    }
+    MOV  ES:[DI+2], AX     {the segment, or 0                  }
     XOR  AX, AX
-    MOV  ES:[DI], AX       { 1880:0038  the offset is always zero          }
+    MOV  ES:[DI], AX       {the offset is always zero          }
   end;
   DOSAllocate := LongInt(Paras) shl 4;
 end;
@@ -146,14 +146,14 @@ give a block back.
   -------------------------------------------------------------------------- }
 procedure DOSFree(var P : Pointer); assembler;
 asm
-  LES  DI, P             { 1880:005d  the ADDRESS of the caller's pointer  }
-  MOV  AX, ES:[DI+2]     { 1880:0060  keep the segment                     }
+  LES  DI, P             {the ADDRESS of the caller's pointer  }
+  MOV  AX, ES:[DI+2]     {keep the segment                     }
   XOR  BX, BX
-  MOV  ES:[DI+2], BX     { 1880:0066  P := nil, before the call            }
+  MOV  ES:[DI+2], BX     {P := nil, before the call            }
   MOV  ES:[DI], BX
-  MOV  ES, AX            { 1880:006d  $49 wants it here                    }
-  MOV  AH, 49h           { 1880:006f  DOS: free memory                     }
-  INT  21h               { 1880:0071  carry ignored                        }
+  MOV  ES, AX            {$49 wants it here                    }
+  MOV  AH, 49h           {DOS: free memory                     }
+  INT  21h               {carry ignored                        }
 end;
 
 { --------------------------------------------------------------------------
@@ -170,23 +170,23 @@ read the UMB link state, set a new one, return the old.
   -------------------------------------------------------------------------- }
 function UMBLink(State : Byte) : Byte; assembler;
 asm
-  MOV  AX, 5802h         { 1880:007a  DOS: get UMB link state              }
+  MOV  AX, 5802h         {DOS: get UMB link state              }
   INT  21h
-  MOV  AH, 0             { 1880:007f  the answer if it failed              }
+  MOV  AH, 0             {the answer if it failed              }
   JC   @@Out
-  MOV  AH, AL            { 1880:0083  keep the old state                   }
-  PUSH AX                { 1880:0085  ... across the second call           }
-  MOV  AX, 5803h         { 1880:0086  DOS: set UMB link state              }
+  MOV  AH, AL            {keep the old state                   }
+  PUSH AX                {... across the second call           }
+  MOV  AX, 5803h         {DOS: set UMB link state              }
   XOR  BH, BH
   MOV  BL, State
   INT  21h
   POP  AX
 @@Out:
-  MOV  AL, AH            { 1880:0091  the result                           }
+  MOV  AL, AH            {the result                           }
 end;
 
 { --------------------------------------------------------------------------
-  1880:0097 and 1880:00cb -- the same two operations with upper memory linked
+and 1880:00cb -- the same two operations with upper memory linked
   in for the duration.
 
   Plain Pascal in the binary: `ENTER`, a byte local for the old state, and

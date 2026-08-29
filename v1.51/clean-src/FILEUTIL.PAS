@@ -82,11 +82,11 @@ begin
     `80 7e ff 3a`). A case selector is evaluated once and stays in AL.
 
     The labels are in SOURCE order, not sorted: $3a, $5c, $2f. }
-  case Path[Length(Path)] of
+  case Path[Length(Path)] of                      {.. 116a:0010 }
     ':', '\', '/' : ;
   else
-    Path[Length(Path) + 1] := '\';
-    Inc(Path[0]);                                 { 116a:0036  the length   }
+    Path[Length(Path) + 1] := '\';                {.. 116a:002f }
+    Inc(Path[0]);                                 {the length   }
   end;
 end;
 

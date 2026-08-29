@@ -98,12 +98,12 @@ var
     would need a load. }
   ModJM : TModJMIdString absolute Header;
 begin
-  Song.FileFormat := mffJMPlayer;                 { 164b:0007  +$5d := 4 }
+  Song.FileFormat := mffJMPlayer;                 {+$5d := 4 }
 
   if ModJM = ModJMIdString then
-    Song.Status := msFileFormatNotSupported       { 164b:003a  +$59 := 6 }
+    Song.Status := msFileFormatNotSupported       {+$59 := 6 }
   else
-    Song.Status := msNotLoaded;                   { 164b:0044  +$59 := 0 }
+    Song.Status := msNotLoaded;                   {+$59 := 0 }
 end;
 
 end.

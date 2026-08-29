@@ -102,14 +102,14 @@ the three kernels.
 procedure Filter1_2Word; assembler;   {y := (prev + x) / 2 }
 asm
 @@Next:
-  MOV  AX, ES:[DI]       { 1544:0000  the sample                             }
-  ADD  BX, AX            { 1544:0003  plus the state                         }
-  XCHG AX, BX            { 1544:0005  the OLD sample becomes the new state   }
+  MOV  AX, ES:[DI]       {the sample                             }
+  ADD  BX, AX            {plus the state                         }
+  XCHG AX, BX            {the OLD sample becomes the new state   }
   SAR  AX, 1
   MOV  ES:[DI], AX
-  ADD  DI, SI            { 1544:000b  one stride on                          }
+  ADD  DI, SI            {one stride on                          }
   LOOP @@Next
-                         { 1544:000f  RET -- NEAR, and supplied by Pascal:   }
+                         {RET -- NEAR, and supplied by Pascal:   }
                          { an assembler procedure gets its own epilogue, }
                          { so writing RET here emits a SECOND one.       }
 end;
@@ -118,26 +118,26 @@ procedure Filter3_4Word; assembler;
 asm
 @@Next:
   MOV  AX, ES:[DI]
-  SAR  BX, 1             { 1544:0013  half the state, not all of it          }
+  SAR  BX, 1             {half the state, not all of it          }
   ADD  BX, AX
   XCHG AX, BX
   SAR  AX, 1
   MOV  DX, AX
   SAR  AX, 2
-  ADC  DX, AX            { 1544:001f  ADC, so the shifted-out bit rounds     }
+  ADC  DX, AX            {ADC, so the shifted-out bit rounds     }
   SAR  AX, 2
   ADC  AX, DX
   MOV  ES:[DI], AX
   ADD  DI, SI
   LOOP @@Next
-                         { 1544:002d  RET, supplied by Pascal                }
+                         {RET, supplied by Pascal                }
 end;
 
 procedure Filter7_8Word; assembler;   {the steepest }
 asm
 @@Next:
   MOV  AX, ES:[DI]
-  SAR  BX, 2             { 1544:0031  a quarter of the state                 }
+  SAR  BX, 2             {a quarter of the state                 }
   ADD  BX, AX
   XCHG AX, BX
   SAR  AX, 1
@@ -149,7 +149,7 @@ asm
   MOV  ES:[DI], AX
   ADD  DI, SI
   LOOP @@Next
-                         { 1544:004b  RET, supplied by Pascal                }
+                         {RET, supplied by Pascal                }
 end;
 
 { --------------------------------------------------------------------------
@@ -167,14 +167,14 @@ pick a kernel and run it.
 function FilterChunkWord(var Buf; Len, Offs : Word; Method : TFilterMethod;
                          OldSpl : Word) : Word; assembler;
 asm
-  MOV  SI, Offs          { 1544:004f  [BP+0Ah]                               }
-  ADD  SI, SI            { 1544:0052  samples -> bytes                       }
-  LES  DI, Buf           { 1544:0054  [BP+0Eh]                               }
-  MOV  BX, OldSpl        { 1544:0057  [BP+06h]                               }
-  MOV  CX, Len           { 1544:005a  [BP+0Ch]                               }
-  JCXZ @@Done            { 1544:005d  nothing to do                          }
-  MOV  AL, Method        { 1544:005f  [BP+08h]                               }
-  CMP  AL, fm1_2         { 1544:0062  the enum -- and ORD(fm1_2) is 3        }
+  MOV  SI, Offs          {[BP+0Ah]                               }
+  ADD  SI, SI            {samples -> bytes                       }
+  LES  DI, Buf           {[BP+0Eh]                               }
+  MOV  BX, OldSpl        {[BP+06h]                               }
+  MOV  CX, Len           {[BP+0Ch]                               }
+  JCXZ @@Done            {nothing to do                          }
+  MOV  AL, Method        {[BP+08h]                               }
+  CMP  AL, fm1_2         {the enum -- and ORD(fm1_2) is 3        }
   JNZ  @@Try2
   CALL Filter1_2Word
   JMP  @@Done
@@ -188,7 +188,7 @@ asm
   JNZ  @@Done
   CALL Filter7_8Word
 @@Done:
-  MOV  AX, BX            { 1544:007b  the state, for the next call           }
+  MOV  AX, BX            {the state, for the next call           }
 end;
 
 end.

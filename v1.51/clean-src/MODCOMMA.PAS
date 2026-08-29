@@ -129,13 +129,13 @@ type
     VSldIsFine : Boolean;       { +$23  ANCHORED                             }
 
     { +$24 and +$25 -- named for WHERE THEY GO rather than what they are:
-      12ba:0a8a copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
+copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
       +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
       the first to index the published control block. }
     { ~~RingSem AND RingPending~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
-      147d:05d8 is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
+is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
       MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
-      147d:05b9 stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
+stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
     RetrigCt   : Byte;          { +$24  was RingSem in 1.31b                 }
     RetrigVal  : Byte;          { +$25  was RingPending in 1.31b                 }
     DoRetrig  : Boolean;       { +$26                                        }
@@ -151,7 +151,7 @@ type
     { +$2a and +$2b -- THE S3M Qxy RETRIGGER'S VOLUME CHANGE, and the flag says which
       of two arithmetics to use. 147d:0785 looks the high nibble up in a MULTIPLIER
       table and sets +$2a when that entry is ZERO, meaning "this x is not a multiply";
-      147d:0818 then either multiplies the volume by +$2b and shifts down four, or
+then either multiplies the volume by +$2b and shifts down four, or
       adds +$2b as a signed step. Two tables, one selector byte. }
     S3mRetAdd : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
     S3mRetVal  : Byte;          { +$2b                                        }
@@ -750,7 +750,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:034f and 142f:0356 -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
+and 142f:0356 -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
   VIBRATO-PLUS-VOLUME-SLIDE. Two instructions each: do one effect, then fall into
   the other. The release is identical.
 
@@ -1048,7 +1048,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:04e2 and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
+and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
   CONFIRMED at both addresses by the near calls at 142f:0114 and 142f:0163.
 
   THEY ARE THE MIRROR OF StartTPortUp AND StartTPortDown, and the pair of pairs is
@@ -1183,7 +1183,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  147d:05b9 and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
+and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
   carries an empty `TickRetrigNote` and no Start at all. `CommandStart` maps command
   $1a to 05b9, and $1a is `mcRetrigNote`.
 
@@ -1212,7 +1212,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:0584 and 142f:05cd -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
+and 142f:05cd -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
   The same borrow-the-coarse-routine trick StartVolSlide uses: set the increment,
   clear the fine flag so TickVolSlide will act, call it once, set the flag again.
 

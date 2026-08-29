@@ -146,7 +146,7 @@ implementation
   `Busy` and `LastTick` stay in this unit but moved UP into the interface const block,
   because their addresses are BELOW `DevData` at $0060 and a unit lays its interface
   declarations down before its implementation ones. `LastTick` also has to be visible:
-  1000:02a1 writes it. }
+writes it. }
 
 { THREE VARIABLES USED TO BE DECLARED HERE AND ALL THREE WERE DUPLICATES of
   globals another unit already owns. Every reference to one is a linker fixup,
@@ -205,16 +205,16 @@ begin
   MOV  AX, SEG @DATA
   MOV  DS, AX
   CMP  Busy, 0
-  JBE  @@Take         { 106e:000d  zero -> nobody is inside              }
-  JMP  @@Out          { 106e:000f  already inside; do nothing            }
+  JBE  @@Take         {zero -> nobody is inside              }
+  JMP  @@Out          {already inside; do nothing            }
 @@Take:
   INC  Busy
   INC  LastTick
-  CALL FAR PTR FlushEventRow    { 106e:0019  CALLF 12ce:03d9  -- NOT      }
+  CALL FAR PTR FlushEventRow    {CALLF 12ce:03d9  -- NOT      }
                               { AdvanceEventRow; see PlayMod's interface  }
   DEC  Busy
 @@Out:
-  end  { 106e:0022  LEAVE / RETF, supplied by Pascal      }
+  end  {LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------
@@ -274,22 +274,22 @@ begin
   JMP  @@Out
 @@Take:
   INC  PollBusy
-  MOV  SoundDevices.SavedSS, SS { 106e:0034  keep the caller's stack     }
+  MOV  SoundDevices.SavedSS, SS {keep the caller's stack     }
   MOV  SoundDevices.SavedSP, SP
   MOV  DX, DS
   { **THE STACK THIS SWITCHES TO IS `SoundDevices.PollStack`**, and the operand
     below is why nothing could find it: SP is loaded with the address of `SavedSS`,
     the variable ABOVE the block, and the stack then grows down through it. The
     block's own address appears in no instruction anywhere in the image. }
-  MOV  SS, DX         { 106e:003e  ours lives in the data segment        }
-  MOV  SP, OFFSET SoundDevices.SavedSS  { 106e:0040  the top of PollStack }
+  MOV  SS, DX         {ours lives in the data segment        }
+  MOV  SP, OFFSET SoundDevices.SavedSS  {the top of PollStack }
   CALL DWORD PTR SoundDevices.PeriodicProc
   MOV  SS, SoundDevices.SavedSS
   MOV  SP, SoundDevices.SavedSP
-  INC  DriverTicks    { 106e:004f  AFTER the call, not before            }
+  INC  DriverTicks    {AFTER the call, not before            }
   DEC  PollBusy
 @@Out:
-  end  { 106e:0057  LEAVE / RETF, supplied by Pascal      }
+  end  {LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------
@@ -399,7 +399,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:00f5 and 1084:00fc -- slots +$22 and +$2e. Empty.
+and 1084:00fc -- slots +$22 and +$2e. Empty.
 
   The first takes a word and the second takes nothing, and neither does
   anything with it. Whatever these mean, the GUS has no use for them.

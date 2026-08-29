@@ -209,21 +209,21 @@ asm
   PUSH AX
   PUSH DS
   PUSH DX
-  MOV  AX, SEG @DATA     { 1065:0009  was MOV AX,1CAAh                     }
+  MOV  AX, SEG @DATA     {was MOV AX,1CAAh                     }
   MOV  DS, AX
   PUSH ES
   PUSH BX
   PUSH CX
   PUSH DI
   PUSH SI
-  MOV  DX, ComPort       { 1065:0013  was MOV DX,03F8h                     }
+  MOV  DX, ComPort       {was MOV DX,03F8h                     }
   XOR  AL, AL
-  OUT  DX, AL            { 1065:0018  keep the interrupts coming           }
+  OUT  DX, AL            {keep the interrupts coming           }
   MOV  AL, Frac
-  ADD  AL, AddPer        { 1065:001c  + 5                                  }
+  ADD  AL, AddPer        {+ 5                                  }
   CMP  AL, CarryAt
   JC   @@NoTick
-  SUB  AL, CarryAt       { 1065:0022  carry the remainder, do not drop it  }
+  SUB  AL, CarryAt       {carry the remainder, do not drop it  }
   INC  Ticks
 @@NoTick:
   MOV  Frac, AL
@@ -239,12 +239,12 @@ asm
     arrives. `MOV AX,[0202]` loads the whole word and the test is on AL. }
   MOV  AX, ComIrq
   CMP  AL, 8
-  JB   @@Master          { 115e:0036  master alone for 0..7                }
+  JB   @@Master          {master alone for 0..7                }
   MOV  AL, 20h
-  OUT  0A0h, AL          { 115e:003a  EOI to the slave                     }
+  OUT  0A0h, AL          {EOI to the slave                     }
 @@Master:
   MOV  AL, 20h
-  OUT  20h, AL           { 115e:003e  EOI, late and on purpose             }
+  OUT  20h, AL           {EOI, late and on purpose             }
   POP  DX
   POP  DS
   POP  AX
@@ -305,7 +305,7 @@ begin
   DevBits     := 8;
   MixMethod   := 0;
 
-  if OldVec <> nil then Exit;                     { 1065:005d  already running }
+  if OldVec <> nil then Exit;                     {already running }
 
   {`IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
     v1.31b tests `Port[$21] and $10` with the mask bit for IRQ 4 written in;
@@ -318,11 +318,11 @@ begin
   OldVec := SetIRQVector(ComIrq, @IrqHandler);
   EnableIRQ(ComIrq);
 
-  SavedMCR := Port[ComPort + 4];                  { 1065:009a  $3FC }
-  SavedLCR := Port[ComPort + 3];                  { 1065:00a3  $3FB }
+  SavedMCR := Port[ComPort + 4];                  {$3FC }
+  SavedLCR := Port[ComPort + 3];                  {$3FB }
 
-  Port[ComPort + 4] := 8;                         { 1065:00ab  OUT2 -- gate the IRQ }
-  Port[ComPort + 3] := $83;                       { 1065:00b1  DLAB + 8N1 }
+  Port[ComPort + 4] := 8;                         {OUT2 -- gate the IRQ }
+  Port[ComPort + 3] := $83;                       {DLAB + 8N1 }
 
   { READ THE ORDER HERE BACKWARDS. The original evaluates the HIGH byte
     first -- IN from $3f9, SHL AX,8, MOV CX,AX, then IN from $3f8 and ADD --
@@ -333,13 +333,13 @@ begin
   SavedDiv := Port[ComPort]
               + (Port[ComPort + 1] shl 8);
 
-  Port[ComPort]     := Lo(Divisor);               { 1065:00cd  $60 }
-  Port[ComPort + 1] := Hi(Divisor);               { 1065:00d3  $00 -> 1200 baud }
-  Port[ComPort + 3] := $03;                       { 1065:00d9  8N1, DLAB off }
+  Port[ComPort]     := Lo(Divisor);               {$60 }
+  Port[ComPort + 1] := Hi(Divisor);               {$00 -> 1200 baud }
+  Port[ComPort + 3] := $03;                       {8N1, DLAB off }
 
-  SavedIER := Port[ComPort + 1];                  { 1065:00e0  $3F9 }
+  SavedIER := Port[ComPort + 1];                  {$3F9 }
   Port[ComPort + 1] := 0;
-  Port[ComPort + 1] := 2;                         { 1065:00ee  transmit empty }
+  Port[ComPort + 1] := 2;                         {transmit empty }
 end;
 
 { --------------------------------------------------------------------------
@@ -355,7 +355,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0104 and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
+and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
   -------------------------------------------------------------------------- }
 procedure ChgHz(W : Word); far;
 begin
@@ -379,17 +379,17 @@ slot +$32, stop the clock and hand the port back.
 procedure Stop; far;
 begin
   { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
-    1065:0113 and jumps over the whole body with a single `JZ +54`. An
+and jumps over the whole body with a single `JZ +54`. An
     `if OldVec = nil then Exit` compiles instead to `JNZ +2 / JMP +54` --
     a conditional jump around an unconditional one, two bytes longer and
     the wrong shape. Same behaviour; only this form reproduces the bytes. }
-  if OldVec <> nil then                           { 1065:0113  never started }
+  if OldVec <> nil then                           {never started }
   begin
     Port[ComPort + 4] := Lo(SavedMCR);
-    Port[ComPort + 3] := $80;                     { 1065:0128  DLAB, to reach the divisor }
+    Port[ComPort + 3] := $80;                     {DLAB, to reach the divisor }
     Port[ComPort]     := Lo(SavedDiv);
     Port[ComPort + 1] := Hi(SavedDiv);
-    Port[ComPort + 3] := Lo(SavedLCR);            { 1065:013d  drops DLAB }
+    Port[ComPort + 3] := Lo(SavedLCR);            {drops DLAB }
     Port[ComPort + 1] := 0;
     Port[ComPort + 1] := Lo(SavedIER);
 

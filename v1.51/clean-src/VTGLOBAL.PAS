@@ -92,7 +92,7 @@ const
   StringsFName      : PathStr       = 'VT_Esp.Lng';  { DS:$09F0  MEASURED      }
   ModPath           : PathStr       = '';
 
-  { 109c:05b2 SETS THIS AND `1000` READS IT, which is how the switch got its name.
+  {SETS THIS AND `1000` READS IT, which is how the switch got its name.
     `1000:00fb` is `CMP byte [09e8],0 / JNZ +$67`, and the 103 bytes it skips are four
     WriteLns of four 62-byte string constants at `1000:0000`, `003e`, `007c` and
     `00ba` -- a four-line banner. `1000:0164` then sets the same flag itself, so the

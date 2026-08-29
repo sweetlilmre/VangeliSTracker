@@ -98,16 +98,16 @@ unlike 1544, whose filter kernels use `SAR AX,2` and do not. The
   -------------------------------------------------------------------------- }
 procedure SetMemTop(P : Pointer); assembler;
 asm
-  MOV  BX, WORD PTR P    { 188f:0003  [BP+06h] -- Ofs(P)                    }
-  ADD  BX, 000Fh         { 188f:0006  round up to a whole paragraph         }
-  MOV  CL, 4             { 188f:0009  8086: no shift by immediate > 1       }
-  SHR  BX, CL            { 188f:000b  bytes -> paragraphs                   }
-  ADD  BX, WORD PTR P+2  { 188f:000d  [BP+08h] -- Seg(P)                    }
-  MOV  AX, PrefixSeg     { 188f:0010  was MOV AX,[0C62h]                    }
-  SUB  BX, AX            { 188f:0013  absolute top -> a length              }
-  MOV  ES, AX            { 188f:0015  $4A wants the block's own segment     }
-  MOV  AH, 4Ah           { 188f:0017  DOS: resize memory block              }
-  INT  21h               { 188f:0019  carry ignored -- see above            }
+  MOV  BX, WORD PTR P    {[BP+06h] -- Ofs(P)                    }
+  ADD  BX, 000Fh         {round up to a whole paragraph         }
+  MOV  CL, 4             {8086: no shift by immediate > 1       }
+  SHR  BX, CL            {bytes -> paragraphs                   }
+  ADD  BX, WORD PTR P+2  {[BP+08h] -- Seg(P)                    }
+  MOV  AX, PrefixSeg     {was MOV AX,[0C62h]                    }
+  SUB  BX, AX            {absolute top -> a length              }
+  MOV  ES, AX            {$4A wants the block's own segment     }
+  MOV  AH, 4Ah           {DOS: resize memory block              }
+  INT  21h               {carry ignored -- see above            }
 end;
 
 end.

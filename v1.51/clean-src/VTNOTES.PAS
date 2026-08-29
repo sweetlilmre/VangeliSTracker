@@ -34,10 +34,10 @@ unit VTNotes;
 interface
 
 const
-  Octaves  = 7;                   { 1650:0027 stops the octave scan at 6 }
-  Semis    = 12;                  { 1650:0059 stops the note scan at $0B }
+  Octaves  = 7;                   {stops the octave scan at 6 }
+  Semis    = 12;                  {stops the note scan at $0B }
   Notes    = Octaves * Semis;     { 84 -- the linear form NoteOf's low byte holds }
-  Periods  = 2048;                { 1650:0089 stops at $7FF }
+  Periods  = 2048;                {stops at $7FF }
   RowBytes = 24;                  {IMUL by $18 }
 
 type
@@ -51,7 +51,7 @@ type
 
   It is the ProTracker period table: 1712 down to 14 over seven octaves, each
   semitone the one below divided by the twelfth root of two. Transcribed from
-  1caa:0414 rather than computed, per the standing rule.
+rather than computed, per the standing rule.
   ------------------------------------------------------------------------- }
 const
   NotePeriods : array[0..Notes - 1] of Word = (
@@ -117,7 +117,7 @@ implementation
   ORDINARY DGROUP DATA, not `absolute`. This pair was once declared
   `absolute 0:$04bc`, which is segment ZERO -- the interrupt vector table -- and
   made every access a far one through ES. The original indexes them DS-relative:
-  1650:004e is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
+is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
   instruction. The offsets themselves are decided by link order, which is the open
   problem for a byte-exact EXE; inside a .TPU they are pending fixups and compare
   as zero either way.
@@ -187,13 +187,13 @@ begin
         goto Store;
 
     Note := 0;
-    Oct  := 0;                                    { 1650:0064  falls through }
+    Oct  := 0;                                    {falls through }
 
     {both forms in one word. The low byte is the linear note
       number a sample rate is worked out from; the high byte is the nibble
       pair a pattern display wants. }
   Store:
-    NoteOf[P] := ((Oct shl 4) + Note) shl 8
+    NoteOf[P] := ((Oct shl 4) + Note) shl 8       {.. 1650:007e }
                  + (Oct * Semis + Note);
   end;
 end;

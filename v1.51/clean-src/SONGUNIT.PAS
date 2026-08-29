@@ -66,7 +66,7 @@ interface
 uses
   { Objects -- TObject, which TSong descends from, and PString.
     Heaps    -- `FullHeap` at DS:$39ae. 14b9:0339 calls its VMT slot +$30 and
-                14b9:0329 slot +$34, which HEAPS.PAS independently declares as
+slot +$34, which HEAPS.PAS independently declares as
                 HNewStr and HDisposeStr. That is the same object 12ba calls at
                 +$08, so the VMT geometry is confirmed from a third segment. }
   { SongElements -- 165a, and the release's own layering: its SONGUNIT.PAS uses
@@ -75,8 +75,8 @@ uses
     through a local look-alike record. The three SizeOfs the code pushes are
     exactly SongElements' three objects:
 
-      14b9:0390   PUSH 000a    SizeOf(TInstrument)  VMT + Name + Instr
-      14b9:0442   PUSH 000e    SizeOf(TTrack)       VMT + Name + Note + Comm
+PUSH 000a    SizeOf(TInstrument)  VMT + Name + Instr
+PUSH 000e    SizeOf(TTrack)       VMT + Name + Note + Comm
       (GetPattern)             SizeOf(TPattern)     VMT + Name + Patt
 
     THE LOOK-ALIKE TYPES BELOW ARE KEPT ANYWAY, and deliberately: PLAYMOD reads
@@ -144,7 +144,7 @@ type
     GetInstrument, GetTrack and GetPattern, which is `At` and `AtInsert`.
 
     AND `Count` IS AN `Integer`, NOT A `Word`, WHICH ONE COMPARISON FIXES.
-    14b9:035d is `CWD` -- 14b9 sign-extends Count to a LongInt before comparing
+is `CWD` -- 14b9 sign-extends Count to a LongInt before comparing
     it against the Word parameter `i`, which is zero-extended. That is Turbo
     Pascal promoting a SIGNED 16-bit value against an unsigned one. Declared a
     Word the whole comparison collapses to a 16-bit `CMP` and the routine is
@@ -187,11 +187,11 @@ type
     like -- parameters, then Self, then a direct far call -- so the call site
     could never have separated the two. Three instructions in 14b9 do:
 
-      14b9:0005  XOR DI,DI / CALLF 1ba1:04f5 / JZ over the body
+XOR DI,DI / CALLF 1ba1:04f5 / JZ over the body
                  Turbo Pascal's CONSTRUCTOR prologue helper. DI = 0 is "do not
                  allocate"; the JZ is the failure path. Nothing else emits it.
-      14b9:0014  CALLF 1891:0000 with a zero VMT word and Self  -- TObject.Init
-      14b9:003f  CALLF 1891:0031                                -- TObject.Done
+CALLF 1891:0000 with a zero VMT word and Self  -- TObject.Init
+CALLF 1891:0031                                -- TObject.Done
 
     and both of those routines are `RETF 6`: Self (4) plus the hidden VMT word
     (2) that ONLY a constructor or a destructor carries.
@@ -241,8 +241,8 @@ type
       $100 read as a speed and a tempo rather than a start and a length. They do
       not. `InitValues` opens with
 
-        14b9:0735   MOV WORD PTR ES:[DI+02],0001
-        14b9:073e   MOV WORD PTR ES:[DI+04],0100
+MOV WORD PTR ES:[DI+02],0001
+MOV WORD PTR ES:[DI+04],0100
 
       and the release's `InitValues` opens with `SongStart := 1;` and
       `SongLen := MaxSequence;` -- and **MaxSequence is 256**, which is $100.
@@ -267,11 +267,11 @@ type
       compiles an empty-string assignment, so both are Strings and the gaps are
       their declared sizes: $16..$1e is nine bytes and $1f..$23 is five. That is
       String[8] and String[4] -- FSplit's NameStr and ExtStr exactly, and
-      14b9:0100 is the routine that calls FSplit. The same arithmetic settled
+is the routine that calls FSplit. The same arithmetic settled
       DirStr as String[67] in 116e.
 
       AND 154d CONFIRMS +$1f INDEPENDENTLY: docs/CONTINUATION.md records
-      154d:0c4d comparing the literal '.WOW' against TSong+$1f, which it already
+comparing the literal '.WOW' against TSong+$1f, which it already
       called "the release's Song.FileExt". Two segments, one offset. }
     FileName : String[8];    { +$16  emptied at 14b9:077b }
     FileExt  : String[4];    { +$1f  emptied at 14b9:0783 }
@@ -338,7 +338,7 @@ type
     Tracks   : TCollection;  { +$4d..+$58  count at +$53 }
 
     { A ShortInt, NOT a Byte, and 154d is what settles it. 154d:0b4c and
-      154d:0b6a are `CMP byte ES:[DI+59],n / JLE` -- a SIGNED byte comparison,
+are `CMP byte ES:[DI+59],n / JLE` -- a SIGNED byte comparison,
       where a Byte gives the unsigned JBE. Both are `Song.Status > msOk` and
       `> msFileTooShort` in LoadMod. 14b9 and 164b only ever compare it for
       EQUALITY or store it, which is sign-independent, so neither could see
@@ -376,7 +376,7 @@ type
 
     { 004f  RETF 8, ENTER 0806,0 -- `TSongHeader` plus the release's `i` and
       `Pos`. NOT TRANSCRIBED, but its NAME and SIGNATURE are no longer guesses:
-      14b9:0299 is `PUSH SS / PUSH DI (St) / PUSH ES / PUSH DI (Self) /
+is `PUSH SS / PUSH DI (St) / PUSH ES / PUSH DI (Self) /
       PUSH CS / CALL 004f`, which is `Load(St)` from inside LoadFName, with St
       passed by reference. That is what turned `Rut_004f` into a name. }
     procedure Load(var St : TStream);
@@ -521,7 +521,7 @@ const
   mcOktArp                 = 33; { Oktalizer -- slot exists, tick does not }
   mcOktArp2                = 34; { Oktalizer -- ditto                   }
   mcS3mRetrigNote          = 35; { Scream Tracker Qxy -- NEW IN v1.51   }
-  mcLast                   = 36; { 147d:087a guards with mcLast*2 = 48h }
+  mcLast                   = 36; {guards with mcLast*2 = 48h }
 
   { +$59. TSongStatus. }
   { **AND THE COMPARISON THIS TREE MEASURED IS THE RELEASE'S OWN BOUNDARY.**
@@ -583,8 +583,8 @@ const
     magic, which is this tree's loader contract, so the value is the first
     instruction of the routine:
 
-      1664:0a90   MOV BYTE PTR ES:[DI+7d],09      LoadS3MFileFormat
-      15d0:076b   MOV BYTE PTR ES:[DI+7d],0b      LoadSTMFileFormat
+MOV BYTE PTR ES:[DI+7d],09      LoadS3MFileFormat
+MOV BYTE PTR ES:[DI+7d],0b      LoadSTMFileFormat
 
     NINE AND ELEVEN, NOT NINE AND TEN. The gap at 10 is a format v1.51 numbers
     and does not load -- the release's enumeration is longer than its loader
@@ -1254,10 +1254,10 @@ begin
 
   {NEW IN v1.51, and the LAST statement of InitValues.
 
-      153a:0893  MOV DI,0440 / PUSH DS / PUSH DI      the source constant
-      153a:0898  LES DI,[BP+06] / ADD DI,0029         Self.ChannelPan
-      153a:08a1  PUSH 20                              32 bytes
-      153a:08a3  CALLF 1d89:09f7                      the ASSIGNMENT copy helper
+MOV DI,0440 / PUSH DS / PUSH DI      the source constant
+LES DI,[BP+06] / ADD DI,0029         Self.ChannelPan
+PUSH 20                              32 bytes
+CALLF 1d89:09f7                      the ASSIGNMENT copy helper
 
     It must compile to 09f7 and not to 0fb2. Both are copy loops eleven bytes
     apart in SYSTEM; 0fb2 is `Move` and compares the pointers so it can copy

@@ -65,7 +65,7 @@ type
     anything but an address.
 
     DataType IS SIGNED, and that is from the bytes rather than a choice:
-    1a17:04af sign-extends it with CBW. A Turbo Pascal enumerated type would
+sign-extends it with CBW. A Turbo Pascal enumerated type would
     zero-extend, so whatever 1.31 declared was not one. }
   PSampleBuffer = ^TSampleBuffer;
   TSampleBuffer = record
@@ -267,7 +267,7 @@ const
   UsingGUS          : Boolean      = False;  { DS:$0c76  pad; was GusStarted   }
   {A SECOND TICK COUNTER, and 1.31's own: the release has nothing between
     TicksPerSecond and the filter coefficients. DevGus's timer handler advances it and
-    1000:02a8 clears it, so it was declared in BOTH of those units -- DevGus called it
+clears it, so it was declared in BOTH of those units -- DevGus called it
     `Ticks` and VTMAIN called it `WordAtBD0`. It is neither unit's: this block is
     contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099.
 
@@ -527,7 +527,7 @@ var
 implementation
 
 { ==========================================================================
-  1a17:0000 and 1a17:0001 -- the two null callbacks.
+and 1a17:0001 -- the two null callbacks.
 
   What the hook slots hold before anything real is installed. The first is a
   bare RETF -- ONE byte, and `assembler` with an empty body is the only way to

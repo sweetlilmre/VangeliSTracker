@@ -34,7 +34,7 @@ const
   MaskBX = $6B65;   MaskCX = $7220;   { $5472 xor $6B65 = $3F17 }
                                       { $6163 xor $7220 = $1343 }
 
-  { 1b54:0061 and 1b54:007b. CP437: #173 is the inverted exclamation mark,
+  {and 1b54:007b. CP437: #173 is the inverted exclamation mark,
     #162 an o-acute. }
   Already = #13#10'    ' + #173#173 + 'Ojo, que est' + #160 + ' el ';
   Resident = ' residente!!';
@@ -74,10 +74,10 @@ the chain to the previous INT 2Fh handler.
   -------------------------------------------------------------------------- }
 procedure OldInt2F; assembler;
 asm
-  DB   0EAh              { 1b54:0000  JMP FAR seg:ofs                        }
-  DW   OFFSET OldInt2F   { 1b54:0001  patched with the old INT 2Fh offset     }
-  DW   SEG OldInt2F      { 1b54:0003  patched with the old INT 2Fh segment    }
-                         { 1b54:0005  RET -- supplied by Pascal, not written  }
+  DB   0EAh              {JMP FAR seg:ofs                        }
+  DW   OFFSET OldInt2F   {patched with the old INT 2Fh offset     }
+  DW   SEG OldInt2F      {patched with the old INT 2Fh segment    }
+                         {RET -- supplied by Pascal, not written  }
                          { here: an assembler procedure already gets an  }
                          { epilogue and a written one duplicates it.     }
 end;
@@ -103,20 +103,20 @@ the INT 2Fh handler.
   -------------------------------------------------------------------------- }
 procedure Handler; assembler;
 asm
-  STI                    { 1b54:0006  DOS multiplex handlers run enabled     }
-  CMP  AX, ReqAX         { 1b54:0007  'VT'                                   }
+  STI                    {DOS multiplex handlers run enabled     }
+  CMP  AX, ReqAX         {'VT'                                   }
   JNZ  @@NotUs
-  CMP  BX, ReqBX         { 1b54:000c  'Tr'                                   }
+  CMP  BX, ReqBX         {'Tr'                                   }
   JNZ  @@NotUs
-  CMP  CX, ReqCX         { 1b54:0012  'ac'                                   }
+  CMP  CX, ReqCX         {'ac'                                   }
   JNZ  @@NotUs
-  XOR  AX, AX            { 1b54:0018  AX := 0 says "yes, and it is me"       }
-  XOR  BX, MaskBX        { 1b54:001a  -> $3F17                               }
-  XOR  CX, MaskCX        { 1b54:001e  -> $1343                               }
-  MOV  DI, SEG @DATA     { 1b54:0022  the binary has MOV DI,1CAAh -- an
+  XOR  AX, AX            {AX := 0 says "yes, and it is me"       }
+  XOR  BX, MaskBX        {-> $3F17                               }
+  XOR  CX, MaskCX        {-> $1343                               }
+  MOV  DI, SEG @DATA     {the binary has MOV DI,1CAAh -- an
                                       absolute segment, not ours to copy     }
   MOV  ES, DI
-  MOV  DI, OFFSET SelfName  { 1b54:0027  the binary has 432Ch. The four bytes
+  MOV  DI, OFFSET SelfName  {the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
                               reads its control block from ES:[DI-4].        }
   IRET
@@ -126,7 +126,7 @@ asm
     above, whose operand holds the displaced vector. Jumping FAR here
     assembles a five-byte JMP to the stub's address instead, which is two
     bytes longer and one indirection short of the idiom. }
-  JMP  OldInt2F          { 1b54:002b  every failed test lands here           }
+  JMP  OldInt2F          {every failed test lands here           }
 end;
 
 { --------------------------------------------------------------------------
@@ -139,12 +139,12 @@ begin
   ExitProc := SavedExit;
   asm
     LES  DI, Stub
-    MOV  AX, ES:[DI+1]     { 1b54:0044  the displaced offset                 }
-    MOV  DX, ES:[DI+3]     { 1b54:0048  and segment                          }
-    MOV  SI, 0             { 1b54:004c  MOV, not XOR -- the original loads an }
+    MOV  AX, ES:[DI+1]     {the displaced offset                 }
+    MOV  DX, ES:[DI+3]     {and segment                          }
+    MOV  SI, 0             {MOV, not XOR -- the original loads an }
                            { immediate zero, and BASM emits what it is told   }
-    MOV  ES, SI            { 1b54:004f  ES := 0000, the vector table         }
-    MOV  ES:[0BCh], AX     { 1b54:0051  $2F * 4                              }
+    MOV  ES, SI            {ES := 0000, the vector table         }
+    MOV  ES:[0BCh], AX     {$2F * 4                              }
     MOV  SI, 0
     MOV  ES, SI
     MOV  ES:[0BEh], DX
@@ -243,7 +243,7 @@ begin
   {take INT 2Fh, and leave the displaced vector inside the
     JMP FAR so the chain works without a variable to hold it. }
   asm
-    MOV  SI, 0             { 1b54:0157  MOV SI,0000 -- NOT `XOR SI,SI`       }
+    MOV  SI, 0             {MOV SI,0000 -- NOT `XOR SI,SI`       }
     MOV  ES, SI
     MOV  AX, ES:[0BCh]
     MOV  SI, 0
@@ -252,8 +252,8 @@ begin
     LES  DI, Stub
     MOV  ES:[DI+1], AX
     MOV  ES:[DI+3], DX
-    MOV  AX, OFFSET Handler{ 1b54:0176  the binary has 0006h                 }
-    MOV  DX, SEG Handler   { 1b54:0179  and 1B54h                            }
+    MOV  AX, OFFSET Handler{the binary has 0006h                 }
+    MOV  DX, SEG Handler   {and 1B54h                            }
     MOV  SI, 0
     MOV  ES, SI
     MOV  ES:[0BCh], AX

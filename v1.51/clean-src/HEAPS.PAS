@@ -176,7 +176,7 @@ type
 
 var
   { The release's five, in its declaration order. `FullHeap` at DS:$5d08 is the one
-    12ba:125c reaches; it is a THeapColl here rather than the THeap the stub had,
+reaches; it is a THeapColl here rather than the THeap the stub had,
     which changes no byte at that call site because HGetMem is at +$08 either way. }
   InitialHeapEnd : Pointer;
   Heap           : THeap;
@@ -222,7 +222,7 @@ THE THREE POINTER HELPERS, and all three are one-liners
   inside this segment, more than any other routine here.
 
   THE 32-BIT SHIFTS ARE RTL CALLS, not instruction sequences: 17cf:0016 calls
-  1ba1:0a9c for `shr 4` on a LongInt and 17cf:0091 calls 1ba1:0aa8 for `shl 4`. An
+for `shr 4` on a LongInt and 17cf:0091 calls 1ba1:0aa8 for `shl 4`. An
   8086 has no 32-bit shift, so Turbo Pascal calls a helper -- which is why `IncPtr`'s
   one line is fifty bytes and why `NormalizePtr`, whose shift is on a WORD, gets the
   inline `SHR AX,4` instead and is twenty bytes shorter.

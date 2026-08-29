@@ -502,7 +502,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0826 and 11bb:0850 -- GetWord and GetByte. GetNum with a cast, and the two
+and 11bb:0850 -- GetWord and GetByte. GetNum with a cast, and the two
   are identical but for the width. `ENTER 0006,0` each: the LongInt local and the
   one-byte result.
   -------------------------------------------------------------------------- }

@@ -82,7 +82,7 @@ the exit handler.
   -------------------------------------------------------------------------- }
 procedure AtExit; far;
 begin
-  ExitProc := SavedExit;
+  ExitProc := SavedExit;                          {.. 1931:000d }
   Close(ConFile);
 end;
 
@@ -119,8 +119,8 @@ begin
   Assign(ConFile, 'CON');
   Rewrite(ConFile);
 
-  SavedExit := ExitProc;
-  ExitProc  := @AtExit;
+  SavedExit := ExitProc;                          {.. 1931:0050 }
+  ExitProc  := @AtExit;                           {.. 1931:005d }
 
-  ProgName := FExpand(GetEnv('COMSPEC'))
+  ProgName := FExpand(GetEnv('COMSPEC'))          {.. 1931:0083 }
 end.

@@ -63,7 +63,7 @@ begin
     until (i > l) or (z[i] = #0);
 
   if i > l then Dec(i);
-  StrAsciiZ[0] := Chr(l);                         { 1642:004d  ALWAYS l     }
+  StrAsciiZ[0] := Chr(l);                         {ALWAYS l     }
 
   if i < l then
     for i := i + 1 to l do

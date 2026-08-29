@@ -165,9 +165,9 @@ function  DMASBMix2Name : TDevID; far;  begin end;
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which
   card it is:
 
-    193a:0017  [0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
-    193a:001d  [0b06] -> [0bea]   DSP8AckPort
-    193a:0023  [0afe] -> [0bec]   DSPLifePort
+[0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
+[0b06] -> [0bea]   DSP8AckPort
+[0afe] -> [0bec]   DSPLifePort
 
   All six addresses were already known from the two units independently, so
   this routine is a six-way cross-check that both are right. }
