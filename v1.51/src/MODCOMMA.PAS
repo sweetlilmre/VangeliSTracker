@@ -48,7 +48,7 @@ unit ModCommands;
 interface
 
 uses
-  SongUnit, VTNotes;
+  SongUnit, SongElements, VTNotes;
 
 type
   { --- the channel state, DS:$1260 in 12ba's array ------------------------
@@ -94,7 +94,11 @@ type
   PCanal = ^TCanal;
   TCanal = record
     Note       : TFullNote;     { +$00                                       }
-    Instrument : PSampleDesc;   { +$06  and 12ba:09ff dereferences it        }
+    { `PInstrumentRec`, which is SongElements' own -- and the release declares this
+      very field as `Instrument : PInstrumentRec` with the comment "Pointer to the
+      instrument data". It pointed at a SongUnit-local look-alike until that copy
+      was removed. }
+    Instrument : PInstrumentRec; { +$06  and 12ba:09ff dereferences it       }
     Volume     : Byte;          { +$0a                                       }
     Period     : Word;          { +$0b                                       }
     RealPeriod : Word;          { +$0d  the release's name; 12ba:0eaf writes it }

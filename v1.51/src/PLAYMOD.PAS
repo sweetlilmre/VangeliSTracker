@@ -73,7 +73,7 @@ interface
   reverse DFS post-order over the `uses` graph, so a dependency in this direction is
   impossible. `demovt/linkorder.py` checks every edge in the tree against it. }
 uses
-  SongUnit, SoundDevices, VTCtrl, GUS, ModCommands, Filters,
+  SongUnit, SongElements, SoundDevices, VTCtrl, GUS, ModCommands, Filters,
   Heaps, Hardware;
 
 { --------------------------------------------------------------------------
@@ -1228,7 +1228,7 @@ end;
   34-byte record), then a four-byte value read out of `[0300]^` at `+6`/`+8`.
   With `RET $0a` and near linkage that gives
 
-      procedure ?(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc);
+      procedure ?(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec);
 
   and it CONFIRMS DS:$1384 as the `RawChannels` array -- `IMUL ..,$22` is the
   34-byte stride of the record already declared above.
@@ -1276,7 +1276,7 @@ end;
 
   ~~SetGusVoiceCtl~~ takes the release's name. It was never GUS-specific: 1.39b has
   no GUS support in this unit at all and still has this routine. }
-procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc;
+procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec;
                        Offs : Word);
 begin
   { 03cf..03d9 -- compiled: `OR AX,[BP+6]` is the code generator's direction,
@@ -1331,14 +1331,14 @@ begin
       first, `CMP ES:[DI+2],0 / JG / JGE / CMP ES:[DI],$FFF0 / JA`. $FFF0 is
       65,520, which is what `rcfLongSample` means: a sample too long for one
       64K part. }
-    if Desc^.SplLen > $FFF0 then
+    if Desc^.Len > $FFF0 then
     begin
       { 042c..0452 -- HAND-WRITTEN again, and the DS-relative store at 0437 is
         what says so. Equivalent Pascal, REFERENCE ONLY:
 
             NewFlags := NewFlags or rcfLongSample;
             Raw.SplLimit1 := $FFF0;
-            Raw.SplLimit2 := Desc^.SplLen - $FFF0;
+            Raw.SplLimit2 := Desc^.Len - $FFF0;
 
         so the first part is capped at 65,520 bytes and the remainder becomes
         the second. `SBB DX,0` carries the subtraction into the high word even
@@ -1362,8 +1362,8 @@ begin
       loads a FAR POINTER out of the descriptor and then `MOV AX,DI` / `MOV AX,ES`
       take its halves, which is `Ofs(P^)` and `Seg(P^)` -- an Ofs of a
       dereference, not of the field. }
-    Raw.SplOfs2 := Ofs(Desc^.Data2^);
-    Raw.SplSeg2 := Seg(Desc^.Data2^);
+    Raw.SplOfs2 := Ofs(Desc^.Xtra^);
+    Raw.SplSeg2 := Seg(Desc^.Xtra^);
 
     if NoLoop = 0 then                              { 0473..047c            }
     begin
@@ -1371,28 +1371,28 @@ begin
         needs no splitting if it lies wholly inside one 64K part: either it
         starts beyond the boundary, or it starts and ends below it. `$FFF0` is
         the same 65,520 as above. }
-      if (Desc^.LoopStart > $FFF0) or
-         (Desc^.LoopStart + Desc^.LoopLen <= $FFF0) then
+      if (Desc^.Reps > $FFF0) or
+         (Desc^.Reps + Desc^.Repl <= $FFF0) then
         { 04b2..04c1 -- the low word only, which is what makes the LongInt
           field assignable to a Word without a cast. }
-        Raw.LoopLen := Desc^.LoopLen
+        Raw.LoopLen := Desc^.Repl
       else
       begin
         { 04c2..04de -- the loop STRADDLES the 64K boundary, so its length is
           measured from the start of the second part and the flag says so.
           `ADD byte,$10` rather than `OR`, which is what `Inc` gives. }
-        Raw.LoopLen := Desc^.LoopLen - $FFF0;
+        Raw.LoopLen := Desc^.Repl - $FFF0;
         Inc(NewFlags, rcfLongLoopLen)
       end;
 
       { 04df..0547 -- and the same question again for the loop's END. The sum is
         recomputed in the test and in both branches, three times over, which is
         Turbo Pascal re-evaluating rather than anything in the source. }
-      if Desc^.LoopStart + Desc^.LoopLen <= $FFF0 then
-        Raw.LoopEnd := Desc^.LoopStart + Desc^.LoopLen
+      if Desc^.Reps + Desc^.Repl <= $FFF0 then
+        Raw.LoopEnd := Desc^.Reps + Desc^.Repl
       else
       begin
-        Raw.LoopEnd := Desc^.LoopStart + Desc^.LoopLen - $FFF0;
+        Raw.LoopEnd := Desc^.Reps + Desc^.Repl - $FFF0;
         Inc(NewFlags, rcfLongLoopEnd)
       end
       end
@@ -1405,11 +1405,11 @@ begin
 
       Equivalent Pascal, REFERENCE ONLY:
 
-          Raw.SplLimit1 := Desc^.SplLen;
+          Raw.SplLimit1 := Desc^.Len;
           if NoLoop = 0 then
           begin
-            Raw.LoopLen := Desc^.LoopLen;
-            Raw.LoopEnd := Desc^.LoopLen + Desc^.LoopStart
+            Raw.LoopLen := Desc^.Repl;
+            Raw.LoopEnd := Desc^.Repl + Desc^.Reps
           end }
     asm
       MOV     DI, WORD PTR Raw       { 054a                                   }
@@ -1505,13 +1505,19 @@ begin
   if UsingGUS then                             { 0699..06a3             }
     if (Raw.Flags and rcfDoesLoop) <> 0 then         { 06a4..06af             }
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
-               Offs + Desc^.Data1,
-               Desc^.Data1 + Desc^.LoopStart,
-               Desc^.Data1 + Desc^.LoopStart + Desc^.LoopLen)  { 06b0..071f   }
+               { **`Data` IS A POINTER IN SongElements AND THIS IS A GUS DRAM ADDRESS**, so
+        every use of it here is cast. The SongUnit copy declared the field a
+        LongInt outright, which made the arithmetic read naturally and was the one
+        thing that copy got MORE right than the release -- 12ba:05e0 adds a loop
+        offset to it, and you cannot add to a `^TSample`. The cast reinterprets
+        and emits nothing; the byte count is the check. }
+      Offs + LongInt(Desc^.Data),
+               LongInt(Desc^.Data) + Desc^.Reps,
+               LongInt(Desc^.Data) + Desc^.Reps + Desc^.Repl)  { 06b0..071f   }
     else
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
-               Offs + Desc^.Data1, -1,
-               Desc^.Data1 + Desc^.SplLen);          { 0722..076b             }
+               Offs + LongInt(Desc^.Data), -1,
+               LongInt(Desc^.Data) + Desc^.Len);          { 0722..076b             }
 
   { NEW IN v1.51, AND IT IS OUTSIDE THE `UsingGUS` TEST. The false path at 06a1 jumps
     to 076c, which is this store -- so a channel is marked in the wide ring whatever
@@ -1695,10 +1701,14 @@ begin
     Pattern := Song.GetPatternSeq(SeqPlaying);       { 0773..078d            }
 
     { 078e..07c1 -- advance one row, or fall off the end of the pattern and
-      advance the order position instead. `Pattern^.Rows^` is a byte reached
+      advance the order position instead. `Pattern^.Patt^` is a byte reached
       through a far pointer at the pattern's +$06; a position past the last one
       sets the row to $FFFF, which is the marker 06fe tests on the next call. }
-    if Pattern^.Rows^.RowCount > NextNote then        { 078e..07a0            }
+    { **`NNotes` AND `Patt` ARE SongElements' NAMES FOR THE SAME TWO BYTES.** The
+      operand ORDER stays as it is: 1.39b writes `IF NextNote < Patt^.Patt^.NNotes`
+      and the original's codegen here puts the field first. A field rename is free
+      and flipping a comparison is not. }
+    if Pattern^.Patt^.NNotes > NextNote then          { 078e..07a0            }
       Inc(NextNote)                                   { 07a1..07a4            }
     else
     begin
@@ -1730,7 +1740,7 @@ begin
         begin
           Note.Period     := 800;                      { 081d..0825            }
           Note.Instrument := 1;                        { 0826..082c            }
-          Note.Command    := 0;                        { 082d..0834            }
+          Note.Command    := mcNone;                   { 082d..0834            }
           Period          := 800                       { 0835..083d            }
         end;
 
@@ -1762,8 +1772,8 @@ begin
         CurSpeed := Song.GetPatternTempo(SeqPlaying) { 08b6..08cc            }
       else
       begin
-        if Pattern^.Rows^.Speed <> 0 then              { 08cf..08dd            }
-          CurSpeed := Pattern^.Rows^.Speed             { 08de..08ec            }
+        if Pattern^.Patt^.Tempo <> 0 then              { 08cf..08dd            }
+          CurSpeed := Pattern^.Patt^.Tempo             { 08de..08ec            }
       end;
 
     { 08ed..0965 -- once per channel: fetch this row's note out of the song and
@@ -1806,14 +1816,19 @@ begin
       if ((NewNote.Instrument <> 0) and
           (CurCanal^.Note.Instrument <> NewNote.Instrument)) or
          ((NewNote.Period <> 0) and
-          (NewNote.Command <> 4) and (NewNote.Command <> 6)) then
+          (NewNote.Command <> mcNPortamento) and
+          (NewNote.Command <> mcT_VSlide)) then
       begin
         { 098f..09c7 -- a new instrument: remember it and fetch its sample data. }
         if NewNote.Instrument <> 0 then                { 098f..0995            }
         begin
           CurCanal^.Note.Instrument := NewNote.Instrument;      { 0996..099f   }
+          { `Instr`, and the rename is the proof the six bytes ahead of it were a
+            VMT word and a name: GetInstrument returns a `PInstrument` OBJECT, and
+            the pointer at +$06 is its `Instr` field. The local copy called the
+            object a record and the field `Data`. }
           CurCanal^.Instrument :=
-            Song.GetInstrument(NewNote.Instrument)^.Data       { 09a0..09c7   }
+            Song.GetInstrument(NewNote.Instrument)^.Instr      { 09a0..09c7   }
         end;
 
         { 09c8..09e5 -- and hand the sample to the GUS voice. This is the call
@@ -1831,7 +1846,7 @@ begin
         is how Turbo Pascal compares a Pointer against nil. }
       if (NewNote.Instrument <> 0) and
          (CurCanal^.Instrument <> nil) then            { 09e6..09fa            }
-        CurCanal^.Volume := CurCanal^.Instrument^.Volume;   { 09fb..0a0e       }
+        CurCanal^.Volume := CurCanal^.Instrument^.Vol;   { 09fb..0a0e       }
 
       { 0a0f..0a37 -- the note's own volume overrides it, stored one lower than
         written, and clamped to 64 whichever way it arrived. }
@@ -2259,8 +2274,8 @@ begin
 
       Equivalent Pascal, REFERENCE ONLY:
 
-          CanalPtr^.RealPeriod := CanalPtr^.Period * Instrument^.PeriodMul
-                                  div Instrument^.PeriodDiv }
+          CanalPtr^.RealPeriod := CanalPtr^.Period * Instrument^.NAdj
+                                  div Instrument^.DAdj }
     if CanalPtr^.Instrument <> nil then              { 0e85..0e92            }
       asm
         LES     SI, CanalPtr               { 0e93                            }

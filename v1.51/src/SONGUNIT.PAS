@@ -105,44 +105,29 @@ type
 
 
 
-{ --------------------------------------------------------------------------
-  The sample descriptor 165a fills in, as much of it as 12ba establishes.
+{ ~~TSampleDesc~~ IS GONE. It was a 32-byte local copy of SongElements'
+  `TInstrumentRec`, and NOTHING IN THE TREE REFERENCED IT -- `PSampleDesc` and
+  `TSampleDesc` occurred exactly twice between them, on their own two declaration
+  lines. It was also the WRONG SIZE: the real record ends at `Prop : Word` on
+  +$1a and is 28 bytes, where the copy carried six bytes of filler to +$1f
+  because the tail had been guessed at rather than read.
 
-  ONLY THE FIELDS THIS UNIT PROVES ARE NAMED; 165a is not transcribed and
-  guessing at the rest would put invented names into a record other segments
-  share. Same policy as VTCtrl's control block.
-  -------------------------------------------------------------------------- }
-  PSampleDesc = ^TSampleDesc;
-  TSampleDesc = record
-    SplLen    : LongInt;        { +$00  compared against $FFF0 at 12ba:0417  }
-    LoopStart : LongInt;        { +$04  added to LoopLen and compared to 64K }
-    LoopLen   : LongInt;        { +$08  and its low three bytes are the test }
-    Volume    : Byte;           { +$0c  -> TCanal.Volume at 12ba:0a03        }
-    Pad0D     : Byte;           { +$0d                                        }
-    { +$0e and +$10 -- a RATIO applied to the period: 12ba:0e9f multiplies by the
-      first and divides by the second to turn a channel's period into the one the
-      hardware wants. Named for that; what they really are is 165a's business. }
-    PeriodMul : Word;           { +$0e                                        }
-    PeriodDiv : Word;           { +$10                                        }
-    { +$12 -- a GUS DRAM ADDRESS, not a host pointer, and the arithmetic at
-      12ba:05e0 proves it: LoopStart is ADDED to it. The asm at 03e0 splits the
-      same four bytes into Raw.SplOfs1/SplSeg1, so on the GUS path those two
-      fields hold the halves of a DRAM address rather than a segment and an
-      offset. }
-    Data1     : LongInt;        { +$12                                       }
-    Data2     : Pointer;        { +$16  DEREFERENCED, then Ofs and Seg taken }
-    Filler2   : array[$1A..$1F] of Byte;
-  end;
+  BOTH FACTS SURVIVED EVERY COMPARISON IN THE KIT, and they had to: a type
+  nothing declares a variable of emits no bytes, so no unit size, no operand and
+  no DGROUP block can disagree with it. A declaration nothing reads can be wrong
+  for as long as it exists.
 
-  TModCommand = Byte;
+  What it was trying to describe, SONGELEM.PAS declares in the release's own
+  names -- and three of the guesses were right in substance: `Pad0D` is `Ftune`,
+  and `PeriodMul`/`PeriodDiv`, named here for multiplying and dividing a period
+  at 12ba:0e9f, are `NAdj` and `DAdj`, the numerator and denominator of the note
+  adjustment. The reading was correct; the second declaration was the mistake. }
 
-  TFullNote = record
-    Instrument : Byte;          { +$00                                       }
-    Period     : Word;          { +$01                                       }
-    Volume     : Byte;          { +$03                                       }
-    Command    : TModCommand;   { +$04                                       }
-    Parameter  : Byte;          { +$05                                       }
-  end;
+  { ~~TModCommand AND TFullNote~~ WENT THE SAME WAY. SONGELEM.PAS declares both,
+    with these exact field names and offsets -- as a VARIANT record, so a track can
+    reach the same six bytes as a note or as a command pair. And its `TModCommand`
+    is the ENUMERATION, not a Byte: a plain Byte here let `Command := 0` compile
+    where the release means `mcNone`, which is the same byte and a worse sentence. }
 
 
   { THE THREE COLLECTION FIELDS ARE REAL `Objects.TCollection`s, AND THE FILLER
@@ -165,40 +150,33 @@ type
     Word the whole comparison collapses to a 16-bit `CMP` and the routine is
     fourteen bytes shorter. TCollection's own declaration has it as Integer. }
 
-  { --- moved here from the VTSONG stub when it was folded in ----------------
-    What 14b9:0575 returns. PlayMod reads the far pointer at +$06 and takes the
-    byte at IT -- the pattern's row count. Nothing else here is established, and
-    these records belong to 14b9 rather than to us.
+  { ~~TPatternData, TInstrumentRec AND TPattern~~ ARE GONE, and with them the last
+    of this unit's fillers. All three were look-alikes for types SONGELEM.PAS
+    already declares, kept because pointing PlayMod at the release's names is a
+    rename in a byte-exact unit. The note that stood here said doing it meant
+    adding `uses SongElements` and moving SongUnit down the link order -- that
+    edge has since been added, `linkorder.py` still reports 32 of 32, and the
+    warning outlived the condition it described.
 
-    THEY DUPLICATE TYPES `SONGELEM.PAS` ALREADY DECLARES, deliberately and for
-    now: 165a is byte-exact and its declarations are the real ones, but pointing
-    this unit at them means adding `uses SongElements` here and moving SongUnit
-    down build.py's ORDER, which is a change that can move a byte in three
-    byte-exact units. Do it as its own pass, with verify.py either side. }
-  { ONE-BASED, and 14b9:05bc is what proves it: GetPatternSequence computes
-    `LES DI,[DI+39] / ADD DI,AX / MOV AL,ES:[DI-1]`, and that -1 is the base.
-    256 is the release's `MaxSequence`, declared identically in SONGELEM.PAS. }
-  PPatternSequence = ^TPatternSequence;
-  TPatternSequence = array[1..MaxSequence] of Byte;
+    WHAT THE FILLERS WERE, NOW THAT THE REAL DECLARATIONS ARE IN SCOPE:
 
-  PPatternData = ^TPatternData;
-  TPatternData = record
-    RowCount : Byte;            { +$00  12ba:0792 compares it against the row }
-    Filler1  : Byte;            { +$01                                        }
-    Speed    : Byte;            { +$02  12ba:08d7 -- a per-pattern override   }
-  end;
+      TPatternData.Filler1   +$01  is `NChans`, and TPatternRec continues past
+                                   the three bytes read here with `BPM` and a
+                                   `Channels` array
+      TInstrumentRec.Filler1 six bytes at +$00, and they are TObject's VMT word
+                             followed by `Name : PString` -- these were not
+                             records at all but OBJECTS, which is why the payload
+                             pointer sat at +$06
+      TPattern.Filler1       the same six bytes, for the same reason
 
-  PInstrumentRec = ^TInstrumentRec;
-  TInstrumentRec = record
-    Filler1 : array[$00..$05] of Byte;
-    Data    : Pointer;          { +$06  -> TCanal.Instrument at 12ba:09b4     }
-  end;
+    NONE OF THAT WAS RECOVERABLE FROM THE INSTRUCTIONS. Six bytes ahead of a
+    pointer look identical whether they are padding or a base object's fields,
+    and 14b9's own `PUSH 000a` for SizeOf(TInstrument) -- quoted in the uses
+    clause above -- was already being read correctly as VMT + Name + Instr while
+    the local copy went on calling the same six bytes filler.
 
-  PPattern = ^TPattern;
-  TPattern = record
-    Filler1 : array[$00..$05] of Byte;
-    Rows    : PPatternData;     { +$06                                        }
-  end;
+    `TPatternSequence` went with them; SONGELEM.PAS declares it identically, with
+    the same one-based indexing that 14b9:05bc's `MOV AL,ES:[DI-1]` proves. }
 
   { --------------------------------------------------------------------------
     TSong IS AN OBJECT, AND THE CONSTRUCTOR IS WHAT SAYS SO.
@@ -409,7 +387,7 @@ type
     procedure SetInsidePath(S : String);                          { 02f5 RETF 8  }
 
     { 0352  RETF 6.  154d:0030's target. }
-    function  GetInstrument(i : Word) : PInstrumentRec;
+    function  GetInstrument(i : Word) : PInstrument;
     { 0404  RETF 6.  154d calls it. }
     function  GetTrack(i : Word) : Pointer;
     { 04b6  RETF 6.  154d calls it. }
@@ -957,9 +935,9 @@ end;
         construction, where Init's own `TObject.Init` at 000c pushes ZERO because
         an inherited call must not re-stamp the VMT.
   0390  PUSH 000a / <the heap at DS:397e> / CALLF [DI+08]     Heap.HGetMem, 10 }
-function TSong.GetInstrument(i : Word) : PInstrumentRec;
+function TSong.GetInstrument(i : Word) : PInstrument;
 var
-  Instrument : SongElements.PInstrument;
+  Instrument : PInstrument;
   j          : Word;
 label
   Break;
@@ -979,10 +957,10 @@ begin
             goto Break                               { 03cb                  }
         end;
 Break:
-      GetInstrument := PInstrumentRec(Instrument)     { 03d5..03e2           }
+      GetInstrument := Instrument                     { 03d5..03e2           }
     end
   else
-    GetInstrument := PInstrumentRec(Instruments.At(i)) { 03e3..03f9          }
+    GetInstrument := PInstrument(Instruments.At(i))  { 03e3..03f9          }
 end;
 
 { 0404..04b5.  RETF 6.  The same body against Tracks at +$4d.
