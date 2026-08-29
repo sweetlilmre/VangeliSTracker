@@ -1659,6 +1659,15 @@ end;
   63-byte rows is there and switched off by one instruction. Transcribed as
   found -- `and 0` and all -- because tidying it would change the bytes. It also
   makes the MyMove below copy slot zero onto itself.
+  **THIS IS THE RELEASE'S `ProcessNewNote`**, identified the same way: its
+  constants -- `i`, `j`, `n`, `can`, `Patt`, `NewSample` -- are this routine's
+  `NextIdx`, `ChanIdx`, `NewNote`, `CurCanal`, `Pattern` and `NewSample`, in
+  order, and none of them is touched anywhere else.
+
+  [1.39b] "Work out and process the next note of the score."
+
+  The release groups it under a section headed "[1.39b] Routines that interpret
+  the score", which is the same group `SetNewSample` belongs to.
   -------------------------------------------------------------------------- }
 procedure NextPattern(var Song : TSong);
 begin
@@ -2069,6 +2078,15 @@ end;
   On a DMA device the tick is also gated on the timer: `VTSilenc.Ticks` is what
   the interrupt increments and DS:$0bca is this side's snapshot of it, so equal
   counters mean nothing new has happened yet.
+  **THIS IS THE RELEASE'S `ProcessTick`**, and the identification is measured
+  rather than guessed from the name. Its typed-constant block -- `incr`,
+  `OTempoCt`, `Can`, `Raw`, `NoteHzFreq`, `i`, `j`, `t`, `step`, `FBCount`,
+  `NumChannels` -- is this routine's block, in that order and those widths, and
+  the constants live in this routine and nowhere else. The names diverged; the
+  storage did not.
+
+  [1.39b] "Process one tick of the music. Normally 50 ticks per second are used,
+          but that can be changed."
   -------------------------------------------------------------------------- }
 procedure SeqTick(var Song : TSong);
 begin

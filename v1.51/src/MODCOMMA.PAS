@@ -415,6 +415,13 @@ end;
   exactly: `PROCEDURE TickArpeggio; ASSEMBLER;` names no parameter, so Turbo
   Pascal gives it no prologue at all and the channel arrives in SI.
 
+  **AND THE RELEASE STATES THAT CONVENTION OUTRIGHT.** Over the whole group its
+  source says "[1.39b] Command routines, for the start of a note and for each
+  tick" and then "[1.39b] The tick routines are entered with SI pointing at the
+  relevant TCanal." -- which is a fact about EVERY handler below, written once by
+  the author, where this reconstruction had to derive it per routine from the
+  prologue each one lacks.
+
   `@@Fin` IS THE EPILOGUE. Both `JMP @@Fin`s land on 142f:00cb, which is the `RET`
   the compiler appends -- there is no instruction of our own at that label. Written
   with a written `RET` instead, TP would emit a second one.
