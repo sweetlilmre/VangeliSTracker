@@ -260,7 +260,11 @@ const
     Desample and Resample. }
   LowQuality : Boolean = True;
 
+  { [1.39b] "Set if the instrument is played always at the same freq (not
+    implemented)." -- so this bit is defined and does nothing, in the release and
+    here. }
   ipMonoFreq = $0001;
+  { [1.39b] "Set if the instrument's sample is longer than 65520 bytes." }
   ipLong     = $0002;
 
 type
@@ -269,19 +273,28 @@ type
 
   TIProperties = Word;
 
+{ [1.39b] "Instruments are fragments of sampled sound (long arrays of bytes
+  which describe the wave of the sound of the instrument). The samples used in
+  music modules have a default volume and also, they can have a loop (for
+  sustained instruments) and a fine tuning constant (not yet implemented)."
+
+  Every field description below is the release's. Two of them say a thing the
+  image cannot: `Ftune` is NOT IMPLEMENTED, and `Vol`'s range is 0..64 -- a
+  ceiling of 64 rather than 63 or 255, which is what makes S3M's 0..64 clamp at
+  $40 the same scale rather than a coincidence. }
   PInstrumentRec = ^TInstrumentRec;
   TInstrumentRec =
     record
-      Len,
-      Reps,
-      Repl  : LongInt;
-      Vol   : Byte;
-      Ftune : Byte;
-      NAdj  : Word;
-      DAdj  : Word;
-      Data  : ^TSample;
-      Xtra  : ^TSample;
-      Prop  : TIProperties;
+      Len,          { [1.39b] length of the instrument's sampled image      }
+      Reps,         { [1.39b] starting offset of the repeated portion       }
+      Repl  : LongInt;  { [1.39b] size of the repeated portion              }
+      Vol   : Byte;     { [1.39b] default volume of the instrument (0..64)  }
+      Ftune : Byte;     { [1.39b] fine tuning value -- NOT YET IMPLEMENTED  }
+      NAdj  : Word;     { [1.39b] numerator of the note adjustment          }
+      DAdj  : Word;     { [1.39b] denominator of the note adjustment        }
+      Data  : ^TSample; { [1.39b] pointer to the first 65520 bytes          }
+      Xtra  : ^TSample; { [1.39b] pointer to the second 65520 bytes, if any }
+      Prop  : TIProperties;  { [1.39b] bit mapped properties value          }
     end;
 
   PInstrument = ^TInstrument;
@@ -306,6 +319,11 @@ type
   A TRACK IS ONE CHANNEL'S COLUMN OF NOTES, stored with the leading and trailing blanks
   removed -- `NoteOffset` is where the first real note sits and `NumNotes` is how many
   follow. A track whose notes run from line 12 to line 20 costs nine notes, not 256.
+
+  THE RELEASE SAYS THE SAME THING INDEPENDENTLY: "[1.39b] Tracks are lists of
+  notes and command values of which the empty leading and trailing blanks have
+  been removed (obviated)." That was worked out here from `NoteOffset` and
+  `NumNotes` before the release's own words were read, and the two agree.
 
   THE TWO ARRAYS ARE DECLARED AT FULL LENGTH AND ALLOCATED SHORT. `TNoteTrack` says
   `array[0..255]` but `TTrack.FreeContents` frees `NumNotes * SizeOf(TNoCommandNote) + 2`
@@ -359,6 +377,20 @@ type
   (see PLAYMOD.PAS). **It reaches no instruction in this segment** -- TPattern.Init and
   FreeContents both compute their block size from `Chans` and `Patt^.NChans`, and nothing
   here takes SizeOf(TPatternRec) -- so the figure is documentation, not a measurement.
+
+  **AND THE RELEASE'S OWN PROSE DISAGREES WITH THE RELEASE'S OWN CONSTANT.** Its
+  section header reads "[1.39b] Patterns are arrays of pointers to tracks (up to
+  12 tracks). A music module can have up to 255 individual patterns, arranged in
+  a sequence of up to 255." Twelve is not 32, which is what its `MaxChannels`
+  actually holds, and 255 is not 256, which is what its `MaxPatterns` and
+  `MaxSequence` hold.
+
+  So there are three figures in play and the prose is the odd one out. It is
+  recorded here rather than repeated as fact, because it is a worked example of
+  the rule this whole harvest runs under: **a comment is a candidate, not a
+  measurement -- including in the source it came from.** Twelve was probably true
+  when the sentence was written and the constant grew past it afterwards, which
+  is exactly how the addresses in this reconstruction's own comments went stale.
   --------------------------------------------------------------------------- }
 const
   MaxSequence     = 256;
