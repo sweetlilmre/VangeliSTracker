@@ -82,8 +82,12 @@ const
     v1.31b runs Frac $18, pad, OldVec $1a, Driver $1e, table $34 -- and $34-$18
     is $1c. v1.51's table is at $220 and its Frac at $204, the same $1c apart,
     with $200 and $202 above. Four bytes, two Words, declared first. }
-  ComPort : Word    = $3F8;   { DS:$0200  COM1 by default }
-  ComIrq  : Word    = 4;      { DS:$0202 }
+  { **COM2 IN v1.51, COM1 IN 1.31b.** DGROUP +$0200 holds `f8 02` and +$0202 holds
+    `03 00`. Two bytes, and no instruction anywhere names either value -- both are
+    initialisers a command-line switch overwrites, so only the image says what the
+    default is. }
+  ComPort : Word    = $2F8;   { DS:$0200  COM2 by default }
+  ComIrq  : Word    = 3;      { DS:$0202 }
 
   Frac    : Byte    = 0;      { DS:$0018  the 5-in-12 accumulator }
   OldVec  : Pointer = nil;    { DS:$001a  the displaced INT 0Ch vector }

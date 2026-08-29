@@ -845,28 +845,39 @@ end;
   card is slow.
   -------------------------------------------------------------------------- }
 const
-  { DS:$05c2 -- 128 words, read out of the image.
+  { DS:$066a in v1.51 -- 128 words, read out of the image, as 1.31b's were.
 
-    THE 1.39b RELEASE HAS A DIFFERENT TABLE. Only entry 0 ($1800) agrees;
-    every other value was retuned between the versions. The release settled
-    the SHAPE of the routine below and is worth nothing for its data. }
+    **RETUNED AGAIN BETWEEN 1.31b AND 1.51**, and only entry 0 survives -- $1800, the
+    same value that is the only agreement with the 1.39b release. Every other word
+    differs from BOTH earlier tables.
+
+    THE NOTE THAT STOOD HERE WAS RIGHT AND STILL LET THIS THROUGH. It said "the
+    release settled the SHAPE of the routine below and is worth nothing for its data",
+    which is correct, and it is exactly why carrying 1.31b's numbers forward was never
+    safe either: a table nothing computes has no witness but the image it came from.
+    **Data transcribed from one version is a measurement of that version only** -- the
+    routine that reads it is identical in all three, so no comparison of code could
+    ever have said the numbers were stale. 253 of the 256 bytes were wrong and the
+    unit verified byte-for-byte throughout.
+
+    A logarithmic volume ramp: entry 0 is silence and the rest climb to $FE30. }
   VolumeTable : array[0..127] of Word = (
-    $1800, $9EF0, $AAF0, $AE70, $B8F0, $BAB0, $BC70, $BE30,
-    $BFF0, $C8D0, $C9B0, $CA90, $CB70, $CC50, $CD30, $CE10,
-    $CEF0, $CFD0, $D850, $D8C0, $D930, $D9A0, $DA10, $DA80,
-    $DAF0, $DB60, $DBD0, $DC40, $DCB0, $DD20, $DD90, $DE00,
-    $DE70, $DEE0, $DF50, $DFC0, $E810, $E850, $E880, $E8C0,
-    $E8F0, $E930, $E960, $E9A0, $E9D0, $EA10, $EA40, $EA80,
-    $EAB0, $EAF0, $EB20, $EB60, $EB90, $EBD0, $EC00, $EC40,
-    $EC70, $ECB0, $ECE0, $ED20, $ED50, $ED90, $EDC0, $EE00,
-    $EE30, $EE70, $EEA0, $EEE0, $EF10, $EF50, $EF80, $EFC0,
-    $EFF0, $F810, $F830, $F850, $F860, $F880, $F8A0, $F8C0,
-    $F8D0, $F8F0, $F910, $F930, $F940, $F960, $F980, $F9A0,
-    $F9B0, $F9D0, $F9F0, $FA10, $FA20, $FA40, $FA60, $FA80,
-    $FA90, $FAB0, $FAD0, $FAF0, $FB00, $FB20, $FB40, $FB60,
-    $FB70, $FB90, $FBB0, $FBD0, $FBE0, $FC00, $FC20, $FC40,
-    $FC50, $FC70, $FC90, $FCB0, $FCC0, $FCE0, $FD00, $FD20,
-    $FD30, $FD50, $FD70, $FD90, $FDA0, $FDC0, $FDE0, $FE00
+    $1800, $9DF0, $A5F0, $ACF0, $B1F0, $B570, $B8F0, $BC70,
+    $BFF0, $C1B0, $C370, $C530, $C6F0, $C8B0, $CA70, $CC30,
+    $CDF0, $CFB0, $D0B0, $D190, $D270, $D350, $D430, $D510,
+    $D5F0, $D6D0, $D7B0, $D890, $D970, $DA50, $DB30, $DC10,
+    $DCF0, $DDD0, $DEB0, $DF90, $E030, $E0A0, $E110, $E180,
+    $E1F0, $E260, $E2D0, $E340, $E3B0, $E420, $E490, $E500,
+    $E570, $E5E0, $E650, $E6C0, $E730, $E7A0, $E810, $E880,
+    $E8F0, $E960, $E9D0, $EA40, $EAB0, $EB20, $EB90, $EC00,
+    $EC70, $ECE0, $ED50, $EDC0, $EE30, $EEA0, $EF10, $EF80,
+    $EFF0, $F030, $F060, $F0A0, $F0D0, $F110, $F140, $F180,
+    $F1B0, $F1F0, $F220, $F260, $F290, $F2D0, $F300, $F340,
+    $F370, $F3B0, $F3E0, $F420, $F450, $F490, $F4C0, $F500,
+    $F530, $F570, $F5A0, $F5E0, $F610, $F650, $F680, $F6C0,
+    $F6F0, $F730, $F760, $F7A0, $F7D0, $F810, $F840, $F880,
+    $F8B0, $F8F0, $F920, $F960, $F990, $F9D0, $FA00, $FA40,
+    $FA70, $FAB0, $FAE0, $FB20, $FB50, $FB90, $FBC0, $FC00
   );
 
 { --------------------------------------------------------------------------
