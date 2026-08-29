@@ -328,33 +328,39 @@ const
   pair in the unidentified set, and it holds 1.
   ========================================================================== }
 const
-  PlayingSong      : PSong         = nil;      { DS:$02c4                      }
-  LoopMod          : Boolean       = True;     { DS:$02c8  nothing reads it     }
-  ForceLoopMod     : Boolean       = False;    { DS:$02c9  the ForceLoopMod key }
-  CanFallBack      : Boolean       = True;     { DS:$02ca  12ba:1325 reads it   }
-  FilterOn         : TFilterMethod = fmNone;   { DS:$02cb  the FilterOn key     }
-  FilterOff        : TFilterMethod = fmNone;   { DS:$02cc  the FilterOff key    }
+  PlayingSong      : PSong         = nil;      { DS:$02ca                      }
+  LoopMod          : Boolean       = True;     { DS:$02ce  nothing reads it     }
+  ForceLoopMod     : Boolean       = False;    { DS:$02cf  the ForceLoopMod key }
+  CanFallBack      : Boolean       = True;     { DS:$02d0  12ba:1325 reads it   }
+  FilterOn         : TFilterMethod = fmNone;   { DS:$02d1  the FilterOn key     }
+  FilterOff        : TFilterMethod = fmNone;   { DS:$02d2  the FilterOff key    }
 
   { DS:$02cd -- **NOT** ModCommands' `FilterIsOn`, which is a different variable at
     DS:$0348. 1.31 has two of them; so, it turns out, does the release, which declares
     one in each of the same two interfaces -- this file used to say the release had
     only one, and that was wrong. Both are exported here because the ADDRESS requires
-    it: $02cd sits between two interface globals, and a unit's implementation
+    it: $02d3 sits between two interface globals, and a unit's implementation
     declarations all come after its interface ones, so a private declaration cannot
-    land there. The shadowing hazard the old note worried about is handled where it
-    actually bites -- VTCFG writes ModCommands' and now says so by qualifying it. }
-  FilterIsOn       : Boolean       = False;    { DS:$02cd                       }
+    land there.
 
-  MaxOutputFreq    : Word          = 44000;    { DS:$02ce  ab e0; release 45000 }
-  DontExecute      : Boolean       = False;    { DS:$02d0                       }
-  AltMode          : Boolean       = False;    { DS:$02d1  1.31 only            }
-  Playing          : Boolean       = False;    { DS:$02d2                       }
-  ModTickProcValid : Boolean       = False;    { DS:$02d3                       }
-  NoteTl           : Word          = 0;        { DS:$02d4                       }
-  NoteHd           : Word          = 0;        { DS:$02d6                       }
-  NoteSound        : PPlayingNote  = nil;      { DS:$02d8                       }
-  NoteProcessed    : PPlayingNote  = nil;      { DS:$02dc                       }
-  MaxSplPerTick    : Word          = 880;      { DS:$02e0  03 70, the release's }
+    THE ADDRESS IN THAT ARGUMENT WAS $02cd UNTIL THE LINKER WAS ASKED. It is $02d3 --
+    `MaxOutputFreq` is the next declaration and the map puts it at $02d4, one byte
+    on. The reasoning was right and the number it was built on was v1.31b's, which
+    is the whole hazard: prose that argues FROM an address reads as corroboration
+    for it. The shadowing hazard the old note worried about is handled where it
+    actually bites -- VTCFG writes ModCommands' and now says so by qualifying it. }
+  FilterIsOn       : Boolean       = False;    { DS:$02d3                       }
+
+  MaxOutputFreq    : Word          = 44000;    { DS:$02d4  ab e0; release 45000 }
+  DontExecute      : Boolean       = False;    { DS:$02d6                       }
+  AltMode          : Boolean       = False;    { DS:$02d7  1.31 only            }
+  Playing          : Boolean       = False;    { DS:$02d8                       }
+  ModTickProcValid : Boolean       = False;    { DS:$02d9                       }
+  NoteTl           : Word          = 0;        { DS:$02da                       }
+  NoteHd           : Word          = 0;        { DS:$02dc                       }
+  NoteSound        : PPlayingNote  = nil;      { DS:$02de                       }
+  NoteProcessed    : PPlayingNote  = nil;      { DS:$02e2                       }
+  MaxSplPerTick    : Word          = 880;      { DS:$02e6  03 70, the release's }
 
   { DS:$02e2 -- EIGHT PAN POSITIONS, one per channel, and this unit already had them
     under this name. What it did not have was their VALUES or their BOUNDS.
@@ -434,7 +440,7 @@ const
     is $0300, which is CurCanal. }
   NewNote          : TFullNote     = (Instrument : 0; Period : 0; Volume : 0;
                                       Command    : mcNone; Parameter : 0);
-  CurCanal         : PCanal        = nil;      { DS:$0300                       }
+  CurCanal         : PCanal        = nil;      { DS:$0306                       }
   Pattern          : PPattern      = nil;      { DS:$030a in v1.51             }
 
   { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
@@ -462,10 +468,10 @@ const
     picking. }
   FirstTick        : Word          = 1;
 
-  MixChan          : Word          = 0;        { DS:$030a                       }
-  ChanRec          : PModRawChan   = nil;      { DS:$030c                       }
-  OutPtr           : Pointer       = nil;      { DS:$0310                       }
-  ModRec           : PSampleBuffer = nil;      { DS:$0314                       }
+  MixChan          : Word          = 0;        { DS:$0312                       }
+  ChanRec          : PModRawChan   = nil;      { DS:$0314                       }
+  OutPtr           : Pointer       = nil;      { DS:$0318                       }
+  ModRec           : PSampleBuffer = nil;      { DS:$031C                       }
   { **THE WHOLE OF ProcessTick's CONSTANT BLOCK IS HERE, IN THE RELEASE'S ORDER**,
     and matching it end to end is what named the four unknowns in this run. 1.39b's
     LIB/PLAYMOD.PAS:1024 declares, after an untyped SizeOf:
@@ -485,8 +491,8 @@ const
   Incr             : Integer       = 0;        { the release's `incr`, unread    }
   PrevTick         : Word          = 0;        { the release's `OTempoCt`        }
 
-  CanalPtr         : PCanal        = nil;      { DS:$031c                       }
-  RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
+  CanalPtr         : PCanal        = nil;      { DS:$0324                       }
+  RawPtr           : PModRawChan   = nil;      { DS:$0328                       }
   NoteHzFreq       : LongInt       = 0;        { unread here and in 1.39b       }
   { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
     A separate `TickSpan` was declared for the tempo loop's span last commit and it
@@ -525,7 +531,7 @@ const
     not four. 1.39b calls it `FBCount` -- a fall-back counter, beside `CanFallBack`
     and `FBTicks` elsewhere in the unit -- and never reads it. }
   FBCount          : Word          = 0;
-  TickChans        : Byte          = 0;        { DS:$0332                       }
+  TickChans        : Byte          = 0;        { DS:$033C                       }
 
 { THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
   the declarations they described are in the block above.
@@ -618,10 +624,10 @@ var
     identical while its data was short. See `constant-only-half-applied` and
     `dead-data-has-no-witness` in the kit. }
   SplBuf          : array[1..MaxChannels] of Word;  { DS:$12b8               }
-  ActualHz        : Word;  { DS:$1200 }
-  NoteHz          : Word;  { DS:$1202 }
-  NoteCalcVal     : LongInt;  { DS:$1204 }
-  UserVols        : TVolumes;             { DS:$1208  base-1 base $1207 }
+  ActualHz        : Word;  { DS:$12D8 }
+  NoteHz          : Word;  { DS:$12DA }
+  NoteCalcVal     : LongInt;  { DS:$12DC }
+  UserVols        : TVolumes;             { DS:$12E0  base-1 base $1207 }
 
 { 12ba:132f -- negotiate the rate, size the buffers, program the DMA. Declared
   here because 12ba:0d4e calls it and it lives 1,500 bytes further down the
@@ -829,7 +835,7 @@ type
 { ...and the rest, private but in the same run -- see the note above. }
 var
   Permisos        : array[1..MaxChannels] of Boolean;  { DS:$1210  base-1 base $120f }
-  TickCount       : Word;  { DS:$1218 }
+  TickCount       : Word;  { DS:$1220 }
   ModTickProc     : TTickProc;  { DS:$121a }
   MyCanFallBack   : Boolean;  { DS:$121e }
   FilterVal       : TFilterMethod;  { DS:$121f }

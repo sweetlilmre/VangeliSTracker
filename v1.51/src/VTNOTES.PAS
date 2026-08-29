@@ -69,7 +69,7 @@ const
   to index NotePeriods above. The two tables are a matched pair and both ends of
   the pairing are now in the tree. }
 var
-  NoteOf    : array[0..Periods - 1] of Word;         { DS:$25c6  4,096 bytes }
+  NoteOf    : array[0..Periods - 1] of Word;         { DS:$4920  4,096 bytes }
 
   { DS:$35c6 -- 340 BYTES THAT HAD TO BE HERE, and the release names them. This unit's
     variable block ends where GUS's begins at $371a, and $25c6 + 4096 is $35c6, so there
@@ -83,7 +83,7 @@ var
     the image is silent about it and `census.py` finding no printable string in the
     segment is consistent. It is here for its 340 bytes and its name, and the arithmetic
     is what says it exists. }
-  NoteStr   : array[0..84] of String[3];             { DS:$35c6  340 bytes  }
+  NoteStr   : array[0..84] of String[3];             { DS:$5920  340 bytes  }
 
 procedure BuildNoteTable; far;
 

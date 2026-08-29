@@ -61,27 +61,27 @@ uses
   than the `PathStr` it was: 68 bytes is what closes the gap, where 80 would overrun
   into data that is not zero. }
 const
-  VTDir             : DirStr        = '';            { DS:$083a  68 bytes      }
-  DevPtr            : PSoundDevice  = nil;           { DS:$087e                }
-  DevID             : TDevID        = 'DMA-SB-Mono'; { DS:$0882  MEASURED      }
-  StartupScr        : String[32]    = '';            { DS:$0898  after a pad   }
+  VTDir             : DirStr        = '';            { DS:$08e2  68 bytes      }
+  DevPtr            : PSoundDevice  = nil;           { DS:$0926                }
+  DevID             : TDevID        = 'DMA-SB-Mono'; { DS:$092A  MEASURED      }
+  StartupScr        : String[32]    = '';            { DS:$0940  after a pad   }
 
-  PermitFade        : Boolean       = True;          { DS:$08b9  01            }
-  VtVolume          : Byte          = 127;           { DS:$08ba  7f            }
-  ShellLoopMod      : Boolean       = True;          { DS:$08bb  01            }
+  PermitFade        : Boolean       = True;          { DS:$0961  01            }
+  VtVolume          : Byte          = 127;           { DS:$0962  7f            }
+  ShellLoopMod      : Boolean       = True;          { DS:$0963  01            }
 
   { DS:$08bc -- `e0 2e`, 12000. The release computes its default as
     `DefaultHz * 3 DIV 4`, so 1.31's DefaultHz is 16000. Read, not derived. }
   ShellHz           : Word          = 12000;
 
-  FadeIncr          : Word          = 256;           { DS:$08be  00 01         }
-  VTLoopMod         : Boolean       = False;         { DS:$08c0                }
+  FadeIncr          : Word          = 256;           { DS:$0966  00 01         }
+  VTLoopMod         : Boolean       = False;         { DS:$0968                }
 
   { $08c2..$08c7, after the pad at $08c1. All three are zero in the image, so the
     ORDER here is the release's rather than measured -- flagged for that reason. }
-  VT1stPattern      : Word          = 0;             { DS:$08c2                }
-  VTRepStart        : Word          = 0;             { DS:$08c4                }
-  VTSongLen         : Word          = 0;             { DS:$08c6                }
+  VT1stPattern      : Word          = 0;             { DS:$096a                }
+  VTRepStart        : Word          = 0;             { DS:$096c                }
+  VTSongLen         : Word          = 0;             { DS:$096e                }
 
   { DS:$08c8 -- A `String[127]`, AND THE WIDTH IS MEASURED TWICE OVER. `11bb:0d5c`
     pushes `6A 7F`, an immediate 127, as `SizeOf(ShellParam) - 1`; a full `String`
@@ -89,8 +89,8 @@ const
     StringsFName. }
   ShellParam        : String[127]   = '';
 
-  StringsFName      : PathStr       = 'VT_Esp.Lng';  { DS:$0948  MEASURED      }
-  ModPath           : PathStr       = '';            { DS:$0998                }
+  StringsFName      : PathStr       = 'VT_Esp.Lng';  { DS:$09F0  MEASURED      }
+  ModPath           : PathStr       = '';            { DS:$0A40                }
 
   { 109c:05b2 SETS THIS AND `1000` READS IT, which is how the switch got its name.
     `1000:00fb` is `CMP byte [09e8],0 / JNZ +$67`, and the 103 bytes it skips are four
@@ -100,7 +100,7 @@ const
     A typed constant like everything else here, and $0998 + 80 is what puts it at
     $09e8: the last byte of this unit's block, with DevSB's first device record
     eleven bytes further on. }
-  NoBanner          : Boolean       = False;         { DS:$09e8  MEASURED      }
+  NoBanner          : Boolean       = False;         { DS:$0a90  MEASURED      }
 
 { ~~A NEW BOOLEAN AT DS:$4821 WHOSE OWNER IS NOT YET PROVEN~~ -- **IT IS
   `VTCtrl.CtrlBlock.Abort`, AND THE ARITHMETIC IS ONE SUBTRACTION.** $4821 minus

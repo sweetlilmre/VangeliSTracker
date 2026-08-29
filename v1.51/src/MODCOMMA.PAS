@@ -232,37 +232,37 @@ type
   -------------------------------------------------------------------------- }
 const
   { $0334..$0337 -- both of these were declared in PLAYMOD until the layout moved them. }
-  MyLoopMod          : Boolean = False;  { DS:$0334                            }
-  PermitFilterChange : Boolean = False;  { DS:$0335  the `FilterChange` key     }
-  TempoDiv           : Word    = 125;    { DS:$0336  release: BPMDivider        }
+  MyLoopMod          : Boolean = False;  { DS:$033E                            }
+  PermitFilterChange : Boolean = False;  { DS:$033F  the `FilterChange` key     }
+  TempoDiv           : Word    = 125;    { DS:$0340  release: BPMDivider        }
 
   { The release calls these `BPMIncrement` and `BPMCount`. 142f:04a6 and 142f:04bc
     write CurTempo from the F-command. }
-  CurTempo           : Word    = 125;    { DS:$0338  release: BPMIncrement      }
-  TempoAccum         : Word    = 0;      { DS:$033a  release: BPMCount          }
+  CurTempo           : Word    = 125;    { DS:$0342  release: BPMIncrement      }
+  TempoAccum         : Word    = 0;      { DS:$0344  release: BPMCount          }
 
   { THE TWO HALVES OF THE PLAY RANGE. `My*` is the copy the player is working
     through and the bare name is what a client asked for; PlayStart copies one to
     the other, which is where both sets were read from (12ba:10b4, 10ba, 10c0). }
-  RangeStart         : Word    = 0;      { DS:$033c  release: MyFirstPattern    }
-  RangeEnd           : Word    = 0;      { DS:$033e  release: MyRepStart        }
-  MySongLen          : Word    = 0;      { DS:$0340                            }
-  ReqStart           : Word    = 0;      { DS:$0342  release: FirstPattern      }
-  ReqEnd             : Word    = 0;      { DS:$0344  release: RepStart          }
-  ReqLen             : Word    = 0;      { DS:$0346  release: SongLen           }
+  RangeStart         : Word    = 0;      { DS:$0346  release: MyFirstPattern    }
+  RangeEnd           : Word    = 0;      { DS:$0348  release: MyRepStart        }
+  MySongLen          : Word    = 0;      { DS:$034A                            }
+  ReqStart           : Word    = 0;      { DS:$034C  release: FirstPattern      }
+  ReqEnd             : Word    = 0;      { DS:$034E  release: RepStart          }
+  ReqLen             : Word    = 0;      { DS:$0350  release: SongLen           }
 
   { NOT PlayMod's `FilterIsOn`, which is a DIFFERENT variable at DS:$02cd. 1.31 has
     two of them and the release has one; see the long note that used to sit below.
     11bb:0b0e's `FilterIsOn` key writes THIS one, which is why it is exported --
     safe only because PlayMod's copy stays private, so no unit can see both. }
-  FilterIsOn         : Boolean = False;  { DS:$0348                             }
+  FilterIsOn         : Boolean = False;  { DS:$0352                             }
 
   { $0349..$034f. The release's names are `Tempo`, `NextNote`, `NextSeq`, `TempoCt`;
     `Tempo` is the one rename this tree declines on purpose. }
-  CurSpeed           : Byte    = 6;      { DS:$0349  release: Tempo             }
-  NextNote           : Word    = 1;      { DS:$034a                             }
-  NextSeq            : Word    = 1;      { DS:$034c                             }
-  TickInRow          : Byte    = 0;      { DS:$034e  release: TempoCt           }
+  CurSpeed           : Byte    = 6;      { DS:$0353  release: Tempo             }
+  NextNote           : Word    = 1;      { DS:$0354                             }
+  NextSeq            : Word    = 1;      { DS:$0356                             }
+  TickInRow          : Byte    = 0;      { DS:$0358  release: TempoCt           }
 
 { NEW IN v1.51, DS:$035a -- THE EQUAL-TEMPERED SEMITONE TABLE, and it is what the
   new arpeggio divides by. Sixteen words, indexed by a nibble, and each one is

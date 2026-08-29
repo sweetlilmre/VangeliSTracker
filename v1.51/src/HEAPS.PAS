@@ -167,7 +167,7 @@ var
   InitialHeapEnd : Pointer;
   Heap           : THeap;
   UmbHeap        : THeapColl;
-  FullHeap       : THeapColl;      { DS:$39ae                                 }
+  FullHeap       : THeapColl;      { DS:$5d08                                 }
   TempHeap       : THeap;
 
 { --------------------------------------------------------------------------

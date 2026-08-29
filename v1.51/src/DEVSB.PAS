@@ -85,10 +85,10 @@ interface
   is the release's own default. Everything else this unit declares stays private and
   follows on at $09ee. }
 const
-  SbProMixMasterVol : Byte    = 255;  { DS:$09ea  the VT.CFG `MasterVol` key   }
-  SbProMixDACVol    : Byte    = 255;  { DS:$09eb  ... `DACVol`                 }
-  SbProMixFMVol     : Byte    = 255;  { DS:$09ec  ... `FMVol`                  }
-  SbProMixFilter    : Boolean = False;{ DS:$09ed  ... `Filter`                 }
+  SbProMixMasterVol : Byte    = 255;  { DS:$0a92  the VT.CFG `MasterVol` key   }
+  SbProMixDACVol    : Byte    = 255;  { DS:$0a93  ... `DACVol`                 }
+  SbProMixFMVol     : Byte    = 255;  { DS:$0a94  ... `FMVol`                  }
+  SbProMixFilter    : Boolean = False;{ DS:$0a95  ... `Filter`                 }
 
 implementation
 

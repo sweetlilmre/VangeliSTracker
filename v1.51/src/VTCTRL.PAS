@@ -195,7 +195,7 @@ type
   end;
 
 var
-  CtrlBlock : TCtrlBlock;    { DS:$22c6 }
+  CtrlBlock : TCtrlBlock;    { DS:$461a }
 
 implementation
 

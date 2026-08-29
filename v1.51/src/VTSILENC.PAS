@@ -89,8 +89,8 @@ const
   ComPort : Word    = $2F8;   { DS:$0200  COM2 by default }
   ComIrq  : Word    = 3;      { DS:$0202 }
 
-  Frac    : Byte    = 0;      { DS:$0018  the 5-in-12 accumulator }
-  OldVec  : Pointer = nil;    { DS:$001a  the displaced INT 0Ch vector }
+  Frac    : Byte    = 0;      { DS:$0204  the 5-in-12 accumulator }
+  OldVec  : Pointer = nil;    { DS:$0206  the displaced INT 0Ch vector }
 
   { DS:$001e. A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
     DATA rather than something the unit assigns at run time -- exactly what
@@ -107,7 +107,7 @@ const
     Ticks)`. A device that produces no output and only paces the tick wants that gate
     active, which is what claiming DMA does. DevGus's own record has DMA FALSE at the
     same offset in both images, so the two are not simply copies of one default. }
-  Driver : TSoundDevice = ( DevID : 'Silence'; DMA : True );    { DS:$001e }
+  Driver : TSoundDevice = ( DevID : 'Silence'; DMA : True );    { DS:$020a }
 
 { ~~Ticks : Word at DS:$0bc8~~ -- MOVED TO SOUNDDEV.PAS, where the note explains
   why. In short: PlayMod reads $0bc8 and the original's link order forbids PlayMod

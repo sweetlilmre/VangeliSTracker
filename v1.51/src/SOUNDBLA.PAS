@@ -92,40 +92,40 @@ const
   and 1.31's does too, store for store.
   -------------------------------------------------------------------------- }
 const
-  CMS1DataPort : Word = $220 + CMS1DataPortOffset;  { DS:$0adc  0148 }
-  CMS1AddrPort : Word = $220 + CMS1AddrPortOffset;  { DS:$0ade  014f }
-  CMS2DataPort : Word = $220 + CMS2DataPortOffset;  { DS:$0ae0  0157 }
-  CMS2AddrPort : Word = $220 + CMS2AddrPortOffset;  { DS:$0ae2  0160 }
+  CMS1DataPort : Word = $220 + CMS1DataPortOffset;  { DS:$0b84  0148 }
+  CMS1AddrPort : Word = $220 + CMS1AddrPortOffset;  { DS:$0b86  014f }
+  CMS2DataPort : Word = $220 + CMS2DataPortOffset;  { DS:$0b88  0157 }
+  CMS2AddrPort : Word = $220 + CMS2AddrPortOffset;  { DS:$0b8a  0160 }
 
-  MixAddrPort  : Word = $220 + MixAddrPortOffset;   { DS:$0ae4  00d1, 0169 }
-  MixDataPort  : Word = $220 + MixDataPortOffset;   { DS:$0ae6  00d9, 0172 }
+  MixAddrPort  : Word = $220 + MixAddrPortOffset;   { DS:$0b8c  00d1, 0169 }
+  MixDataPort  : Word = $220 + MixDataPortOffset;   { DS:$0b8e  00d9, 0172 }
 
-  FMStatPort   : Word = $220 + FMStatPortOffset;    { DS:$0ae8  017b }
-  FMAddrPort   : Word = $220 + FMAddrPortOffset;    { DS:$0aea  0184 }
-  FMDataPort   : Word = $220 + FMDataPortOffset;    { DS:$0aec }
+  FMStatPort   : Word = $220 + FMStatPortOffset;    { DS:$0b90  017b }
+  FMAddrPort   : Word = $220 + FMAddrPortOffset;    { DS:$0b92  0184 }
+  FMDataPort   : Word = $220 + FMDataPortOffset;    { DS:$0b94 }
 
-  LFMStatPort  : Word = $220 + LFMStatPortOffset;   { DS:$0aee }
-  LFMAddrPort  : Word = $220 + LFMAddrPortOffset;   { DS:$0af0 }
-  LFMDataPort  : Word = $220 + LFMDataPortOffset;   { DS:$0af2 }
+  LFMStatPort  : Word = $220 + LFMStatPortOffset;   { DS:$0b96 }
+  LFMAddrPort  : Word = $220 + LFMAddrPortOffset;   { DS:$0b98 }
+  LFMDataPort  : Word = $220 + LFMDataPortOffset;   { DS:$0b9a }
 
-  RFMStatPort  : Word = $220 + RFMStatPortOffset;   { DS:$0af4 }
-  RFMAddrPort  : Word = $220 + RFMAddrPortOffset;   { DS:$0af6 }
-  RFMDataPort  : Word = $220 + RFMDataPortOffset;   { DS:$0af8 }
+  RFMStatPort  : Word = $220 + RFMStatPortOffset;   { DS:$0b9c }
+  RFMAddrPort  : Word = $220 + RFMAddrPortOffset;   { DS:$0b9e }
+  RFMDataPort  : Word = $220 + RFMDataPortOffset;   { DS:$0ba0 }
 
-  DSPResetPort : Word = $220 + DSPResetPortOffset;  { DS:$0afa  0006 }
-  DSPReadPort  : Word = $220 + DSPReadPortOffset;   { DS:$0afc  003d }
-  DSPLifePort  : Word = $220 + DSPLifePortOffset;   { DS:$0afe  0085 }
-  DSPWStatPort : Word = $220 + DSPWStatPortOffset;  { DS:$0b00 }
-  DSPWritePort : Word = $220 + DSPWritePortOffset;  { DS:$0b02  0061 }
-  DSPRStatPort : Word = $220 + DSPRStatPortOffset;  { DS:$0b04  0035 }
-  DSP8AckPort  : Word = $220 + DSP8AckPortOffset;   { DS:$0b06 }
-  DSP16AckPort : Word = $220 + DSP16AckPortOffset;  { DS:$0b08 }
+  DSPResetPort : Word = $220 + DSPResetPortOffset;  { DS:$0ba2  0006 }
+  DSPReadPort  : Word = $220 + DSPReadPortOffset;   { DS:$0ba4  003d }
+  DSPLifePort  : Word = $220 + DSPLifePortOffset;   { DS:$0ba6  0085 }
+  DSPWStatPort : Word = $220 + DSPWStatPortOffset;  { DS:$0ba8 }
+  DSPWritePort : Word = $220 + DSPWritePortOffset;  { DS:$0baa  0061 }
+  DSPRStatPort : Word = $220 + DSPRStatPortOffset;  { DS:$0bac  0035 }
+  DSP8AckPort  : Word = $220 + DSP8AckPortOffset;   { DS:$0bae }
+  DSP16AckPort : Word = $220 + DSP16AckPortOffset;  { DS:$0bb0 }
 
-  CDDataPort   : Word = $220 + CDDataPortOffset;    { DS:$0b0a }
-  CDCmdPort    : Word = $220 + CDCmdPortOffset;     { DS:$0b0c }
-  CDStatPort   : Word = $220 + CDStatPortOffset;    { DS:$0b0e }
-  CDResetPort  : Word = $220 + CDResetPortOffset;   { DS:$0b10 }
-  CDEnablePort : Word = $220 + CDEnablePortOffset;  { DS:$0b12 }
+  CDDataPort   : Word = $220 + CDDataPortOffset;    { DS:$0bb2 }
+  CDCmdPort    : Word = $220 + CDCmdPortOffset;     { DS:$0bb4 }
+  CDStatPort   : Word = $220 + CDStatPortOffset;    { DS:$0bb6 }
+  CDResetPort  : Word = $220 + CDResetPortOffset;   { DS:$0bb8 }
+  CDEnablePort : Word = $220 + CDEnablePortOffset;  { DS:$0bba }
 
 { --------------------------------------------------------------------------
   THE CONFIGURATION SETTINGS. These four were this file's whole contents while
@@ -136,11 +136,11 @@ const
   release's list with no gaps.
   -------------------------------------------------------------------------- }
 const
-  SbPort       : Word    = $FFFF;  { DS:$0b14  $FFFF means autodetect }
-  SbIrq        : Word    = 7;      { DS:$0b16 }
-  SbDMAChan    : Word    = 1;      { DS:$0b18 }
-  SbDefTimeout : Word    = 5000;   { DS:$0b1a }
-  SbHiSpeed    : Boolean = True;   { DS:$0b1c }
+  SbPort       : Word    = $FFFF;  { DS:$0bbc  $FFFF means autodetect }
+  SbIrq        : Word    = 7;      { DS:$0bbe }
+  SbDMAChan    : Word    = 1;      { DS:$0bc0 }
+  SbDefTimeout : Word    = 5000;   { DS:$0bc2 }
+  SbHiSpeed    : Boolean = True;   { DS:$0bc4 }
 
   { $0b1d..$0b20 -- FOUR "FORCE" FLAGS, and they were missing. The layout is what
     found them: SbHiSpeed is at $0b1c and SbVersionMin at $0b22, and the release
@@ -153,22 +153,22 @@ const
     not these -- so they exist here for their four bytes and their names, and the names
     are the release's. A typed constant nothing references is normally smart-linked
     away; these survive because they sit inside a block whose neighbours are read. }
-  SbForce      : Boolean = False;  { DS:$0b1d }
-  MixerForce   : Boolean = False;  { DS:$0b1e }
-  SbProForce   : Boolean = False;  { DS:$0b1f }
-  Sb16Force    : Boolean = False;  { DS:$0b20  pad at $0b21 }
+  SbForce      : Boolean = False;  { DS:$0bc5 }
+  MixerForce   : Boolean = False;  { DS:$0bc6 }
+  SbProForce   : Boolean = False;  { DS:$0bc7 }
+  Sb16Force    : Boolean = False;  { DS:$0bc8  pad at $0b21 }
 
 { Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
   `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 19a0:026f is what fixes the
   overlay: it compares $0b22 against $0200 as a Word, where the two halves are
   written separately as bytes. }
 const
-  SbVersionMin : Byte       = 0;   { DS:$0b22 }
-  SbVersionMaj : Byte       = 0;   { DS:$0b23 }
-  SbVersionStr : String[ 5] = '';  { DS:$0b24 }
-  SbCopyright  : String[80] = '';  { DS:$0b2a }
-  SbResponse1  : Byte       = 0;   { DS:$0b7b }
-  SbResponse2  : Byte       = 0;   { DS:$0b7c }
+  SbVersionMin : Byte       = 0;   { DS:$0bca }
+  SbVersionMaj : Byte       = 0;   { DS:$0bcb }
+  SbVersionStr : String[ 5] = '';  { DS:$0bcc }
+  SbCopyright  : String[80] = '';  { DS:$0bd2 }
+  SbResponse1  : Byte       = 0;   { DS:$0c23 }
+  SbResponse2  : Byte       = 0;   { DS:$0c24 }
 var
   SbVersion : Word absolute SbVersionMin;
 
@@ -190,33 +190,33 @@ var
   byte, so it is pinned by SPACING between the addresses instructions do name.
   -------------------------------------------------------------------------- }
 const
-  SbRegDetected      : Boolean = False; { DS:$0b7e  00fd, 0103, 012d }
-  SbRegInited        : Boolean = False; { DS:$0b7f  0264, 0291 }
-  SbProDetected      : Boolean = False; { DS:$0b80 }
-  SbProInited        : Boolean = False; { DS:$0b81 }
-  Sb16Detected       : Boolean = False; { DS:$0b82 }
-  Sb16Inited         : Boolean = False; { DS:$0b83 }
-  MixerDetected      : Boolean = False; { DS:$0b84 }
+  SbRegDetected      : Boolean = False; { DS:$0c26  00fd, 0103, 012d }
+  SbRegInited        : Boolean = False; { DS:$0c27  0264, 0291 }
+  SbProDetected      : Boolean = False; { DS:$0c28 }
+  SbProInited        : Boolean = False; { DS:$0c29 }
+  Sb16Detected       : Boolean = False; { DS:$0c2a }
+  Sb16Inited         : Boolean = False; { DS:$0c2b }
+  MixerDetected      : Boolean = False; { DS:$0c2c }
 
   { Cleared when a DSP wait times out; both loops write it, and that write is
     the only reason they compute `OR BL,BH` at all. }
-  SbWorksOk          : Boolean = True;  { DS:$0b85  006f, 00af }
+  SbWorksOk          : Boolean = True;  { DS:$0c2d  006f, 00af }
 
-  HSBlockSpecified   : Word    = 0;     { DS:$0b86 }
-  Sb16BlockSpecified : Word    = 0;     { DS:$0b88 }
-  SbStereo           : Boolean = False; { DS:$0b8a }
-  SbFilter           : Boolean = False; { DS:$0b8b }
-  DoHiSpeed          : Boolean = False; { DS:$0b8c  0284 }
-  Sb16Bit            : Boolean = False; { DS:$0b8d }
-  TimeConst          : Byte    = 0;     { DS:$0b8e }
+  HSBlockSpecified   : Word    = 0;     { DS:$0c2e }
+  Sb16BlockSpecified : Word    = 0;     { DS:$0c30 }
+  SbStereo           : Boolean = False; { DS:$0c32 }
+  SbFilter           : Boolean = False; { DS:$0c33 }
+  DoHiSpeed          : Boolean = False; { DS:$0c34  0284 }
+  Sb16Bit            : Boolean = False; { DS:$0c35 }
+  TimeConst          : Byte    = 0;     { DS:$0c36 }
 
   { The four 193a's DMA interrupt handler touches, and its stores are what
     place them: 193a:0045 clears $0b92, 0048 reads $0b90, 004f writes $0b91.
     With TimeConst at $0b8e the release's order lands them exactly. }
-  DMAStart           : Boolean = False; { DS:$0b8f }
-  DMAStop            : Boolean = False; { DS:$0b90  193a:0048 }
-  DMAStopped         : Boolean = False; { DS:$0b91  193a:004f }
-  DMAIrqWatch        : Byte    = 0;     { DS:$0b92  193a:0045 }
+  DMAStart           : Boolean = False; { DS:$0c37 }
+  DMAStop            : Boolean = False; { DS:$0c38  193a:0048 }
+  DMAStopped         : Boolean = False; { DS:$0c39  193a:004f }
+  DMAIrqWatch        : Byte    = 0;     { DS:$0c3a  193a:0045 }
 
 { DSP commands and the one mixer register 1.31 touches. }
 const

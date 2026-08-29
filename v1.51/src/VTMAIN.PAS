@@ -303,9 +303,9 @@ var
   `Song` used to be declared LAST and is second; `Str1208` was carrying `DS:$1208`,
   which is PlayMod's `UserVols` and not this at all -- its real address is $0cd6, and
   256 + 4 is exactly the gap between `SavedCD` and `Dir`. }
-  ChainPtr  : Pointer;   { DS:$0c6e -> TimerChain }
-  Complain  : Boolean;   { DS:$0c72  and a pad at $0c73 }
-  Song      : TSong;     { DS:$0c74  94 bytes; Init at 1000:032a }
+  ChainPtr  : Pointer;   { DS:$0d16 -> TimerChain }
+  Complain  : Boolean;   { DS:$0d1a  and a pad at $0c73 }
+  Song      : TSong;     { DS:$0d1c  94 bytes; Init at 1000:032a }
 
 { --------------------------------------------------------------------------
   EIGHT NAMES RESOLVED TO THE UNITS THAT OWN THEM, now that all of them are
@@ -362,7 +362,7 @@ var
     LongInt and 1000:03c4 pushes both halves of this pair into it. The asm at
     0390 stores AX and DX into $0cd2 and $0cd4, which is the same object seen
     from the other end. }
-  SavedCD   : LongInt;   { DS:$0cd2 }
+  SavedCD   : LongInt;   { DS:$0d9a }
   { ~~TickSnapshot $0bca, LastTick $0058, DriverTicks $0bd0~~ -- ALL THREE GONE, and each
     was a second declaration of a global another unit owns. The layout is what settled
     it: $0bca and $0bd0 are inside SoundDevices' block ($0b94..$0c0b) and $0058 is
@@ -374,7 +374,7 @@ var
     any instruction: nothing in the program references it, so no operand names it. What
     fixes it is that `SavedCD` ends at $0cd5 and `Dir` begins at $0dda, and 256 + 4 is
     the gap. It used to be quoted at DS:$1208, which is PlayMod's `UserVols`. }
-  Str1208   : String;    { DS:$0cd6 }
+  Str1208   : String;    { DS:$0d9e }
 
   { DS:$0e9e -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
     `Dir` at $0dda. Nothing references them. Filler, so the SIZE is right and the

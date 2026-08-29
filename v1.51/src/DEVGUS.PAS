@@ -67,7 +67,7 @@ type
   declared in the implementation section, which put them AFTER the record; a unit's
   interface declarations all come first, so the addresses require them here. }
 const
-  LastTick : Word    = 0;   { DS:$0058  1000:02a1 clears it, so it is exported }
+  LastTick : Word    = 0;   { DS:$0014  1000:02a1 clears it, so it is exported }
 
   { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME. The addresses either side
     are measured and the block is contiguous, so the bytes exist; nothing in the tree

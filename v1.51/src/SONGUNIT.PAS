@@ -419,7 +419,7 @@ type
   It is the offset of the module inside its file, and `14b9:0242` pushes it into
   `St.Seek` -- which is this unit's own `LoadFName`, so the consumer is here too. }
 const
-  ModOffset : LongInt = 0;                    { DS:$03c0 }
+  ModOffset : LongInt = 0;                    { DS:$042c }
 
 { --------------------------------------------------------------------------
   Status and format codes.

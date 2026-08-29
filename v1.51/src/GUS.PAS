@@ -91,11 +91,11 @@ const
     the config file's value here, which is what ties VT.CFG to the card. }
   GUSPort         : Word    = $FFFF;
 
-  GUSIrq          : Word    = 11;      { DS:$0584                            }
-  GUSChannels     : Byte    = 32;      { DS:$0586  the CARD's voices; pad $0587 }
-  GUSDivisor      : Word    = 19293;   { DS:$0588  4b 5d                     }
-  GUSTimer1RutPtr : Pointer = nil;     { DS:$058a                            }
-  GUSTimer2RutPtr : Pointer = nil;     { DS:$058e                            }
+  GUSIrq          : Word    = 11;      { DS:$062C                            }
+  GUSChannels     : Byte    = 32;      { DS:$062E  the CARD's voices; pad $0587 }
+  GUSDivisor      : Word    = 19293;   { DS:$0630  4b 5d                     }
+  GUSTimer1RutPtr : Pointer = nil;     { DS:$0632                            }
+  GUSTimer2RutPtr : Pointer = nil;     { DS:$0636                            }
 
 { `VAR Src` UNTYPED, AND `165a` IS WHAT SETTLED IT. Inside this routine a Pointer
   parameter and an untyped var parameter are the same four bytes and `LDS SI,Src`
@@ -136,11 +136,11 @@ uses
   $059a, and $059a + 16 is $05aa, which is `GUSPorts`. Three consecutive blocks landing
   on two addresses that were already known. All five hold zero. }
 const
-  TimerControl  : Byte    = 0;    { DS:$0592  shadow of GF1 register $45      }
-  TimerMask     : Byte    = 0;    { DS:$0593  shadow of the timer control     }
-  OldIrqHandler : Pointer = nil;  { DS:$0594                                  }
-  OldIrqState   : Boolean = False;{ DS:$0598  enabled before InitGusIRQ?      }
-  GusIRQInited  : Boolean = False;{ DS:$0599                                  }
+  TimerControl  : Byte    = 0;    { DS:$063A  shadow of GF1 register $45      }
+  TimerMask     : Byte    = 0;    { DS:$063B  shadow of the timer control     }
+  OldIrqHandler : Pointer = nil;  { DS:$063C                                  }
+  OldIrqState   : Boolean = False;{ DS:$0640  enabled before InitGusIRQ?      }
+  GusIRQInited  : Boolean = False;{ DS:$0641                                  }
 
   { DS:$059a -- the GF1 encodes its interrupt in three bits rather than
     taking the number, so the number has to be translated. Zero means the

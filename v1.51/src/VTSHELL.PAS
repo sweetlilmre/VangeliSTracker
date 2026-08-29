@@ -50,8 +50,8 @@ var
     names. `ConFile` is a `Text`, and a TP `TextRec` is 256 bytes, so the three close on
     340 -- this unit's whole data size -- with nothing over. `ProgName` was declared first
     and had to move below the file variable, which means `ConFile` is exported too. }
-  ConFile   : Text;      { DS:$39de  256 bytes }
-  ProgName  : String[79];{ DS:$3ade }
+  ConFile   : Text;      { DS:$5d38  256 bytes }
+  ProgName  : String[79];{ DS:$5e38 }
 
 { ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND THEY
   WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next segment
@@ -70,7 +70,7 @@ implementation
 
 var
   { ~~ConFile~~ has moved to the interface, above `ProgName` -- see the note there. }
-  SavedExit : Pointer;   { DS:$3b2e }
+  SavedExit : Pointer;   { DS:$5e88 }
 
 { --------------------------------------------------------------------------
   1931:0000 -- the exit handler.

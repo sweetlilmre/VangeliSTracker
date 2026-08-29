@@ -52,8 +52,13 @@ const
 
 var
   Stub      : Pointer;   { DS:$4324 -> OldInt2F                             }
+  { NOT VTCtrl's `CtrlBlock`, which is the 768-byte structure itself at $461a.
+    This is a FAR POINTER TO IT, in this unit's implementation section and so not
+    public -- which is why the linker map cannot settle its address and the
+    relative check is all it gets. Two variables, one name, and the map lists the
+    other one. }
   CtrlBlock : Pointer;   { DS:$4328 -- what a client reads at ES:[DI-4]     }
-  SelfName  : String;    { DS:$432c -- what INT 2Fh answers with in ES:DI   }
+  SelfName  : String;    { DS:$0006 -- what INT 2Fh answers with in ES:DI   }
   SavedExit : Pointer;   { DS:$442c -- the ExitProc we displaced            }
 
 { --------------------------------------------------------------------------

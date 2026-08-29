@@ -129,7 +129,7 @@ type
     end;
 
 var
-  Cmd      : TVTCmd;      { DS:$0e38  VMT $009e -- 1000:05b2 }
+  Cmd      : TVTCmd;      { DS:$0ef6  VMT $009e -- 1000:05b2 }
 
   { A PLAIN `TCollection`, AND THE CONSTRUCTOR IS WHAT SETTLES IT. This was
     declared a `TStringCollection` on the strength of holding strings, and
@@ -165,7 +165,7 @@ var
 
     So `demovt/dgroup.py` has now found something no byte comparison and no call-site
     reading could: an object's TYPE, from the size word of its virtual method table. }
-  SongColl : TStringCollection; { DS:$0f82  VMT $07fe -- 1000:05c4 }
+  SongColl : TStringCollection; { DS:$1040  VMT $07fe -- 1000:05c4 }
 
 procedure SetVTFreq;
 procedure SetVTDevice;
