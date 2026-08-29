@@ -726,12 +726,14 @@ begin
     assignment, and BASM emits exactly what it is told. }
   asm
     MOV  DX, GUSPort  { 1723:03c4                                       }
-    MOV  AL, 0Bh      { 1723:03c8                                       }
+    MOV  AL, 0Bh      { 1723:03c8  [1.39b] "Turn off output, to avoid   }
+                      {             clicks." -- the reason for the whole }
+                      {             port write, and not in the bytes     }
     OUT  DX, AL       { 1723:03ca                                       }
   end;
-  SetGusRegister8(grReset, 0);    { 1723:03cf  hold in reset }
+  SetGusRegister8(grReset, 0);    { 1723:03cf  [1.39b] "Reset the GUS card." }
   GusDelay;                   { 1723:03d2 }
-  SetGusRegister8(grReset, 1);    { 1723:03d9  release       }
+  SetGusRegister8(grReset, 1);    { 1723:03d9  [1.39b] "DAC turned off."     }
   SetGusRegister8(grActiveVoices, $DF);  { 1723:03e0  32 voices     }
   SetGusRegister16(grDRAMLowIO, 0);   { 1723:03e7 }
   SetGusRegister8(grDRAMHighIO, 0);    { 1723:03ee }
@@ -759,7 +761,12 @@ begin
     end;
   end;  { 1723:043c  CMP V,$1F }
 
-  SetGusRegister8(grReset, 7);  { 1723:0446  DAC and IRQ on }
+  { **AND THE PORT WRITE THAT FOLLOWS IS THE OTHER HALF OF THE CLICK GUARD.**
+    The release pairs them explicitly: 0Bh at the top is "[1.39b] Turn off
+    output, to avoid clicks" and 0Ch at the bottom is "[1.39b] Turn on output".
+    The card is silenced before the reset and unsilenced after it, so the
+    transition itself is never audible. }
+  SetGusRegister8(grReset, 7);  { 1723:0446  [1.39b] "DAC turned on."  }
   asm                       { hand assembler, same as the $0B poke above:      }
     MOV  DX, GUSPort        { 1723:044f  port first, then the value            }
     MOV  AL, 0Ch            { 1723:0453                                       }

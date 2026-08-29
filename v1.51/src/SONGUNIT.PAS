@@ -526,10 +526,19 @@ const
   { +$59. TSongStatus. }
   msNotLoaded              = 0;  { 164b:0044 -- the initial state       }
   msOK                     = 1;  { 154d:09d7                            }
+  { **[1.39b] "End of file premature (lot's of modules have this)."** Which is
+    why it is a NON-FATAL state in the release's own grouping -- it lists 1 and 2
+    together under "Non fatal states" and 3 to 6 under "Fatal states". A module
+    that ends early is common enough that the author expected it and played the
+    file anyway. That is a fact about the corpus of modules in the wild, and
+    nothing in this image could have said it. }
   msFileTooShort           = 2;  { 154d:00c9 -- premature end of file   }
   msFileOpenError          = 3;  { not seen stored yet                  }
   msOutOfMemory            = 4;  { 154d:004a, 154d:0490                 }
+    { [1.39b] "There is not enough memory left. :-( Shouldn't happen." }
   msFileDamaged            = 5;  { 154d:09d7                            }
+  { [1.39b] "JMPlayer or ScreamTracker, for example." -- its own examples of a
+    format the program recognises and cannot play. }
   msFileFormatNotSupported = 6;  { 164b:003a -- recognised, not played  }
 
   { +$5d. TSongFileFormat. Only the values some routine stores are named, and
@@ -543,12 +552,14 @@ const
   mffUnknown     = 0;   { 14b9:088e }
   mffMod31M_K_   = 1;   { 154d:0c7f -- 'M.K.', four channels }
   mffMod31FLT4   = 2;   { 'FLT4' }
-  mffMod15       = 3;   { the 15-instrument SoundTracker fallback }
+  mffMod15       = 3;   { [1.39b] SoundTracker 15-instrument module }
   mffJMPlayer    = 4;   { 164b:0007 }
-  mffOktalizer   = 5;   { no loader in 1.31 }
+  mffOktalizer   = 5;   { [1.39b] 8 voices Oktalizer MOD (.OKT); no loader
+                          in 1.31 }
   mffComposer669 = 6;   { no loader in 1.31 }
-  mffWow8        = 7;   { 154d:0c6d -- '.WOW', eight channels }
-  mffFastTracker = 8;   { '6CHN' / '8CHN' }
+  mffWow8        = 7;   { 154d:0c6d -- [1.39b] "8 voices Grave" (.WOW) }
+  mffFastTracker = 8;   { '6CHN' / '8CHN' -- [1.39b] "6 or 8 voices Triton
+                          FastTracker" (.MOD) }
   { TWO MORE IN v1.51, AND BOTH ARE READ OFF THE STORE RATHER THAN COUNTED.
     Each new loader writes its own value into FileFormat before it tests its
     magic, which is this tree's loader contract, so the value is the first
