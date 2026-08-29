@@ -359,18 +359,50 @@ var
   ours came out at $39fa, and with everything before this unit accounted for the block
   had to start at $3b32. $4302 - $3b32 is exactly $7D0.
 
-  **THE SIZE IS 1.31's, NOT THE RELEASE'S.** `LIB/SOUNDDEV.PAS` has `DevStkSize = 1000`;
-  this is 2000, read off the two addresses. A count is data, and the release is worth
-  nothing for data -- the same rule that made `NumBuffers` 1 rather than 3 and
-  `MaxOutputFreq` 44000 rather than 45000.
+  ~~THE SIZE IS 1.31's, NOT THE RELEASE'S~~ -- **IT IS 1000, AND THE RELEASE WAS RIGHT.**
+  The note said 2000 "read off the two addresses", and the two addresses only bound the
+  DISTANCE from DevStack to SavedSS; they say nothing about how that distance is
+  divided. 1bff:102b is what divides it: `MOV SP,6274`, and $6274 is DevStack + 998,
+  which is the top of a **1000-byte** stack less the two bytes a stack pointer starts
+  below its top. A 2000-byte stack's top-less-two is $665c.
+
+  SO A SECOND 1000-BYTE VARIABLE FOLLOWS IT, unnamed, because the total to SavedSS is
+  fixed and only half of it is the stack. Declared as filler below.
+
+  **AND THE RULE THAT PRODUCED THE WRONG SIZE IS STILL RIGHT** -- a count is data and
+  the release is worth nothing for data. What went wrong is that this was not a count
+  read from the release and rejected; it was a count INFERRED from a span, with the
+  release's own answer sitting there disagreeing. A disagreement with the release is a
+  reason to find the instruction that settles it, not to close the question.
 
   The order below is the original's, and it was wrong in four places: the buffer-queue
   group was declared FIRST and belongs last, and DMABuffer/DMABufferPtr and
   DMABufferYet/DMABufferEnd were each the wrong way round.
   ========================================================================== }
+const
+  { **THE RELEASE'S OWN VALUE**, `LIB/SOUNDDEV.PAS`'s `DevStkSize = 1000`, restored
+    after 1bff:102b confirmed it. }
+  DevStkSize = 1000;
+
 var
-  { $3b32..$4301 -- the poll's own stack. }
-  DevStack          : array[1..2000] of Byte;
+  { **TWO BYTES AHEAD OF THE STACK, AND THE ARITHMETIC CLOSES ON THEM.** Three numbers
+    fix this block's head exactly and none of them is a guess: SavedSS is at $665c,
+    1bff:102b sets SP to $6274, and a stack pointer starts two below its top -- so
+    DevStack begins at $6274 - 998 = $5e8e, and $665c - $5e8e is 1998, not 2000.
+    A thousand of those are the stack; 998 are the filler below; and the two the block
+    is short are these, before it. Unnamed, like the filler. }
+  Fill5E8C          : Word;
+
+  { The poll's own stack, 1000 bytes -- see the note above and 1bff:102b. }
+  DevStack          : array[1..DevStkSize] of Byte;
+
+  { **UNNAMED, AND ONLY ITS SIZE IS MEASURED.** DevStack is 1000 bytes and SavedSS is
+    2000 bytes past its start, so a thousand bytes sit between them that nothing in
+    the transcribed tree reads or writes. Declared as filler rather than folded into
+    the stack, because the stack's size is settled by an instruction and this is not.
+    See `filler-is-not-a-finding` in the kit: a filler beside something measured is
+    the next thing to identify, not background. }
+  Fill3F1A          : array[1..DevStkSize - 2] of Byte;
 
   { $4302/$4304 -- the caller's stack, saved across the poll, because the poll
     switches to the stack above. The release calls them `DevSS` and `DevSP`. }

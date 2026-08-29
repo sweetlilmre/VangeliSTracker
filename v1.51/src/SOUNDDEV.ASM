@@ -51,6 +51,7 @@
                 EXTRN   ActualBuffer    : DWORD
                 EXTRN   BytesPerSample  : BYTE
                 EXTRN   ClockAccum      : WORD
+                EXTRN   DevStack        : BYTE
                 EXTRN   DMABuffer       : DWORD
                 EXTRN   DMABufferPtr    : DWORD
                 EXTRN   DMABufferSize   : WORD
@@ -127,7 +128,11 @@ SharedPoll:
         MOV     [SavedSP],SP              ; 1023
         MOV     AX,DS                     ; 1027
         MOV     SS,AX                     ; 1029  ours is in DGROUP
-        MOV     SP,3F1Ah                  ; 102b  its top
+; A HARDCODED ADDRESS COPIED FROM v1.31b, AND RIGHT THERE BY COINCIDENCE ONLY.
+; 3F1Ah was where that build's stack ended; this build's is elsewhere, and the
+; instruction assembles identically either way. Computed from the symbol now --
+; see `transcribe-the-meaning-not-the-constant` in the kit.
+        MOV     SP,OFFSET DevStack + 998  ; 102b  its top, less two
 
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
         MOV     [DeviceIdling],AL         ; 1030  clear before the work

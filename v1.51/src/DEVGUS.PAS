@@ -81,8 +81,13 @@ const
     DS:$0020, and nothing in the segment touches what lies between. Declared as
     filler for the same reason Fill005A above is: it keeps the SIZE honest and
     says plainly that the name is missing. }
-  Fill001B : LongInt = 0;
-  Fill001F : Byte    = 0;
+  { **A BYTE FIRST, THEN THE LONGINT**, and the order is measured rather than
+    chosen: `PollBusy` is at $0020 -- 106e:0029, 0032 and 0055 all name it -- and
+    `Busy` is at $001A, so the five bytes between them start at $001B. Declared
+    LongInt-first the compiler word-aligns it to $001C and everything after lands one
+    byte high, which is exactly the three operands that were wrong. }
+  Fill001B : Byte    = 0;
+  Fill001C : LongInt = 0;
 
   { NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
     handler's Busy cannot serve, because the whole point of the change is that

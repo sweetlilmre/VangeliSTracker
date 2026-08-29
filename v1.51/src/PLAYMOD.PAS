@@ -2199,8 +2199,13 @@ begin
     { 0e4a..0e6f -- AND THESE TWO ARE COMMON TO BOTH PATHS. The software branch's
       `JMP` at 0e22 lands on 0e4a, not past it, which is what says so; written
       inside the GUS branch they would be jumped over. }
-    if RawPtr^.Volume >= $80 then                    { 0e4a..0e54            }
-      RawPtr^.Volume := $80;                         { 0e55..0e5d            }
+    { **$7F IN v1.51, $80 IN 1.31b** -- 12ce:10bd stores 7F. One less than the power
+      of two, which is what a clamp to "the largest value that fits" looks like when
+      the consumer treats the top bit as a sign. }
+    { **THE TEST IS $80 AND THE STORE IS $7F**, which is not a slip: the clamp admits
+      everything below $80 and pins the rest at the largest value that is not $80. }
+    if RawPtr^.Volume >= $80 then                    { 10b3..10bd            }
+      RawPtr^.Volume := $7F;                         { 10be..10c6            }
 
     { 0e5e..0e6f -- the master volume, and HAND-WRITTEN. Two tells: the pointer
       goes into SI, where Turbo Pascal's code generator always uses DI, and the
@@ -2333,11 +2338,14 @@ begin
       THE VOLUME IS SCALED BY UserVols, so what a client reads is what it would HEAR
       rather than what the tune asked for. `MUL DX` with DX loaded first puts
       UserVols on the right of the multiply. }
-    with WideRing[WideSlot, ChanIdx] do          { 11b1..11c9                     }
+    { `TmpVal` AND NOT `ChanIdx` -- 12ce:11b1 loads [0330], which is this loop's own
+      control variable, not ProcessNewNote's. Two Word globals a few bytes apart doing
+      the same job in different routines. }
+    with WideRing[WideSlot, TmpVal] do           { 11b1..11c9                     }
     begin
       Period     := CanalPtr^.RealPeriod;        { 11ca..11d7                     }
       Instrument := CanalPtr^.Note.Instrument;   { 11d8..11e5                     }
-      Volume     := CanalPtr^.Volume * UserVols[ChanIdx] shr 7;  { 11e6..1207     }
+      Volume     := CanalPtr^.Volume * UserVols[TmpVal] shr 7;   { 11e6..1207     }
 
       { AND CLAMPED, STILL INSIDE THE `with` -- 12ce:1208 reloads [BP-6] rather than
         the channel pointer, so the test is on the entry just written and not on the
@@ -2375,7 +2383,8 @@ begin
       the literal `PUSH 0` at 127a is what says so rather than anything in the docs. }
     if CanalPtr^.DoRetrig then                       { 124b..1255            }
       if CanalPtr^.Instrument <> nil then            { 1256..1263            }
-        SetNewSample(ChanIdx, RawPtr^,
+        { `TmpVal` again -- 12ce:1265 loads [0330], the volume loop's own counter. }
+        SetNewSample(TmpVal, RawPtr^,
                      CanalPtr^.Instrument, 0);       { 1264..127e            }
 
     { 0f2a..0f56 -- and whether this channel is allowed to sound at all.
@@ -2405,10 +2414,15 @@ begin
                   PlayingSong^.ChannelPan[TmpVal]);  { 12fa..1315            }
 
     { 0fb4..0fe0 -- and hold the period inside ProTracker's range, 57 to 1712. }
-    if CanalPtr^.Period < $39 then                   { 0fb4..0fbe            }
-      CanalPtr^.Period := $39                        { 0fbf..0fca            }
-    else if CanalPtr^.Period > $6B0 then             { 0fcb..0fd6            }
-      CanalPtr^.Period := $6B0                       { 0fd7..0fe0            }
+    { **$1F AND $1FFF IN v1.51, WHERE 1.31b HAS PROTRACKER'S 57 AND 1712.** The
+      widened bounds are the same pair the RealPeriod clamp uses and are there for the
+      same reason: an arpeggio that divides and an S3M loader that supplies arbitrary
+      periods both produce values ProTracker's range would reject. 1.31b could afford
+      the tight bounds because every period came out of a note table. }
+    if CanalPtr^.Period < $1F then                   { 131a..1324            }
+      CanalPtr^.Period := $1F                        { 1325..1330            }
+    else if CanalPtr^.Period > $1FFF then            { 1331..133c            }
+      CanalPtr^.Period := $1FFF                      { 133d..1346            }
   end;                                               { 0fe1..0feb  for end   }
 
   NullProcedure(0, 0, 0);                            { 0fec..0ff4            }

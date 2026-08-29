@@ -622,18 +622,23 @@ begin
           TickSnapshot := Ticks;                    { 1000:029b  $0bca := $0bc8 }
           LastTick := 0;                          { 1000:02a1  $0058 := 0     }
           DriverTicks := 0;                         { 1000:02a6  $0c78 := 0     }
+
+          { ~~AFTER THE CASE~~ -- **INSIDE THIS ARM, AND FOUR JUMP DISPLACEMENTS SAY
+            SO.** Placed after the case, every arm's exit jumps to 1000:02ab, the
+            start of these two statements; the original's four arms jump to 02b6,
+            past them. Eleven bytes, four `eb` displacements, and no other byte in the
+            segment different -- so the code was right and only its BRACKET was wrong.
+
+            A jump that lands eleven bytes early is not a missing eleven bytes. It is
+            the same eleven bytes on the wrong side of an `end`.
+
+            THE PAIR HAS TO BE SET TOGETHER -- `XOR AX,AX / MOV [02e8],AX /
+            MOV word [02ea],1`. One slot of daylight is the ring's empty state, so
+            zeroing both would make PlayMod's full test fire on the first tick. }
+          RingSlot  := 0;                         { 1000:02ab              }
+          FlushSlot := 1;                         { 1000:02b0              }
         end;
   end;
-
-  { NEW IN v1.51 -- the GUS event ring is re-seeded on the way out of the dispatcher,
-    AFTER the case rather than inside any arm: 1000:02ab follows the last arm's store
-    to $0c78 and precedes the `POP DS` below, so every call passes through it.
-
-    THE PAIR HAS TO BE SET TOGETHER -- `XOR AX,AX / MOV [02e8],AX / MOV word
-    [02ea],1`. One slot of daylight is the ring's empty state, so zeroing both would
-    make PlayMod's full test fire on the first tick and silence the player. }
-  RingSlot  := 0;                                 { 1000:02ab              }
-  FlushSlot := 1;                                 { 1000:02b0              }
 
   asm
     POP  DS                { 1000:02ab                                       }
@@ -751,7 +756,11 @@ begin
     census.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
     established 1ba1:0fd5 as FillChar. The pushes are dest, count, VALUE:
     DS:$1208 for eight bytes of whatever $08ba holds. }
-  FillChar(UserVols, 8, VtVolume);                  { 1000:0311..0320 }
+  { **THE FOURTH LITERAL EIGHT.** 1000:0372 pushes $10, not 8 -- `UserVols` is
+    `TVolumes`, which follows the channel count, and this is the only site that wrote
+    the length out rather than asking for it. Written as SizeOf so a fifth cannot
+    happen here. }
+  FillChar(UserVols, SizeOf(UserVols), VtVolume);   { 1000:036c..037b }
   Song.Init;                     { 1000:032a }
   Song.SetInsidePath(Params);                   { 1000:033a }
 

@@ -125,15 +125,22 @@ type
   TSampleBytes = array[0..65520] of ShortInt;
 
 var
+
+  { DS:$491a. Set to 1 by the recogniser and raised by ReadPatterns as it
+    meets channels; the recogniser then narrows Song.NumChannels to it, so a
+    module that declares sixteen channels and uses four reports four. }
+  { **DS:$491a, AND IT IS DECLARED FIRST.** 1664:02ab reads it at $491a and 1664:0014
+    adds into a LongInt at $491c/$491e, which is ModBase -- so the Word comes ahead of
+    the LongInt in this unit's block. Declared the other way round it lands at $491e
+    and ModBase at $491a, and eleven operands across three routines are wrong with
+    nothing else to say why. }
+  ChansUsed : Word;
+
   { DS:$491c. `SeekPara` adds a paragraph count to it, so it is the module's
     own origin -- the stream position the recogniser saw before it seeked past
     the header. A plain `var`: it is in the uninitialised half. }
   ModBase : LongInt;
 
-  { DS:$491a. Set to 1 by the recogniser and raised by ReadPatterns as it
-    meets channels; the recogniser then narrows Song.NumChannels to it, so a
-    module that declares sixteen channels and uses four reports four. }
-  ChansUsed : Word;
 
   { THE SAME TWO-SUBSCRIPT VIEW STMLOADE LAYS OVER VTNotes' FLAT TABLE, and
     this unit needs it for the same reason: 0250 is
