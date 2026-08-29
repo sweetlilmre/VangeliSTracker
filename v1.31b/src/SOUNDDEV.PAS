@@ -351,26 +351,46 @@ var
 { ==========================================================================
   THIS UNIT'S DGROUP VARIABLE BLOCK, $3b32..$4323, IN ADDRESS ORDER.
 
-  **`DevStack` IS 2,000 BYTES AND WAS MISSING ENTIRELY**, which is most of the 2,350
-  bytes our whole DGROUP was short. It is the private stack the shared poll switches to,
-  and `SavedSS`/`SavedSP` -- the release's `DevSS`/`DevSP` -- are the caller's stack saved
-  across that switch, which is why the three belong together and why the stack comes
-  first. `demovt/linkcmp.py` is what measured it: the original's `SavedSS` is at $4302 and
-  ours came out at $39fa, and with everything before this unit accounted for the block
-  had to start at $3b32. $4302 - $3b32 is exactly $7D0.
+  **`DevStack` IS 1,000 BYTES AND THERE ARE TWO OF THEM.** It was missing
+  entirely once, which is most of the 2,350 bytes our DGROUP was short, and the
+  block that replaced it was declared as one array of 2000. That was wrong, and
+  the comment two lines below in this unit's own assembler is what made it look
+  right.
 
-  **THE SIZE IS 1.31's, NOT THE RELEASE'S.** `LIB/SOUNDDEV.PAS` has `DevStkSize = 1000`;
-  this is 2000, read off the two addresses. A count is data, and the release is worth
-  nothing for data -- the same rule that made `NumBuffers` 1 rather than 3 and
-  `MaxOutputFreq` 44000 rather than 45000.
+  SOUNDDEV.ASM WRITES `MOV SP,3F1Ah` AND CALLS IT "ITS TOP". It is not the top:
+  the block runs $3b32..$4301 and $3b32 + $7D0 is $4302. $3F1A is exactly 1000
+  bytes in, and A STACK GROWS DOWNWARDS -- so the thousand bytes BELOW $3F1A are
+  the stack, and the thousand above it are something else.
 
-  The order below is the original's, and it was wrong in four places: the buffer-queue
-  group was declared FIRST and belongs last, and DMABuffer/DMABufferPtr and
-  DMABufferYet/DMABufferEnd were each the wrong way round.
+  THE SOMETHING ELSE IS A SECOND STACK, AND DEVGUS USES IT. `1084:0021` is
+  `MOV SP,OFFSET SoundDevices.SavedSS` -- SP set to $4302, growing down through
+  $3F1A..$4301. So this unit's poll runs on the lower thousand behind its own
+  guard, and DevGus's handler runs on the upper thousand behind another. Neither
+  block's own address appears in any instruction: each is reached through the
+  address of the thing ABOVE it, which is why the upper one looked dead.
+
+  THAT MAKES THE RELEASE RIGHT ABOUT THE SIZE AFTER ALL. `LIB/SOUNDDEV.PAS` has
+  `DevStkSize = 1000` and this file overruled it from a span that only bounded
+  the distance between two ends. The span is 2000 because there are two blocks
+  of a thousand.
+
+  The order below is the original's, and it was wrong in four places: the
+  buffer-queue group was declared FIRST and belongs last, and
+  DMABuffer/DMABufferPtr and DMABufferYet/DMABufferEnd were each the wrong way
+  round.
   ========================================================================== }
+const
+  { The release's own value, restored -- see above. }
+  DevStkSize = 1000;
+
 var
-  { $3b32..$4301 -- the poll's own stack. }
-  DevStack          : array[1..2000] of Byte;
+  { $3b32..$3f19 -- this unit's poll switches to this one, at 1a17:102b. }
+  DevStack          : array[1..DevStkSize] of Byte;
+
+  { $3f1a..$4301 -- and DevGus's handler switches to this one, at 1084:0021,
+    by loading the address of SavedSS below and letting the stack grow down
+    into it. Its own address is in no instruction anywhere. }
+  PollStack         : array[1..DevStkSize] of Byte;
 
   { $4302/$4304 -- the caller's stack, saved across the poll, because the poll
     switches to the stack above. The release calls them `DevSS` and `DevSP`. }

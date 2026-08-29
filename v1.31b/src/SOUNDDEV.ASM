@@ -48,6 +48,12 @@
 ; Every one of these is a linker fixup, so verify.py cannot check them; they
 ; are checked by reading, and by risk 1 whenever the link happens.
                 .DATA
+; The poll's own stack, and its size. 3F1Ah was written here as a literal and
+; called "its top"; it is the top of the LOWER of two thousand-byte blocks --
+; see SOUNDDEV.PAS. StackSize is the release's own name and value.
+StackSize       EQU     1000
+
+                EXTRN   DevStack        : BYTE
                 EXTRN   ActualBuffer    : DWORD
                 EXTRN   BytesPerSample  : BYTE
                 EXTRN   ClockAccum      : WORD
@@ -109,6 +115,7 @@
 ; One byte, and it was the last difference in the whole module.
                 DB      0
                 PUBLIC  SharedPoll
+
 SharedPoll:
         PUSHA                             ; 1008  save everything
         PUSH    ES                        ; 1009
@@ -127,7 +134,14 @@ SharedPoll:
         MOV     [SavedSP],SP              ; 1023
         MOV     AX,DS                     ; 1027
         MOV     SS,AX                     ; 1029  ours is in DGROUP
-        MOV     SP,3F1Ah                  ; 102b  its top
+; StackSize IS THE RELEASE'S OWN NAME AND ITS OWN VALUE -- LIB/SOUNDDEV.ASM
+; declares StackSize EQU 1000 and reaches the stack's top the same way. TASM
+; cannot see the Pascal DevStkSize, so it is declared here as the release
+; declares it.
+;
+; AND 3F1Ah WAS NOT "ITS TOP" -- that comment was wrong and it is what kept
+; DevStack declared at 2000 bytes. See the note in SOUNDDEV.PAS.
+        MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
