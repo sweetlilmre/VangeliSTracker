@@ -475,6 +475,20 @@ begin
                                         $E : Note.Command := mcPattDelay;
                                         $F : Note.Command := mcFunkIt;
                                       else
+                                        { **$50 IS 80, AND THAT IS PAST THE END OF
+                                          THE TYPE.** `mcLast` is 36 and the tick
+                                          dispatch is `array[mcNone..mcLast]`
+                                          behind a guard that admits 0..34, so any
+                                          command this arm produces is rejected
+                                          before it reaches a handler. It is the
+                                          `else` of the S3M extended-command case:
+                                          an unrecognised Sxy becomes a value
+                                          nothing can act on.
+
+                                          NO NAME EXISTS FOR IT. The release has no
+                                          counterpart -- this arm is v1.51's own --
+                                          and 80 is not an ordinal of any
+                                          enumeration here. Left as measured. }
                                         Note.Command := TModCommand((Note.Parameter shr 4) + $50)
                                       end;
                                       Note.Parameter := Note.Parameter and $0F
@@ -485,7 +499,12 @@ begin
                                       Note.Command := mcNone;
                               $18 : Note.Command := mcNPI1;
                             else
-                              Note.Command := TModCommand(Blk[k] + $24)
+                              { $24 IS Ord(mcLast), AND THE RELEASE WRITES IT THAT
+                                WAY: `TModCommand(ORD(mcLast) + Patt[i])`. This
+                                unit's STM counterpart already does. The operand
+                                ORDER stays as measured -- a named constant is
+                                free, a swapped addition is not. }
+                              Note.Command := TModCommand(Blk[k] + Ord(mcLast))
                             end;
 
 
