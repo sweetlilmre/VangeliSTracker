@@ -163,7 +163,31 @@ var
     VoicesChanged is the release's name and the release's is a BOOLEAN. It is
     kept as a Byte here because the code tests it as `<> 0` and stores 1, and
     rewriting those as `then`/`True` is a codegen change, not a rename. }
-  LastVoiceStart : array[0..MaxVoice] of LongInt;  { DS:$371a  filled with $FF }
+  { **THE SEVEN ADDRESSES BELOW ARE STALE, AND NOTHING HERE CAN CORRECT THEM.**
+    They are consistent with each other -- $371a, +128, +128, +128, +32, +128,
+    +32 lands on every one of them -- and consistent is all they are.
+
+    THEY ARE ALSO UNANCHORED, WHICH IS RARE. A `var` holds no bytes in the image,
+    so no comparison sees it; and none of these is public, so the linker map does
+    not name one either. Of this tree's 289 address claims, nine are in that
+    position and seven of them are here.
+
+    THE LINK ORDER IS WHAT CATCHES THEM. Every unit's variables sit above the
+    variables of every unit linked before it -- eight anchored units agree, with
+    no exception:
+
+        DemoVT $0d16   VTCmd $0ef6   PlayMod $12b8   VTCtrl $461a
+        VTNotes $4920  Heaps $5d08   VTShell $5d38   SoundDevices $665c
+
+    GUS links at position 19, between VTNotes at 17 and Heaps at 20, so its
+    variables must start above $4920 and end below $5d08. $371a is impossible.
+
+    WHAT THE TRUE ADDRESSES ARE IS STILL OPEN. Computing them needs every
+    intervening unit's variable sizes, and SongElements alone has nine
+    declarations this transcription cannot size. The addresses are left as they
+    stand rather than replaced with a guess -- a wrong number that is admitted is
+    worth more than a wrong number that is not. }
+  LastVoiceStart : array[0..MaxVoice] of LongInt;  { DS:$371a  STALE, see above }
   LastLoopStart  : array[0..MaxVoice] of LongInt;  { DS:$379a  filled with $FE }
   LastVoiceEnd   : array[0..MaxVoice] of LongInt;  { DS:$381a  filled with $FF }
   LastVolumes    : array[0..MaxVoice] of Byte;     { DS:$389a  filled with $FF }

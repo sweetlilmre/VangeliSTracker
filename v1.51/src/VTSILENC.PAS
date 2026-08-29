@@ -144,7 +144,13 @@ var
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
   SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
-  WasOn  : Boolean;     { DS:$0e36 }
+  { **STALE, AND UNANCHORED.** This unit links at position 4 and VTCmd at 2, so
+    this variable must sit above VTCmd's $0ef6. It does not. The claim is
+    consistent with nothing else in the file -- it is the only variable here with
+    an address -- and no instrument in the kit can reach it: a variable is absent
+    from the image, and this one is not public, so the linker map is silent too.
+    Left as it stands and marked, rather than replaced with a guess. }
+  WasOn  : Boolean;     { DS:$0e36  STALE }
 
 { ~~Flag0BC7, Flag0BBD, Flag0BBF, Flag0BBC~~ -- ALL FOUR GONE, and all four were
   SoundDevices' own, in its CONSTANT-region block at $0bbc..$0bc7. The note here said
