@@ -136,6 +136,35 @@ type
 
   TModCommand = Byte;
 
+{ **WHAT A NOTE'S FOUR FIELDS MEAN, IN THE RELEASE'S OWN WORDS.** None of this
+  is in the image: a range, a unit and a sentinel are conventions the code obeys
+  without ever stating them.
+
+    Period      "[1.39b] A number in the range 0..2047 which states the period of
+                the note in units of 1/3584000 per sample. (this is a somewhat
+                empyric number. If anyone knows the exact Amiga number, please,
+                tell us). A zero means to keep using the same period used
+                before."
+
+    Instrument  "[1.39b] A number in range 0..63 meaning the number of the
+                instrument which will be used for the note. A zero means use the
+                same."
+
+    Command     the effect, from the mc* list further down this unit.
+
+    Parameter   "[1.39b] A parameter for the command. Its meaning differs from
+                one command to another. Sometimes each nibble is considered as a
+                different parameter."
+
+  TWO ZEROES THAT MEAN "UNCHANGED" ARE THE PART WORTH HAVING. A zero period and
+  a zero instrument are not silence and not instrument zero -- they say carry the
+  previous value forward, which is why a pattern can be mostly empty and still
+  play. An implementation treating either as a value would sound wrong in a way
+  no byte comparison could show.
+
+  AND THE PERIOD UNIT IS ADMITTED APPROXIMATE by its own author, who asks for the
+  exact Amiga figure. Kept as written, because this program's timing derives
+  from the number it actually used. }
   TFullNote = record
     Instrument : Byte;          { +$00                                       }
     Period     : Word;          { +$01                                       }

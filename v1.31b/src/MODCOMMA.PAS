@@ -344,6 +344,32 @@ end;
   exactly: `PROCEDURE TickArpeggio; ASSEMBLER;` names no parameter, so Turbo
   Pascal gives it no prologue at all and the channel arrives in SI.
 
+  **AND THE RELEASE STATES THAT CONVENTION FOR THE WHOLE GROUP.** Over these
+  routines LIB/MODCOMMA.PAS says "[1.39b] Command routines, for the start of a
+  note and for each tick", then "[1.39b] The tick routines are entered with SI
+  pointing at the relevant TCanal." One sentence covering every handler here,
+  written by the author, where this tree derived it per routine from the
+  prologue each one lacks. The two agree.
+
+  **SO EVERY `[SI+n]` IN THIS FILE IS A TCanal FIELD, AND THIS IS THE KEY** --
+  this version's own offsets, which are not v1.51's past +$13:
+
+      +$00  Note        the note being played (TFullNote, 6 bytes)
+      +$06  Instrument  pointer to the sample descriptor
+      +$0a  Volume
+      +$0b  Period      what the mixer turns into a step
+      +$0d  RealPeriod  Period after the instrument's tuning
+      +$0f  PeriodIncr  portamento step; SIGNED, the sign is the direction
+      +$11  PeriodDest  portamento target
+      +$13  ArpCt       arpeggio phase
+      +$1a  VibWave     vibrato waveform and state -- NONE of these five is
+      +$1b  VibPos      confirmed by an instruction, because TickVibrato is a
+      +$1c  VibWidth    stub here. They are placed by their neighbours, and a
+      +$1d  VibDepth    reader should treat them as the best available reading
+      +$1e  VibReset    rather than as measurement.
+
+  A handler may assume SI and nothing else; AX, BX, CX and DX are scratch.
+
   `@@Fin` IS THE EPILOGUE. Both `JMP @@Fin`s land on 142f:00cb, which is the `RET`
   the compiler appends -- there is no instruction of our own at that label. Written
   with a written `RET` instead, TP would emit a second one.
