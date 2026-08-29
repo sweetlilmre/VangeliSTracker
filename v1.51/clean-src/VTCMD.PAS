@@ -57,13 +57,13 @@
 
   THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM:
 
-AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
-FExpand      x4   Dir, ModPath, DefaultPath, Path
-FSplit       x2
-FindFirst    x1   and 1b6f:003e FindNext x1
-LocateDevice x1   from SetVTDevice at 0000
-SetDevice    x1   also SetVTDevice
-ChangeSamplingRate x1  from SetVTFreq at 0038
+ AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
+ FExpand      x4   Dir, ModPath, DefaultPath, Path
+ FSplit       x2
+ FindFirst    x1   and 1b6f:003e FindNext x1
+ LocateDevice x1   from SetVTDevice at 0000
+ SetDevice    x1   also SetVTDevice
+ ChangeSamplingRate x1  from SetVTFreq at 0038
 
   AND `1ba1:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
   `CmdInitFreq` has `VAL(s, i, r);` written TWICE in a row, plainly by accident; 1.31 has
@@ -129,7 +129,7 @@ type
     end;
 
 var
-  Cmd      : TVTCmd;      { DS:$0ef6  VMT $009e -- 1000:05b2 }
+  Cmd      : TVTCmd;      { VMT $009e -- 1000:05b2 }
 
   { A PLAIN `TCollection`, AND THE CONSTRUCTOR IS WHAT SETTLES IT. This was
     declared a `TStringCollection` on the strength of holding strings, and
@@ -165,7 +165,7 @@ var
 
     So `demovt/dgroup.py` has now found something no byte comparison and no call-site
     reading could: an object's TYPE, from the size word of its virtual method table. }
-  SongColl : TStringCollection; { DS:$1040  VMT $07fe -- 1000:05c4 }
+  SongColl : TStringCollection; { VMT $07fe -- 1000:05c4 }
 
 procedure SetVTFreq;
 procedure SetVTDevice;
@@ -191,7 +191,7 @@ uses
 
 
 { ===========================================================================
-and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
+ and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
   both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
   count that `census.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
@@ -481,7 +481,7 @@ begin
 end;
 
 
-{and 109c:04ca -- one port and one IRQ for both cards, because only one of
+{ and 109c:04ca -- one port and one IRQ for both cards, because only one of
   them can be present. `off` at 0518's neighbour is the odd one out; see CmdModOffset. }
 procedure CmdSetPort(s : String);
 var
@@ -751,7 +751,7 @@ end;
 
 
 { ===========================================================================
-onwards -- THE FIVE METHODS, in the release's own implementation order:
+ onwards -- THE FIVE METHODS, in the release's own implementation order:
   `TVTCmd`'s override first, then `TVTCmdSwitch`'s four. That order is odd -- the
   descendant before its parent -- and it is the release's, and the original agrees.
   =========================================================================== }
@@ -868,7 +868,7 @@ begin
 end;
 
 
-{and 109c:0c9d -- save and restore the four settings a shelled-to program
+{ and 109c:0c9d -- save and restore the four settings a shelled-to program
   might change. `PUSH BP` with no frame, because a `var` parameter needs no copy, and
   `RETF 8` for Self plus the pointer.
 

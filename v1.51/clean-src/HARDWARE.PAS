@@ -64,7 +64,7 @@ function  SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer; far;
   as given; the minus-one the hardware wants is applied here. }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
 
-{/ 1b24:02f0 }
+{ / 1b24:02f0 }
 { Channel IS A BYTE, and the caller settles it: 1a17:06ea loads it with
   `MOV AL,[DMAChannel] / PUSH AX` and NO zero-extension, which Turbo Pascal
   only emits when the parameter is byte-sized. Declared Word, the caller gains
@@ -94,7 +94,7 @@ type
   end;
 
 const
-  { DS:$0c10 and DS:$0c18. The page register for a DMA channel is not at a
+  { and DS:$0c18. The page register for a DMA channel is not at a
     port you can compute -- IBM scattered them -- so both controllers need a
     lookup. These are the standard PC assignments.
 
@@ -147,11 +147,11 @@ let an IRQ through.
 procedure EnableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then
-    Port[$21] := Port[$21] and not (1 shl IRQ)    {.. 1b24:001b }
+    Port[$21] := Port[$21] and not (1 shl IRQ)    { .. 1b24:001b }
   else
   begin
-    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  {.. 0038 }
-    Port[$21] := Port[$21] and not (1 shl 2)      {-> AND AL,0FBh }
+    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  { .. 0038 }
+    Port[$21] := Port[$21] and not (1 shl 2)      { -> AND AL,0FBh }
   end
 end;
 
@@ -167,9 +167,9 @@ shut an IRQ out.
 procedure DisableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then
-    Port[$21] := Port[$21] or (1 shl IRQ)         {.. 1b24:005d }
+    Port[$21] := Port[$21] or (1 shl IRQ)         { .. 1b24:005d }
   else
-    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))   {.. 1b24:0078 }
+    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))   { .. 1b24:0078 }
 end;
 
 { --------------------------------------------------------------------------
@@ -191,7 +191,7 @@ begin
   if IRQ < 8 then
     IRQState := (Port[$21] and (1 shl IRQ)) = 0
   else
-    IRQState := ((Port[$21] and 4) = 0) and     {the cascade }
+    IRQState := ((Port[$21] and 4) = 0) and     { the cascade }
                   ((Port[$A1] and (1 shl (IRQ - 8))) = 0)
 end;
 
@@ -222,9 +222,9 @@ var
   j : Word;              { [BP-$a] }
 begin
   if IRQ < 8 then
-    j := IRQ + 8                                {INT $08..$0F }
+    j := IRQ + 8                                { INT $08..$0F }
   else
-    j := IRQ + $68;                             {INT $70..$77 }
+    j := IRQ + $68;                             { INT $70..$77 }
 
   GetIntVec(j, p);
   SetIntVec(j, Vec);
@@ -256,45 +256,45 @@ program a 16-bit DMA channel. FRAMELESS.
   -------------------------------------------------------------------------- }
 procedure DMA16Set; assembler;
 asm
-  AND  AH, 3             {DMA 4..7 -> 0..3 on this controller   }
-  SHR  CL, 1             {CL:BX >> 1 -- 16-bit DMA counts words }
+  AND  AH, 3             { DMA 4..7 -> 0..3 on this controller   }
+  SHR  CL, 1             { CL:BX >> 1 -- 16-bit DMA counts words }
   RCR  BX, 1
-  ADD  CL, CL            {... but the page is NOT halved        }
+  ADD  CL, CL            { ... but the page is NOT halved        }
   MOV  AL, AH
-  ADD  AL, 4             {bit 2 = set mask                      }
-  OUT  0D4h, AL          {mask the channel                      }
+  ADD  AL, 4             { bit 2 = set mask                      }
+  OUT  0D4h, AL          { mask the channel                      }
   XOR  AL, AL
-  OUT  0D8h, AL          {clear the byte-pointer flip-flop      }
+  OUT  0D8h, AL          { clear the byte-pointer flip-flop      }
   MOV  AL, AH
-  ADD  AL, CH            {channel + mode                        }
-  OUT  0D6h, AL          {mode register                         }
+  ADD  AL, CH            { channel + mode                        }
+  OUT  0D6h, AL          { mode register                         }
   XOR  DH, DH
   MOV  DL, AH
   ADD  DX, DX
-  ADD  DX, DX            {channel * 4                           }
-  ADD  DX, 00C0h         {the address port                      }
+  ADD  DX, DX            { channel * 4                           }
+  ADD  DX, 00C0h         { the address port                      }
   MOV  AL, BL
-  OUT  DX, AL            {address, low                          }
+  OUT  DX, AL            { address, low                          }
   MOV  AL, BH
-  OUT  DX, AL            {address, high                         }
+  OUT  DX, AL            { address, high                         }
   PUSH DX
   MOV  DL, AH
-  ADD  DX, DX            {channel * 2                           }
-  MOV  BX, OFFSET Page16 {was MOV BX,0C10h                      }
+  ADD  DX, DX            { channel * 2                           }
+  MOV  BX, OFFSET Page16 { was MOV BX,0C10h                      }
   ADD  BX, DX
-  MOV  DX, [BX]          {this channel's page port              }
+  MOV  DX, [BX]          { this channel's page port              }
   MOV  AL, CL
   OUT  DX, AL
   POP  DX
   INC  DX
-  INC  DX                {the count port is address + 2         }
+  INC  DX                { the count port is address + 2         }
   MOV  BX, SI
   MOV  AL, BL
-  OUT  DX, AL            {count, low                            }
+  OUT  DX, AL            { count, low                            }
   MOV  AL, BH
-  OUT  DX, AL            {count, high                           }
+  OUT  DX, AL            { count, high                           }
   MOV  AL, AH
-  OUT  0D4h, AL          {unmask -- bit 2 clear                 }
+  OUT  0D4h, AL          { unmask -- bit 2 clear                 }
 end;
 
 { --------------------------------------------------------------------------
@@ -310,38 +310,38 @@ procedure DMA8Set; assembler;
 asm
   MOV  AL, AH
   ADD  AL, 4
-  OUT  0Ah, AL           {mask the channel                      }
+  OUT  0Ah, AL           { mask the channel                      }
   XOR  AL, AL
-  OUT  0Ch, AL           {clear the flip-flop                   }
+  OUT  0Ch, AL           { clear the flip-flop                   }
   MOV  AL, AH
   ADD  AL, CH
-  OUT  0Bh, AL           {mode register                         }
+  OUT  0Bh, AL           { mode register                         }
   XOR  DH, DH
   MOV  DL, AH
-  ADD  DX, DX            {channel * 2 = the address port        }
+  ADD  DX, DX            { channel * 2 = the address port        }
   MOV  AL, BL
-  OUT  DX, AL            {address, low                          }
+  OUT  DX, AL            { address, low                          }
   MOV  AL, BH
-  OUT  DX, AL            {address, high                         }
+  OUT  DX, AL            { address, high                         }
   PUSH DX
-  MOV  BX, OFFSET Page8  {was MOV BX,0C18h                      }
+  MOV  BX, OFFSET Page8  { was MOV BX,0C18h                      }
   ADD  BX, DX
   MOV  DX, [BX]
   MOV  AL, CL
-  OUT  DX, AL            {page                                  }
+  OUT  DX, AL            { page                                  }
   POP  DX
-  INC  DX                {count port = address port + 1         }
+  INC  DX                { count port = address port + 1         }
   MOV  BX, SI
   MOV  AL, BL
   OUT  DX, AL
   MOV  AL, BH
   OUT  DX, AL
   MOV  AL, AH
-  OUT  0Ah, AL           {unmask                                }
+  OUT  0Ah, AL           { unmask                                }
 end;
 
 { --------------------------------------------------------------------------
-and 1b24:01b2 -- mask a channel and leave it masked. FRAMELESS.
+ and 1b24:01b2 -- mask a channel and leave it masked. FRAMELESS.
   Channel in AH. Two instructions and an OUT; the whole of stopping a
   transfer.
   -------------------------------------------------------------------------- }
@@ -371,12 +371,12 @@ procedure GetDMA16Count; assembler;
 asm
   AND  AH, 3
   XOR  AL, AL
-  OUT  0D8h, AL          {clear the flip-flop                   }
+  OUT  0D8h, AL          { clear the flip-flop                   }
   XOR  DH, DH
   MOV  DL, AH
   ADD  DX, DX
   ADD  DX, DX
-  ADD  DX, 00C2h         {the COUNT port: $C0 + chan*4 + 2      }
+  ADD  DX, 00C2h         { the COUNT port: $C0 + chan*4 + 2      }
   IN   AL, DX
   MOV  BL, AL
   IN   AL, DX
@@ -410,32 +410,32 @@ how far has an 8-bit transfer got? FRAMELESS.
 procedure GetDMA8Count; assembler;
 asm
   XOR  AL, AL
-  OUT  0Ch, AL           {clear the flip-flop                   }
+  OUT  0Ch, AL           { clear the flip-flop                   }
   XOR  DH, DH
   MOV  DL, AH
   ADD  DX, DX
-  INC  DX                {count port = chan*2 + 1               }
+  INC  DX                { count port = chan*2 + 1               }
   IN   AL, DX            {- first read                        }
   MOV  BL, AL
   IN   AL, DX
   MOV  BH, AL
-  MOV  CX, BX            {keep it                               }
+  MOV  CX, BX            { keep it                               }
   IN   AL, DX            {- second read                       }
   MOV  BL, AL
   IN   AL, DX
   MOV  BH, AL
-  MOV  AX, BX            {assume the second                     }
+  MOV  AX, BX            { assume the second                     }
   MOV  SI, CX
-  SUB  SI, BX            {how far it moved between reads        }
+  SUB  SI, BX            { how far it moved between reads        }
   CMP  SI, 5
-  JC   @@Out             {barely moved -> the second read       }
+  JC   @@Out             { barely moved -> the second read       }
   MOV  AX, CX
   CMP  SI, 0104h
-  JC   @@Out             {moved a little -> the FIRST read      }
+  JC   @@Out             { moved a little -> the FIRST read      }
   MOV  AX, BX
   CMP  SI, 0FF01h
-  JNC  @@Out             {wrapped past zero -> the second       }
-  MOV  AX, 0FFFFh        {no idea; say so                       }
+  JNC  @@Out             { wrapped past zero -> the second       }
+  MOV  AX, 0FFFFh        { no idea; say so                       }
 @@Out:
 end;
 
@@ -461,9 +461,9 @@ pick a controller by channel number.
   why 2 and 4 are refused. }
 procedure GetDMACountAsm; far; assembler;
 asm
-  CMP  AH, 2             {the floppy                            }
+  CMP  AH, 2             { the floppy                            }
   JZ   @@Out
-  CMP  AH, 4             {the cascade                           }
+  CMP  AH, 4             { the cascade                           }
   JZ   @@Out
   JC   @@Eight
   CALL GetDMA16Count
@@ -500,11 +500,11 @@ end;
   =========================================================================== }
 procedure DMASetAsm; far; assembler;
 asm
-  CMP  AH, 2             {the floppy controller's channel        }
-  JZ   @@Out             {refuse it                              }
-  CMP  AH, 4             {the cascade, not a usable channel      }
-  JZ   @@Out             {refuse that too                        }
-  JC   @@Eight           {below 4: the 8-bit controller          }
+  CMP  AH, 2             { the floppy controller's channel        }
+  JZ   @@Out             { refuse it                              }
+  CMP  AH, 4             { the cascade, not a usable channel      }
+  JZ   @@Out             { refuse that too                        }
+  JC   @@Eight           { below 4: the 8-bit controller          }
   CALL DMA16Set
   JMP  @@Out
 @@Eight:
@@ -535,11 +535,11 @@ the Pascal-callable faces.
   -------------------------------------------------------------------------- }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
-  MOV  AH, BYTE PTR Channel   {[BP+0Eh]                         }
-  MOV  CH, BYTE PTR Mode      {[BP+0Ch]                         }
-  MOV  CL, BYTE PTR Page      {[BP+0Ah]                         }
-  MOV  BX, Offs               {[BP+08h]                         }
-  MOV  SI, Size              {[BP+06h]                         }
+  MOV  AH, BYTE PTR Channel   { [BP+0Eh]                         }
+  MOV  CH, BYTE PTR Mode      { [BP+0Ch]                         }
+  MOV  CL, BYTE PTR Page      { [BP+0Ah]                         }
+  MOV  BX, Offs               { [BP+08h]                         }
+  MOV  SI, Size              { [BP+06h]                         }
   CALL DMASetAsm
 end;
 
@@ -600,9 +600,9 @@ begin
   Segm := Seg(Buf^) and $F000;
   Offs := Seg(Buf^) and $0FFF;
 
-  if ($FFFF - Ofs(Buf^)) < Offs then              {would carry }
+  if ($FFFF - Ofs(Buf^)) < Offs then              { would carry }
   begin
-    Inc(Segm, $1000);                             {next page   }
+    Inc(Segm, $1000);                             { next page   }
 
     { THE `- $10000` IS IN THE BINARY AND IT LOOKS POINTLESS. 1b24:02b6 is
       `SUB AX,0 / SBB DX,1` -- a 32-bit subtraction of 65536 -- and the
@@ -613,12 +613,12 @@ begin
       expression LongInt, and without it Turbo Pascal emits a two-byte
       `ADD AX,[BP-4]` where the original has fourteen bytes of 32-bit
       arithmetic. Transcribed as found. }
-    Offs := Offs - $10000 + Ofs(Buf^);            {.. 02c0 }
+    Offs := Offs - $10000 + Ofs(Buf^);            { .. 02c0 }
   end
   else
     Offs := Ofs(Buf^) + Offs;
 
-  Dec(Size);                                      {the 8237 wants N-1 }
+  Dec(Size);                                      { the 8237 wants N-1 }
 
   DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);
 end;

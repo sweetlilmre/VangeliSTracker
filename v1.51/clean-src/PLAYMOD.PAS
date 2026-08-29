@@ -142,7 +142,7 @@ const
 type
   { THE RELEASE'S NAMED TYPE, AND IT IS LOAD-BEARING. Turbo Pascal only allows a
     whole-array assignment between operands of the SAME named type, and 12ba:075e and
-are assignments rather than `Move` calls -- see the note at each. Declared
+ are assignments rather than `Move` calls -- see the note at each. Declared
     as two anonymous `array[1..8] of Byte` the assignment does not compile at all, which
     is why both sites were read as `Move`. Eight is written out rather than `MaxChannels`
     because that constant is declared further down, after the records that use it. }
@@ -224,7 +224,7 @@ are assignments rather than `Move` calls -- see the note at each. Declared
   -------------------------------------------------------------------------- }
 type
   { EIGHTEEN BYTES IN v1.51, SIXTEEN IN 1.31b, AND `Freq` IS WHERE THE TWO WENT.
-is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
+ is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
     and 12ce:0305/0309 store a WORD PAIR into +$1 and +$3 from [BP+12] and [BP+14],
     which is a LongInt where 1.31b stored one word. Every field after it moves up
     two, and FlushEventRow's "is this slot free" test at 12ce:0413 is
@@ -273,7 +273,7 @@ const
   RingRows = 25;
 
   { NEW IN v1.51. 12ce:0243's `SHL DI,5` fixes the flag grid at 32 bytes a row and
-stops the loop at 20h, so the wide ring carries thirty-two channels
+ stops the loop at 20h, so the wide ring carries thirty-two channels
     where `MaxChannels` below still says eight. Both numbers are live at once: the
     8-channel ring at 0183 and the 32-channel one at 0202 run back to back. }
   WideChans = 32;
@@ -340,11 +340,11 @@ stops the loop at 20h, so the wide ring carries thirty-two channels
   ========================================================================== }
 const
   PlayingSong      : PSong         = nil;
-  LoopMod          : Boolean       = True;     { DS:$02ce  nothing reads it     }
-  ForceLoopMod     : Boolean       = False;    { DS:$02cf  the ForceLoopMod key }
-  CanFallBack      : Boolean       = True;     { DS:$02d0  12ba:1325 reads it   }
-  FilterOn         : TFilterMethod = fmNone;   { DS:$02d1  the FilterOn key     }
-  FilterOff        : TFilterMethod = fmNone;   { DS:$02d2  the FilterOff key    }
+  LoopMod          : Boolean       = True;     { nothing reads it     }
+  ForceLoopMod     : Boolean       = False;    { the ForceLoopMod key }
+  CanFallBack      : Boolean       = True;     { reads it   }
+  FilterOn         : TFilterMethod = fmNone;   { the FilterOn key     }
+  FilterOff        : TFilterMethod = fmNone;   { the FilterOff key    }
 
   {**NOT** ModCommands' `FilterIsOn`, which is a different variable at
     DS:$0348. 1.31 has two of them; so, it turns out, does the release, which declares
@@ -362,16 +362,16 @@ const
     actually bites -- VTCFG writes ModCommands' and now says so by qualifying it. }
   FilterIsOn       : Boolean       = False;
 
-  MaxOutputFreq    : Word          = 44000;    { DS:$02d4  ab e0; release 45000 }
+  MaxOutputFreq    : Word          = 44000;    { ab e0; release 45000 }
   DontExecute      : Boolean       = False;
-  AltMode          : Boolean       = False;    { DS:$02d7  1.31 only            }
+  AltMode          : Boolean       = False;    { 1.31 only            }
   Playing          : Boolean       = False;
   ModTickProcValid : Boolean       = False;
   NoteTl           : Word          = 0;
   NoteHd           : Word          = 0;
   NoteSound        : PPlayingNote  = nil;
   NoteProcessed    : PPlayingNote  = nil;
-  MaxSplPerTick    : Word          = 880;      { DS:$02e6  03 70, the release's }
+  MaxSplPerTick    : Word          = 880;      { 03 70, the release's }
 
   {EIGHT PAN POSITIONS, one per channel, and this unit already had them
     under this name. What it did not have was their VALUES or their BOUNDS.
@@ -421,17 +421,17 @@ const
     byte of the image, because the declaration sat at the wrong address -- `dgroup.py`
     went from 164 blocks in place to 163 and one MOVED, which is the only reading
     that says "right content, wrong place". }
-  RingSlot         : Word          = 0;        { DS:$02e8  the PRODUCER's cursor }
+  RingSlot         : Word          = 0;        { the PRODUCER's cursor }
 
   { **IT STARTS AT ONE, NOT ZERO,** and two independent places say so: DGROUP holds
     `01 00` at $02ea in the original's initialised image, and 1000:02b0 sets it again
     at run time with `MOV word [02ea],1` beside `RingSlot := 0`. One slot of daylight
     between producer and consumer is what stops the full test firing on the first
     tick. }
-  FlushSlot        : Word          = 1;        { DS:$02ea  the CONSUMER's        }
+  FlushSlot        : Word          = 1;        { the CONSUMER's        }
 
   Rest             : Word          = 0;
-  EventSlot        : Word          = 0;        { DS:$02ee  AdvanceEventRow's    }
+  EventSlot        : Word          = 0;        { AdvanceEventRow's    }
   EventChan        : Word          = 0;
 
   { NEW IN v1.51 -- the wide ring's own three, named by 12ce:0206, 023c and 02cd. }
@@ -439,7 +439,7 @@ const
   WideChan         : Word          = 0;
   WidePrev         : Word          = 0;
 
-  RingVoice        : Word          = 0;        { DS:$02f8  FlushEventRow's loop }
+  RingVoice        : Word          = 0;        { FlushEventRow's loop }
   NewFlags         : Byte          = 0;
   NoLoop           : Byte          = 0;
   NextIdx          : Word          = 0;
@@ -452,7 +452,7 @@ const
   NewNote          : TFullNote     = (Instrument : 0; Period : 0; Volume : 0;
                                       Command    : mcNone; Parameter : 0);
   CurCanal         : PCanal        = nil;
-  Pattern          : PPattern      = nil;      { DS:$030a in v1.51             }
+  Pattern          : PPattern      = nil;      { in v1.51             }
 
   { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
     declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
@@ -515,7 +515,7 @@ const
     THAT IS THE THIRD TIME THIS UNIT REUSES ONE GLOBAL FOR TWO ROLES -- the notes at
     $02f6 and $0328 record the other two, both found the same way. It is the
     release's habit, not an accident, and it is why neutral names are right here. }
-  TmpVal           : Word          = 0;        { DS:$0330 in v1.51  TWO JOBS    }
+  TmpVal           : Word          = 0;        { in v1.51  TWO JOBS    }
   { The release's `j`, the second of ProcessTick's two Word indices -- `TmpVal` above
     is its `i`. Neither version reads it, so there is no role to name it for and it
     keeps a name that claims only what the sequence shows. }
@@ -526,7 +526,7 @@ const
     cannot account for. }
   TickIter         : Word          = 0;
   { A LONGINT IN v1.51, A WORD IN 1.31b, AND THE ZERO STORE IS WHAT SETTLES IT.
-is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
+ is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
     Written as two separate Word variables the second would be `XOR AX,AX /
     MOV [x],AX`, because Turbo Pascal special-cases assigning zero and five bytes
     beat six; it only emits the immediate form for BOTH halves when they are one
@@ -536,7 +536,7 @@ is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
     AND THE SHIFTS BELOW ARE CAST BACK DOWN. 121d and 122b are `SHL AX,4` and
     `SHR AX,0Ch` on the low word alone; a LongInt shift would be an RTL call, so the
     source has to narrow it first. }
-  StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
+  StepVal          : LongInt       = 0;        { in v1.51              }
   { A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends pinned it before the
     release confirmed it: StepVal occupies four bytes and TickChans follows two later,
     not four. 1.39b calls it `FBCount` -- a fall-back counter, beside `CanFallBack`
@@ -638,7 +638,7 @@ var
   ActualHz        : Word;
   NoteHz          : Word;
   NoteCalcVal     : LongInt;
-  UserVols        : TVolumes;             { DS:$12E0  base-1 base $1207 }
+  UserVols        : TVolumes;             { base-1 base $1207 }
 
 {negotiate the rate, size the buffers, program the DMA. Declared
   here because 12ba:0d4e calls it and it lives 1,500 bytes further down the
@@ -669,13 +669,13 @@ procedure FlushEventRow; far;
 procedure ProcessTickEntry; far;
 
 {stop playing and give the buffers back. Declared here because
-calls it from inside PlayStart's out-of-memory path, 1,300 bytes
+ calls it from inside PlayStart's out-of-memory path, 1,300 bytes
   above it; the release exports it too, as `PROCEDURE PlayStop`. Its body is a
   PLACEHOLDER until the transcription reaches 13d7. }
 procedure PlayStop; far;
 
 {start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
-is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
+ is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
   was read nothing outside this unit was known to reach it, so it was declared
   in the implementation only. The release exports it too, as
   `PROCEDURE PlayStart(VAR Song: TSong)`.
@@ -713,7 +713,7 @@ implementation
   { ~~ONE cursor, shared~~ -- **v1.51 SPLITS IT, AND ADDS THE FULL TEST THAT GOES
     WITH A REAL RING.** 1.31b had SetEvent, PostEvent and FlushEventRow all indexing
     by DS:$02f0. In 1.51 the two producers use $02e8 and the flush uses $02ea, and
-is what makes the pair mean something:
+ is what makes the pair mean something:
 
         MOV AX,[02e8] / INC AX / XOR DX,DX / MOV CX,19 / DIV CX / XCHG AX,DX
         CMP AX,[02ea] / JNZ advance / JMP away
@@ -732,7 +732,7 @@ is what makes the pair mean something:
     rcfLongLoopEnd. It was read as "a GUS voice control byte" until the last two
     turned up. Whatever stores it into the record is further down the routine.
 
-    DS:$02f5 is its companion: set to 1 when the sample's loop is shorter than
+ is its companion: set to 1 when the sample's loop is shorter than
     four bytes -- treated as no loop at all -- and 0 when it loops, which is why
     every test of it reads `= 0`. }
 
@@ -796,7 +796,7 @@ is what makes the pair mean something:
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
   {AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
-writes that one from the E0x command and nothing reads it; this one is
+ writes that one from the E0x command and nothing reads it; this one is
     read by the initialisation section at 12ba:1430 to choose between FilterOn and
     FilterOff. Two variables where the release has one. ModCommands keeps its copy in
     its IMPLEMENTATION section precisely so that this name cannot be shadowed here --
@@ -812,7 +812,7 @@ writes that one from the E0x command and nothing reads it; this one is
     is used from here directly. So one of the pair resolves cleanly and the other
     does not, in the same comparison. Risk 1 again. }
 
-  { DS:$034e IS A TICK COUNTER WITHIN THE ROW, not the row number, and
+  { IS A TICK COUNTER WITHIN THE ROW, not the row number, and
     docs/04-units.md has it as "the current row". 12ba:0cdf compares it against
     `NoteProcessed^.Tempo` -- the release's "number of ticks the note will last"
     -- and 12ba:0cf7 resets it to zero when the pattern advances. A row number
@@ -845,24 +845,24 @@ type
 
 { ...and the rest, private but in the same run -- see the note above. }
 var
-  Permisos        : array[1..MaxChannels] of Boolean;  { DS:$1210  base-1 base $120f }
+  Permisos        : array[1..MaxChannels] of Boolean;  { base-1 base $120f }
   TickCount       : Word;
   ModTickProc     : TTickProc;
   MyCanFallBack   : Boolean;
   FilterVal       : TFilterMethod;
-  NoteBuff        : array[0..0] of TPlayingNote;  { DS:$1220  63 bytes, then a pad }
-  Canales         : array[1..MaxChannels] of TCanal;  { DS:$1260  base-1 base $123a }
+  NoteBuff        : array[0..0] of TPlayingNote;  { 63 bytes, then a pad }
+  Canales         : array[1..MaxChannels] of TCanal;  { base-1 base $123a }
   BuffIdx         : Word;
   BuffGive        : Word;
   Buffers         : array[1..NumBuffers] of TSampleBuffer;
   SizeOfABuffer   : Word;
   ModFlag         : Boolean;
   MuestrasPerTick : Word;
-  RawChannels     : array[1..MaxChannels] of TModRawChan;  { DS:$13a6  base-1 base $1384 }
+  RawChannels     : array[1..MaxChannels] of TModRawChan;  { base-1 base $1384 }
   NoteRing        : array[0..RingRows - 1] of TRingRow;
 
   { NEW IN v1.51 -- THE WIDE RING, and its shape is read off three multipliers.
-is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
+ is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
     flag grid is 32 bytes a row; and 0206..0211 is `INC / CMP 18 / SUB 19`, so
     there are 25 rows exactly as the narrow ring has. }
   WideRing        : array[0..RingRows - 1] of TChansData;
@@ -891,7 +891,7 @@ is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
 
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$0c74 `TicksPerSecond` -- THE THIRD DUPLICATED GLOBAL, after AltMode and
+  { `TicksPerSecond` -- THE THIRD DUPLICATED GLOBAL, after AltMode and
     UsingGUS. DevGUS
     declares it privately in its implementation section, where a comment already
     records that the release moved it to SoundDevices and that ownership is the
@@ -910,7 +910,7 @@ is `SHL DI,7`, so a row is 128 bytes; 0243 is `SHL DI,5`, so the
     The client-facing `LoopMod` it was named after is a DIFFERENT variable, at
     $02c8; see its declaration in the interface. }
   { MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
-and 142f:04bc write from the F-command. Names unchanged; the release
+ and 142f:04bc write from the F-command. Names unchanged; the release
     calls them Tempo and BPMIncrement and the rename is declined there for reasons
     given at the declaration. }
 
@@ -972,7 +972,7 @@ takes six bytes of arguments and does nothing with them.
   same idea rather than the same routine -- the pairing is by ROLE only.
 
   THREE WORDS, NOT A POINTER AND A WORD, and the only call site says so:
-pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
+ pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
   would be built and pushed differently. The six bytes are the same either way
   in THIS routine -- `RET 6` regardless -- but the caller's bytes are not, which
   is why the declaration matters. Names are placeholders: nothing reads them.
@@ -1228,7 +1228,7 @@ post a voice event, merging into whatever is already there.
   alone by passing $FFFF for the frequency.
   -------------------------------------------------------------------------- }
 { AFreq IS A LONGINT HERE TOO, and the sentinel test is what shows it most plainly:
-is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
+ is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
   compare done high word first. 1.31b had one `CMP ...,$FFFF`. Written as `-1` and
   not `$FFFFFFFF` because that is what gives the sign-extended byte immediate the
   original has -- the full constant would need four bytes of operand. }
@@ -1983,7 +1983,7 @@ begin
       NoteProcessed^.Tempo := CurSpeed;
 
       {publish the channel's event into the note ring, where
-will increment the semaphore it names. The ring is indexed by
+ will increment the semaphore it names. The ring is indexed by
         the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
         CurCanal^.RingPending;
@@ -2087,7 +2087,7 @@ begin
   {AND THE SECOND DISABLED ROTATION IN THIS UNIT. `Inc(ModIdx)`
     followed by a clamp to 1 means the index is 1 from the first call onward, so
     only one entry of the module table is ever used -- exactly like the `and 0` at
-pinning the note buffer to slot zero. Two independent pieces of
+ pinning the note buffer to slot zero. Two independent pieces of
     machinery for handling more than one of something, both switched off by their
     own next instruction. Transcribed as found. }
   Inc(BuffIdx);
@@ -2503,7 +2503,7 @@ begin
 
     { **NEW IN v1.51 -- THIS IS WHERE THE RETRIGGER ACTUALLY RETRIGGERS.** MODCOMMA
       only ever sets a flag: 147d:05d8 counts ticks and raises `DoRetrig`, and
-clears it again on the next dispatch, so it is true for exactly one
+ clears it again on the next dispatch, so it is true for exactly one
       tick. Nothing in that segment restarts a sample -- it cannot, because the sample
       machinery lives here. 12ce:124f is the reader, and `SetNewSample(.., 0)` is the
       restart.
@@ -2594,7 +2594,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-and 12ba:105d -- the two buffer callbacks the sound device asks
+ and 12ba:105d -- the two buffer callbacks the sound device asks
   through. Both are FAR functions of no arguments returning a PSampleBuffer,
   which is `SoundDevices.TAskBufferProc`, and both are the release's: it declares
   `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION BufferGiver :

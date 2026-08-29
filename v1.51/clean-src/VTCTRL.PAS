@@ -6,7 +6,7 @@
   the one routine and the rest is padding.
 
   This unit exists because of the control block, not because of the code.
-  DS:$22c6 is the 768-byte structure that INT 2Fh hands out to any client
+ is the 768-byte structure that INT 2Fh hands out to any client
   that asks -- ES:[DI-4] in the handshake points at it -- so it is the whole
   of DemoVT's published interface. `01-int2f.md` documents the server side.
 
@@ -52,7 +52,7 @@ const
 
 type
   { **DECLARED HERE AND NOT IN PLAYMOD, BECAUSE THE COPY HAS TO BE AN ASSIGNMENT.**
-calls SYSTEM's $09f7 -- the whole-array copy the code generator emits
+ calls SYSTEM's $09f7 -- the whole-array copy the code generator emits
     for `A := B` -- where a written `Move` gets $0fb2, the overlap-checking one. The
     two helpers are eleven bytes apart in behaviour and identical in signature, so
     only the CALL TARGET tells them apart.
@@ -102,7 +102,7 @@ calls SYSTEM's $09f7 -- the whole-array copy the code generator emits
     ChansTrig : array[1..32] of Byte;  { CB+$100  1 = channel retriggered    }
 
     { CB+$120, NEW IN v1.51 -- and it was declared as one byte of filler until
-was read. `PlayStart` stores `Song.NumChannels` here, so a client
+ was read. `PlayStart` stores `Song.NumChannels` here, so a client
       reading the thirty-two ChanHit flags above knows how many of them mean
       anything. One byte that makes the array before it interpretable. }
     NumChannels : Byte;      { CB+$120                                      }
@@ -227,6 +227,6 @@ wipe the block and stamp it.
   wrong was the KIND of thing they are, and only linking exposes it.
   -------------------------------------------------------------------------- }
 begin
-  FillChar(CtrlBlock, CtrlBlockSize, 0);          {.. 14b7:000d }
+  FillChar(CtrlBlock, CtrlBlockSize, 0);          { .. 14b7:000d }
   CtrlBlock.SoundVolume := $FF;
 end.

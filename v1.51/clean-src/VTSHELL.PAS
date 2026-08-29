@@ -18,7 +18,7 @@
   puts the banner on screen. DemoVT is run from a batch file by every part of
   the demo, so that matters.
 
-  DS:$3ade IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites it
+ IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites it
   per playlist entry and 1000:03af hands it to Dos.Exec; what this unit does
   is give it a default, so an entry that names no program of its own falls
   back to the command interpreter.
@@ -50,7 +50,7 @@ var
     names. `ConFile` is a `Text`, and a TP `TextRec` is 256 bytes, so the three close on
     340 -- this unit's whole data size -- with nothing over. `ProgName` was declared first
     and had to move below the file variable, which means `ConFile` is exported too. }
-  ConFile   : Text;      { DS:$5d38  256 bytes }
+  ConFile   : Text;      { 256 bytes }
   ProgName  : String[79];
 
 { ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND THEY
@@ -82,7 +82,7 @@ the exit handler.
   -------------------------------------------------------------------------- }
 procedure AtExit; far;
 begin
-  ExitProc := SavedExit;                          {.. 1931:000d }
+  ExitProc := SavedExit;                          { .. 1931:000d }
   Close(ConFile);
 end;
 
@@ -119,8 +119,8 @@ begin
   Assign(ConFile, 'CON');
   Rewrite(ConFile);
 
-  SavedExit := ExitProc;                          {.. 1931:0050 }
-  ExitProc  := @AtExit;                           {.. 1931:005d }
+  SavedExit := ExitProc;                          { .. 1931:0050 }
+  ExitProc  := @AtExit;                           { .. 1931:005d }
 
-  ProgName := FExpand(GetEnv('COMSPEC'))          {.. 1931:0083 }
+  ProgName := FExpand(GetEnv('COMSPEC'))          { .. 1931:0083 }
 end.

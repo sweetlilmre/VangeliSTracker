@@ -65,7 +65,7 @@ type
     anything but an address.
 
     DataType IS SIGNED, and that is from the bytes rather than a choice:
-sign-extends it with CBW. A Turbo Pascal enumerated type would
+ sign-extends it with CBW. A Turbo Pascal enumerated type would
     zero-extend, so whatever 1.31 declared was not one. }
   PSampleBuffer = ^TSampleBuffer;
   TSampleBuffer = record
@@ -195,24 +195,24 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
   already named.
   ========================================================================== }
 const
-  NumDevices        : Byte         = 0;      { DS:$0c3c  pad at $0b95         }
+  NumDevices        : Byte         = 0;      { pad at $0b95         }
   ActiveDevice      : PSoundDevice = nil;
-  Sounding          : Pointer      = nil;    { DS:$0c42  NON-DMA only         }
+  Sounding          : Pointer      = nil;    { NON-DMA only         }
   SoundLeft         : Word         = 0;
   NumChannels       : Word         = 1;
   ChannelIncr       : Word         = 1;
-  DMABufferSize     : Word         = 46000;  { DS:$0c4c  b3 b0                }
+  DMABufferSize     : Word         = 46000;  { b3 b0                }
   { A BYTE, NOT THE RELEASE'S BOOLEAN, AND THE CODE IS WHY: 1a17:00d0 assigns 1 to it
     rather than testing it as a flag, so the standing rule -- do not take a TYPE from
     the release -- keeps it a Byte. The value is the same either way; $0ba6 holds 01. }
-  DeviceIdling      : Byte         = 1;      { DS:$0c4e  pad at $0ba7         }
+  DeviceIdling      : Byte         = 1;      { pad at $0ba7         }
 
   { $0ba8..$0baf. THREE OF THE FOUR HOLD 16000, WHICH FIXES `DefaultHz`. The release
     initialises TimerHz, SoundHz and DesiredHz to `DefaultHz` and does not say what
     that is here; 1.31's image says 16000 three times over -- and VTGlobal's `ShellHz`
     holds 12000, which is the release's `DefaultHz * 3 DIV 4` exactly. Two units
     agreeing on a constant neither of them stores by name. }
-  TimerHz           : Word         = 16000;  { DS:$0c50  80 3e                }
+  TimerHz           : Word         = 16000;  { 80 3e                }
   LastHz            : Word         = 0;
   SoundHz           : Word         = 16000;
   DesiredHz         : Word         = 16000;
@@ -222,18 +222,18 @@ const
     handler gets called. }
   ClockAccum        : Word         = 0;
   SystemClockIncr   : Word         = 0;
-  TimerVal          : Word         = 0;      { DS:$0c5c  what goes to the PIT }
-  DeviceInitialized : Boolean      = False;  { DS:$0c5e  pad at $0bb7         }
-  DMAOffset         : Word         = 1;      { DS:$0c60  samples held back    }
+  TimerVal          : Word         = 0;      { what goes to the PIT }
+  DeviceInitialized : Boolean      = False;  { pad at $0bb7         }
+  DMAOffset         : Word         = 1;      { samples held back    }
   HzChanged         : Boolean      = False;
-  DoBassPower       : Boolean      = False;  { DS:$0c63  the filter stage     }
-  MixMethod         : Byte         = 3;      { DS:$0c64  0..3                 }
+  DoBassPower       : Boolean      = False;  { the filter stage     }
+  MixMethod         : Byte         = 3;      { 0..3                 }
   Stereo            : Boolean      = False;
   BytesPerSample    : Byte         = 1;
   DevBits           : Byte         = 8;
   DMAStop           : Boolean      = False;
   DMAStopped        : Boolean      = False;
-  DMAIrqWatch       : Byte         = 0;      { DS:$0c6a  pad at $0bc3         }
+  DMAIrqWatch       : Byte         = 0;      { pad at $0bc3         }
 
   {A WORD, and 255 rather than the release's 0. 12ba:13ae is
     `81 3E C4 0B FF 00`, a six-byte WORD compare against $00FF, where a Byte gives the
@@ -251,23 +251,23 @@ const
     demonstrated: the command line said `nx`. It does NOT claim to know what `nx` was
     going to do, and a behavioural name here -- `NoExtended`, `NoXms` -- would be an
     invention dressed as a measurement. A half-finished feature should read as one. }
-  NxOption          : Boolean      = False;  { DS:$0c6e  set by `nx`, unread  }
+  NxOption          : Boolean      = False;  { set by `nx`, unread  }
 
-  IsDmaDevice       : Boolean      = False;  { DS:$0c6f  picks @@Prepare's path }
+  IsDmaDevice       : Boolean      = False;  { picks @@Prepare's path }
 
   { $0bc8..$0bcd -- THE TICK GROUP, and all three used to be somewhere else. `Ticks`
     came from VTSILENC, which the LINK ORDER moved; `TickSnapshot` from PlayMod and
     VTMAIN, which both declared it; `TicksPerSecond` from PlayMod AND DevGus, which
     both declared it. The core owns the shared poll at 1a17:1008 and the periodic
     proc, so a tick counter, the mixer's copy of it and the rate all belong with them. }
-  Ticks             : Word         = 0;      { DS:$0c70  VTSilenc advances it  }
-  TickSnapshot      : Word         = 0;      { DS:$0c72  12ba:0c52 compares it }
-  TicksPerSecond    : Word         = 50;     { DS:$0c74  50 = Europe           }
+  Ticks             : Word         = 0;      { VTSilenc advances it  }
+  TickSnapshot      : Word         = 0;      { compares it }
+  TicksPerSecond    : Word         = 50;     { 50 = Europe           }
 
-  UsingGUS          : Boolean      = False;  { DS:$0c76  pad; was GusStarted   }
+  UsingGUS          : Boolean      = False;  { pad; was GusStarted   }
   {A SECOND TICK COUNTER, and 1.31's own: the release has nothing between
     TicksPerSecond and the filter coefficients. DevGus's timer handler advances it and
-clears it, so it was declared in BOTH of those units -- DevGus called it
+ clears it, so it was declared in BOTH of those units -- DevGus called it
     `Ticks` and VTMAIN called it `WordAtBD0`. It is neither unit's: this block is
     contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099.
 
@@ -275,7 +275,7 @@ clears it, so it was declared in BOTH of those units -- DevGus called it
     the one 12ba:0c52 gates the mixer on; this one is the polled driver's. The gate is
     guarded by `IsDmaDevice`, so on a GUS -- which is polled, not DMA -- the mixer never
     reads $0bc8 at all, and the two never have to agree. }
-  DriverTicks       : Word         = 0;      { DS:$0c78  the polled driver's   }
+  DriverTicks       : Word         = 0;      { the polled driver's   }
 
   { $0bd2..$0be1 -- SIXTEEN BYTES THIS TREE HAS READ TWO DIFFERENT WAYS, AND THE
     LAYOUT DOES NOT DEPEND ON WHICH IS RIGHT. What is certain is that they are a typed
@@ -313,8 +313,8 @@ clears it, so it was declared in BOTH of those units -- DevGus called it
   BassFilterVal_Right    : Word = 13;
   BassFilterMult_Right   : Word = 0;
 
-  PeriodicHz        : Byte         = 0;      { DS:$0c8a  pad at $0be3         }
-  PeriodicStart     : Word         = 1;      { DS:$0c8c  NON-DMA countdown    }
+  PeriodicHz        : Byte         = 0;      { pad at $0be3         }
+  PeriodicStart     : Word         = 1;      { NON-DMA countdown    }
   PeriodicCount     : Word         = 0;
   DSPWritePort      : Word         = 0;
   DSP8AckPort       : Word         = 0;
@@ -331,19 +331,19 @@ clears it, so it was declared in BOTH of those units -- DevGus called it
   { $0bf8..$0c01 -- FIVE slots, not four. The release calls them DeviceStartRut,
     DeviceRut1, DeviceRut2, DeviceKickRut and DeviceFillRut; ours are named for the
     1a17 offsets that patch them, and the fifth is what the gap at $0c00 was. }
-  OutSlot0          : Word         = 0;      { DS:$0ca0  -> 1a17:0f64         }
-  OutSlot1          : Word         = 0;      { DS:$0ca2  -> 1a17:104d         }
-  OutSlot2          : Word         = 0;      { DS:$0ca4  -> 1a17:1063         }
-  OutSlot3          : Word         = 0;      { DS:$0ca6  -> 1a17:107c         }
+  OutSlot0          : Word         = 0;      { -> 1a17:0f64         }
+  OutSlot1          : Word         = 0;      { -> 1a17:104d         }
+  OutSlot2          : Word         = 0;      { -> 1a17:1063         }
+  OutSlot3          : Word         = 0;      { -> 1a17:107c         }
   {this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
     installs, mono or stereo", declared as a lone `var` well away from the other four.
     It is the fifth entry of the same table: the release's DeviceFillRut. A NEAR
     pointer, as the other four are, because the kernels are in this segment. }
-  MixRut            : Word         = 0;      { DS:$0ca8  release: DeviceFillRut }
+  MixRut            : Word         = 0;      { release: DeviceFillRut }
 
   DeviceList        : PSoundDevice = nil;
   OldTimerHandler   : Pointer      = nil;
-  IntInstalled      : Boolean      = False;  { DS:$0cb2  pad at $0c0b         }
+  IntInstalled      : Boolean      = False;  { pad at $0c0b         }
 
   { THE ASSEMBLER MODULE'S VIEW OF $0bd2..$0be1. `SOUNDDEV.ASM` has
     `EXTRN Volumes : WORD` and indexes it +0..+14, so the symbol has to exist under
@@ -449,20 +449,20 @@ var
     DMABufferSize is NOT here: it is a typed constant at $0ba4 holding 46000. The
     release has it as a plain untyped constant, and 1a17:00fd pushes
     `word ptr [0ba4]`, so in 1.31 it is a word in DGROUP and the disassembly wins. }
-  DMABufferPtr      : Pointer;       { DS:$6660  where the mixer is up to  }
+  DMABufferPtr      : Pointer;       { where the mixer is up to  }
   DMABuffer         : Pointer;
-  DMABufferEnd      : Word;          { DS:$6668  Ofs(DMABuffer^) + the size }
-  DMABufferYet      : Boolean;       { DS:$666A  and a pad at $4311        }
+  DMABufferEnd      : Word;          { Ofs(DMABuffer^) + the size }
+  DMABufferYet      : Boolean;       { and a pad at $4311        }
 
   {the far routine the poll actually calls once it is on its
     own stack and has taken the guard. Installed by the core at startup. }
   PeriodicProc      : Pointer;
 
   { ---- the buffer queue, 1a17:03d2 ------------------------------------ }
-  AskBufferProc     : TAskBufferProc;{ DS:$6670  installed by 1a17:0176    }
-  ActualBuffer      : PSampleBuffer; { DS:$6674  the block playing         }
-  NextBuffer        : PSampleBuffer; { DS:$6678  the one behind it         }
-  PleaseFallback    : Word;          { DS:$667C  no buffer was available   }
+  AskBufferProc     : TAskBufferProc;{ installed by 1a17:0176    }
+  ActualBuffer      : PSampleBuffer; { the block playing         }
+  NextBuffer        : PSampleBuffer; { the one behind it         }
+  PleaseFallback    : Word;          { no buffer was available   }
 
 { ~~A DOZEN COMMENTS USED TO SIT IN THIS SECTION~~ describing declarations that are now
   in the address-ordered const block above -- the periodic process, the INT 8 hook, the
@@ -527,7 +527,7 @@ var
 implementation
 
 { ==========================================================================
-and 1a17:0001 -- the two null callbacks.
+ and 1a17:0001 -- the two null callbacks.
 
   What the hook slots hold before anything real is installed. The first is a
   bare RETF -- ONE byte, and `assembler` with an empty body is the only way to

@@ -129,8 +129,8 @@ const
   GUSPort         : Word    = $FFFF;
 
   GUSIrq          : Word    = 11;
-  GUSChannels     : Byte    = 32;      { DS:$062E  the CARD's voices; pad $0587 }
-  GUSDivisor      : Word    = 19293;   { DS:$0630  4b 5d                     }
+  GUSChannels     : Byte    = 32;      { the CARD's voices; pad $0587 }
+  GUSDivisor      : Word    = 19293;   { 4b 5d                     }
   GUSTimer1RutPtr : Pointer = nil;
   GUSTimer2RutPtr : Pointer = nil;
 
@@ -173,10 +173,10 @@ uses
   $059a, and $059a + 16 is $05aa, which is `GUSPorts`. Three consecutive blocks landing
   on two addresses that were already known. All five hold zero. }
 const
-  TimerControl  : Byte    = 0;    { DS:$063A  shadow of GF1 register $45      }
-  TimerMask     : Byte    = 0;    { DS:$063B  shadow of the timer control     }
+  TimerControl  : Byte    = 0;    { shadow of GF1 register $45      }
+  TimerMask     : Byte    = 0;    { shadow of the timer control     }
   OldIrqHandler : Pointer = nil;
-  OldIrqState   : Boolean = False;{ DS:$0640  enabled before InitGusIRQ?      }
+  OldIrqState   : Boolean = False;{ enabled before InitGusIRQ?      }
   GusIRQInited  : Boolean = False;
 
   {the GF1 encodes its interrupt in three bits rather than
@@ -224,13 +224,13 @@ var
     declarations this transcription cannot size. The addresses are left as they
     stand rather than replaced with a guess -- a wrong number that is admitted is
     worth more than a wrong number that is not. }
-  LastVoiceStart : array[0..MaxVoice] of LongInt;  { DS:$371a  STALE, see above }
-  LastLoopStart  : array[0..MaxVoice] of LongInt;  { DS:$379a  filled with $FE }
-  LastVoiceEnd   : array[0..MaxVoice] of LongInt;  { DS:$381a  filled with $FF }
-  LastVolumes    : array[0..MaxVoice] of Byte;     { DS:$389a  filled with $FF }
-  LastFreqs      : array[0..MaxVoice] of LongInt;  { DS:$38ba  filled with $FF }
-  LastPans       : array[0..MaxVoice] of Byte;     { DS:$393a  filled with $7F }
-  VoicesChanged  : array[0..MaxVoice] of Byte;     { DS:$395a  filled with $00 }
+  LastVoiceStart : array[0..MaxVoice] of LongInt;  { STALE, see above }
+  LastLoopStart  : array[0..MaxVoice] of LongInt;  { filled with $FE }
+  LastVoiceEnd   : array[0..MaxVoice] of LongInt;  { filled with $FF }
+  LastVolumes    : array[0..MaxVoice] of Byte;     { filled with $FF }
+  LastFreqs      : array[0..MaxVoice] of LongInt;  { filled with $FF }
+  LastPans       : array[0..MaxVoice] of Byte;     { filled with $7F }
+  VoicesChanged  : array[0..MaxVoice] of Byte;     { filled with $00 }
 
   { ~~CmdList : array[0..255] of Byte~~ -- GONE FROM HERE. It is 64 bytes, it is a TYPED
   CONSTANT, and it is LOCAL to `RestartChannels`; all three were open questions and the
@@ -327,7 +327,7 @@ the GF1 register interface.
 procedure SetGusVoice(N : Byte); assembler;
 asm
         MOV     DX,GUSPort
-        ADD     DX,$102     {the voice-select register }
+        ADD     DX,$102     { the voice-select register }
         MOV     AL,N
         OUT     DX,AL
 end;
@@ -336,14 +336,14 @@ end;
 function GetGusRegister8(Reg : Byte) : Byte; assembler;
 asm
         MOV     DX,GUSPort
-        ADD     DX,$103     {the register-select port }
+        ADD     DX,$103     { the register-select port }
         MOV     AL,Reg
         CMP     AL,$40
-        JNB     @@Hi        {already an alias }
+        JNB     @@Hi        { already an alias }
         ADD     AL,$80
 @@Hi:
         OUT     DX,AL
-        ADD     DX,2   {-> the data port, $105 }
+        ADD     DX,2   { -> the data port, $105 }
         IN      AL,DX
 end;
 
@@ -352,10 +352,10 @@ procedure SetGusRegister8(Reg, Val : Byte); assembler;
 asm
         MOV     DX,GUSPort
         ADD     DX,$103
-        MOV     AL,Reg      {[BP+6], the FIRST parameter }
+        MOV     AL,Reg      { [BP+6], the FIRST parameter }
         OUT     DX,AL
         ADD     DX,2
-        MOV     AL,Val      {[BP+4] }
+        MOV     AL,Val      { [BP+4] }
         OUT     DX,AL
 end;
 
@@ -369,18 +369,18 @@ asm
         ADD     AL,$80
 @@Hi:
         OUT     DX,AL
-        INC     DX     {-> $104, the 16-bit port }
-        IN      AX,DX  {a WORD read }
+        INC     DX     { -> $104, the 16-bit port }
+        IN      AX,DX  { a WORD read }
 end;
 
 procedure SetGusRegister16(Reg : Byte; Val : Word); assembler;
 asm
         MOV     DX,GUSPort
         ADD     DX,$103
-        MOV     AL,Reg      {[BP+6] }
+        MOV     AL,Reg      { [BP+6] }
         OUT     DX,AL
         INC     DX
-        MOV     AX,Val      {[BP+4] }
+        MOV     AX,Val      { [BP+4] }
         OUT     DX,AX
 end;
 
@@ -439,7 +439,7 @@ copy a sample into the card's own DRAM.
   -------------------------------------------------------------------------- }
 { PASCAL FIRST, THEN ASSEMBLER. The routine opens with two ordinary calls --
   1723:008c..00b2 is compiler output, including a runtime helper at
-for the 32-bit shift -- and only the transfer loop is hand
+ for the 32-bit shift -- and only the transfer loop is hand
   written. Declared `assembler`, the whole prologue vanishes and the unit
   diverges at the first byte after the frame.
 
@@ -451,45 +451,45 @@ for the 32-bit shift -- and only the transfer loop is hand
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
-  SetGusRegister8(grDRAMHighIO, DramAt shr 16);      {.. 1723:009f }
-  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);  {.. 1723:00b2 }
+  SetGusRegister8(grDRAMHighIO, DramAt shr 16);      { .. 1723:009f }
+  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);  { .. 1723:00b2 }
   asm
-  PUSH DS          {LODSB will take DS away              }
-  MOV  CX, Count   {[BP+0Ch]                             }
-  LES  DI, DramAt  {the DRAM address, low word in DI     }
-  MOV  BX, ES      {... high half in BL                  }
-  MOV  BH, BYTE PTR Signed {[BP+06h]                           }
-  CMP  BH, 1        {carry when the caller said 0         }
-  SBB  BH, BH       {$FF when signed, else $00            }
-  SHL  BH, 7        {... becomes the $80 XOR mask         }
+  PUSH DS          { LODSB will take DS away              }
+  MOV  CX, Count   { [BP+0Ch]                             }
+  LES  DI, DramAt  { the DRAM address, low word in DI     }
+  MOV  BX, ES      { ... high half in BL                  }
+  MOV  BH, BYTE PTR Signed { [BP+06h]                           }
+  CMP  BH, 1        { carry when the caller said 0         }
+  SBB  BH, BH       { $FF when signed, else $00            }
+  SHL  BH, 7        { ... becomes the $80 XOR mask         }
   MOV  DX, GUSPort
-  LDS  SI, Src      {[BP+0Eh]                             }
-  ADD  DX, 0103h    {the register select port             }
+  LDS  SI, Src      { [BP+0Eh]                             }
+  ADD  DX, 0103h    { the register select port             }
 @@Byte:
-  MOV  AL, 43h  {DRAM address, low word               }
+  MOV  AL, 43h  { DRAM address, low word               }
   OUT  DX, AL
-  INC  DX       {base+$104                            }
+  INC  DX       { base+$104                            }
   MOV  AX, DI
   OUT  DX, AX
-  ADD  DX, 3    {base+$107, the DRAM data port        }
+  ADD  DX, 3    { base+$107, the DRAM data port        }
   LODSB
-  XOR  AL, BH   {signed -> unsigned, or nothing       }
+  XOR  AL, BH   { signed -> unsigned, or nothing       }
   OUT  DX, AL
   INC  DI
-  JNZ  @@Same   {the low word did not wrap            }
+  JNZ  @@Same   { the low word did not wrap            }
   INC  BL
-  SUB  DX, 4    {back to base+$103                    }
-  MOV  AL, 44h  {DRAM address, high byte              }
+  SUB  DX, 4    { back to base+$103                    }
+  MOV  AL, 44h  { DRAM address, high byte              }
   OUT  DX, AL
-  ADD  DX, 2    {base+$105                            }
+  ADD  DX, 2    { base+$105                            }
   MOV  AL, BL
   OUT  DX, AL
   ADD  DX, 2
 @@Same:
-  SUB  DX, 4   {base+$103, ready for the next        }
+  SUB  DX, 4   { base+$103, ready for the next        }
   LOOP @@Byte
   POP  DS
-  end          {LEAVE / RETF 0Ch, from Pascal        }
+  end          { LEAVE / RETF 0Ch, from Pascal        }
 end;
 
 { --------------------------------------------------------------------------
@@ -526,10 +526,10 @@ begin
   SetGusRegister8(grTimer1Count, Count);
   TimerControl := TimerControl or $04;
   SetGusRegister8(grTimerControl, TimerControl);
-  TimerMask := TimerMask or $01;        {timer 1's mask bit }
-  Port[GUSPort + 8] := 4;               {select register 4 in the
+  TimerMask := TimerMask or $01;        { timer 1's mask bit }
+  Port[GUSPort + 8] := 4;               { select register 4 in the
                                           interrupt window -- see above }
-  Port[GUSPort + 9] := TimerMask;       {and write it }
+  Port[GUSPort + 9] := TimerMask;       { and write it }
 end;
 
 procedure GUSInitTimer2(Count : Byte);
@@ -552,7 +552,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-and 1723:01db -- a timer expired.
+ and 1723:01db -- a timer expired.
 
   Compiler output, near, private. Clearing the enable bit and setting it
   straight back is what acknowledges the timer to the GF1; the shadow is not
@@ -563,7 +563,7 @@ and 1723:01db -- a timer expired.
   on BOTH halves -- a segment of zero with a non-zero offset would still be
   called. That is deliberate enough to preserve.
 
-  DS:$058e is the one that matters to the rest of the program: 1084:008a puts
+ is the one that matters to the rest of the program: 1084:008a puts
   the GUS driver's own handler there, so timer 2 is what drives the music.
   -------------------------------------------------------------------------- }
 procedure ServiceTimer1;
@@ -586,8 +586,8 @@ end;
   why the shadow exists. See the note above the timer routines. }
 procedure ServiceTimer2;
 begin
-  SetGusRegister8(grTimerControl, TimerControl and $F7);  {drop it }
-  SetGusRegister8(grTimerControl, TimerControl);          {re-arm }
+  SetGusRegister8(grTimerControl, TimerControl and $F7);  { drop it }
+  SetGusRegister8(grTimerControl, TimerControl);          { re-arm }
   if GUSTimer2RutPtr <> nil then
     asm
       CALL DWORD PTR GUSTimer2RutPtr
@@ -626,14 +626,14 @@ asm
   PUSHA
   PUSH ES
   PUSH DS
-  MOV  AX, SEG @DATA        {was MOV AX,1CAAh                     }
+  MOV  AX, SEG @DATA        { was MOV AX,1CAAh                     }
   MOV  DS, AX
-  MOV  AL, 20h              {non-specific EOI                     }
-  OUT  20h, AL              {release the master straight away     }
+  MOV  AL, 20h              { non-specific EOI                     }
+  OUT  20h, AL              { release the master straight away     }
   MOV  AH, BYTE PTR GUSIrq
   CMP  AH, 8
   JC   @@Master
-  OUT  0A0h, AL             {the slave as well                    }
+  OUT  0A0h, AL             { the slave as well                    }
 @@Master:
   MOV  AL, AH
   XOR  AH, AH
@@ -642,11 +642,11 @@ asm
 @@Again:
   CLI
   MOV  DX, GUSPort
-  ADD  DX, 6          {the IRQ status register              }
+  ADD  DX, 6          { the IRQ status register              }
   IN   AL, DX
-  TEST AL, 0Ch        {either timer?                        }
+  TEST AL, 0Ch        { either timer?                        }
   JZ   @@Done
-  STI                 {callbacks run with interrupts on     }
+  STI                 { callbacks run with interrupts on     }
   TEST AL, 4
   JZ   @@NotOne
   PUSH AX
@@ -659,14 +659,14 @@ asm
   CALL ServiceTimer2
   POP  AX
 @@NotTwo:
-  JMP  @@Again  {until the card is quiet              }
+  JMP  @@Again  { until the card is quiet              }
 @@Done:
   MOV  AL, BYTE PTR GUSIrq
   XOR  AH, AH
   PUSH AX
   CALL EnableIRQ
   PUSH 000Fh
-  CALL GetGusRegister8      {clear anything latched               }
+  CALL GetGusRegister8      { clear anything latched               }
   POP  DS
   POP  ES
   POPA
@@ -691,14 +691,14 @@ begin
   OldIrqState  := IRQState(GUSIrq);
   OldIrqHandler := SetIRQVector(GUSIrq, @GUSIrqHandler);
   EnableIRQ(GUSIrq);
-  GetGusRegister8(grVoiceIRQ);                                   {clear status }
+  GetGusRegister8(grVoiceIRQ);                                   { clear status }
 end;
 
 procedure DoneGusIRQ;
 begin
   if not GusIRQInited then Exit;
   GusIRQInited := False;
-  if not OldIrqState then DisableIRQ(GUSIrq);  {only if we turned it on }
+  if not OldIrqState then DisableIRQ(GUSIrq);  { only if we turned it on }
   SetIRQVector(GUSIrq, OldIrqHandler);
 end;
 
@@ -728,7 +728,7 @@ var
 begin
   V := IrqCode[GUSIrq] + $40;
   asm
-    PUSHF  {keep the caller's interrupt state    }
+    PUSHF  { keep the caller's interrupt state    }
     CLI
   end;
   Port[GUSPort + $0F] := 5;
@@ -736,9 +736,9 @@ begin
   Port[GUSPort + $0B] := 0;
   Port[GUSPort + $0F] := 0;
   Port[GUSPort] := $4B;
-  Port[GUSPort + $0B] := V;   {arm         }
+  Port[GUSPort + $0B] := V;   { arm         }
   Port[GUSPort] := $4B;
-  Port[GUSPort + $0B] := V;   {commit      }
+  Port[GUSPort + $0B] := V;   { commit      }
   Port[GUSPort + $102] := 0;
   Port[GUSPort] := $0C;
   Port[GUSPort + $102] := 0;
@@ -773,7 +773,7 @@ begin
   FillChar(LastVoiceEnd,  $80, $FF);
   FillChar(LastVolumes,    $20, $FF);
   FillChar(LastFreqs,    $80, $FF);
-  FillChar(LastPans,     $20, $7F);     {dead centre }
+  FillChar(LastPans,     $20, $7F);     { dead centre }
   FillChar(VoicesChanged,   $20, $00);
 
   SetMixControl;
@@ -793,7 +793,7 @@ begin
   SetGusRegister8(grReset, 0);    { 1723:03cf  [1.39b] "Reset the GUS card." }
   GusDelay;
   SetGusRegister8(grReset, 1);    { 1723:03d9  [1.39b] "DAC turned off."     }
-  SetGusRegister8(grActiveVoices, $DF);  {32 voices     }
+  SetGusRegister8(grActiveVoices, $DF);  { 32 voices     }
   SetGusRegister16(grDRAMLowIO, 0);
   SetGusRegister8(grDRAMHighIO, 0);
 
@@ -805,8 +805,8 @@ begin
   for V := 0 to MaxVoice do
   begin
     SetGusVoice(V);
-    SetGusRegister8(grVoiceControl, 3);  {stopped      }
-    SetGusRegister8(grVolumeControl, 3);  {volume idle  }
+    SetGusRegister8(grVoiceControl, 3);  { stopped      }
+    SetGusRegister8(grVolumeControl, 3);  { volume idle  }
     { ALL FOUR ARE INSIDE THE `if`. The JBE at 1723:0418 jumps to 1723:043c,
       which is the loop test -- so it skips the ramp settings too, not just
       the two volume writes. Written with the last two outside, a voice whose
@@ -815,10 +815,10 @@ begin
     begin
       SetGusRegister8(grRampStart, $18);
       SetGusRegister8(grRampEnd, Hi(GetGusRegister16(grCurrentVol)));
-      SetGusRegister8(grRampRate, $1F);                        {fastest ramp }
+      SetGusRegister8(grRampRate, $1F);                        { fastest ramp }
       SetGusRegister8(grVolumeControl, $40);
     end;
-  end;  {CMP V,$1F }
+  end;  { CMP V,$1F }
 
   { **AND THE PORT WRITE THAT FOLLOWS IS THE OTHER HALF OF THE CLICK GUARD.**
     The release pairs them explicitly: 0Bh at the top is "[1.39b] Turn off
@@ -827,7 +827,7 @@ begin
     transition itself is never audible. }
   SetGusRegister8(grReset, 7);  { 1723:0446  [1.39b] "DAC turned on."  }
   asm                       { hand assembler, same as the $0B poke above:      }
-    MOV  DX, GUSPort        {port first, then the value            }
+    MOV  DX, GUSPort        { port first, then the value            }
     MOV  AL, 0Ch
     OUT  DX, AL
   end;
@@ -867,7 +867,7 @@ begin
   ProbeUltrasound := False;
   asm CLI end;
 
-  SetGusRegister8(grReset, 0);    {hold in reset }
+  SetGusRegister8(grReset, 0);    { hold in reset }
   GusDelay;
   SetGusRegister8(grReset, 7);
   SetGusRegister8(grActiveVoices, $DF);
@@ -905,7 +905,7 @@ find a card.
   MIND THE SENSE OF THE RESULT -- IT IS INVERTED FROM WHAT IT LOOKS LIKE.
   This returns 1 when a card ANSWERED and 0 when none did, and 1084:0061
   passes that straight into driver slot +$1a. But the slot is an ERROR CODE:
-selects a driver only when the probe returns ZERO.
+ selects a driver only when the probe returns ZERO.
 
   So the value that means "I found a GUS" is the value that means "do not
   use this driver". That is not a bug -- there is no path in this program
@@ -925,7 +925,7 @@ var
 begin
   DetectUltrasound := True;
 
-  if GUSPort = $FFFF then  {not configured }
+  if GUSPort = $FFFF then  { not configured }
   begin
     for I := 1 to 12 do
     begin
@@ -936,7 +936,7 @@ begin
   else
     if ProbeUltrasound then Exit;
 
-  DetectUltrasound := False;  {nothing answered }
+  DetectUltrasound := False;  { nothing answered }
 
 end;
 
@@ -959,7 +959,7 @@ begin
   { ONE STATEMENT. The release's SwapGusAddress is
     `Addr := (Addr SHL 9) AND $1FFFFE00;` -- a single shift and a single
     32-bit mask, not a shift followed by a rebuild from two halves. }
-  A := (A shl 9) and $1FFFFE00;  {.. 1723:0553 }
+  A := (A shl 9) and $1FFFFE00;  { .. 1723:0553 }
 end;
 
 { --------------------------------------------------------------------------
@@ -1016,7 +1016,7 @@ set a voice's volume, ramping to it rather than jumping.
   has it as ChangeVol(Channel, Vol, Ramp) and the frame agrees exactly:
   RET 6, with Channel at [BP+8], Vol at [BP+6] and Ramp at [BP+4].
 
-  DS:$389a is LastVolumes, not the mode table -- also misnamed here until now.
+ is LastVolumes, not the mode table -- also misnamed here until now.
 
   It never jumps the volume. It reads where the ramp currently is, points the
   ramp at the new value from whichever end it has to travel, and sets the
@@ -1034,15 +1034,15 @@ begin
   begin
     LastVolumes[Channel] := Vol;
 
-    SetGusRegister8(grVolumeControl, 3);            {ramp stopped }
-    Oldv := Hi(GetGusRegister16(grCurrentVol));  {where it is  }
+    SetGusRegister8(grVolumeControl, 3);            { ramp stopped }
+    Oldv := Hi(GetGusRegister16(grCurrentVol));  { where it is  }
 
     if Oldv <> Hi(VolumeTable[Vol]) then
     begin
-      if Oldv > Hi(VolumeTable[Vol]) then  {going down   }
+      if Oldv > Hi(VolumeTable[Vol]) then  { going down   }
       begin
-        SetGusRegister8(grRampEnd, Oldv);                  {ramp end     }
-        SetGusRegister8(grRampStart, Hi(VolumeTable[Vol]));  {ramp start   }
+        SetGusRegister8(grRampEnd, Oldv);                  { ramp end     }
+        SetGusRegister8(grRampStart, Hi(VolumeTable[Vol]));  { ramp start   }
       end
       else
       begin
@@ -1051,7 +1051,7 @@ begin
       end;
 
       SetGusRegister16(grCurrentVol, Word(Oldv) shl 8);
-      SetGusRegister8(grRampRate, Ramp);               {ramp rate    }
+      SetGusRegister8(grRampRate, Ramp);               { ramp rate    }
 
       if Oldv > Hi(VolumeTable[Vol]) then
         SetGusRegister8(grVolumeControl, GetGusRegister8(grVolumeControl) and not 3 or $40)
@@ -1082,7 +1082,7 @@ begin
   Loop := LastLoopStart[Voice];
   Fin  := LastVoiceEnd[Voice];
 
-  SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $03);  {stop it first }
+  SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $03);  { stop it first }
 
   SwapGusAddress(Cur);
   SetGusRegister16(grCurrentAddrLow, Cur and $FFFF);
@@ -1092,11 +1092,11 @@ begin
   SetGusRegister16(grEndAddrLow, Fin and $FFFF);
   SetGusRegister16(grEndAddrHigh, Fin shr 16);
 
-  if Loop = -1 then                                     {no loop }
+  if Loop = -1 then                                     { no loop }
     SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) and $F7)
   else
   begin
-    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $08);  {looping }
+    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $08);  { looping }
     SwapGusAddress(Loop);
     SetGusRegister16(grStartAddrLow, Loop and $FFFF);
     SetGusRegister16(grStartAddrHigh, Loop shr 16);
@@ -1195,7 +1195,7 @@ begin
       ChangeSample(i);
       Vol := LastVolumes[i];
       LastVolumes[i] := 0;
-      ChangeVol(i, Vol, $1F);  {.. 07da }
+      ChangeVol(i, Vol, $1F);  { .. 07da }
     end;
 
   { --- pass two: collect the ready voices, then start them together -- }
@@ -1205,7 +1205,7 @@ begin
     begin
       Inc(j, 2);
       CmdList[j - 1] := i;
-      CmdList[j] := GetGusRegister8(grVoiceControl) and $FC;  {clear the stop bits }
+      CmdList[j] := GetGusRegister8(grVoiceControl) and $FC;  { clear the stop bits }
       { v1.51 DOES NOT CLEAR IT HERE. The clear moved into the third pass
         below, which is the pass that actually starts the voice. }
     end;
@@ -1301,12 +1301,12 @@ start a voice with a loop. THE ENTRY 12ba's ring flushes to.
 procedure TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan : Byte;
                          StartA, LoopA, EndA : LongInt);
 begin
-  SetGusVoice(Voice);                      {all register writes
+  SetGusVoice(Voice);                      { all register writes
                                              below apply to this voice }
-  ChangeVoiceParams(Voice, 0, Freq, Pan);  {volume 0: silent until
+  ChangeVoiceParams(Voice, 0, Freq, Pan);  { volume 0: silent until
                                              the restart ramps it up }
 
-  asm PUSHF; CLI end;                {the five updates are one
+  asm PUSHF; CLI end;                { the five updates are one
                                        transaction -- see above }
   LastVoiceStart[Voice]  := StartA;
   LastLoopStart[Voice] := LoopA;
@@ -1319,7 +1319,7 @@ begin
     installed each time rather than once, so whatever the timer last ran does
     not decide what happens now. }
   GUSTimer1RutPtr := @RestartChannels;
-  GUSInitTimer1($F6);                   {$F6 is the countdown, not
+  GUSInitTimer1($F6);                   { $F6 is the countdown, not
                                           a register number }
 end;
 
@@ -1366,13 +1366,13 @@ begin
     end
   end
   else
-    ChangeVol(Channel, Vol, $1F);  {.. 09c2 }
+    ChangeVol(Channel, Vol, $1F);  { .. 09c2 }
 
   if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then
   begin
     LastFreqs[Channel] := Freq;
     SetGusRegister16(grFreqControl, ((Freq shl 9) + LongInt(GUSDivisor shr 1))
-                    div LongInt(GUSDivisor shr 1));  {.. 0a31 }
+                    div LongInt(GUSDivisor shr 1));  { .. 0a31 }
   end;
 
   if LastPans[Channel] <> Panning then
@@ -1396,8 +1396,8 @@ how many voices, and what that costs in sample rate.
   -------------------------------------------------------------------------- }
 procedure SetGusChannels(N : Byte);
 begin
-  if N > $20 then N := $20        {at most 32 }
-  else if N < $14 then N := $14;  {at least 14 }
+  if N > $20 then N := $20        { at most 32 }
+  else if N < $14 then N := $14;  { at least 14 }
 
   SetGusRegister8(grActiveVoices, $C0 + N - 1);
   GUSDivisor    := 617400 div N;

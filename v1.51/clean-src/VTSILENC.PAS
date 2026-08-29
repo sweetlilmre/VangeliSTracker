@@ -93,11 +93,11 @@ const
     `03 00`. Two bytes, and no instruction anywhere names either value -- both are
     initialisers a command-line switch overwrites, so only the image says what the
     default is. }
-  ComPort : Word    = $2F8;   { DS:$0200  COM2 by default }
+  ComPort : Word    = $2F8;   { COM2 by default }
   ComIrq  : Word    = 3;
 
-  Frac    : Byte    = 0;      { DS:$0204  the 5-in-12 accumulator }
-  OldVec  : Pointer = nil;    { DS:$0206  the displaced INT 0Ch vector }
+  Frac    : Byte    = 0;      { the 5-in-12 accumulator }
+  OldVec  : Pointer = nil;    { the displaced INT 0Ch vector }
 
   { DS:$001e. A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
     DATA rather than something the unit assigns at run time -- exactly what
@@ -143,14 +143,14 @@ var
   { ~~Frac and OldVec~~ are TYPED CONSTANTS in the interface now -- see the note there.
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
-  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
+  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { .. $0e34 }
   { **STALE, AND UNANCHORED.** This unit links at position 4 and VTCmd at 2, so
     this variable must sit above VTCmd's $0ef6. It does not. The claim is
     consistent with nothing else in the file -- it is the only variable here with
     an address -- and no instrument in the kit can reach it: a variable is absent
     from the image, and this one is not public, so the linker map is silent too.
     Left as it stands and marked, rather than replaced with a guess. }
-  WasOn  : Boolean;     { DS:$0e36  STALE }
+  WasOn  : Boolean;     { STALE }
 
 { ~~Flag0BC7, Flag0BBD, Flag0BBF, Flag0BBC~~ -- ALL FOUR GONE, and all four were
   SoundDevices' own, in its CONSTANT-region block at $0bbc..$0bc7. The note here said
@@ -209,21 +209,21 @@ asm
   PUSH AX
   PUSH DS
   PUSH DX
-  MOV  AX, SEG @DATA     {was MOV AX,1CAAh                     }
+  MOV  AX, SEG @DATA     { was MOV AX,1CAAh                     }
   MOV  DS, AX
   PUSH ES
   PUSH BX
   PUSH CX
   PUSH DI
   PUSH SI
-  MOV  DX, ComPort       {was MOV DX,03F8h                     }
+  MOV  DX, ComPort       { was MOV DX,03F8h                     }
   XOR  AL, AL
-  OUT  DX, AL            {keep the interrupts coming           }
+  OUT  DX, AL            { keep the interrupts coming           }
   MOV  AL, Frac
-  ADD  AL, AddPer        {+ 5                                  }
+  ADD  AL, AddPer        { + 5                                  }
   CMP  AL, CarryAt
   JC   @@NoTick
-  SUB  AL, CarryAt       {carry the remainder, do not drop it  }
+  SUB  AL, CarryAt       { carry the remainder, do not drop it  }
   INC  Ticks
 @@NoTick:
   MOV  Frac, AL
@@ -239,12 +239,12 @@ asm
     arrives. `MOV AX,[0202]` loads the whole word and the test is on AL. }
   MOV  AX, ComIrq
   CMP  AL, 8
-  JB   @@Master          {master alone for 0..7                }
+  JB   @@Master          { master alone for 0..7                }
   MOV  AL, 20h
-  OUT  0A0h, AL          {EOI to the slave                     }
+  OUT  0A0h, AL          { EOI to the slave                     }
 @@Master:
   MOV  AL, 20h
-  OUT  20h, AL           {EOI, late and on purpose             }
+  OUT  20h, AL           { EOI, late and on purpose             }
   POP  DX
   POP  DS
   POP  AX
@@ -305,7 +305,7 @@ begin
   DevBits     := 8;
   MixMethod   := 0;
 
-  if OldVec <> nil then Exit;                     {already running }
+  if OldVec <> nil then Exit;                     { already running }
 
   {`IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
     v1.31b tests `Port[$21] and $10` with the mask bit for IRQ 4 written in;
@@ -318,11 +318,11 @@ begin
   OldVec := SetIRQVector(ComIrq, @IrqHandler);
   EnableIRQ(ComIrq);
 
-  SavedMCR := Port[ComPort + 4];                  {$3FC }
-  SavedLCR := Port[ComPort + 3];                  {$3FB }
+  SavedMCR := Port[ComPort + 4];                  { $3FC }
+  SavedLCR := Port[ComPort + 3];                  { $3FB }
 
-  Port[ComPort + 4] := 8;                         {OUT2 -- gate the IRQ }
-  Port[ComPort + 3] := $83;                       {DLAB + 8N1 }
+  Port[ComPort + 4] := 8;                         { OUT2 -- gate the IRQ }
+  Port[ComPort + 3] := $83;                       { DLAB + 8N1 }
 
   { READ THE ORDER HERE BACKWARDS. The original evaluates the HIGH byte
     first -- IN from $3f9, SHL AX,8, MOV CX,AX, then IN from $3f8 and ADD --
@@ -333,13 +333,13 @@ begin
   SavedDiv := Port[ComPort]
               + (Port[ComPort + 1] shl 8);
 
-  Port[ComPort]     := Lo(Divisor);               {$60 }
-  Port[ComPort + 1] := Hi(Divisor);               {$00 -> 1200 baud }
-  Port[ComPort + 3] := $03;                       {8N1, DLAB off }
+  Port[ComPort]     := Lo(Divisor);               { $60 }
+  Port[ComPort + 1] := Hi(Divisor);               { $00 -> 1200 baud }
+  Port[ComPort + 3] := $03;                       { 8N1, DLAB off }
 
-  SavedIER := Port[ComPort + 1];                  {$3F9 }
+  SavedIER := Port[ComPort + 1];                  { $3F9 }
   Port[ComPort + 1] := 0;
-  Port[ComPort + 1] := 2;                         {transmit empty }
+  Port[ComPort + 1] := 2;                         { transmit empty }
 end;
 
 { --------------------------------------------------------------------------
@@ -355,7 +355,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
+ and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
   -------------------------------------------------------------------------- }
 procedure ChgHz(W : Word); far;
 begin
@@ -379,17 +379,17 @@ slot +$32, stop the clock and hand the port back.
 procedure Stop; far;
 begin
   { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
-and jumps over the whole body with a single `JZ +54`. An
+ and jumps over the whole body with a single `JZ +54`. An
     `if OldVec = nil then Exit` compiles instead to `JNZ +2 / JMP +54` --
     a conditional jump around an unconditional one, two bytes longer and
     the wrong shape. Same behaviour; only this form reproduces the bytes. }
-  if OldVec <> nil then                           {never started }
+  if OldVec <> nil then                           { never started }
   begin
     Port[ComPort + 4] := Lo(SavedMCR);
-    Port[ComPort + 3] := $80;                     {DLAB, to reach the divisor }
+    Port[ComPort + 3] := $80;                     { DLAB, to reach the divisor }
     Port[ComPort]     := Lo(SavedDiv);
     Port[ComPort + 1] := Hi(SavedDiv);
-    Port[ComPort + 3] := Lo(SavedLCR);            {drops DLAB }
+    Port[ComPort + 3] := Lo(SavedLCR);            { drops DLAB }
     Port[ComPort + 1] := 0;
     Port[ComPort + 1] := Lo(SavedIER);
 

@@ -136,7 +136,7 @@ const
   release's list with no gaps.
   -------------------------------------------------------------------------- }
 const
-  SbPort       : Word    = $FFFF;  { DS:$0bbc  $FFFF means autodetect }
+  SbPort       : Word    = $FFFF;  { $FFFF means autodetect }
   SbIrq        : Word    = 7;
   SbDMAChan    : Word    = 1;
   SbDefTimeout : Word    = 5000;
@@ -156,7 +156,7 @@ const
   SbForce      : Boolean = False;
   MixerForce   : Boolean = False;
   SbProForce   : Boolean = False;
-  Sb16Force    : Boolean = False;  { DS:$0bc8  pad at $0b21 }
+  Sb16Force    : Boolean = False;  { pad at $0b21 }
 
 { Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
   `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 19a0:026f is what fixes the

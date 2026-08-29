@@ -85,10 +85,10 @@ interface
   is the release's own default. Everything else this unit declares stays private and
   follows on at $09ee. }
 const
-  SbProMixMasterVol : Byte    = 255;  { DS:$0a92  the VT.CFG `MasterVol` key   }
-  SbProMixDACVol    : Byte    = 255;  { DS:$0a93  ... `DACVol`                 }
-  SbProMixFMVol     : Byte    = 255;  { DS:$0a94  ... `FMVol`                  }
-  SbProMixFilter    : Boolean = False;{ DS:$0a95  ... `Filter`                 }
+  SbProMixMasterVol : Byte    = 255;  { the VT.CFG `MasterVol` key   }
+  SbProMixDACVol    : Byte    = 255;  { ... `DACVol`                 }
+  SbProMixFMVol     : Byte    = 255;  { ... `FMVol`                  }
+  SbProMixFilter    : Boolean = False;{ ... `Filter`                 }
 
 implementation
 
@@ -165,9 +165,9 @@ function  DMASBMix2Name : TDevID; far;  begin end;
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which
   card it is:
 
-[0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
-[0b06] -> [0bea]   DSP8AckPort
-[0afe] -> [0bec]   DSPLifePort
+ [0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
+ [0b06] -> [0bea]   DSP8AckPort
+ [0afe] -> [0bec]   DSPLifePort
 
   All six addresses were already known from the two units independently, so
   this routine is a six-way cross-check that both are right. }

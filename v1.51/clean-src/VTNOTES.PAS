@@ -18,7 +18,7 @@
                      ...
                      oct 6    26   24 ...                  14
 
-           DS:$04d2  is not a separate table -- it is $04bc + 22, i.e. the
+ is not a separate table -- it is $04bc + 22, i.e. the
                      LAST entry of each row, so [$04d2 + Oct*24] is the
                      smallest period that octave holds.
 
@@ -34,10 +34,10 @@ unit VTNotes;
 interface
 
 const
-  Octaves  = 7;                   {stops the octave scan at 6 }
-  Semis    = 12;                  {stops the note scan at $0B }
+  Octaves  = 7;                   { stops the octave scan at 6 }
+  Semis    = 12;                  { stops the note scan at $0B }
   Notes    = Octaves * Semis;     { 84 -- the linear form NoteOf's low byte holds }
-  Periods  = 2048;                {stops at $7FF }
+  Periods  = 2048;                { stops at $7FF }
   RowBytes = 24;                  {IMUL by $18 }
 
 type
@@ -51,7 +51,7 @@ type
 
   It is the ProTracker period table: 1712 down to 14 over seven octaves, each
   semitone the one below divided by the twelfth root of two. Transcribed from
-rather than computed, per the standing rule.
+ rather than computed, per the standing rule.
   ------------------------------------------------------------------------- }
 const
   NotePeriods : array[0..Notes - 1] of Word = (
@@ -69,7 +69,7 @@ const
   to index NotePeriods above. The two tables are a matched pair and both ends of
   the pairing are now in the tree. }
 var
-  NoteOf    : array[0..Periods - 1] of Word;         { DS:$4920  4,096 bytes }
+  NoteOf    : array[0..Periods - 1] of Word;         { 4,096 bytes }
 
   {340 BYTES THAT HAD TO BE HERE, and the release names them. This unit's
     variable block ends where GUS's begins at $371a, and $25c6 + 4096 is $35c6, so there
@@ -83,7 +83,7 @@ var
     the image is silent about it and `census.py` finding no printable string in the
     segment is consistent. It is here for its 340 bytes and its name, and the arithmetic
     is what says it exists. }
-  NoteStr   : array[0..84] of String[3];             { DS:$5920  340 bytes  }
+  NoteStr   : array[0..84] of String[3];             { 340 bytes  }
 
 procedure BuildNoteTable; far;
 
@@ -117,7 +117,7 @@ implementation
   ORDINARY DGROUP DATA, not `absolute`. This pair was once declared
   `absolute 0:$04bc`, which is segment ZERO -- the interrupt vector table -- and
   made every access a far one through ES. The original indexes them DS-relative:
-is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
+ is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
   instruction. The offsets themselves are decided by link order, which is the open
   problem for a byte-exact EXE; inside a .TPU they are pending fixups and compare
   as zero either way.
@@ -187,13 +187,13 @@ begin
         goto Store;
 
     Note := 0;
-    Oct  := 0;                                    {falls through }
+    Oct  := 0;                                    { falls through }
 
     {both forms in one word. The low byte is the linear note
       number a sample rate is worked out from; the high byte is the nibble
       pair a pattern display wants. }
   Store:
-    NoteOf[P] := ((Oct shl 4) + Note) shl 8       {.. 1650:007e }
+    NoteOf[P] := ((Oct shl 4) + Note) shl 8       { .. 1650:007e }
                  + (Oct * Semis + Note);
   end;
 end;

@@ -67,7 +67,7 @@ type
   declared in the implementation section, which put them AFTER the record; a unit's
   interface declarations all come first, so the addresses require them here. }
 const
-  LastTick : Word    = 0;   { DS:$0014  1000:02a1 clears it, so it is exported }
+  LastTick : Word    = 0;   { clears it, so it is exported }
 
   { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, AND 1.31b COULD NOT
     EITHER. The addresses either side are measured and the block is contiguous, so
@@ -87,7 +87,7 @@ const
     only a reader in this image can name them. }
   Fill0016 : LongInt = 0;
 
-  Busy     : Byte    = 0;   { DS:$001a in v1.51  the handler's guard          }
+  Busy     : Byte    = 0;   { in v1.51  the handler's guard          }
 
   { FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
     DS:$0020, and nothing in the segment touches what lies between. Declared as
@@ -104,7 +104,7 @@ const
     declared LongInt-first the compiler aligns it to $001C and everything after
     lands one byte high, which is exactly the three operands that were wrong. The
     release supplies the REASON for the shape the addresses had already forced. }
-  Pad001B  : Byte    = 0;   { DS:$001b  alignment, as 1.31b's $005f is    }
+  Pad001B  : Byte    = 0;   { alignment, as 1.31b's $005f is    }
 
   { **FOUR BYTES NEITHER VERSION NAMES.** 1.31b has them too, as `Fill005A`, in
     the same place relative to its neighbours -- between the tick counter and the
@@ -146,7 +146,7 @@ implementation
   `Busy` and `LastTick` stay in this unit but moved UP into the interface const block,
   because their addresses are BELOW `DevData` at $0060 and a unit lays its interface
   declarations down before its implementation ones. `LastTick` also has to be visible:
-writes it. }
+ writes it. }
 
 { THREE VARIABLES USED TO BE DECLARED HERE AND ALL THREE WERE DUPLICATES of
   globals another unit already owns. Every reference to one is a linker fixup,
@@ -155,8 +155,8 @@ writes it. }
 
     DS:$4302/$4304   SavedSS/SavedSP, owned by SoundDevices, which switches
                      to the same private stack in its own shared poll
-    DS:$4312         SoundDevices.PeriodicProc -- what 1084:003a CALLs
-    DS:$058e         GUS.GUSTimer2RutPtr -- what 1084:008a STORES to
+ SoundDevices.PeriodicProc -- what 1084:003a CALLs
+ GUS.GUSTimer2RutPtr -- what 1084:008a STORES to
 
   The store and the call went through one `Callback : Pointer` whose comment
   claimed $4312, while the assignment's own comment said it reached $058e. The
@@ -205,16 +205,16 @@ begin
   MOV  AX, SEG @DATA
   MOV  DS, AX
   CMP  Busy, 0
-  JBE  @@Take         {zero -> nobody is inside              }
-  JMP  @@Out          {already inside; do nothing            }
+  JBE  @@Take         { zero -> nobody is inside              }
+  JMP  @@Out          { already inside; do nothing            }
 @@Take:
   INC  Busy
   INC  LastTick
-  CALL FAR PTR FlushEventRow    {CALLF 12ce:03d9  -- NOT      }
+  CALL FAR PTR FlushEventRow    { CALLF 12ce:03d9  -- NOT      }
                               { AdvanceEventRow; see PlayMod's interface  }
   DEC  Busy
 @@Out:
-  end  {LEAVE / RETF, supplied by Pascal      }
+  end  { LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------
@@ -274,22 +274,22 @@ begin
   JMP  @@Out
 @@Take:
   INC  PollBusy
-  MOV  SoundDevices.SavedSS, SS {keep the caller's stack     }
+  MOV  SoundDevices.SavedSS, SS { keep the caller's stack     }
   MOV  SoundDevices.SavedSP, SP
   MOV  DX, DS
   { **THE STACK THIS SWITCHES TO IS `SoundDevices.PollStack`**, and the operand
     below is why nothing could find it: SP is loaded with the address of `SavedSS`,
     the variable ABOVE the block, and the stack then grows down through it. The
     block's own address appears in no instruction anywhere in the image. }
-  MOV  SS, DX         {ours lives in the data segment        }
-  MOV  SP, OFFSET SoundDevices.SavedSS  {the top of PollStack }
+  MOV  SS, DX         { ours lives in the data segment        }
+  MOV  SP, OFFSET SoundDevices.SavedSS  { the top of PollStack }
   CALL DWORD PTR SoundDevices.PeriodicProc
   MOV  SS, SoundDevices.SavedSS
   MOV  SP, SoundDevices.SavedSP
-  INC  DriverTicks    {AFTER the call, not before            }
+  INC  DriverTicks    { AFTER the call, not before            }
   DEC  PollBusy
 @@Out:
-  end  {LEAVE / RETF, supplied by Pascal      }
+  end  { LEAVE / RETF, supplied by Pascal      }
 end;
 
 { --------------------------------------------------------------------------
@@ -399,7 +399,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-and 1084:00fc -- slots +$22 and +$2e. Empty.
+ and 1084:00fc -- slots +$22 and +$2e. Empty.
 
   The first takes a word and the second takes nothing, and neither does
   anything with it. Whatever these mean, the GUS has no use for them.
@@ -416,7 +416,7 @@ end;
 fill in the record and hand it to the player core.
 
   Eight far addresses written straight into DS:$0076..DS:$0095. That range is
-  DS:$0060 + $16 through + $35, which is what fixes the driver layout -- see
+ + $16 through + $35, which is what fixes the driver layout -- see
   VTDevData. No VMT is built and none is referenced.
 
   The name at +$00 is not written here: 'GUS' is already sitting in DGROUP as

@@ -61,20 +61,20 @@ uses
   than the `PathStr` it was: 68 bytes is what closes the gap, where 80 would overrun
   into data that is not zero. }
 const
-  VTDir             : DirStr        = '';            { DS:$08e2  68 bytes      }
+  VTDir             : DirStr        = '';            { 68 bytes      }
   DevPtr            : PSoundDevice  = nil;
-  DevID             : TDevID        = 'DMA-SB-Mono'; { DS:$092A  MEASURED      }
-  StartupScr        : String[32]    = '';            { DS:$0940  after a pad   }
+  DevID             : TDevID        = 'DMA-SB-Mono'; { MEASURED      }
+  StartupScr        : String[32]    = '';            { after a pad   }
 
-  PermitFade        : Boolean       = True;          { DS:$0961  01            }
-  VtVolume          : Byte          = 127;           { DS:$0962  7f            }
-  ShellLoopMod      : Boolean       = True;          { DS:$0963  01            }
+  PermitFade        : Boolean       = True;          { 01            }
+  VtVolume          : Byte          = 127;           { 7f            }
+  ShellLoopMod      : Boolean       = True;          { 01            }
 
   {`e0 2e`, 12000. The release computes its default as
     `DefaultHz * 3 DIV 4`, so 1.31's DefaultHz is 16000. Read, not derived. }
   ShellHz           : Word          = 12000;
 
-  FadeIncr          : Word          = 256;           { DS:$0966  00 01         }
+  FadeIncr          : Word          = 256;           { 00 01         }
   VTLoopMod         : Boolean       = False;
 
   { $08c2..$08c7, after the pad at $08c1. All three are zero in the image, so the
@@ -89,10 +89,10 @@ const
     StringsFName. }
   ShellParam        : String[127]   = '';
 
-  StringsFName      : PathStr       = 'VT_Esp.Lng';  { DS:$09F0  MEASURED      }
+  StringsFName      : PathStr       = 'VT_Esp.Lng';  { MEASURED      }
   ModPath           : PathStr       = '';
 
-  {SETS THIS AND `1000` READS IT, which is how the switch got its name.
+  { SETS THIS AND `1000` READS IT, which is how the switch got its name.
     `1000:00fb` is `CMP byte [09e8],0 / JNZ +$67`, and the 103 bytes it skips are four
     WriteLns of four 62-byte string constants at `1000:0000`, `003e`, `007c` and
     `00ba` -- a four-line banner. `1000:0164` then sets the same flag itself, so the
@@ -100,7 +100,7 @@ const
     A typed constant like everything else here, and $0998 + 80 is what puts it at
     $09e8: the last byte of this unit's block, with DevSB's first device record
     eleven bytes further on. }
-  NoBanner          : Boolean       = False;         { DS:$0a90  MEASURED      }
+  NoBanner          : Boolean       = False;         { MEASURED      }
 
 { ~~A NEW BOOLEAN AT DS:$4821 WHOSE OWNER IS NOT YET PROVEN~~ -- **IT IS
   `VTCtrl.CtrlBlock.Abort`, AND THE ARITHMETIC IS ONE SUBTRACTION.** $4821 minus

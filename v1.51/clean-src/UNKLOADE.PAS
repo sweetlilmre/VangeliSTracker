@@ -44,7 +44,7 @@ uses
   Objects, SongUnit;
 
 type
-  { DS:$040e holds six bytes with NO length prefix, and the routine compares
+  { holds six bytes with NO length prefix, and the routine compares
     exactly six, so the marker is a fixed-width character run rather than a
     Pascal string. }
   PModJMIdString = ^TModJMIdString;
@@ -98,12 +98,12 @@ var
     would need a load. }
   ModJM : TModJMIdString absolute Header;
 begin
-  Song.FileFormat := mffJMPlayer;                 {+$5d := 4 }
+  Song.FileFormat := mffJMPlayer;                 { +$5d := 4 }
 
   if ModJM = ModJMIdString then
-    Song.Status := msFileFormatNotSupported       {+$59 := 6 }
+    Song.Status := msFileFormatNotSupported       { +$59 := 6 }
   else
-    Song.Status := msNotLoaded;                   {+$59 := 0 }
+    Song.Status := msNotLoaded;                   { +$59 := 0 }
 end;
 
 end.

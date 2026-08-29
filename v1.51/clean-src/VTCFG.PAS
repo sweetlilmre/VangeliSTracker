@@ -83,7 +83,7 @@ implementation
 var
   { The release's names and its comments. Both are DGROUP. }
   ConfFile : Text;                { the open configuration file                }
-  Line     : String;              { DS:$1090  the last line read from it        }
+  Line     : String;              { the last line read from it        }
 
 
 { --------------------------------------------------------------------------
@@ -502,7 +502,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-and 11bb:0850 -- GetWord and GetByte. GetNum with a cast, and the two
+ and 11bb:0850 -- GetWord and GetByte. GetNum with a cast, and the two
   are identical but for the width. `ENTER 0006,0` each: the LongInt local and the
   one-byte result.
   -------------------------------------------------------------------------- }

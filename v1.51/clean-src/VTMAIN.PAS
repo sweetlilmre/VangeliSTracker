@@ -58,22 +58,22 @@ program DemoVT;
   program reaches are transcribed and byte-exact, so the seventeen calls that
   were written as addresses are now written as names:
 
-SetVTDevice     109c:0038 SetVTFreq    109c:0724 DoSongColl
-GetDOSCmdLine   12ba:10a1 PlayStart    12ba:13d7 PlayStop
-TSong.Init      14b9:0106 LoadFName    14b9:02f5 SetInsidePath
-InitUmbHeap     17cf:01d3 ShrinkSystemHeap
-InitHeapVariables
-TObject.Init    1891:03a7 TCollection.Init
-SwapVectors     (twice, around the Exec)
+ SetVTDevice     109c:0038 SetVTFreq    109c:0724 DoSongColl
+ GetDOSCmdLine   12ba:10a1 PlayStart    12ba:13d7 PlayStop
+ TSong.Init      14b9:0106 LoadFName    14b9:02f5 SetInsidePath
+ InitUmbHeap     17cf:01d3 ShrinkSystemHeap
+ InitHeapVariables
+ TObject.Init    1891:03a7 TCollection.Init
+ SwapVectors     (twice, around the Exec)
 
   THE INIT CHAIN AT 1000:04b3 IS THE CONSTRAINT ON THIS `uses` CLAUSE, and it
   is not a free choice. Turbo Pascal emits one call per unit that HAS an
   initialisation section, in dependency-resolved order, and the original's is
 
-RTL        193a:0488  DevSB      1931:0029  VTShell
-Heaps      14b7:0000  VTCtrl     12ba:141e  PlayMod
-VTCfg      1084:0101  DevGus     1065:0172  VTSilenc
-RTL exit
+ RTL        193a:0488  DevSB      1931:0029  VTShell
+ Heaps      14b7:0000  VTCtrl     12ba:141e  PlayMod
+ VTCfg      1084:0101  DevGus     1065:0172  VTSilenc
+ RTL exit
 
   so the clause below has to produce exactly that order. Units with no
   initialisation section never appear in the chain however they are listed.
@@ -142,9 +142,9 @@ uses
   TP word-aligning `SelfName` after it; the same alignment shows up three more times
   in VTGlobal's block. }
 const
-  Guard     : Byte = 0;  { DS:$0002  the poll re-entrancy guard }
+  Guard     : Byte = 0;  { the poll re-entrancy guard }
 
-  { DS:$0003 and DS:$0004, AND THE LAYOUT IS WHAT FOUND THEM. `dgroup.py` puts this
+  { and DS:$0004, AND THE LAYOUT IS WHAT FOUND THEM. `dgroup.py` puts this
     unit's block at 20 bytes in the original against our 24, and the original's
     version string starts at $0006 where 1.31b's starts at $0004 -- so two bytes went
     in ahead of it. A scan of the image for absolute references to $0004 finds
@@ -157,13 +157,13 @@ const
     string would land two bytes early. A pad that was invisible while it was the last
     thing before an aligned field becomes a real declaration the moment something
     follows it. }
-  Fill0003  : Byte = 0;  { DS:$0003  1.31b's alignment pad, now explicit }
+  Fill0003  : Byte = 0;  { 1.31b's alignment pad, now explicit }
   { **NAMED FOR WHAT IT GUARDS, WHICH IS THE ONLY THING THAT CAN NAME IT.** There is
     one writer -- 1000:03c8, immediately after `Song.LoadFName` returns -- and one
     reader, 1000:02f7, which decides whether `StopModule` calls `Song.Done`. That pair
     says the byte means "the song object owns a file", and nothing in the image says
     more. An address is not a name; a writer and a reader together are. }
-  SongOpen  : Boolean = False;  { DS:$0004  set at 1000:03c8, read at 1000:02f7 }
+  SongOpen  : Boolean = False;  { set at 1000:03c8, read at 1000:02f7 }
 
   {A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
     $0006 and Guard is at $0002, so those four bytes are accounted for exactly: a byte
@@ -178,7 +178,7 @@ const
     requested range restoring. Everything it guards is a teardown of something the
     start-up did, which is what makes "started" the right word rather than "playing":
     the byte stays set after the module ends. }
-  PlayerStarted : Boolean = False;  { DS:$0005  read at 1000:02ca }
+  PlayerStarted : Boolean = False;  { read at 1000:02ca }
 
   { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
@@ -203,7 +203,7 @@ const
              #196#196#196#196#196#196#196#196#196 + #191;
   { THE VERSION AND THE YEAR BOTH MOVE, and both are same-length substitutions --
     each line is $3d bytes in the original as it is here, so the box still closes.
-is `35 31` where ours had `33 31`, and 1000:0097 is `39 34` for `39 33`. }
+ is `35 31` where ours had `33 31`, and 1000:0097 is `39 34` for `39 33`. }
   Banner2 = '    ' + #179 + '  DemoVT.  VangeliSTracker''s version for demos, v1.51  ' + #179;
   Banner3 = '    ' + #179 + '                (C) 1992-94  VangeliSTeam              ' + #179;
   Banner4 = '    ' + #192 + #196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
@@ -238,7 +238,7 @@ is `35 31` where ours had `33 31`, and 1000:0097 is `39 34` for `39 33`. }
 
   {the name Install publishes over INT 2Fh. A TYPED constant, so it
     lives in DGROUP rather than in the code segment, and TWO measurements say so:
-is `MOV DI,0004 / PUSH DS / PUSH DI`, and PUSH DS against PUSH CS is
+ is `MOV DI,0004 / PUSH DS / PUSH DI`, and PUSH DS against PUSH CS is
     this project's standing test for where a constant lives -- an untyped one is a
     literal in CODE. And the LENGTH follows from the neighbour: VTSilenc's `Driver`
     is the next unit's first datum and the original puts it at $001e, so this
@@ -303,9 +303,9 @@ var
   `Song` used to be declared LAST and is second; `Str1208` was carrying `DS:$1208`,
   which is PlayMod's `UserVols` and not this at all -- its real address is $0cd6, and
   256 + 4 is exactly the gap between `SavedCD` and `Dir`. }
-  ChainPtr  : Pointer;   { DS:$0d16 -> TimerChain }
-  Complain  : Boolean;   { DS:$0d1a  and a pad at $0c73 }
-  Song      : TSong;     { DS:$0d1c  94 bytes; Init at 1000:032a }
+  ChainPtr  : Pointer;   { -> TimerChain }
+  Complain  : Boolean;   { and a pad at $0c73 }
+  Song      : TSong;     { 94 bytes; Init at 1000:032a }
 
 { --------------------------------------------------------------------------
   EIGHT NAMES RESOLVED TO THE UNITS THAT OWN THEM, now that all of them are
@@ -394,7 +394,7 @@ var
   { ~~Obj0E38 : TObject~~ and ~~Var0F82 : TCollection~~ ARE GONE. They were
     VTCmd's own `Cmd` and `SongColl`, and declaring stand-ins here is what kept
     both CMDLINE and VTCMD out of the linked image -- see the body at 1000:05bb.
-    DS:$0e38 and DS:$0f82 are their measured addresses; VTCMD.PAS carries them. }
+ and DS:$0f82 are their measured addresses; VTCMD.PAS carries them. }
   { ~~Var0F3A $0f3a~~ -- ALSO NOT A VARIABLE. `Cmd` is at $0e38 and $0e38 + $102 is
     `FileDir`, which CMDLINE.PAS declares at that offset in TCmdLineInterpreter -- VMT,
     then `Line : String` at +$002, then `FileDir : DirStr` at +$102. So the last
@@ -445,10 +445,10 @@ the chain to whatever held INT 1Ch before us.
   and `1000:0577` takes its address, so far is what it is. }
 procedure TimerChain; far; assembler;
 asm
-  DB   0EAh              {JMP FAR seg:ofs -- the operand is data }
-  DW   OFFSET TimerChain {patched with the old INT 1Ch offset    }
-  DW   SEG TimerChain    {patched with the old INT 1Ch segment   }
-                         {the epilogue's RETF, never reached     }
+  DB   0EAh              { JMP FAR seg:ofs -- the operand is data }
+  DW   OFFSET TimerChain { patched with the old INT 1Ch offset    }
+  DW   SEG TimerChain    { patched with the old INT 1Ch segment   }
+                         { the epilogue's RETF, never reached     }
 end;
 
 { --------------------------------------------------------------------------
@@ -467,7 +467,7 @@ begin
     {LES DI,[0b96]; CALL DWORD PTR ES:[DI+$2a] }
     asm
       LES  DI, ActiveDevice
-      CALL DWORD PTR ES:[DI+2Ah]         {the driver's poll method          }
+      CALL DWORD PTR ES:[DI+2Ah]         { the driver's poll method          }
       LES  DI, ActiveDevice
       CALL DWORD PTR ES:[DI+2Ah]
       LES  DI, ActiveDevice
@@ -493,22 +493,22 @@ the INT 1Ch handler. THIS is what drives the music.
   -------------------------------------------------------------------------- }
 procedure TimerHandler; assembler;
 asm
-  PUSHF                  {the chain expects the flags on top     }
+  PUSHF                  { the chain expects the flags on top     }
   PUSHA
   PUSH DS
   PUSH ES
-  MOV  AX, SEG @DATA     {the binary has MOV AX,1CAAh -- an
+  MOV  AX, SEG @DATA     { the binary has MOV AX,1CAAh -- an
                                       absolute segment, and copying it would
                                       point us at somebody else's data       }
   MOV  DS, AX
   CLD
-  STI                    {a poll is long; let the machine breathe}
+  STI                    { a poll is long; let the machine breathe}
   CALL PollDriver
   POP  ES
   POP  DS
   POPA
   POPF
-  JMP  FAR PTR TimerChain{and on to whoever had INT 1Ch          }
+  JMP  FAR PTR TimerChain{ and on to whoever had INT 1Ch          }
 end;
 
 { --------------------------------------------------------------------------
@@ -529,7 +529,7 @@ begin
     MOV  AX, ES:[DI+1]
     OR   AX, ES:[DI+3]
     JZ   @@NotHooked
-    JMP  @@Done            {already hooked -- leave it alone     }
+    JMP  @@Done            { already hooked -- leave it alone     }
   @@NotHooked:
     { **`MOV SI,0000` AND NOT `XOR SI,SI`**, six times over in this file. Same value,
       three bytes against two, and the original has the long form -- `be 00 00`, not
@@ -538,16 +538,16 @@ begin
       VTRESID, where four of them cost four bytes; here it cost six. **The verbatim rule
       exists for exactly this.** }
     MOV  SI, 0000h
-    MOV  ES, SI            {ES := 0000, the vector table         }
-    MOV  AX, ES:[70h]      {INT 1Ch offset                       }
+    MOV  ES, SI            { ES := 0000, the vector table         }
+    MOV  AX, ES:[70h]      { INT 1Ch offset                       }
     MOV  SI, 0000h
     MOV  ES, SI
-    MOV  DX, ES:[72h]      {INT 1Ch segment                      }
+    MOV  DX, ES:[72h]      { INT 1Ch segment                      }
     LES  DI, ChainPtr
-    MOV  ES:[DI+1], AX     {patch the chain stub                 }
+    MOV  ES:[DI+1], AX     { patch the chain stub                 }
     MOV  ES:[DI+3], DX
-    MOV  AX, OFFSET TimerHandler   {the binary has 01A5h         }
-    MOV  DX, SEG TimerHandler      {and 1000h                    }
+    MOV  AX, OFFSET TimerHandler   { the binary has 01A5h         }
+    MOV  DX, SEG TimerHandler      { and 1000h                    }
     MOV  SI, 0000h
     MOV  ES, SI
     MOV  ES:[70h], AX
@@ -571,7 +571,7 @@ begin
     MOV  AX, ES:[DI+1]
     OR   AX, ES:[DI+3]
     JNZ  @@Hooked
-    JMP  @@Done            {never hooked -- nothing to undo      }
+    JMP  @@Done            { never hooked -- nothing to undo      }
   @@Hooked:
     LES  DI, ChainPtr
     MOV  AX, ES:[DI+1]
@@ -584,7 +584,7 @@ begin
     MOV  ES:[72h], DX
     LES  DI, ChainPtr
     XOR  AX, AX
-    MOV  ES:[DI+1], AX     {and mark it unhooked                 }
+    MOV  ES:[DI+1], AX     { and mark it unhooked                 }
     MOV  ES:[DI+3], AX
   @@Done:
   end;
@@ -610,7 +610,7 @@ begin
     PUSHA
     PUSH ES
     PUSH DS
-    MOV  AX, SEG @DATA     {the binary has MOV AX,1CAAh          }
+    MOV  AX, SEG @DATA     { the binary has MOV AX,1CAAh          }
     MOV  DS, AX
   end;
 
@@ -620,7 +620,7 @@ begin
     0 : HookTimer;
     1 : UnhookTimer;
     2 : asm
-          LES  DI, ActiveDevice    {one poll, where the timer does four}
+          LES  DI, ActiveDevice    { one poll, where the timer does four}
           CALL DWORD PTR ES:[DI+2Ah]
         end;
     3 : begin
@@ -642,9 +642,9 @@ begin
             AND over the whole pointer, aligning it down to a multiple of four. }
           LongInt(DMABufferPtr) := LongInt(GetPlayPos) and $FFFFFFFC;
                                                        { 1000:0288..0293  -> $4306 }
-          TickSnapshot := Ticks;                    {$0bca := $0bc8 }
-          LastTick := 0;                          {$0058 := 0     }
-          DriverTicks := 0;                         {$0c78 := 0     }
+          TickSnapshot := Ticks;                    { $0bca := $0bc8 }
+          LastTick := 0;                          { $0058 := 0     }
+          DriverTicks := 0;                         { $0c78 := 0     }
 
           { ~~AFTER THE CASE~~ -- **INSIDE THIS ARM, AND FOUR JUMP DISPLACEMENTS SAY
             SO.** Placed after the case, every arm's exit jumps to 1000:02ab, the
@@ -771,14 +771,14 @@ begin
   SetVTDevice;
   asm
     LES  DI, ActiveDevice
-    CALL DWORD PTR ES:[DI+1Ah]         {a second driver method               }
+    CALL DWORD PTR ES:[DI+1Ah]         { a second driver method               }
   end;
   SetVTFreq;
-  MaxOutputFreq := DesiredHz;                      {$02ce := $0bae }
+  MaxOutputFreq := DesiredHz;                      { $02ce := $0bae }
   {a FillChar, NOT the Str this file used to read here.
     census.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
     established 1ba1:0fd5 as FillChar. The pushes are dest, count, VALUE:
-    DS:$1208 for eight bytes of whatever $08ba holds. }
+ for eight bytes of whatever $08ba holds. }
   { **THE FOURTH LITERAL EIGHT.** 1000:0372 pushes $10, not 8 -- `UserVols` is
     `TVolumes`, which follows the channel count, and this is the only site that wrote
     the length out rather than asking for it. Written as SizeOf so a fifth cannot
@@ -840,7 +840,7 @@ begin
       MOV  DI, OFFSET Heap
       PUSH DS
       PUSH DI
-      MOV  DI, [DI]             {its VMT                         }
+      MOV  DI, [DI]             { its VMT                         }
       { NO `ES:` HERE, AND THE DIFFERENCE IS WHICH REGISTER HOLDS THE OBJECT.
         `MOV DI, OFFSET Heap` puts a DGROUP offset in DI, so the VMT fetch and the
         call through it are both DS-relative and the original emits no prefix --
@@ -877,8 +877,8 @@ end;
 { ==========================================================================
 the body. The init chain that precedes it is at 1000:04b3:
 
-the RTL      193a:0488   1931:0029   17cf:0a93
-1065:0172
+ the RTL      193a:0488   1931:0029   17cf:0a93
+ 1065:0172
   -------------------------------------------------------------------------- }
 { ~~Self : String at [BP-$100]~~ -- NOT A VARIABLE. `[BP-$100]` is the COMPILER'S
   256-byte temporary for `ParamStr`'s result: 1000:0542 is `LEA DI,[BP-0100] / PUSH SS /
@@ -926,7 +926,7 @@ begin
   asm
     LES  DI, ChainPtr
     XOR  AX, AX
-    MOV  ES:[DI+1], AX     {start out plainly unhooked           }
+    MOV  ES:[DI+1], AX     { start out plainly unhooked           }
     MOV  ES:[DI+3], AX
   end;
 
@@ -940,14 +940,14 @@ begin
     routine, so writing it and pointing nothing at it emitted no bytes at all and left
     a seven-byte hole exactly where 1000:02c0 is. The second assignment below is what
     brings it into the image. }
-  CtrlBlock.CtrlEntryPoint := @Dispatch;              {-> CB+$121   }
-  CtrlBlock.RegEntryPoint := @DispatchEntry;         {-> CB+$129   }
+  CtrlBlock.CtrlEntryPoint := @Dispatch;              { -> CB+$121   }
+  CtrlBlock.RegEntryPoint := @DispatchEntry;         { -> CB+$129   }
 
   Install(SelfName, @CtrlBlock);
 
   InitHeapVariables;
   InitUmbHeap;
-  {pushes a VMT offset of $009e and far-calls 1891:0000, TObject.Init,
+  { pushes a VMT offset of $009e and far-calls 1891:0000, TObject.Init,
     so `Cmd` inherits its constructor rather than declaring one -- which is
     exactly what TVTCmd does. 05c4 pushes $07fe and calls 1891:03a7,
     TCollection.Init, NOT TSortedCollection's: see the note on SongColl's type. }
@@ -956,7 +956,7 @@ begin
   InitSoundDevices;
   BuildNoteTable;
   DesiredHz := ShellHz;
-  OneModPtr := @PlayModule;                       {-> DS:$009a }
+  OneModPtr := @PlayModule;                       { -> DS:$009a }
   Complain := True;
   { ONE STATEMENT, NOT TWO, and the stack is what says so. 05f4 pushes
     SS:[BP-0100] and calls GetDOSCmdLine, which is a STRING FUNCTION and so does
@@ -994,7 +994,7 @@ begin
   EndSampling;
 
   { **AND THE CLOSING BANNER IS SUPPRESSED WHEN THE PROGRAM HAS JUST COMPLAINED.**
-tests the same `Complain` byte the WriteLn above tests, with the sense
+ tests the same `Complain` byte the WriteLn above tests, with the sense
     reversed -- `JZ` there, `JNZ` here. One variable read twice in ten instructions
     to opposite ends, which is why the address had to be checked rather than the
     second test assumed to be a different flag. }

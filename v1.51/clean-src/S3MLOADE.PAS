@@ -806,8 +806,8 @@ const
 
     THE SECOND IS 'SCRM' AGAIN. Turbo Pascal emits one typed constant per
     declaration, so the author wrote it twice. }
-  S3MInsString  : array[1..4] of Char = 'SCRS';   { DS:$046c  never read        }
-  S3MIdString2  : array[1..4] of Char = 'SCRM';   { DS:$0470  never read        }
+  S3MInsString  : array[1..4] of Char = 'SCRS';   { never read        }
+  S3MIdString2  : array[1..4] of Char = 'SCRM';   { never read        }
 var
   S3M     : TS3MFile absolute Header;
   { THE ORDER IS READ OFF THE COUNTER'S OWN DISPLACEMENT. 0b8e is

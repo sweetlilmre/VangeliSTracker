@@ -129,13 +129,13 @@ type
     VSldIsFine : Boolean;       { +$23  ANCHORED                             }
 
     { +$24 and +$25 -- named for WHERE THEY GO rather than what they are:
-copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
+ copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
       +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
       the first to index the published control block. }
     { ~~RingSem AND RingPending~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
-is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
+ is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
       MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
-stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
+ stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
     RetrigCt   : Byte;          { +$24  was RingSem in 1.31b                 }
     RetrigVal  : Byte;          { +$25  was RingPending in 1.31b                 }
     DoRetrig  : Boolean;       { +$26                                        }
@@ -151,7 +151,7 @@ stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
     { +$2a and +$2b -- THE S3M Qxy RETRIGGER'S VOLUME CHANGE, and the flag says which
       of two arithmetics to use. 147d:0785 looks the high nibble up in a MULTIPLIER
       table and sets +$2a when that entry is ZERO, meaning "this x is not a multiply";
-then either multiplies the volume by +$2b and shifts down four, or
+ then either multiplies the volume by +$2b and shifts down four, or
       adds +$2b as a signed step. Two tables, one selector byte. }
     S3mRetAdd : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
     S3mRetVal  : Byte;          { +$2b                                        }
@@ -233,23 +233,23 @@ then either multiplies the volume by +$2b and shifts down four, or
 const
   { $0334..$0337 -- both of these were declared in PLAYMOD until the layout moved them. }
   MyLoopMod          : Boolean = False;
-  PermitFilterChange : Boolean = False;  { DS:$033F  the `FilterChange` key     }
-  TempoDiv           : Word    = 125;    { DS:$0340  release: BPMDivider        }
+  PermitFilterChange : Boolean = False;  { the `FilterChange` key     }
+  TempoDiv           : Word    = 125;    { release: BPMDivider        }
 
   { The release calls these `BPMIncrement` and `BPMCount`. 142f:04a6 and 142f:04bc
     write CurTempo from the F-command. }
-  CurTempo           : Word    = 125;    { DS:$0342  release: BPMIncrement      }
-  TempoAccum         : Word    = 0;      { DS:$0344  release: BPMCount          }
+  CurTempo           : Word    = 125;    { release: BPMIncrement      }
+  TempoAccum         : Word    = 0;      { release: BPMCount          }
 
   { THE TWO HALVES OF THE PLAY RANGE. `My*` is the copy the player is working
     through and the bare name is what a client asked for; PlayStart copies one to
     the other, which is where both sets were read from (12ba:10b4, 10ba, 10c0). }
-  RangeStart         : Word    = 0;      { DS:$0346  release: MyFirstPattern    }
-  RangeEnd           : Word    = 0;      { DS:$0348  release: MyRepStart        }
+  RangeStart         : Word    = 0;      { release: MyFirstPattern    }
+  RangeEnd           : Word    = 0;      { release: MyRepStart        }
   MySongLen          : Word    = 0;
-  ReqStart           : Word    = 0;      { DS:$034C  release: FirstPattern      }
-  ReqEnd             : Word    = 0;      { DS:$034E  release: RepStart          }
-  ReqLen             : Word    = 0;      { DS:$0350  release: SongLen           }
+  ReqStart           : Word    = 0;      { release: FirstPattern      }
+  ReqEnd             : Word    = 0;      { release: RepStart          }
+  ReqLen             : Word    = 0;      { release: SongLen           }
 
   { NOT PlayMod's `FilterIsOn`, which is a DIFFERENT variable at DS:$02cd. 1.31 has
     two of them and the release has one; see the long note that used to sit below.
@@ -259,10 +259,10 @@ const
 
   { $0349..$034f. The release's names are `Tempo`, `NextNote`, `NextSeq`, `TempoCt`;
     `Tempo` is the one rename this tree declines on purpose. }
-  CurSpeed           : Byte    = 6;      { DS:$0353  release: Tempo             }
+  CurSpeed           : Byte    = 6;      { release: Tempo             }
   NextNote           : Word    = 1;
   NextSeq            : Word    = 1;
-  TickInRow          : Byte    = 0;      { DS:$0358  release: TempoCt           }
+  TickInRow          : Byte    = 0;      { release: TempoCt           }
 
 { NEW IN v1.51, DS:$035a -- THE EQUAL-TEMPERED SEMITONE TABLE, and it is what the
   new arpeggio divides by. Sixteen words, indexed by a nibble, and each one is
@@ -750,7 +750,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-and 142f:0356 -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
+ and 142f:0356 -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
   VIBRATO-PLUS-VOLUME-SLIDE. Two instructions each: do one effect, then fall into
   the other. The release is identical.
 
@@ -1048,7 +1048,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
+ and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
   CONFIRMED at both addresses by the near calls at 142f:0114 and 142f:0163.
 
   THEY ARE THE MIRROR OF StartTPortUp AND StartTPortDown, and the pair of pairs is
@@ -1183,7 +1183,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
+ and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
   carries an empty `TickRetrigNote` and no Start at all. `CommandStart` maps command
   $1a to 05b9, and $1a is `mcRetrigNote`.
 
@@ -1212,7 +1212,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-and 142f:05cd -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
+ and 142f:05cd -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
   The same borrow-the-coarse-routine trick StartVolSlide uses: set the increment,
   clear the fine flag so TickVolSlide will act, call it once, set the flag again.
 
@@ -1436,7 +1436,7 @@ so the plain retrigger does the counting and this routine only decides what
   the format reference and this program disagree. }
 procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { DS:$03ba and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all, and so is
+  { and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all, and so is
     `RetAdd` being SHORTINT: the transcription had it as Byte with $FF..$F0, which is
     the same sixteen bytes and says nothing about the sign. Reading them as signed is
     what makes the tick's `ADD AH,AL / JNC / MOV AH,0` obviously an underflow test
