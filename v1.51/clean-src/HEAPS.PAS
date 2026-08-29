@@ -79,12 +79,26 @@ type
     same Objects. Nothing here depends on more than `TObject`'s VMT link at offset 0
     and `TCollection`'s field layout, both of which are stable across versions. }
 
+{ **A HEAP IS A BLOCK, A BUMP POINTER AND A FREE LIST**, and those are exactly
+  the four fields below. Allocation takes from HHeapPtr and moves it up; freeing
+  does not move it back, but links the block onto HFreeList so a later
+  allocation of the same size can take it instead. So memory is reused but never
+  compacted, and the high-water mark only ever rises.
+
+  That is the right trade for this program. Everything large -- samples,
+  patterns, buffers -- is allocated once when a module loads and freed together
+  when it unloads, so fragmentation never has time to matter, and no allocation
+  can ever pause the mixer to compact anything.
+
+  THERE ARE SEVERAL HEAPS, WHICH IS THE POINT OF MAKING IT AN OBJECT. Conventional
+  memory, upper memory blocks and the system heap are each one of these, with the
+  same interface over different storage, and THeapColl below keeps the set. }
   PHeap = ^THeap;
   THeap = object(TObject)
-    HHeapOrg  : Pointer;
-    HHeapPtr  : Pointer;
-    HHeapEnd  : Pointer;
-    HFreeList : PFreeListRec;
+    HHeapOrg  : Pointer;        { the block's base -- never changes           }
+    HHeapPtr  : Pointer;        { the bump pointer: everything below is used  }
+    HHeapEnd  : Pointer;        { one past the block's last byte              }
+    HFreeList : PFreeListRec;   { blocks handed back, available for reuse     }
 
     { The two constructors are NOT virtual and so take no VMT slot -- which is why
       adding them ahead of `Done` leaves every offset below unchanged. }
@@ -213,16 +227,53 @@ implementation
   one line is fifty bytes and why `NormalizePtr`, whose shift is on a WORD, gets the
   inline `SHR AX,4` instead and is twenty bytes shorter.
   -------------------------------------------------------------------------- }
+{ ===========================================================================
+  **THE THREE POINTER HELPERS, AND WHY REAL MODE NEEDS THEM AT ALL.**
+
+  A far pointer here is two 16-bit halves, a segment and an offset, and the
+  address it means is `segment * 16 + offset`. That multiplication is the source
+  of every awkwardness below, because it means THE SAME ADDRESS HAS 4,096
+  DIFFERENT REPRESENTATIONS: $1000:$0010 and $1001:$0000 are the same byte.
+
+  Two consequences, and the three routines are the answers to them:
+
+  **Pointers cannot be compared as they stand.** `A = B` compares two 32-bit
+  values, and two spellings of one address are not equal. `LinealPtr` collapses
+  both halves into the single number the hardware computes, and that number can
+  be compared, subtracted and sorted. A heap must do all three, which is why it
+  is here.
+
+  **Offsets overflow at 64K.** Adding to the offset alone works until it passes
+  $FFFF and then wraps to the start of the same segment -- a pointer that walks
+  backwards. `IncPtr` adds the whole amount and carries the excess into the
+  segment, sixteen bytes at a time, which is what `shr 4` and `and 15` are doing.
+
+  `NormalizePtr` is `IncPtr` with a zero increment: it moves as much as possible
+  out of the offset and into the segment, leaving an offset of 0..15. Doing that
+  before a comparison, or before handing a pointer to something that will add to
+  it, buys the largest possible margin before the next overflow.
+
+  ALL THREE ARE ARITHMETIC ON THE HALVES, NOT DEREFERENCES. `Seg(P^)` and
+  `Ofs(P^)` read the pointer's own two words; the `^` is how Turbo Pascal spells
+  that and nothing is fetched from the address.
+  =========================================================================== }
+
+{ Advance a pointer by L bytes, carrying any overflow into the segment so the
+  result is correct past a 64K boundary. }
 function IncPtr(P : Pointer; L : LongInt) : Pointer;
 begin
   IncPtr := Ptr(Seg(P^) + ((Ofs(P^) + L) shr 4), (Ofs(P^) + L) and 15)
 end;
 
+{ The same address with the offset reduced to 0..15 -- the canonical spelling of
+  a pointer, and the one with the most room left before it overflows. }
 function NormalizePtr(P : Pointer) : Pointer;
 begin
   NormalizePtr := Ptr(Seg(P^) + (Ofs(P^) shr 4), Ofs(P^) and 15)
 end;
 
+{ The 20-bit address as a single number: segment * 16 + offset. The only form in
+  which two pointers may be compared or subtracted. }
 function LinealPtr(P : Pointer) : LongInt;
 begin
   LinealPtr := (LongInt(Seg(P^)) shl 4) + Ofs(P^)
