@@ -498,14 +498,32 @@ end;
   and the shadow is written out whole -- the only way to set one bit without
   knowing the others.
   -------------------------------------------------------------------------- }
+{ **THE TWO TIMERS DO DIFFERENT JOBS AND THE ROUTINES ARE OTHERWISE IDENTICAL.**
+  Timer 1 is the one TriggerVoice arms: it fires once, shortly after a note is
+  set up, and RestartChannels starts the voices on it. Timer 2 drives whatever
+  GUSTimer2RutPtr holds. Each has its own enable bit in the control register
+  ($04 and $08) and its own mask bit in the interrupt mask ($01 and $02), and
+  the two routines below differ in nothing else.
+
+  **AND THERE IS A SECOND REGISTER WINDOW, WHICH THE PORT MAP ABOVE DOES NOT
+  COVER.** The last two lines write base+8 and base+9 rather than base+$103 and
+  base+$105. That is a different pair of ports reaching a different set of
+  registers -- the GF1's interrupt control -- selected the same way: say which
+  register at +8, write the value at +9. Register 4 there is the timer interrupt
+  mask.
+
+  So a reader who has learned the $103/$105 pattern will meet these two lines
+  and think something is wrong. Nothing is: the chip simply has two windows, and
+  the timers need both. }
 procedure GUSInitTimer1(Count : Byte);
 begin
   SetGusRegister8(grTimer1Count, Count);          { 1723:0109 }
   TimerControl := TimerControl or $04;  { 1723:010f }
   SetGusRegister8(grTimerControl, TimerControl);   { 1723:011a }
-  TimerMask := TimerMask or $01;        { 1723:0120 }
-  Port[GUSPort + 8] := 4;               { 1723:012f }
-  Port[GUSPort + 9] := TimerMask;       { 1723:013b }
+  TimerMask := TimerMask or $01;        { 1723:0120  timer 1's mask bit }
+  Port[GUSPort + 8] := 4;               { 1723:012f  select register 4 in the
+                                          interrupt window -- see above }
+  Port[GUSPort + 9] := TimerMask;       { 1723:013b  and write it }
 end;
 
 procedure GUSInitTimer2(Count : Byte);
@@ -552,10 +570,18 @@ begin
     end;
 end;
 
+{ **ACKNOWLEDGE BY CLEARING THE BIT AND PUTTING IT BACK.** The GF1 holds its
+  timer interrupt asserted until the enable bit is taken away, so the two writes
+  below are not redundant: the first clears bit 3 to drop the interrupt, and the
+  second restores the shadow -- which has bit 3 still set -- to re-arm it.
+  Writing the shadow twice would do nothing at all.
+
+  Reading the register to clear it is not an option; it is write-only, which is
+  why the shadow exists. See the note above the timer routines. }
 procedure ServiceTimer2;
 begin
-  SetGusRegister8(grTimerControl, TimerControl and $F7);  { 1723:01e6 }
-  SetGusRegister8(grTimerControl, TimerControl);          { 1723:01ef }
+  SetGusRegister8(grTimerControl, TimerControl and $F7);  { 1723:01e6  drop it }
+  SetGusRegister8(grTimerControl, TimerControl);          { 1723:01ef  re-arm }
   if GUSTimer2RutPtr <> nil then               { 1723:01f2 }
     asm
       CALL DWORD PTR GUSTimer2RutPtr  { 1723:01fb                              }
