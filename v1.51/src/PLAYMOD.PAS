@@ -540,7 +540,7 @@ const
   and an untyped constant would have folded to an immediate. It is the client's
   standing permission; `MyCanFallBack` at $121e is the working copy PlayStart
   clears while it is setting up and restores on the way out. }
-{ DS:$02c8 -- the release's `LoopMod`, "TRUE if music CAN be played forever", and
+{ DS:$02ce -- the release's `LoopMod`, "TRUE if music CAN be played forever", and
   the client's half of the pair whose working copy is `MyLoopMod` at $0334. Typed,
   and its address proves the release's declaration order again: `LoopMod` then
   `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes.
@@ -792,7 +792,7 @@ implementation
     if both were exported, every reference in this unit would silently bind to this
     one and no byte comparison could see it. }
 
-  { DS:$02ce -- the release's `MaxOutputFreq`, whose comment is "Maximum frequency
+  { DS:$02d4 -- the release's `MaxOutputFreq`, whose comment is "Maximum frequency
     of the output sound. Less means less memory for buffers." Divided by the tick
     rate at 12ba:1174 it gives exactly MaxSplPerTick, which is that sentence. }
 
@@ -880,7 +880,8 @@ var
 
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$0bcc -- THE THIRD DUPLICATED GLOBAL, after AltMode and UsingGUS. DevGUS
+  { DS:$0c74 `TicksPerSecond` -- THE THIRD DUPLICATED GLOBAL, after AltMode and
+    UsingGUS. DevGUS
     declares it privately in its implementation section, where a comment already
     records that the release moved it to SoundDevices and that ownership is the
     open question rather than the name. 12ba reads it here. Risk 1 again. }
@@ -911,7 +912,7 @@ var
     Provisional names: nothing outside 12ba has been seen to set them. }
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$02c9 -- the release's `ForceLoopMod`, "TRUE if music must be played
+  { DS:$02cf -- the release's `ForceLoopMod`, "TRUE if music must be played
     forever", and 12ba:112e uses it exactly that way: it forces LoopMod on. }
 
 

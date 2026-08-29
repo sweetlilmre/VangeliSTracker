@@ -335,7 +335,7 @@ const
   OutSlot1          : Word         = 0;      { DS:$0ca2  -> 1a17:104d         }
   OutSlot2          : Word         = 0;      { DS:$0ca4  -> 1a17:1063         }
   OutSlot3          : Word         = 0;      { DS:$0ca6  -> 1a17:107c         }
-  { DS:$0c00 -- this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
+  { DS:$0ca8 -- this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
     installs, mono or stereo", declared as a lone `var` well away from the other four.
     It is the fifth entry of the same table: the release's DeviceFillRut. A NEAR
     pointer, as the other four are, because the kernels are in this segment. }

@@ -161,7 +161,7 @@ type
   end;
 
 var
-  { The release's five, in its declaration order. `FullHeap` at DS:$39ae is the one
+  { The release's five, in its declaration order. `FullHeap` at DS:$5d08 is the one
     12ba:125c reaches; it is a THeapColl here rather than the THeap the stub had,
     which changes no byte at that call site because HGetMem is at +$08 either way. }
   InitialHeapEnd : Pointer;
