@@ -153,10 +153,33 @@ EmptyPatchOfs   EQU     7
 ;  (the register contract is the release's own comment, LIB/PLAYMOD.ASM 49..54)
 ; --------------------------------------------------------------------------
                 PUBLIC  DumpRaw
+; ===========================================================================
+; DumpRaw -- mix one channel's samples into the buffer, resampling as it goes.
+;
+;   IN   AL      how many samples to produce
+;        CH      the integer part of the step
+;        DX      the fractional part of the step (patched into the body)
+;        BX      the interleave stride, in bytes, between output slots
+;        CL      the volume
+;        DS:SI   the current position in the sample
+;        ES:DI   the current position in the output buffer
+;        BP      the running fractional position
+;
+;   OUT  SI, DI and BP advanced; the buffer written
+;
+;   MODIFIES AX, CH, SI, DI, BP, and eight immediates INSIDE ITS OWN BODY
+;
+; **IT MODIFIES ITSELF, AND THAT IS THE FIRST THING TO KNOW.** The fractional
+; step is not held in a register during the loop -- there are not enough -- so it
+; is written directly into the eight `ADD BP,imm16` instructions before the loop
+; runs. The routine is therefore NOT re-entrant and cannot be in ROM, and the
+; immediate sitting in the image, 4321h, is a placeholder that never executes.
+; ===========================================================================
 DumpRaw:
-; 148f..14b6 -- write the fractional step into all eight copies of the
-; `ADD BP,imm16` in the unrolled body. The immediate left in the image is 4321h,
-; which is a placeholder and never executed unpatched.
+; Write the fractional step into all eight copies of the `ADD BP,imm16` in the
+; unrolled body. Eight separate stores rather than a loop: the loop would cost
+; more than the seven extra instructions, and this runs once per channel per
+; buffer fill.
                 MOV     WORD PTR CS:[DumpLoop+DumpPatchOfs+DumpLoopSize*0],DX
                 MOV     WORD PTR CS:[DumpLoop+DumpPatchOfs+DumpLoopSize*1],DX
                 MOV     WORD PTR CS:[DumpLoop+DumpPatchOfs+DumpLoopSize*2],DX
@@ -166,26 +189,56 @@ DumpRaw:
                 MOV     WORD PTR CS:[DumpLoop+DumpPatchOfs+DumpLoopSize*6],DX
                 MOV     WORD PTR CS:[DumpLoop+DumpPatchOfs+DumpLoopSize*7],DX
 
-                MOV     DL,CH                   ; 14b7  the integer step
-                XOR     DH,DH                   ; 14b9
+                MOV     DL,CH                   ; 14b7  DL := integer step
+                XOR     DH,DH                   ; 14b9  DX := step, zero-extended
+                                                ;       DX is now the whole-sample
+                                                ;       part added by ADC SI,DX
 
-; 14bb..14d7 -- AL is the sample count. CH becomes the number of whole groups of
-; eight, rounded up, and the entry point is displaced into the body by however
-; many of the eight are not wanted.
-                MOV     CH,AL                   ; 14bb
-                ADD     AX,7                    ; 14bd
-                SHR     AX,3                    ; 14c0
-                XCHG    AL,CH                   ; 14c3
-                AND     AL,7                    ; 14c5
-                JZ      SHORT DumpLoop          ; 14c7  SHORT: no JUMPS padding
-                NEG     AL                      ; 14c9
-                AND     AL,7                    ; 14cb
-                MOV     AH,DumpLoopSize         ; 14cd
-                NOP                             ; 14cf  JUMPS padding
-                NOP                             ; 14d0
-                MUL     AH                      ; 14d1
-                ADD     AX,OFFSET DumpLoop      ; 14d3
-                JMP     AX                      ; 14d6
+; **ENTERING AN UNROLLED LOOP PART-WAY THROUGH, WHICH IS THE TRICK OF THIS
+; ROUTINE.** The body does eight samples per pass and the caller asks for any
+; count at all. Rather than test for the remainder each time round, the code
+; runs ceil(n/8) passes and JUMPS INTO the body far enough along that the first
+; pass does only the samples that are wanted. Every later pass starts at the top
+; and does all eight.
+;
+; It works because the eight copies are identical and equally sized, so the
+; address of copy k is DumpLoop + k * DumpLoopSize -- which is why DumpLoopSize
+; is an EQU rather than a number, and why any change to the body must keep the
+; eight copies the same length.
+;
+; On entry AL is the sample count. Worked, with AL = 11:
+;
+;   MOV   CH,AL      CH := 11              keep the count
+;   ADD   AX,7       AX := 18              round up before dividing
+;   SHR   AX,3       AX := 2               two passes: 8 + 3
+;   XCHG  AL,CH      AL := 11, CH := 2     CH is the pass count for DEC CH
+;   AND   AL,7       AL := 3               samples wanted in the FIRST pass
+;   JZ    DumpLoop                         a multiple of 8 needs no displacement
+;   NEG   AL         AL := -3
+;   AND   AL,7       AL := 5               copies to SKIP, which is 8 - 3
+;   MOV   AH,DumpLoopSize
+;   MUL   AH         AX := 5 * DumpLoopSize
+;   ADD   AX,OFFSET DumpLoop               the address of copy 5
+;   JMP   AX                               enter there; copies 5,6,7 run
+;
+; NEG then AND 7 is the whole idea in two instructions: it turns "how many do I
+; want" into "how many do I skip" without a subtraction or a branch.
+                MOV     CH,AL                   ; 14bb  CH := count
+                ADD     AX,7                    ; 14bd  round up...
+                SHR     AX,3                    ; 14c0  ...then divide by 8
+                XCHG    AL,CH                   ; 14c3  CH := passes, AL := count
+                AND     AL,7                    ; 14c5  AL := count mod 8
+                JZ      SHORT DumpLoop          ; 14c7  exact multiple: start at
+                                                ;       the top. SHORT keeps
+                                                ;       JUMPS from padding it
+                NEG     AL                      ; 14c9  -k
+                AND     AL,7                    ; 14cb  8-k, the copies to skip
+                MOV     AH,DumpLoopSize         ; 14cd  each copy's byte length
+                NOP                             ; 14cf  JUMPS padding, both of
+                NOP                             ; 14d0  these; not our choice
+                MUL     AH                      ; 14d1  AX := skip * size
+                ADD     AX,OFFSET DumpLoop      ; 14d3  AX := the copy's address
+                JMP     AX                      ; 14d6  enter the body mid-way
 
 ; THE RELEASE'S OWN ACCOUNT OF THIS LOOP SURVIVES, and lines marked [1.39b]
 ; below are its author's words in translation, not ours. LIB/PLAYMOD.PAS carries
