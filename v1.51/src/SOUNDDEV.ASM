@@ -142,6 +142,15 @@ SharedPoll:
         MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
+; [1.39b] "Signal that the device is not idling, and fill a bit more of the DMA
+; buffer." -- the release's own words for this store and the two calls below it.
+;
+; ITS IDLE TEST IS NOT HERE, AND IS DISABLED THERE TOO. Just above this point
+; 1.39b tests DeviceIdling and would reset the timer, explaining why: "[1.39b]
+; If the device is said to be idle, reset the timer. This is to protect the
+; timer period from being modified." The CALL InitTimer that would do it is
+; commented out in the release, so the reason is recorded and the mechanism was
+; already switched off before v1.51 dropped it.
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
 
 ; 1033 -- THE CALL TO @@Prepare AT 1a17:0edf. As inline Pascal asm this had to
