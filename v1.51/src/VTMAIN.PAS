@@ -379,6 +379,17 @@ var
   { DS:$0e9e -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
     `Dir` at $0dda. Nothing references them. Filler, so the SIZE is right and the
     missing name is stated rather than invented. }
+  { **FOUR BYTES, AND 1.31b HAS THE SAME FOUR.** There they are `Fill0DD6`, with
+    a note that reads almost word for word like this one -- four bytes this
+    transcription cannot name, between the string above and what follows. Two
+    versions, two independent readings, the same silence.
+
+    THAT IS THE END OF WHAT EVIDENCE CAN DO HERE. This build is byte-identical and
+    its source names these bytes nowhere, so no instruction in the original names
+    them either; the v1.39b release has no counterpart for this unit at all, since
+    its main program is a tracker rather than a player. They are not a defect and
+    not a gap in the transcription -- they are four bytes the program reserves and
+    never uses. }
   Fill0E9E  : LongInt;   { DS:$0e9e }
   { ~~Obj0E38 : TObject~~ and ~~Var0F82 : TCollection~~ ARE GONE. They were
     VTCmd's own `Cmd` and `SongColl`, and declaring stand-ins here is what kept

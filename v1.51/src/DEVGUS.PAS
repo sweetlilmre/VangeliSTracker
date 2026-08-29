@@ -69,10 +69,14 @@ type
 const
   LastTick : Word    = 0;   { DS:$0014  1000:02a1 clears it, so it is exported }
 
-  { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME. The addresses either side
-    are measured and the block is contiguous, so the bytes exist; nothing in the tree
-    reads or writes them. Declared as filler rather than invented as a variable, which
-    keeps the SIZE honest and says plainly that the name is missing.
+  { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, AND 1.31b COULD NOT
+    EITHER. The addresses either side are measured and the block is contiguous, so
+    the bytes exist; nothing in the tree reads or writes them. Declared as filler
+    rather than invented as a variable, which keeps the SIZE honest and says
+    plainly that the name is missing.
+
+    1.31b CARRIES THE SAME FOUR BYTES as `Fill005A`, between `LastTick` and
+    `Busy` -- the same two neighbours, the same width, the same silence.
 
     **AND THE RELEASE HAS NOTHING TO SAY HERE**, which is worth recording so the
     search is not run twice. The technique that named PlayMod's four unknowns --
@@ -89,12 +93,24 @@ const
     DS:$0020, and nothing in the segment touches what lies between. Declared as
     filler for the same reason Fill0016 above is: it keeps the SIZE honest and
     says plainly that the name is missing. }
-  { **A BYTE FIRST, THEN THE LONGINT**, and the order is measured rather than
-    chosen: `PollBusy` is at $0020 -- 106e:0029, 0032 and 0055 all name it -- and
-    `Busy` is at $001A, so the five bytes between them start at $001B. Declared
-    LongInt-first the compiler word-aligns it to $001C and everything after lands one
-    byte high, which is exactly the three operands that were wrong. }
-  Fill001B : Byte    = 0;
+  { **THE FIRST OF THE FIVE IS AN ALIGNMENT PAD, AND 1.31b SAYS SO.** Its own
+    DevGus declares `Busy : Byte = 0` and comments it "the re-entrancy guard;
+    pad at $005f" -- one byte of guard, then one byte of padding, then an even
+    address. The same pair is here: `Busy` at $001A and a pad at $001B.
+
+    THE ORDER WAS ALREADY MEASURED, which is what made the reading available.
+    `PollBusy` is at $0020 -- 106e:0029, 0032 and 0055 all name it -- so the five
+    bytes between the two guards start at $001B, and a byte has to come first:
+    declared LongInt-first the compiler aligns it to $001C and everything after
+    lands one byte high, which is exactly the three operands that were wrong. The
+    release supplies the REASON for the shape the addresses had already forced. }
+  Pad001B  : Byte    = 0;   { DS:$001b  alignment, as 1.31b's $005f is    }
+
+  { **FOUR BYTES NEITHER VERSION NAMES.** 1.31b has them too, as `Fill005A`, in
+    the same place relative to its neighbours -- between the tick counter and the
+    guard -- and its transcription could not name them either. So this is not
+    something v1.51 introduced and not something a later reading of this image
+    will settle: nothing in either program touches them. }
   Fill001C : LongInt = 0;
 
   { NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the

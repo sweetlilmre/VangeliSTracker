@@ -393,59 +393,47 @@ const
   DevStkSize = 1000;
 
 var
-  { **TWO BYTES AHEAD OF THE STACK, AND THE ARITHMETIC CLOSES ON THEM.** Three numbers
-    fix this block's head exactly and none of them is a guess: SavedSS is at $665c,
-    1bff:102b sets SP to $6274, and a stack pointer starts two below its top -- so
-    DevStack begins at $6274 - 998 = $5e8e, and $665c - $5e8e is 1998, not 2000.
-    A thousand of those are the stack; 998 are the filler below; and the two the block
-    is short are these, before it. Unnamed, like the filler.
 
-    THESE TWO BYTES ARE THE OTHER HALF OF THE QUESTION BELOW. They exist only because
-    the stack is placed two bytes late; on the other reading of the span there is no
-    gap here at all and the stack starts where they are. }
-  Fill5E8C          : Word;
+  { **THE POLL'S OWN STACK, 1000 BYTES, AND IT STARTS TWO BYTES EARLIER THAN THIS
+    FILE USED TO SAY.** A two-byte `Fill5E8C` stood ahead of it and the assembler
+    reached its top with `OFFSET DevStack + 998`, which is the same address
+    written as an odd number.
 
-  { The poll's own stack, 1000 bytes -- see the note above and 1bff:102b. }
+    v1.31b SETTLES IT, AND ITS OWN COMMENT IS WHAT MISLED BOTH VERSIONS. There the
+    block runs $3b32..$4301 and the assembler writes `MOV SP,3F1Ah` under the note
+    "its top". $3F1A is NOT the top: $3b32 + $7D0 is $4302. It is exactly 1000
+    bytes in, and **a stack grows downwards**, so a thousand bytes below $3F1A are
+    the stack and a thousand above it are not.
+
+    THAT MAKES THE RELEASE RIGHT ABOUT THE SIZE. `LIB/SOUNDDEV.PAS` has
+    `DevStkSize = 1000` and 1.31b's note overruled it from a span that only
+    bounded the distance between two ends. The span is 2000 because there are two
+    blocks of a thousand, not because the stack is 2000.
+
+    The arithmetic closes in v1.51 with nothing over. The map puts `SavedSS` at
+    $665c; $665c - $5e8c is $7d0, the same 2000; and $5e8c + 1000 is $6274, which
+    is what 1bff:102b sets SP to. The `+ 998` is gone and the assembler now writes
+    the release's own form, `OFFSET DevStack + DevStkSize`. }
   DevStack          : array[1..DevStkSize] of Byte;
 
-  { **UNNAMED, AND THE RELEASE SHARPENS THE QUESTION WITHOUT ANSWERING IT.** 1.39b's
-    LIB/SOUNDDEV.PAS declares the whole region in four lines --
+  { **A THOUSAND BYTES ABOVE THE STACK, AND STILL UNNAMED** -- but the size and
+    the position are now measured rather than left over. It is `DevStkSize`
+    exactly, it sits between the stack's top and `SavedSS`, and 1.31b has the same
+    thousand bytes in the same place.
 
-        CONST DevStkSize = 1000;
-        VAR   DevStack : ARRAY[1..DevStkSize] OF BYTE;
-              DevSS    : WORD;
-              DevSP    : WORD;
+    NOTHING IN EITHER IMAGE READS THEM. This reconstruction is byte-identical and
+    its source names this block nowhere, so no instruction in the original names
+    it either. The release declares `DevStack`, `DevSS` and `DevSP` with nothing
+    between, so it is not the release's.
 
-    -- with NOTHING between the stack and the saved pair. v1.51 has two thousand
-    bytes where the release has one, and the surplus is exactly DevStkSize again.
-
-    AND THE SP CONSTANT DISAGREES BY TWO. The release's assembler writes
-    `MOV SP,OFFSET DevStack + StackSize` at all four of its stack switches, with
-    `StackSize EQU 1000` -- the top of the array, expressed as its own size. Ours
-    needs `+ 998` to reach the measured $6274, which is the same address expressed
-    two bytes short of a round number. **A constant that has to be written as
-    998 where the original writes it as its own size is a sign the base is
-    misplaced, not that the arithmetic is odd.**
-
-    SO THERE ARE TWO READINGS AND THIS BUILD CANNOT SEPARATE THEM. Either the
-    stack begins where it is placed here and 998 unnamed bytes follow it, or it
-    begins two bytes earlier, `+ StackSize` lands on $6274 exactly as the release
-    writes it, and the surplus is a SECOND thousand-byte block -- which would sit
-    where 1.39b puts nothing at all.
-
-    NEITHER CAN BE TESTED BY REBUILDING. Every byte in the span is uninitialised, so
-    both layouts emit the same nothing and every instrument in the kit agrees with
-    both. Only a reader could decide it, and the transcribed tree has none: one
-    stack switch, at 1bff:102b, and no instruction anywhere touches the surplus.
-
-    Left as it stands rather than restructured on the tidier reading, because tidier
-    is not evidence. Recorded here so the next reader starts from the discrepancy
-    instead of rediscovering it. See `filler-is-not-a-finding` in the kit. }
-  { **DS:$6276, AND THE NAME USED TO SAY $3F1A** -- an address from 1.31b that this
-    build never had, carried in the identifier where nothing checks it. Renamed after
-    the linker map was read: a filler's name is the one place an address goes
-    unverified, because no instruction and no comparison ever names it. }
-  Fill6276          : array[1..DevStkSize - 2] of Byte;
+    A THOUSAND BYTES THE SIZE OF THE STACK, DIRECTLY ABOVE THE STACK, is a shape
+    worth stating plainly: it is what a SECOND stack of the same size looks like.
+    v1.51 gave the poll its own re-entrancy guard -- DevGus's `PollBusy`, new in
+    this version, exists because the poll and the handler now run at different
+    times -- and two routines that can be in flight together need two stacks. The
+    shape fits and no instruction confirms it, so it is written here as the
+    reading to test rather than as a finding. }
+  Fill6274          : array[1..DevStkSize] of Byte;
 
   { $4302/$4304 -- the caller's stack, saved across the poll, because the poll
     switches to the stack above. The release calls them `DevSS` and `DevSP`. }

@@ -132,7 +132,7 @@ SharedPoll:
 ; 3F1Ah was where that build's stack ended; this build's is elsewhere, and the
 ; instruction assembles identically either way. Computed from the symbol now --
 ; see `transcribe-the-meaning-not-the-constant` in the kit.
-        MOV     SP,OFFSET DevStack + 998  ; 102b  its top, less two
+        MOV     SP,OFFSET DevStack + 1000 ; 102b  its top; DevStkSize
 
         DB      32h, 0C0h                 ; 102e  XOR AL,AL
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
