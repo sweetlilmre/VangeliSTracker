@@ -276,26 +276,57 @@ implementation
   000b..0018 and the two reads into the SAME variable at 0035/003d, which is
   the release's `stat := PORT[DSPRStatPort]; stat := PORT[DSPReadPort];` --
   the first read is discarded and only the second matters. }
+{ **THE SOUNDBLASTER RESET, WHICH IS ALSO HOW THE CARD IS DETECTED.** There is
+  no identifying register to read, so presence is established by resetting a card
+  that may not be there and seeing whether anything answers. A DSP that is
+  present pulls the reset line, waits, releases it, and then returns $AA on its
+  read port; nothing else does.
+
+  So the return value means "a SoundBlaster answered", and this same routine is
+  called from SbRegDetect for exactly that purpose.
+
+  TWO THINGS HERE LOOK LIKE MISTAKES AND ARE NOT:
+
+  **The first read is thrown away.** `stat` is loaded from the status port and
+  then immediately overwritten from the data port. That is the protocol, not a
+  slip: the status port must be read before the data port is meaningful, and its
+  value is of no interest once it has been read. Deleting the first line would
+  change the sequence of bus cycles the card sees.
+
+  **The empty `for` loop is the delay.** The card needs the reset line held for a
+  short time and there is no timer available this early. It is CPU-speed
+  dependent, which GUS.PAS's `GusDelay` deliberately is not -- that one uses `IN`
+  because a bus cycle takes the same time whatever the processor does. The
+  difference is worth knowing: this delay gets shorter on a faster machine, and
+  the hundred iterations are a 1993 guess at "long enough".
+
+  BOTH LOOPS ARE BOUNDED AND FAILURE IS SILENT. A hundred attempts, then give up
+  and report False. A machine with no card must not hang here, and every caller
+  treats a False as "no SoundBlaster" rather than as an error. }
 function SbReset : Boolean;
 const
-  ready = $AA;
+  ready = $AA;                                     { what a live DSP answers }
 var
   ct, stat : Byte;
 begin
-  Port[DSPResetPort] := 1;
-  for ct := 1 to 100 do;
-  Port[DSPResetPort] := 0;
+  Port[DSPResetPort] := 1;                         { 0004..000a  assert reset }
+  for ct := 1 to 100 do;                           { 000b..0019  hold it -- see
+                                                     the note above }
+  Port[DSPResetPort] := 0;                         { 001a..0020  release }
 
   stat := 0;
   ct   := 0;
   while (stat <> ready) and (ct < 100) do
     begin
-      stat := Port[DSPRStatPort];
-      stat := Port[DSPReadPort];
+      stat := Port[DSPRStatPort];                  { 0035..003c  required, and
+                                                     the value is discarded }
+      stat := Port[DSPReadPort];                   { 003d..0044  this is the one
+                                                     that matters }
       Inc(ct)
     end;
 
-  SbReset := stat = ready
+  SbReset := stat = ready                          { 004a..0055  True means a
+                                                     card answered }
 end;
 
 { 005b..0076.  RETF 2.  Hand-written, and transcribed VERBATIM per the standing

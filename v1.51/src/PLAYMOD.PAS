@@ -290,13 +290,24 @@ const
     `NumBuffers` is 1, against the release's 3 -- see the note beside Buffers. }
   NumBuffers  = 1;
 
+{ **THE CHANNEL FLAGS, AND FOUR OF THE SEVEN EXIST ONLY BECAUSE OF 64K.** A
+  real-mode segment addresses 65,536 bytes and a sample may be longer, so a long
+  sample is held in two blocks and every position in it needs to say which block
+  it means. That is what rcfLongSample, rcfPlaying2nd, rcfLongLoopLen and
+  rcfLongLoopEnd are between them: one says the sample is split at all, one says
+  which half is playing now, and two say that a loop bound landed in the second
+  half rather than the first.
+
+  Take away the 64K limit and four of these seven disappear. They are not
+  describing the music; they are describing the address space. }
   rcfLongSample     = $01;      { over 65,520 bytes, so it is in two parts   }
   rcfActiveChannel  = $02;      { allowed to sound                           }
-  rcfDoesLoop       = $04;
-  rcfPlaying2nd     = $08;
-  rcfLongLoopLen    = $10;
-  rcfLongLoopEnd    = $20;
-  rcfSampleFinished = $40;
+  rcfDoesLoop       = $04;      { the sample repeats rather than ending      }
+  rcfPlaying2nd     = $08;      { the position is in the SECOND block        }
+  rcfLongLoopLen    = $10;      { the loop length crosses into the second    }
+  rcfLongLoopEnd    = $20;      { and so does its end point                  }
+  rcfSampleFinished = $40;      { ran off the end; the channel is silent
+                                  until something retriggers it              }
 
 { ==========================================================================
   THIS UNIT'S WHOLE DGROUP CONST BLOCK, $02c4..$0333, IN ADDRESS ORDER.
