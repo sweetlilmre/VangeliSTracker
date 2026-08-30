@@ -193,7 +193,7 @@ type
   end;
 
 { ---------------------------------------------------------------------------
-  15d0:0000..03da.  ENTER $a2a, RET $0a.
+ ENTER $a2a, RET $0a.
 
   MODLOADE's ProcessPatterns with the channel count fixed at four, so none of
   its Patt4/Patt5/Patt6/Patt7 repacking is here -- an STM pattern is already
@@ -363,7 +363,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  15d0:03db..0580.  ENTER $12c, RET $0c.
+ ENTER $12c, RET $0c.
 
   `St` IS DECLARED AND NEVER READ. The routine is `RET $0c` -- three far
   pointers -- and touches only the first and the third. MODLOADE's
@@ -478,7 +478,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  15d0:0581..0763.  ENTER $28, RET $08.
+ ENTER $28, RET $08.
 
   THE HALF OF ProcessInstruments AN STM MAKES SEPARATE. Every sample follows
   every pattern in the file, so the data cannot be read while the headers are
@@ -612,7 +612,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  15d0:0764..093d.  ENTER $206, RETF $0c.  SongLoaders[3].
+ ENTER $206, RETF $0c.  SongLoaders[3].
 
   The recogniser. `FileFormat` is written BEFORE the comparison and stays
   written even when the routine declines -- safe only because callers test

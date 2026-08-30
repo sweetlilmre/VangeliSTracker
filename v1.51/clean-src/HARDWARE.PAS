@@ -121,7 +121,7 @@ begin
     Port[$21] := Port[$21] and not (1 shl IRQ)
   else
   begin
-    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  { .. 0038 }
+    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));
     Port[$21] := Port[$21] and not (1 shl 2)      { -> AND AL,0FBh }
   end
 end;
@@ -557,7 +557,7 @@ begin
     Inc(Segm, $1000);                             { next page   }
 
 
-    Offs := Offs - $10000 + Ofs(Buf^);            { .. 02c0 }
+    Offs := Offs - $10000 + Ofs(Buf^);
   end
   else
     Offs := Ofs(Buf^) + Offs;

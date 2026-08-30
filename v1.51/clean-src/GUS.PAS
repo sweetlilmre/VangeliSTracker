@@ -437,7 +437,7 @@ copy a sample into the card's own DRAM.
       end
   -------------------------------------------------------------------------- }
 { PASCAL FIRST, THEN ASSEMBLER. The routine opens with two ordinary calls --
-  1723:008c..00b2 is compiler output, including a runtime helper at
+ is compiler output, including a runtime helper at
  for the 32-bit shift -- and only the transfer loop is hand
   written. Declared `assembler`, the whole prologue vanishes and the unit
   diverges at the first byte after the frame.
@@ -1194,7 +1194,7 @@ begin
       ChangeSample(i);
       Vol := LastVolumes[i];
       LastVolumes[i] := 0;
-      ChangeVol(i, Vol, $1F);  { .. 07da }
+      ChangeVol(i, Vol, $1F);
     end;
 
   { --- pass two: collect the ready voices, then start them together -- }
@@ -1365,13 +1365,13 @@ begin
     end
   end
   else
-    ChangeVol(Channel, Vol, $1F);  { .. 09c2 }
+    ChangeVol(Channel, Vol, $1F);
 
   if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then
   begin
     LastFreqs[Channel] := Freq;
     SetGusRegister16(grFreqControl, ((Freq shl 9) + LongInt(GUSDivisor shr 1))
-                    div LongInt(GUSDivisor shr 1));  { .. 0a31 }
+                    div LongInt(GUSDivisor shr 1));
   end;
 
   if LastPans[Channel] <> Panning then

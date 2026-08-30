@@ -639,7 +639,7 @@ begin
             ANDs and emits both halves whatever they hold. So the source is a LongInt
             AND over the whole pointer, aligning it down to a multiple of four. }
           LongInt(DMABufferPtr) := LongInt(GetPlayPos) and $FFFFFFFC;
-                                                       { 1000:0288..0293  -> $4306 }
+                                                       { -> $4306 }
           TickSnapshot := Ticks;                    { $0bca := $0bc8 }
           LastTick := 0;                          { $0058 := 0     }
           DriverTicks := 0;                         { $0c78 := 0     }

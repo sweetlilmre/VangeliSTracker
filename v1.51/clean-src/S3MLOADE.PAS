@@ -193,7 +193,7 @@ var
   NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
 
 { ---------------------------------------------------------------------------
-  1664:0000..002a.  No ENTER, RET $06.
+ No ENTER, RET $06.
 
   `PUSH BP / MOV BP,SP` and no frame at all, which is Turbo Pascal's shape for
   a routine with no locals. One statement: seek to a paragraph offset measured
@@ -207,7 +207,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  1664:002b..06ca.  ENTER $19b2, RET $16.  NOT TRANSCRIBED.
+ ENTER $19b2, RET $16.  NOT TRANSCRIBED.
 
   PLACEHOLDER holding its position. Turbo Pascal lays routines out in source
   order, so this has to exist and be in the right place or everything below it
@@ -557,7 +557,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  1664:06cb..0a8a.  ENTER $17e, RET $16.  NOT TRANSCRIBED.
+ ENTER $17e, RET $16.  NOT TRANSCRIBED.
 
   PLACEHOLDER, as above. What is known: it walks 1..Num, seeks to each
   instrument's paragraph, reads an $50-byte header, takes the name from +$30
@@ -773,7 +773,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  1664:0a8b..0d83.  ENTER $702, RETF $0c.  SongLoaders[2].
+ ENTER $702, RETF $0c.  SongLoaders[2].
 
   The recogniser. Same contract as every loader here: FileFormat is written
   before the test and stays written when the routine declines, because callers
