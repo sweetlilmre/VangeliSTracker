@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 164b -- the JMPlayer recogniser. 80 bytes, of which 77 are the
   single routine.

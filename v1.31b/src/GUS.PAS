@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 1723 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
   routines and six frameless ones the prologue scanner cannot see.

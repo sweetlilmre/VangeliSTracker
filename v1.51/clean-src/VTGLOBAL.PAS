@@ -1,6 +1,5 @@
 { ===========================================================================
-  DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
+  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
   NO SEGMENT OF ITS OWN. Declarations only, like `SONGUNIT.PAS` and `VTDRIVER.PAS`:
   nothing here compiles to an instruction, so this unit's `.TPU` has no code and

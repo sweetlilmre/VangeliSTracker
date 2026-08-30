@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 17cf -- THE MEMORY POOL. 2,832 bytes, 46 routines.
 

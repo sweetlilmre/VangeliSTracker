@@ -1,7 +1,5 @@
 { ===========================================================================
-  DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md; this tree is out of source
-  control pending a licence check.
+  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
   Segment 1000 -- the program itself. 1621 bytes: four banner strings, five
   routines, the dispatcher, the init chain at $04b3 and the body at $04e0.
@@ -595,7 +593,7 @@ THE DISPATCHER.
 
   This is the routine every Psycho Neurosis part far-calls. Its address is
   published at CB+$121 (DS:$23e7) by the body, and the demo finds it through
-  the INT 2Fh handshake. See demovt/docs/01-int2f.md.
+  the INT 2Fh handshake. See ../v1.31b/docs/01-int2f.md.
 
   The PUSHA / PUSH DS / MOV DS pair is not decoration: the caller is a
   different program with a different data segment, so nothing may be assumed

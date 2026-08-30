@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 1650 -- build the period-to-note lookup. 160 bytes, all of it, one
   routine, no parameters. The body calls it once at 1000:05d7.

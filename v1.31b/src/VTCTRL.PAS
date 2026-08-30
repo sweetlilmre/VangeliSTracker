@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 14b7 -- the control block and its reset. 32 bytes, of which 25 are
   the one routine and the rest is padding.

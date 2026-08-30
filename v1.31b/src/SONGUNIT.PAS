@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 14b9 -- THE MODULE OBJECT. **COMPLETE: 2,224 of 2,224 bytes.**
   Sixteen routines, 198 pending fixups, no real difference anywhere.

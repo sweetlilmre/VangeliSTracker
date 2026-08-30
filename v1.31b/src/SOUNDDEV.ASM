@@ -1,6 +1,5 @@
 ; ==========================================================================
 ; DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-; NOT Asphyxia code. See demovt/docs/00-map.md.
 ;
 ; 1a17:0746 .. 1a17:10c3 -- the gain ladder, the mixing chain, the shared
 ; poll and the output selectors: ONE frameless run with three entry points

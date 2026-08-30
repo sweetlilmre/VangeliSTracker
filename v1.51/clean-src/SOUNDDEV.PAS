@@ -1,6 +1,5 @@
 { ===========================================================================
-  DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
+  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
   SEGMENT 1a17 -- THE PLAYER CORE. 4304 bytes, the largest unit in the
   program and the one everything else hangs off.

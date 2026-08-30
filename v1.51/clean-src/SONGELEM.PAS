@@ -1,6 +1,5 @@
 { ===========================================================================
-  DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
+  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
   Segment 165a -- THE SONG'S ELEMENTS. 3,216 bytes, FIFTEEN routines: an instrument, a
   track and a pattern, each an object with a constructor, a destructor and a

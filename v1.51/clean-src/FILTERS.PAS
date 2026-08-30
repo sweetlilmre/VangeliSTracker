@@ -1,6 +1,5 @@
 { ===========================================================================
-  DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
+  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
   Segment 1544 -- the output filter. 144 bytes, all of it.
 

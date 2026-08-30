@@ -1,6 +1,5 @@
 ; ==========================================================================
-; DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-; NOT Asphyxia code. See demovt/docs/00-map.md.
+; DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 ;
 ; 12ba:148f .. 12ba:1745 -- the resampling kernels and the one Pascal entry
 ; that chooses between them. THE WHOLE OF THE SEGMENT THAT IS NOT PASCAL.

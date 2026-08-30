@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 1b24 -- the 8259 interrupt controllers and the 8237 DMA channels.
   768 bytes. Under every sound driver in the program: the Sound Blaster needs

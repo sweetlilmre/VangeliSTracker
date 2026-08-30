@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See demovt/docs/00-map.md.
 
   Segment 1b54 -- residency: the INT 2Fh server, the chain to whoever held
   the vector before, and the exit handler that gives it back. 432 bytes, all
@@ -8,7 +7,7 @@
 
   This is the half of the handshake that the Psycho Neurosis reconstruction's
   own src/DEMOVT.PAS talks to. Everything that file assumes is confirmed here
-  -- see demovt/docs/01-int2f.md.
+  -- see docs/01-int2f.md.
 
   NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information, so no unit
   or routine name survives.

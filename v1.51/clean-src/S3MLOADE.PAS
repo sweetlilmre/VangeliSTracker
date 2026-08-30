@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See v1.51/docs/CONTINUATION.md.
 
   Segment 1664 -- the Scream Tracker 3 (.S3M) loader. 3,472 bytes, of which
   3,458 are the four routines. NEW IN v1.51, and the headline feature:

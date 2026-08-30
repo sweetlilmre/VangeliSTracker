@@ -1,6 +1,5 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
-  NOT Asphyxia code. See v1.51/docs/CONTINUATION.md.
 
   Segment 15d0 -- the Scream Tracker 2 (.STM) loader. 2,368 bytes, of which
   2,365 are the four routines. NEW IN v1.51; v1.31b has no such unit.
