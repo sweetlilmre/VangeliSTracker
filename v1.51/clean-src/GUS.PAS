@@ -129,7 +129,7 @@ const
 
   GUSIrq          : Word    = 11;
   GUSChannels     : Byte    = 32;      { the CARD's voices; pad $0587 }
-  GUSDivisor      : Word    = 19293;   { 4b 5d                     }
+  GUSDivisor      : Word    = 19293;
   GUSTimer1RutPtr : Pointer = nil;
   GUSTimer2RutPtr : Pointer = nil;
 

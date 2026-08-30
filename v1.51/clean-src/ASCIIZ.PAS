@@ -49,7 +49,7 @@ implementation
 function StrAsciiZ(var s; l : Word) : String;
 var
   z : array[0..65520] of Char absolute s;
-  i : Word;                       
+  i : Word;
 begin
   i := 0;
 

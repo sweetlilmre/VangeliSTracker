@@ -42,7 +42,7 @@ procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
 implementation
 
 const
-  
+
   ModJMIdString : TModJMIdString = 'JMPLAY';
 
 { --------------------------------------------------------------------------

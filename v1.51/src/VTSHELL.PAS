@@ -1,35 +1,40 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1931 -- startup housekeeping. 159 bytes, five routines, three of
-  which do nothing.
+  Startup housekeeping: open the console, find the command interpreter, and
+  arrange to tidy up on the way out.
 
-  Three things happen here, and they are only in the same segment because
-  they all happen once at startup:
+  Three unrelated things live here, and they are together only because they
+  all happen once at startup:
 
     * the console is opened AS A FILE, under the name 'CON'
-    * COMSPEC is looked up and expanded, giving the fallback program to run
+    * COMSPEC is looked up and expanded, giving a fallback program to run
     * an exit handler is chained on, to close the console again
 
-  OPENING 'CON' EXPLICITLY is the interesting one. Writing through a Text
+  OPENING 'CON' EXPLICITLY IS THE INTERESTING ONE. Writing through a Text
   variable assigned to 'CON' reaches the console even when the program's
-  standard output has been redirected -- `DEMOVT @NEUROSIS.CFG > LOG` still
-  puts the banner on screen. DemoVT is run from a batch file by every part of
-  the demo, so that matters.
+  standard output has been redirected, so `DEMOVT @PLAY.CFG > LOG` still puts
+  the banner on the screen and the log gets nothing. DemoVT is launched from
+  batch files, where redirection is ordinary, so this is deliberate rather
+  than incidental.
 
-  DS:$3ade IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites it
-  per playlist entry and 1000:03af hands it to Dos.Exec; what this unit does
-  is give it a default, so an entry that names no program of its own falls
-  back to the command interpreter.
+  THE PROGRAM NAME IS A DEFAULT, NOT A DECISION. What this unit puts in
+  ProgName is the command interpreter; the playlist reader overwrites it per
+  entry, and the player hands whatever is there to Dos.Exec. So an entry that
+  names no program of its own falls back to the shell.
 
-  NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
+  [re] Segment 1931 -- 159 bytes, five routines, three of which do nothing.
 
-  ADDRESS MAP
+  [re] DS:$3ade IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites
+  it per playlist entry and 1000:03af hands it to Dos.Exec.
+
+  [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
+
+  [re] ADDRESS MAP
     AtExit  1931:0000     'CON'      CS:$001d, a String[3]
     Init    1931:0029     'COMSPEC'  CS:$0021, a String[7]
-    stubs   1931:0090, 1931:0095, 1931:009a
 
-  DGROUP
+  [re] DGROUP
     $39de  the console Text variable      $3ade  the program to run
     $3b2e  the displaced ExitProc         $0c58  ExitProc itself
   =========================================================================== }
@@ -42,42 +47,55 @@ uses
   Dos;
 
 var
-  { DS:$3ade -- a String[79]. 1ba1:0aed truncates to $4f on the way in, which
-    is what fixes the declared width. }
-  { THE ORDER HERE IS `ConFile`, THEN `ProgName`, THEN `SavedExit`, and it is measured:
-    $39de + 256 is $3ade and $3ade + 80 is $3b2e, which are the three addresses the code
-    names. `ConFile` is a `Text`, and a TP `TextRec` is 256 bytes, so the three close on
-    340 -- this unit's whole data size -- with nothing over. `ProgName` was declared first
-    and had to move below the file variable, which means `ConFile` is exported too. }
+  { The console, opened as an ordinary file. Everything the player prints goes
+    through here rather than through Output, which is what makes it immune to
+    redirection.
+
+    [re] DS:$3ade -- a String[79]. 1ba1:0aed truncates to $4f on the way in,
+    which is what fixes the declared width.
+
+    [re] THE ORDER HERE IS `ConFile`, THEN `ProgName`, THEN `SavedExit`, and it
+    is measured: $39de + 256 is $3ade and $3ade + 80 is $3b2e, which are the
+    three addresses the code names. `ConFile` is a `Text`, and a TP `TextRec` is
+    256 bytes, so the three close on 340 -- this unit's whole data size -- with
+    nothing over. `ProgName` was declared first and had to move below the file
+    variable, which means `ConFile` is exported too. }
   ConFile   : Text;      { DS:$5d38  256 bytes }
+
+  { The program to run when a playlist entry does not name one. Set here to the
+    command interpreter and overwritten per entry by the playlist reader. }
   ProgName  : String[79];{ DS:$5e38 }
 
-{ ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND THEY
-  WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next segment
-  starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 193a:0000. The
-  three "stubs" are DevSB's first three Name functions read past the boundary,
-  five bytes each at 193a:0000, 0005 and 000a, with a fourth at 000f the scan
-  stopped short of.
+{ [re] ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND
+  THEY WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next
+  segment starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 193a:0000.
+  The three "stubs" are DevSB's first three Name functions read past the
+  boundary, five bytes each at 193a:0000, 0005 and 000a, with a fourth at 000f
+  the scan stopped short of.
 
-  **A SEGMENT BOUNDARY IS NOT A SUGGESTION.** The note said they were "kept
-  because they are in the segment"; they are in the next one. Check the span
-  against the FOLLOWING segment's address before believing anything near the
-  end of a unit -- the same arithmetic that confirmed 116e's 1,232 bytes are
-  exact because 11bb begins at 116e:04d0. }
+  [re] **A SEGMENT BOUNDARY IS NOT A SUGGESTION.** The note said they were
+  "kept because they are in the segment"; they are in the next one. Check the
+  span against the FOLLOWING segment's address before believing anything near
+  the end of a unit -- the same arithmetic that confirmed 116e's 1,232 bytes
+  are exact because 11bb begins at 116e:04d0. }
 
 implementation
 
 var
-  { ~~ConFile~~ has moved to the interface, above `ProgName` -- see the note there. }
+  { Whatever was on the ExitProc chain before this unit joined it. }
   SavedExit : Pointer;   { DS:$5e88 }
 
 { --------------------------------------------------------------------------
-  1931:0000 -- the exit handler.
+  Close the console file on the way out of the program.
 
-  Plain Pascal. The ExitProc chain is Turbo Pascal's own convention: put back
-  whatever was there before, do your cleanup, and the runtime walks on to it.
-  Restoring FIRST and cleaning up second is the required order -- if Close
-  faulted, the chain would still be intact.
+  RESTORING THE CHAIN COMES FIRST AND THE CLEANUP SECOND, and the order is
+  required rather than stylistic. Turbo Pascal's ExitProc convention is that
+  each handler puts back the pointer it displaced and then does its own work;
+  the runtime walks on to whatever ExitProc holds when the handler returns. If
+  Close faulted with the restore still pending, the chain would be broken and
+  every handler below this one would be skipped -- including the runtime's own.
+
+  [re] 1931:0000. Plain Pascal.
   -------------------------------------------------------------------------- }
 procedure AtExit; far;
 begin
@@ -86,13 +104,22 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1931:0029 -- open the console, find the shell, chain the exit handler.
+  Open the console, chain the exit handler, and find the command interpreter.
 
-  Plain Pascal. The frame is `ENTER $200,0`, which is two 256-byte String
-  temporaries and nothing else -- they belong to the COMSPEC expression
-  below, not to any named local.
+  This is the unit's initialisation section, so it runs once before the main
+  program body, in the order the units are linked.
 
-  THE LAST LINE COMPILES TO SOMETHING WORTH RECOGNISING. The binary pushes
+  `FExpand(GetEnv('COMSPEC'))` is the whole of the shell lookup: read the
+  environment variable, then expand it to a full path so that the later Exec
+  does not depend on the current directory. If COMSPEC is unset, GetEnv
+  returns an empty string and FExpand turns it into the current directory --
+  the Exec then fails, and nothing here checks.
+
+  [re] 1931:0029. Plain Pascal. The frame is `ENTER $200,0`, which is two
+  256-byte String temporaries and nothing else -- they belong to the COMSPEC
+  expression, not to any named local.
+
+  [re] THE LAST LINE COMPILES TO SOMETHING WORTH RECOGNISING. The binary pushes
   three far pointers and then makes TWO calls with nothing in between:
 
       push @temp2          FExpand's result
@@ -106,14 +133,14 @@ end;
   outer one's stack slot rather than copying. The same shape turns up in the
   main project's part 007, where FSplit reuses ParamStr's pushed result
   pointer. It reads like a missing push until you know to expect it.
-  -------------------------------------------------------------------------- }
-{ **IT IS THE UNIT'S INITIALISATION SECTION, NOT A PROCEDURE**, by the same
-  reasoning as VTCTRL's: the original's init chain calls 1931:0029, nothing
-  else calls it, and a procedure nothing calls is discarded by the smart
-  linker -- which is why our image had VTSHELL at ZERO bytes.
 
-  It sits at 0029 rather than 0000 because an initialisation section is the
-  LAST code in a unit, and AtExit occupies 0000..0028 ahead of it. }
+  [re] **IT IS THE UNIT'S INITIALISATION SECTION, NOT A PROCEDURE**, by the
+  same reasoning as VTCTRL's: the original's init chain calls 1931:0029,
+  nothing else calls it, and a procedure nothing calls is discarded by the
+  smart linker -- which is why our image had VTSHELL at ZERO bytes. It sits at
+  0029 rather than 0000 because an initialisation section is the LAST code in a
+  unit, and AtExit occupies 0000..0028 ahead of it.
+  -------------------------------------------------------------------------- }
 begin
   Assign(ConFile, 'CON');                         { 1931:0037  1ba1:05a9 }
   Rewrite(ConFile);                               { 1931:0041  1ba1:061e }

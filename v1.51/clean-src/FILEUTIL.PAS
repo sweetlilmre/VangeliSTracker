@@ -55,7 +55,7 @@ implementation
   -------------------------------------------------------------------------- }
 procedure AddBar2Path(var Path : PathStr);
 begin
-  
+
   case Path[Length(Path)] of
     ':', '\', '/' : ;
   else

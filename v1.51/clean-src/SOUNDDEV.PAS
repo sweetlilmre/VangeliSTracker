@@ -200,7 +200,7 @@ const
   SoundLeft         : Word         = 0;
   NumChannels       : Word         = 1;
   ChannelIncr       : Word         = 1;
-  DMABufferSize     : Word         = 46000;  { b3 b0                }
+  DMABufferSize     : Word         = 46000;
   { A BYTE, NOT THE RELEASE'S BOOLEAN, AND THE CODE IS WHY: 1a17:00d0 assigns 1 to it
     rather than testing it as a flag, so the standing rule -- do not take a TYPE from
     the release -- keeps it a Byte. The value is the same either way; $0ba6 holds 01. }
@@ -211,7 +211,7 @@ const
     that is here; 1.31's image says 16000 three times over -- and VTGlobal's `ShellHz`
     holds 12000, which is the release's `DefaultHz * 3 DIV 4` exactly. Two units
     agreeing on a constant neither of them stores by name. }
-  TimerHz           : Word         = 16000;  { 80 3e                }
+  TimerHz           : Word         = 16000;
   LastHz            : Word         = 0;
   SoundHz           : Word         = 16000;
   DesiredHz         : Word         = 16000;
