@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """How much of each 1.31 segment does the 1.39b RELEASE's compiled code reproduce?
 
-    python v1.31b/relbuild.py          first -- compiles the release into build/vt
-    python v1.31b/relmatch.py          then this
+    python relbuild.py          first -- compiles the release into build/vt
+    python relmatch.py          then this
 
 BOTH RUN. This was unrunnable for a while and this docstring said so at length;
 `relbuild.py` beside this file closed that on 28 Aug 2026 and the two were measured
@@ -106,8 +106,7 @@ class V:
                                align.pending, None, False)
         return pre
 
-ROOT = HERE.parent
-VT = ROOT / "build" / "vt"
+VT = HERE / "build" / "vt"
 
 WIN = 8             # window size for the coverage measure
 STEP = 4            # and how far to slide it
@@ -142,7 +141,7 @@ def windows_covered(orig, tpu):
 def main():
     # every segment with code, from the map
     import re
-    txt = (ROOT / "v1.31b/docs/00-map.md").read_text(encoding="utf-8",
+    txt = (HERE / "docs/00-map.md").read_text(encoding="utf-8",
                                                      errors="replace")
     seg = {int(m.group(1), 16): int(m.group(2))
            for m in re.finditer(r"^\| `([0-9a-f]{4})` \| (\d+) \|", txt, re.M)}
@@ -151,7 +150,7 @@ def main():
 
     tpus = sorted(VT.glob("*.TPU")) + sorted((VT / "LIB").glob("*.TPU"))
     if not tpus:
-        print("no .TPU in build/vt -- run python v1.31b/relbuild.py first.")
+        print("no .TPU in build/vt -- run python relbuild.py first.")
         print("(the kit's build.py wipes build/, subdirectories included, so a")
         print(" 1.31 build since the last relbuild.py is enough to explain this)")
         return 1

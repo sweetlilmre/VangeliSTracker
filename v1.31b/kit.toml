@@ -1,6 +1,17 @@
 # This project's answers to the kit's questions. Read by kit/tools/project.py,
 # and by nothing else.
 #
+# THIS DIRECTORY IS ITS OWN HOST ROOT, and that is deliberate. `project.py`
+# walks UP from the working directory looking for kit.toml, and the kit's model
+# is one target per host root -- `target.image` is a single path, not a table.
+# This repository reconstructs two builds of one program, so each gets its own
+# root. Run every v1.31b command with this directory as the working directory:
+#
+#     cd v1.31b && ..\.venv\Scripts\python.exe ..\kit\tools\pascal\build.py build.toml
+#
+# The repository root holds no kit.toml at all: it is a container for the two
+# reconstructions and the kit, and answers for neither on its own.
+#
 # WHAT BELONGS HERE: what somebody READ. Where this repository keeps things, and
 # the facts a person took out of the target once.
 #
@@ -13,9 +24,9 @@
 # Neurosis as NEUROSIS.008, LZEXE-packed, unpacked back to a load image.
 
 [layout]
-src   = "v1.31b/src"                   # the Pascal sources under reconstruction
+src   = "src"                          # the Pascal sources under reconstruction
 build = "build"                        # where the DOSBox build stages and leaves its output
-wiki  = "kit/wiki"                     # the field manual, inside the kit
+wiki  = "../kit/wiki"                  # the field manual, inside the kit
 
 [target]
 # The paragraph the disassembly calls the start of the load image. Every address
@@ -23,21 +34,22 @@ wiki  = "kit/wiki"                     # the field manual, inside the kit
 first_para = 0x1000
 
 # The measurement target: the v1.31b build recovered from NEUROSIS.008 by
-# tools/unlzexe.py. 58,176 bytes. It is TRACKED deliberately -- a checkout that
-# cannot measure itself is not much use -- and v1.31b/refpath.py says what the
-# unpacking cannot tell you about it.
-image = "v1.31b/ref/vt1.31b.bin"
+# kit/tools/substrate/unlzexe.py. 58,176 bytes. It is TRACKED deliberately -- a
+# checkout that cannot measure itself is not much use -- and refpath.py says
+# what the unpacking cannot tell you about it.
+image = "ref/vt1.31b.bin"
 
 [encaudit]
 # Where to look for text I/O that leaves the encoding to the locale. The kit's
 # check refused outright without this -- `kit.toml does not answer` -- so it was
 # not running here at all, in a repository whose whole subject is DOS files that
 # must be written as ascii. The kit's own tiers are listed because nothing else
-# scans them.
-dirs = ["tools", "v1.31b", "kit/tools", "kit/tools/substrate",
-        "kit/tools/pascal", "kit/tools/wikitools"]
+# scans them: v1.51 is its own root and audits only its sources, so the kit's
+# coverage lives here.
+dirs = ["src", ".", "../kit/tools", "../kit/tools/substrate",
+        "../kit/tools/pascal", "../kit/tools/wikitools"]
 
 [census]
 # Directories holding scripts, for the retirement census. The psycho checkout's
 # path is machine-specific and belongs in kit.local.toml, not here.
-roots = ["tools", "v1.31b", "kit/tools"]
+roots = [".", "../kit/tools"]

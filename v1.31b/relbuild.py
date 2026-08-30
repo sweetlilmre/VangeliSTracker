@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 r"""Compile the VangeliSTracker 1.39b RELEASE with TP 7.01, under DOSBox-X.
 
-    python v1.31b/relbuild.py            stage + compile MAKESTR, VT, SHELLVT
-    python v1.31b/relbuild.py VT.PAS     one program
+    python relbuild.py            stage + compile MAKESTR, VT, SHELLVT
+    python relbuild.py VT.PAS     one program
 
 This is the RELEASE source in `v1.39b/` -- JCAB / VangeliSTeam's own tracker,
 the later version of the codebase this project reconstructs -- NOT the
@@ -73,7 +73,7 @@ import pathlib
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 SRC = ROOT / "v1.39b"
-BUILD = ROOT / "build" / "vt"
+BUILD = HERE / "build" / "vt"
 # Generated, and they live with the build rather than beside anything tracked --
 # build/ is gitignored and neither file is worth keeping.
 CONF = BUILD / "DOSBUILD.CFG"
@@ -311,7 +311,7 @@ def main(argv):
         raise SystemExit("no BUILD.LOG -- the autoexec did not run")
     good = report(log.read_text(encoding="latin-1"))
     if good:
-        print("\n  now: python v1.31b/relmatch.py")
+        print("\n  now: python relmatch.py")
     return 0 if good else 1
 
 

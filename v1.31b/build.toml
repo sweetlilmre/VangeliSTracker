@@ -7,7 +7,7 @@
 # NO MACHINE PATHS. DOSBox-X, the drive C: image and each compiler's location
 # live in kit.local.toml, which git ignores.
 
-src     = "v1.31b/src"
+src     = "src"
 build   = "build"
 title   = "DemoVT build"
 drive   = "D"
@@ -100,7 +100,9 @@ list = [
   "CMDLINE.PAS",  # 116e  the command line
   "VTCFG.PAS",  # 11bb  the config file
   "VTCMD.PAS",  # 109c  the switch table -- IN PROGRESS (needs VTCfg)
-  "VTMAIN.PAS",  # 1000  the program -- BLOCKED, see below
+  "VTMAIN.PAS",  # 1000  the program -- compiles and links; the linked
+                 #       image is byte-identical. The old "BLOCKED" note named
+                 #       units that are all transcribed now. Measured 30 Aug 2026.
 ]
 
 [stage]
@@ -110,7 +112,7 @@ list = [
 encoding = "cp437"
 # Every DemoVT source is already an 8.3 name and every unit identifier already
 # matches its filename, so nothing is renamed -- an empty [names] says so.
-alongside = ["v1.31b/src/*.ASM", "v1.31b/src/*.INC"]
+alongside = ["src/*.ASM", "src/*.INC"]
 
 [[compiler.tp6.prepass]]
 # THE BOOTSTRAP PASS. Compile SongUnit once with /DBOOTSTRAP, which takes the

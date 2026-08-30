@@ -7,7 +7,7 @@
 # paragraph the figure is the code only, so a unit may legitimately compile
 # SHORTER and only the overlap is compared.
 
-sources  = "v1.31b/src"
+sources  = "src"
 rewrites = ["tp6_far"]
 
 [unit.ASCIIZ]

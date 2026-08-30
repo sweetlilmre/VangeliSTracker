@@ -9,8 +9,9 @@
 #
 #     cd v1.51 && ..\.venv\Scripts\python.exe ..\kit\tools\pascal\build.py build.toml
 #
-# From the repository root the same commands still answer for v1.31b, and its
-# reconstruction stays measurable exactly as it was.
+# v1.31b/ is the same shape -- its own kit.toml, build.toml and build/ beside
+# its sources. The repository root holds no kit.toml at all: it is a container
+# for the two reconstructions and the kit, and answers for neither on its own.
 #
 # The target is DemoVT v1.51 -- April 1994, the released version, shipped in
 # demovt15.zip as DEMOVT.EXE, LZEXE 0.91-packed, unpacked back to a load image.

@@ -2,7 +2,7 @@
 
 **Start here.** This is the v1.51 handover. It is a *separate* document from `v1.31b/docs/CONTINUATION.md`, deliberately: that one describes a finished reconstruction and is worth reading for METHOD, but every number, address and layout fact in it is v1.31b's and is wrong here. Where this file needs one of its findings, it restates it.
 
-**This directory is its own host root.** `kit.toml` sits beside this `docs/`, so `kit/tools/project.py` resolves v1.51's answers when the working directory is inside it, and the repository root's answers still describe v1.31b. Run every command below from `v1.51/`.
+**This directory is its own host root.** `kit.toml` sits beside this `docs/`, so `kit/tools/project.py` resolves v1.51's answers when the working directory is inside it. `v1.31b/` is the same shape, with its own `kit.toml`; the repository root has none. Run every command below from `v1.51/`.
 
 ---
 

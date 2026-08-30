@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Emit the gain ladder of DemoVT segment 1a17 as Turbo Pascal assembler.
 
-    python v1.31b/emit_gain.py > v1.31b/src/VTGAIN.INC
+    python emit_gain.py > src/VTGAIN.INC
 
 WHY THIS IS GENERATED AND NOT HAND-WRITTEN.  1a17:0746..0a80 is 315 bytes of
 48 tiny near routines plus three 16-entry pointer tables plus a patch area.

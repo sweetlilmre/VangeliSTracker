@@ -11,7 +11,8 @@ import pathlib
 
 import refpath
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent
 REL = ROOT / 'v1.39b'
 
 blob = refpath.read()
@@ -24,7 +25,7 @@ def seg_bytes(seg, size):
 
 
 # segment -> size, from the map
-txt = (ROOT / 'v1.31b/docs/00-map.md').read_text(encoding='utf-8', errors='replace')
+txt = (HERE / 'docs/00-map.md').read_text(encoding='utf-8', errors='replace')
 seg = {int(m.group(1), 16): int(m.group(2))
        for m in re.finditer(r'^\| `([0-9a-f]{4})` \| (\d+) \|', txt, re.M)}
 

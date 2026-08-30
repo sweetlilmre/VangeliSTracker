@@ -11,7 +11,7 @@
 #             padding and is checked to be zero rather than compared
 
 # Where the real sources are, so a stale build is refused rather than measured.
-sources  = "v1.31b/src"
+sources  = "src"
 rewrites = ["tp6_far"]
 
 [module.PLAYMOD]

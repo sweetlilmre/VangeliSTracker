@@ -15,10 +15,10 @@
 # the first attempt and the reader raised KeyError.
 
 map_file = "build/VTMAIN.MAP"
-layout   = "v1.31b/docs/00-map.md"
+layout   = "docs/00-map.md"
 # The program segment is measured block by block -- it emits no unit, so the
 # per-unit table has nothing to say about it.
-program_blocks = "v1.31b/blocks/1000.toml"
+program_blocks = "blocks/1000.toml"
 # Where the last segment ends. A boundary, not a unit.
 end_at   = 0x1caa
 

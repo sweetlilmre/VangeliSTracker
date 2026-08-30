@@ -32,8 +32,8 @@ def read():
         raise SystemExit(
             "reference image not found: %s\n"
             "It is tracked, so a clean checkout has it -- something removed it here.\n"
-            "Restore it with `git checkout -- v1.31b/ref/vt1.31b.bin`, rebuild\n"
-            "it with tools/unlzexe.py, or point VT_REFIMG at a copy you have." % ORIG)
+            "Restore it with `git checkout -- ref/vt1.31b.bin`, rebuild\n"
+            "it with kit/tools/substrate/unlzexe.py, or point VT_REFIMG at a copy you have." % ORIG)
     blob = ORIG.read_bytes()
     if len(blob) != EXPECTED_SIZE:
         raise SystemExit(
