@@ -1,21 +1,31 @@
 ; ==========================================================================
 ; DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 ;
-; 1a17:0746 .. 1a17:10c3 -- the gain ladder, the mixing chain, the shared
-; poll and the output selectors: ONE frameless run with three entry points
-; and two different returns.
+; The parts of the sound core that had to be assembler: the gain ladder, the
+; mixing chain, the timer poll every driver shares, and the output selectors.
 ;
-; WHY THIS IS AN ASSEMBLER MODULE AND NOT PASCAL. It was transcribed as three
-; Pascal `assembler` procedures and cost four bytes that no source shape could
-; reach -- an epilogue at 1007 where the original has a 00 pad, another at
-; 104d, and a near RET at 10c1 where the original ends RETF 4. A Pascal
-; procedure has one entry and one exit; this run has neither. The original
-; built it the way the 1.39b release still builds this same unit: an external
-; TASM module linked with $L. LIB/SOUNDDEV.PAS line 744 is that $L, and
-; LIB/SOUNDDEV.ASM is a 902-line module whose entry points are bare PUBLIC
-; labels.
+; ONE FRAMELESS RUN WITH THREE ENTRY POINTS AND TWO DIFFERENT RETURNS, which is
+; the reason it is a separate module at all. A Pascal procedure has one entry
+; and one exit; this code is entered at three labels, falls from one section
+; into the next, and ends RETF in one place and RETF 4 in another. There is no
+; way to say that in Pascal, so it is said in TASM and linked in with $L --
+; which is how the 1.39b release builds this same unit too.
 ;
-; AND THE ENCODINGS SAY SO. TASM and Turbo Pascal's inline assembler disagree
+; WHAT LIVES HERE, in order:
+;
+;     the gain ladder      256 unrolled scale-and-add steps, generated
+;     SharedPoll           the timer callback every driver shares
+;     the DSP writers      talking to a Sound Blaster
+;     the output selectors mono or stereo, 8-bit or 16-bit
+;
+; [re] 1a17:0746 .. 1a17:10c3. WHY THIS IS AN ASSEMBLER MODULE AND NOT PASCAL:
+; it was transcribed as three Pascal `assembler` procedures and cost four bytes
+; that no source shape could reach -- an epilogue at 1007 where the original has
+; a 00 pad, another at 104d, and a near RET at 10c1 where the original ends
+; RETF 4. LIB/SOUNDDEV.PAS line 744 is that $L, and LIB/SOUNDDEV.ASM is a
+; 902-line module whose entry points are bare PUBLIC labels.
+;
+; [re] AND THE ENCODINGS SAY SO. TASM and Turbo Pascal's inline assembler disagree
 ; on the direction bit, and every disputed byte in this run is TASM's:
 ;
 ;     instruction   original       TASM 4.1   TP6 inline asm
@@ -27,7 +37,7 @@
 ; while GetPlayPos, which stays in SOUNDDEV.PAS, has TP's 29 C3 for SUB BX,AX.
 ; Two assemblers, two regions. See docs/06-transcription.md.
 ;
-; MASM mode, not IDEAL. The release uses IDEAL; this file keeps MASM mode
+; [re] MASM mode, not IDEAL. The release uses IDEAL; this file keeps MASM mode
 ; because the transcription was written in Turbo Pascal's asm syntax, which
 ; MASM mode accepts almost verbatim, and a syntax rewrite of 2,400 verified
 ; bytes is not something to bundle with a structural change. LOCALS is OFF
@@ -35,7 +45,7 @@
 ; module-global, which is what lets SharedPoll reference @@Prepare inside the
 ; ladder. As inline Pascal asm that call had to be a hand-computed literal.
 ;
-; THE BYTES ARE NOT MEANT TO CHANGE by moving here. Instructions transcribed
+; [re] THE BYTES ARE NOT MEANT TO CHANGE by moving here. Instructions transcribed
 ; as DB stay DB even where TASM would now assemble the mnemonic to the right
 ; byte -- converting them is a separate step with its own comparison.
 ; ==========================================================================
@@ -44,13 +54,15 @@
                 P286
 
 ; ---- DGROUP variables, all declared in SOUNDDEV.PAS -----------------------
-; Every one of these is a linker fixup, so units.py cannot check them; they
+; The state this module shares with its Pascal half. Declared there, used here.
+;
+; [re] Every one of these is a linker fixup, so units.py cannot check them; they
 ; are checked by reading, and by risk 1 whenever the link happens.
                 .DATA
                 EXTRN   ActualBuffer    : DWORD
                 EXTRN   BytesPerSample  : BYTE
                 EXTRN   ClockAccum      : WORD
-; StackSize IS THE RELEASE'S OWN NAME AND ITS OWN VALUE. LIB/SOUNDDEV.ASM
+; [re] StackSize IS THE RELEASE'S OWN NAME AND ITS OWN VALUE. LIB/SOUNDDEV.ASM
 ; declares StackSize EQU 1000 and reaches the stack's top with
 ; MOV SP,OFFSET DevStack + StackSize at all four of its switches. TASM
 ; cannot see the Pascal DevStkSize, so the constant is declared here as the
@@ -93,25 +105,31 @@ StackSize       EQU     1000
                 EXTRN   DoGetBuffer     : NEAR
                 EXTRN   GetDMACount     : NEAR
 
-; ---- 0746..1007 : the gain ladder, the patcher and the mixing chain ------
-; GENERATED. python emit_gain.py > src/VTGAIN.INC
+; ---- the gain ladder, the patcher and the mixing chain --------------------
+; 256 unrolled steps, one per volume level, so that scaling a sample costs a
+; call and an add rather than a multiply. Generated rather than written.
+;
+; [re] 0746..1007. GENERATED. python emit_gain.py > src/VTGAIN.INC
                 INCLUDE VTGAIN.INC
 
 ; ==========================================================================
-; 1a17:1008 -- SharedPoll. The timer callback every driver shares.
+; SharedPoll -- the timer callback every driver shares.
 ;
-; A far slot: VTSILENC stores @SoundDevices.SharedPoll in its driver record,
-; so it is reached by a far call and returns with the RETF written at 104a.
-; The re-entrancy guard at 104b is a byte of DATA INSIDE THE CODE, addressed
-; CS-relative, which is why it cannot move to DGROUP.
+; A driver that has no special timer needs of its own points its record's
+; TimerHandler slot straight at this, so it is reached by a far call through a
+; pointer and returns RETF.
 ; ==========================================================================
-; 1007 -- ONE BYTE OF PADDING, and it is the byte this whole module was built
-; to explain. The ladder's run ends at 1006 on an unconditional JMP; SharedPoll
+; [re] 1a17:1008. VTSILENC stores @SoundDevices.SharedPoll in its driver
+; record. The re-entrancy guard at 104b is a byte of DATA INSIDE THE CODE,
+; addressed CS-relative, which is why it cannot move to DGROUP.
+;
+; [re] 1007 -- ONE BYTE OF PADDING, and it is the byte this whole module was
+; built to explain. The ladder's run ends at 1006 on an unconditional JMP; SharedPoll
 ; begins at 1008, an EVEN address. As three Pascal procedures this byte came out
 ; as the compiler's epilogue RET and could not be anything else. Here it is what
 ; the original always was: an assembler aligning its next entry point.
 ;
-; DB 0 AND NOT `EVEN`. TASM pads with 90h, the NOP it would want to be executed
+; [re] DB 0 AND NOT `EVEN`. TASM pads with 90h, the NOP it would want to be executed
 ; through; the original's pad is 00, so whatever aligned it filled with zero.
 ; One byte, and it was the last difference in the whole module.
                 DB      0
@@ -170,13 +188,14 @@ SharedPoll:
         MOV     [SavedSP],SP              ; 1023
         MOV     AX,DS                     ; 1027
         MOV     SS,AX                     ; 1029  ours is in DGROUP
-; A HARDCODED ADDRESS COPIED FROM v1.31b, AND RIGHT THERE BY COINCIDENCE ONLY.
-; 3F1Ah was where that build's stack ended; this build's is elsewhere, and the
-; instruction assembles identically either way. Computed from the symbol now --
-; see `transcribe-the-meaning-not-the-constant` in the kit.
+; [re] A HARDCODED ADDRESS COPIED FROM v1.31b, AND RIGHT THERE BY COINCIDENCE
+; ONLY. 3F1Ah was where that build's stack ended; this build's is elsewhere, and
+; the instruction assembles identically either way. Computed from the symbol now
+; -- see `transcribe-the-meaning-not-the-constant` in the kit.
         MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
-; TWO INSTRUCTIONS ARE WRITTEN AS BYTES, AND THE REASON IS THE DIRECTION BIT.
+; [re] TWO INSTRUCTIONS ARE WRITTEN AS BYTES, AND THE REASON IS THE DIRECTION
+; BIT.
 ; `AND AL,AL` and `XOR AL,AL` can each be encoded two ways -- register-to-
 ; register operations carry a bit saying which operand the assembler treats as
 ; the destination, and both encodings do the same thing. The original used one;
@@ -195,9 +214,9 @@ SharedPoll:
 ; already switched off before v1.51 dropped it.
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
 
-; 1033 -- THE CALL TO @@Prepare AT 1a17:0edf. As inline Pascal asm this had to
-; be DB 0E8h, 0A9h, 0FEh, a hand-computed literal, because @@Prepare is a label
-; in a different procedure. In one module it is a symbol again.
+; [re] 1033 -- THE CALL TO @@Prepare AT 1a17:0edf. As inline Pascal asm this
+; had to be DB 0E8h, 0A9h, 0FEh, a hand-computed literal, because @@Prepare is
+; a label in a different procedure. In one module it is a symbol again.
         CALL    @@Prepare                 ; 1033
         CALL    DWORD PTR [PeriodicProc]  ; 1036  the installed callback
 
@@ -232,14 +251,21 @@ SharedPoll:
                                           ;       there
 
 ; ==========================================================================
-; 1a17:104d .. 1a17:10c3 -- the DSP writers and the output selectors.
+; The DSP writers and the output selectors.
 ;
-; 1087 and 1090 SHARE A TAIL and both open with a hand-written ENTER 0,0 and
-; close LEAVE / RETF 4 -- which no two Pascal procedures can do, and which is
-; the clearest single sign that this run was never compiled.
+; THE WRITERS talk to a SoundBlaster: wait for the DSP to be ready, send a
+; command, wait again, send the sample. THE SELECTORS choose which of them the
+; mixer will call, by patching a slot -- so the per-sample path costs an
+; indirect call rather than a test.
 ;
-; 1090 picks by its FIRST argument; 1087 forces mono and ignores both. The
-; four bytes of arguments are what the RETF 4 removes.
+; TWO SELECTORS, ONE TAIL. One picks mono or stereo by its argument; the other
+; forces mono and ignores both arguments. They share their ending.
+;
+; [re] 1a17:104d .. 1a17:10c3. 1087 and 1090 SHARE A TAIL and both open with a
+; hand-written ENTER 0,0 and close LEAVE / RETF 4 -- which no two Pascal
+; procedures can do, and which is the clearest single sign that this run was
+; never compiled. 1090 picks by its FIRST argument; 1087 forces mono and
+; ignores both. The four bytes of arguments are what the RETF 4 removes.
 ; ==========================================================================
                 PUBLIC  SelectOutput
 SelectOutput:
@@ -332,15 +358,16 @@ SelectOutput:
     DW OFFSET SetGains + 0636h    ;     ... 0d7c, the mono loop
     JMP     @@Install        ; 108e
 
-; 1090 -- mono or stereo, by the FIRST argument.
+; Mono or stereo, by the first argument. The DMA path, where the card is fed a
+; buffer and can therefore afford stereo; the entry above is the non-DMA path,
+; fed sample by sample from the timer, and a non-DMA device is always mono.
 ;
-; IT NEEDED A NAME OF ITS OWN, and 193a is what asked for it: 193a:0352 calls
-; 1a17:1090 directly, so the second entry point has to be PUBLIC. The release
-; calls this pair DevInitSbNonDMA (1087) and DevInitSbDMA (1090), which is
-; exactly what "1087 forces mono and ignores both arguments" means -- a
-; non-DMA device is always mono.
+; [re] 1090. IT NEEDED A NAME OF ITS OWN, and 193a is what asked for it:
+; 193a:0352 calls 1a17:1090 directly, so the second entry point has to be
+; PUBLIC. The release calls this pair DevInitSbNonDMA (1087) and DevInitSbDMA
+; (1090).
 ;
-; A LABEL EMITS NO BYTES. SOUNDDEV verified identical before this and must
+; [re] A LABEL EMITS NO BYTES. SOUNDDEV verified identical before this and must
 ; after; that is the check, not an argument.
                 PUBLIC  DevInitSbDMA
 ; ===========================================================================
