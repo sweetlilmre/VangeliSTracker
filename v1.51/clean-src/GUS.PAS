@@ -124,7 +124,7 @@ const
   the module's -- `MaxVoice` is 31 below for the same reason -- and it is 12ba's
   `MaxChannels` that is 8. Two different numbers that a reader will want to conflate. }
 const
-  {$FFFF means "not configured, go and look". 109c:047c writes
+  { $FFFF means "not configured, go and look". 109c:047c writes
     the config file's value here, which is what ties VT.CFG to the card. }
   GUSPort         : Word    = $FFFF;
 
