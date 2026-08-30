@@ -63,11 +63,7 @@ unit SongUnit;
 interface
 
 uses
-  { Objects -- TObject, which TSong descends from, and PString.
-    Heaps    -- `FullHeap` at DS:$39ae. 14b9:0339 calls its VMT slot +$30 and
- slot +$34, which HEAPS.PAS independently declares as
-                HNewStr and HDisposeStr. That is the same object 12ba calls at
-                +$08, so the VMT geometry is confirmed from a third segment. }
+
   { SongElements -- 165a, and the release's own layering: its SONGUNIT.PAS uses
     SongElem, not the other way round. GetInstrument, GetTrack and GetPattern
     each CONSTRUCT one of its objects, and a constructor cannot be reached
@@ -84,10 +80,7 @@ uses
     names is a rename in a byte-exact unit and belongs in its own pass; until
     then this unit qualifies SongElements' types explicitly where it needs the
     constructors, and the local declarations serve PLAYMOD. }
-  { Dos      -- FSplit, FExpand, PathStr and DirStr; LoadFName calls 1b6f:0241
-                and 1b6f:0178, which are those two.
-    VTGlobal -- ModOffset. 14b9:0242 pushes the LongInt at DS:$03c0 straight
-                into St.Seek, and VTGLOBAL.PAS already declares it. }
+
   Objects, Dos, Heaps, SongElements, VTGlobal;
 
 const
@@ -104,29 +97,9 @@ type
 
 
 
-{ ~~TSampleDesc~~ IS GONE. It was a 32-byte local copy of SongElements'
-  `TInstrumentRec`, and NOTHING IN THE TREE REFERENCED IT -- `PSampleDesc` and
-  `TSampleDesc` occurred exactly twice between them, on their own two declaration
-  lines. It was also the WRONG SIZE: the real record ends at `Prop : Word` on
-  +$1a and is 28 bytes, where the copy carried six bytes of filler to +$1f
-  because the tail had been guessed at rather than read.
 
-  BOTH FACTS SURVIVED EVERY COMPARISON IN THE KIT, and they had to: a type
-  nothing declares a variable of emits no bytes, so no unit size, no operand and
-  no DGROUP block can disagree with it. A declaration nothing reads can be wrong
-  for as long as it exists.
 
-  What it was trying to describe, SONGELEM.PAS declares in the release's own
-  names -- and three of the guesses were right in substance: `Pad0D` is `Ftune`,
-  and `PeriodMul`/`PeriodDiv`, named here for multiplying and dividing a period
-  at 12ba:0e9f, are `NAdj` and `DAdj`, the numerator and denominator of the note
-  adjustment. The reading was correct; the second declaration was the mistake. }
 
-  { ~~TModCommand AND TFullNote~~ WENT THE SAME WAY. SONGELEM.PAS declares both,
-    with these exact field names and offsets -- as a VARIANT record, so a track can
-    reach the same six bytes as a note or as a command pair. And its `TModCommand`
-    is the ENUMERATION, not a Byte: a plain Byte here let `Command := 0` compile
-    where the release means `mcNone`, which is the same byte and a worse sentence. }
 
 
   { THE THREE COLLECTION FIELDS ARE REAL `Objects.TCollection`s, AND THE FILLER
@@ -136,12 +109,6 @@ type
     `object(TObject)` with `Items`, `Count`, `Limit`, `Delta`: **12 bytes, and
     8 + 4 = 12 three times over.** The filler was Limit and Delta.
 
-    The code says the same thing independently. survey.py finds `1891:03a7`
-    called EXACTLY THREE TIMES, all inside InitValues -- the release's
-    `Instruments.Init(32,32)`, `Patterns.Init(64,64)` and `Tracks.Init(256,256)`
-    -- and `1891:0405`/`047a` three times each, one pair inside each of
-    GetInstrument, GetTrack and GetPattern, which is `At` and `AtInsert`.
-
     AND `Count` IS AN `Integer`, NOT A `Word`, WHICH ONE COMPARISON FIXES.
  is `CWD` -- 14b9 sign-extends Count to a LongInt before comparing
     it against the Word parameter `i`, which is zero-extended. That is Turbo
@@ -149,33 +116,7 @@ type
     Word the whole comparison collapses to a 16-bit `CMP` and the routine is
     fourteen bytes shorter. TCollection's own declaration has it as Integer. }
 
-  { ~~TPatternData, TInstrumentRec AND TPattern~~ ARE GONE, and with them the last
-    of this unit's fillers. All three were look-alikes for types SONGELEM.PAS
-    already declares, kept because pointing PlayMod at the release's names is a
-    rename in a byte-exact unit. The note that stood here said doing it meant
-    adding `uses SongElements` and moving SongUnit down the link order -- that
-    edge has since been added, `linkorder.py` still reports 32 of 32, and the
-    warning outlived the condition it described.
 
-    WHAT THE FILLERS WERE, NOW THAT THE REAL DECLARATIONS ARE IN SCOPE:
-
-      TPatternData.Filler1   +$01  is `NChans`, and TPatternRec continues past
-                                   the three bytes read here with `BPM` and a
-                                   `Channels` array
-      TInstrumentRec.Filler1 six bytes at +$00, and they are TObject's VMT word
-                             followed by `Name : PString` -- these were not
-                             records at all but OBJECTS, which is why the payload
-                             pointer sat at +$06
-      TPattern.Filler1       the same six bytes, for the same reason
-
-    NONE OF THAT WAS RECOVERABLE FROM THE INSTRUCTIONS. Six bytes ahead of a
-    pointer look identical whether they are padding or a base object's fields,
-    and 14b9's own `PUSH 000a` for SizeOf(TInstrument) -- quoted in the uses
-    clause above -- was already being read correctly as VMT + Name + Instr while
-    the local copy went on calling the same six bytes filler.
-
-    `TPatternSequence` went with them; SONGELEM.PAS declares it identically, with
-    the same one-based indexing that 14b9:05bc's `MOV AL,ES:[DI-1]` proves. }
 
   { --------------------------------------------------------------------------
     TSong IS AN OBJECT, AND THE CONSTRUCTOR IS WHAT SAYS SO.
@@ -185,12 +126,6 @@ type
     parameter. That is exactly what a STATIC (non-virtual) method call looks
     like -- parameters, then Self, then a direct far call -- so the call site
     could never have separated the two. Three instructions in 14b9 do:
-
- XOR DI,DI / CALLF 1ba1:04f5 / JZ over the body
-                 Turbo Pascal's CONSTRUCTOR prologue helper. DI = 0 is "do not
-                 allocate"; the JZ is the failure path. Nothing else emits it.
- CALLF 1891:0000 with a zero VMT word and Self  -- TObject.Init
- CALLF 1891:0031                                -- TObject.Done
 
     and both of those routines are `RETF 6`: Self (4) plus the hidden VMT word
     (2) that ONLY a constructor or a destructor carries.
@@ -203,32 +138,14 @@ type
     Done is VIRTUAL, as it is in the release; every other method is static, and
     that is what keeps 12ba's and 154d's call sites byte-identical.
     -------------------------------------------------------------------------- }
-  { THE 2,048-BYTE SNIFF BUFFER, and 14b9:0074 is the measurement: `Load` reads
-    `PUSH 0800` bytes of the file into a stack local before handing it to each
-    recogniser in turn. `ENTER 0806,0` accounts for it exactly -- 2048 for the
-    header, 2 for `i`, 4 for `Pos`. The release declares the same array. }
+
   PSongHeader = ^TSongHeader;
   TSongHeader = array[0..2047] of Byte;
 
   { NEW IN v1.51. Thirty-two per-channel panning positions, one byte each --
     see `TSong.ChannelPan` for how the size and the offset were measured, and
-    `DefaultChannelPan` for what the values are.
+    `DefaultChannelPan` for what the values are.}
 
-    IT HAS TO BE A NAMED TYPE, and that is a code fact rather than a style
-    choice. InitValues' new statement compiles to 1d89:09f7, which is the copy
-    helper WITHOUT the overlap check -- the one Turbo Pascal emits for a whole
-    array ASSIGNMENT, where it knows the operands are distinct. `Move` compiles
-    to 1d89:0fb2, eleven bytes away, and compares the pointers first. TP only
-    allows `A := B` between arrays of the same NAMED type, so an anonymous
-    `array[0..31] of Byte` on either side forces the site to be `Move` and
-    picks up the wrong helper. The same distinction cost v1.31b two of its last
-    five divergent bytes, in PLAYMOD. }
-  { BASE ONE, AND ONLY THE S3M LOADER COULD SAY SO. 1664:0b1f writes
-    `ES:[DI+28]` for `ChannelPan[i]` with i running 1..32, and the field starts
-    at TSong+$29 -- so the low bound is folded out of the displacement, which
-    a base-0 array indexed [i] would not do. SongUnit itself assigns the whole
-    array and never indexes it, so nothing here could distinguish the bounds;
-    the smallest consumer read the declaration. }
   TChannelPan = array[1..32] of Byte;
 
   PSong = ^TSong;
@@ -251,15 +168,13 @@ type
 
       Nothing in the transcribed tree READS either one, which is consistent: a
       player that always plays the whole module never needs the play range. }
-    SongStart : Word;        { +$02  := 1            by 14b9:0735 }
-    SongLen   : Word;        { +$04  := MaxSequence  by 14b9:073e }
-    Name     : PString;      { +$06  HDisposeStr at 14b9:069c            }
-    { +$0a IS `Name : PString`, and SetName is what says so: 14b9:02f5 calls
-      HDisposeStr ([DI+34]) on the address of this field and stores HNewStr's
-      ([DI+30]) result back into it. The release's field name, adopted. }
-    InsidePath : PString;    { +$0a  SetInsidePath writes it; Free does NOT }
-    Comment  : PSongComment; { +$0e  HFreeMem $3d0 = 16 * 61 at 14b9:06b2 }
-    FileDir  : PString;      { +$12  HDisposeStr at 14b9:06c5            }
+    SongStart : Word;        { +$02  first order entry to play         }
+    SongLen   : Word;        { +$04  how many to play; the whole song  }
+    Name     : PString;      { +$06  the module's title                 }
+
+    InsidePath : PString;    { +$0a  where inside an archive it came from }
+    Comment  : PSongComment; { +$0e  16 lines of the author's own text   }
+    FileDir  : PString;      { +$12  the directory it was loaded from    }
 
     { $16..$23 WERE FILLER AND ARE NOW SETTLED, by InitValues writing a single
       ZERO BYTE at each of +$16 and +$1f. A lone length byte is how Turbo Pascal
@@ -272,19 +187,15 @@ type
       AND 154d CONFIRMS +$1f INDEPENDENTLY: docs/CONTINUATION.md records
  comparing the literal '.WOW' against TSong+$1f, which it already
       called "the release's Song.FileExt". Two segments, one offset. }
-    FileName : String[8];    { +$16  emptied at 14b9:077b }
-    FileExt  : String[4];    { +$1f  emptied at 14b9:0783 }
-    { A Byte, NOT the release's BOOLEAN. The standing rule is not to change a
-      type to match the release, and the code decides it here as it did for
-      VoicesChanged: 12ba:0d64 tests this field <> 0. 14b9 only ever stores a
-      zero byte in it. }
-    FirstTick : Byte;        { +$24  := 0 at 14b9:078b; 12ba:0d64 reads it }
+    FileName : String[8];    { +$16  8.3, split by FSplit on load        }
+    FileExt  : String[4];    { +$1f  and the extension, which .WOW needs }
 
-    { +$25 and +$26 keep their VALUES and take the release's NAMES: 154d:09d7
-      writes 6 and $7d, the ProTracker defaults, and InitValues sets both to 1. }
+    FirstTick : Byte;        { +$24  play the first tick of a row?       }
+
+
     InitialTempo : Byte;     { +$25 }
     InitialBPM   : Byte;     { +$26 }
-    Volume   : Byte;         { +$27  := 0 at 14b9:07a3 -- was filler }
+    Volume   : Byte;         { +$27  the module's own overall volume     }
 
     NumChannels : Byte;      { +$28  THE CHANNEL COUNT, 4..8 }
 
@@ -293,13 +204,6 @@ type
       agree, which is what makes it safe to insert a field into a record every
       other unit indexes:
 
-        * `verdiff.py 14b9 -> 153a` buckets 51 displacement changes at exactly
-          +$20, and the SMALLEST old displacement in the bucket is $29. A field
-          below an insertion does not move, so the insertion is AT $29.
-        * `TSong`'s VMT size word says $7e where v1.31's says $5e. $5e + $20.
-        * InitValues gained one statement, and it copies 32 bytes from
- to Self+$29 -- see `DefaultChannelPan` below.
-
       THE SIZE IS THE NAME'S EVIDENCE. Thirty-two entries is not a MOD number;
       it is S3M's channel count, and v1.51's WHATSNEW.DOC leads with "Introduced
       .S3M support". The default values settle what the bytes MEAN -- see the
@@ -307,46 +211,27 @@ type
       segments are where its consumers will be. }
     ChannelPan : TChannelPan; { +$29..+$48 }
 
-    { +$49..+$54 in v1.51; it was +$29..+$34 in v1.31. The release's name:
-      GetInstrument is what indexes it, and 14b9:03be reached it as
-      `LES DI,[BP+06] / ADD DI,0029` -- 0049 now. Count at +$4f. }
+
     Instruments : TCollection;
     { +$35 AND +$37 TAKE THE RELEASE'S NAMES. They were Len35 and Len37 --
       addresses for names, because 12ba could only show that both are lengths.
       InitValues clears them in the release's own order, between Instruments.Init
       and the two HGetMems, which is exactly where SequenceLength and
       SequenceRepStart sit in its body. }
-    SequenceLength   : Word; { +$35  12ba:10a1 falls back to this for the end }
-    SequenceRepStart : Word; { +$37  12ba:1107 compares it against the range end }
+    SequenceLength   : Word; { +$35  how long the order list really is   }
+    SequenceRepStart : Word; { +$37  where a repeat jumps back to        }
 
-    { +$39 and +$3d ARE THE RELEASE'S `PatternSequence` AND `PatternTempos`,
-      named by their accessors now that 14b9's routine map is read. 14b9:059f is
-      GetPatternSequence and 14b9:05d3 is GetPatternTempo, in the release's own
-      implementation order and with its own bodies:
 
-        IF PatternTempos <> NIL THEN Result := PatternTempos^[Seq] ELSE 0
-
-      `Table3D` had kept its address for a name because its accessor did not say
-      what it held; 12ba then settled it from the consumer's side as a
-      per-order-position SPEED OVERRIDE, zero meaning none. Producer and consumer
-      agree, which is what makes the name worth adopting. }
     PatternSequence : PPatternSequence;  { +$39 }
     PatternTempos   : PPatternSequence;  { +$3d }
 
     Patterns : TCollection;  { +$41..+$4c  count at +$47 }
     Tracks   : TCollection;  { +$4d..+$58  count at +$53 }
 
-    { A ShortInt, NOT a Byte, and 154d is what settles it. 154d:0b4c and
- are `CMP byte ES:[DI+59],n / JLE` -- a SIGNED byte comparison,
-      where a Byte gives the unsigned JBE. Both are `Song.Status > msOk` and
-      `> msFileTooShort` in LoadMod. 14b9 and 164b only ever compare it for
-      EQUALITY or store it, which is sign-independent, so neither could see
-      this -- the fifth thing settled only by a caller in another segment.
-      (The release has it as an enumeration; this is read from the bytes rather
-      than taken from the release, which is the standing rule working.) }
-    Status   : ShortInt;     { +$59  := 0 at 14b9:0875; see the codes below }
-    ErrorCode : Word;        { +$5a  := 0 at 14b9:087f -- was filler }
-    ThereIsMore : Byte;      { +$5c  := 0 at 14b9:0886 -- was filler; a Byte, as above }
+
+    Status   : ShortInt;     { +$59  how the load went; codes below     }
+    ErrorCode : Word;        { +$5a  the DOS error, when there was one }
+    ThereIsMore : Byte;      { +$5c  the file held more than was read   }
     FileFormat : Byte;       { +$5d  which recogniser claimed it }
     { AND THE RECORD ENDS HERE, at $5e bytes: InitValues initialises every field
       and touches nothing past +$5d. The header's "THE TOTAL SIZE IS NOT SETTLED"
@@ -357,13 +242,6 @@ type
 
       Turbo Pascal lays a unit's routines out in SOURCE order, so this list must
       stay in address order or everything below the first misplacement shifts.
-
-      The order is the release's implementation order with five routines removed,
-      and 21 - 5 = 16 is the segment's far-return count exactly. The five absent
-      are `Save` and `SaveFName` (a player does not write modules),
-      `GetErrorString` (survey.py finds NO printable string in 2,224 bytes but
-      `.MOD`, and that routine is nothing but message literals), and
-      `GetInsidePath`/`SetInsidePath`.
 
       THE `RETF` COUNTS ARE THE SIGNATURE and each one is quoted at its method.
       Note `GetName` is `RETF 4`, not 8: Turbo Pascal does NOT pop the hidden
@@ -385,7 +263,7 @@ type
     function  GetInsidePath : String;                             { 02c2 RETF 4  }
     procedure SetInsidePath(S : String);                          { 02f5 RETF 8  }
 
-    { 0352  RETF 6.  154d:0030's target. }
+
     function  GetInstrument(i : Word) : PInstrument;
     { 0404  RETF 6.  154d calls it. }
     function  GetTrack(i : Word) : Pointer;
@@ -403,20 +281,12 @@ type
     procedure Empty;                                             { 0897 RETF 4  }
   end;
 
-{ DECLARED AFTER `TSong`, AND THE ORDER MATTERS. `TSong`'s VMT is DGROUP data too --
-  $03b8..$03bf holds `005e ffa2 002b 04b9`, which is SizeOf(TSong) = $5e, its negative,
-  and a far pointer to `TSong.Done` at 14b9:002b -- and the original lays that VMT down
-  BEFORE this constant, at the point the TYPE is declared. Declared up beside
-  `MaxSequence`, ahead of the type, ModOffset came out first and the two swapped.
-  Costs no code either way; `dgroup.py` is the only thing that can see it. }
+
 { `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
   address is inside this unit's block, which runs $03c0..$03cb unbroken up to
   ModLoader's, and a `var` puts it in the other DGROUP region entirely so none of its
-  four bytes existed. A typed constant holding 0 is what the image has.
-
-  It is the offset of the module inside its file, and `14b9:0242` pushes it into
-  `St.Seek` -- which is this unit's own `LoadFName`, so the consumer is here too. }
+  four bytes existed. A typed constant holding 0 is what the image has.}
 const
   ModOffset : LongInt = 0;
 
@@ -442,28 +312,12 @@ const
   -------------------------------------------------------------------------- }
 
 const
-  { TModCommand. The release makes this an ENUMERATION, `TModCommand = (mcNone,
-    mcArpeggio, mcTPortUp, ...)` in `LIB/SONGELEM.PAS`, with mcNone first and so
-    zero; only the one name is adopted here, because it is the only one 12ba
-    stores -- 12ba:120d clears `Canales[i].Note.Command` at the start of a song.
-    The TYPE stays a Byte, per the standing rule against taking a type from the
-    release: nothing in the transcribed tree treats it as ordered. }
-  { AND THE WHOLE ORDERING IS THE RELEASE'S, CONFIRMED BY TWO STORES. 142f:0100
-    writes $12 into `Note.Command` where the release's StartTPortUp writes
-    `mcFinePortaUp`, and 142f:014f writes $13 where StartTPortDown writes
-    `mcFinePortaDn`. Counting the release's enum from mcNone gives exactly 18 and
-    19 for those two, so every value between them is fixed as well -- one
-    coincidence would be luck, two consecutive ones in the two routines that are
-    supposed to produce them is the ordering.
 
-    Note the FIRST TWO SHARE A COMMAND NIBBLE: ProTracker's effect 0 is arpeggio
-    when its parameter is non-zero and nothing at all when it is zero, so the
-    release spends two enum values on one nibble and everything after is shifted
-    by one. That is why mcTPortUp is 2 and not 1. }
+
   mcNone                   = 0;
-  mcArpeggio               = 1;  { 0 xy  142f:0000                      }
-  mcTPortUp                = 2;  { 1 xx  142f:00cc                      }
-  mcTPortDown              = 3;  { 2 xx  142f:011b                      }
+  mcArpeggio               = 1;  { 0 xy                    }
+  mcTPortUp                = 2;  { 1 xx                    }
+  mcTPortDown              = 3;  { 2 xx                    }
   mcNPortamento            = 4;  { 3 xy                                 }
   mcVibrato                = 5;  { 4 xy                                 }
   mcT_VSlide               = 6;  { 5 xy                                 }
@@ -478,28 +332,10 @@ const
   mcExtended              = 15;  { E xy  the E-prefixed set             }
   mcSetTempo               = 16; { F xx                                 }
   mcSetFilter              = 17; { E 0x                                 }
-  mcFinePortaUp            = 18; { E 1x  142f:0100 stores $12           }
-  mcFinePortaDn            = 19; { E 2x  142f:014f stores $13           }
+  mcFinePortaUp            = 18; { E 1x                                 }
+  mcFinePortaDn            = 19; { E 2x                                 }
 
-  { AND 20 TO 35 ARE FIXED BY THE DISPATCH TABLE, not by counting the release's
-    enum. `142f:063f` guards with `CMP BX,46h`, so the last valid index is 34 and
-    `mcLast` is 35; the table at DS:$0370 is 36 words, which is
-    `ARRAY[mcNone..mcLast]` exactly as the release declares it. Each index holds the
-    offset of the tick routine for that command, and every one lands on the routine
-    the release's table has at the same index -- including both DOUBLED pairs, 18
-    and 19 sharing TickFPortUpDown and 27 and 28 sharing TickVolFineUpDn. Sixteen
-    names came out of that one table.
-
-    ~~`mcLast` IS 35 HERE AND 36 IN THE RELEASE~~ -- IN v1.51 IT IS 36 HERE TOO, and
-    every part of that 1.31b note came true at once. It predicted the missing command
-    is `mcS3mRetrigNote` at 35, and that TCanal would gain `S3mRetAdd`/`S3mRetVal` when
-    it arrived. 147d's guard is now `CMP BX,48h`, the table at DS:$03da has an entry at
-    index 35 pointing at a real routine, and TCanal has two new bytes at +$2a and +$2b
-    that decide between an additive and a multiplicative volume change. Three
-    predictions, one version later, all confirmed by measurement rather than by
-    reading them back.
-
-    THESE ARE INTEGER CONSTANTS AND THEY SHADOW THE ENUMERATION. SongElements declares
+  {    THESE ARE INTEGER CONSTANTS AND THEY SHADOW THE ENUMERATION. SongElements declares
     `TModCommand` with the same names; this unit's `const` block wins wherever both are
     in scope, which is why `mcLast` here -- and not `Ord(mcLast)` there -- is what
     147d's `CMP BX,mcLast * 2` assembles against. That went unnoticed until the guard
@@ -558,9 +394,7 @@ const
     format the program recognises and cannot play. }
   msFileFormatNotSupported = 6;  { recognised, not played  }
 
-  { +$5d. TSongFileFormat. Only the values some routine stores are named, and
-    InitValues adds the fourth: 14b9:088e clears the field, and the release's
-    last line is `FileFormat := mffUnknown`, so zero is that enumerator. }
+
   { THE RELEASE'S ENUM ORDER CARRIES OVER, AND THREE-FOR-THREE IS WHY THE REST
     ARE NOW WORTH ADDING. Counting `TSongFileFormat` from mffUnknown gives 1, 4
     and 7 for M_K_, JMPlayer and Wow8 -- exactly the three values recovered
@@ -574,7 +408,7 @@ const
   mffOktalizer   = 5;   { [1.39b] 8 voices Oktalizer MOD (.OKT); no loader
                           in 1.31 }
   mffComposer669 = 6;   { no loader in 1.31 }
-  mffWow8        = 7;   { 154d:0c6d -- [1.39b] "8 voices Grave" (.WOW) }
+  mffWow8        = 7;   { [1.39b] "8 voices Grave" (.WOW)               }
   mffFastTracker = 8;   { '6CHN' / '8CHN' -- [1.39b] "6 or 8 voices Triton
                           FastTracker" (.MOD) }
   { TWO MORE IN v1.51, AND BOTH ARE READ OFF THE STORE RATHER THAN COUNTED.
@@ -593,16 +427,9 @@ const
   mffS3M         = 9;
   mffSTM         = 11;
 
-{ the release's `LowQuality`, and its OWNER is the release's too:
-  `LIB/SONGELEM.PAS` is this unit's counterpart and declares it. 11bb:0b0e's
-  `LowQuality` key writes it, which is the only use in the transcribed tree. }
+
 { This unit declares NO variables at all -- see the note below. }
-  { ~~LowQuality : Boolean at DS:$0564~~ -- IT IS SONGELEMENTS', AND A TYPED CONSTANT.
-    $0564 is in the INITIALISED half of DGROUP -- `dgroup.py` reports that half exact and
-    accounts for every byte of it -- so it cannot be a `var`; and it is the two bytes
-    immediately below SongElements' three VMTs at $0566, $056e and $0576, which puts it
-    at the head of that unit's block. Declared here it was two bytes of THIS unit's
-    variables, and two bytes is exactly what `VTNOTES`'s `NoteOf` was out by. }
+
 
 implementation
 
@@ -613,12 +440,6 @@ implementation
   Circular unit reference`, because whichever unit goes first needs the
   other's .TPU -- but with those .TPUs already present it compiles without a
   murmur, and the result is 2,224 bytes, byte-identical to the original.
-
-  So the build BOOTSTRAPS: `build.py` compiles this unit once with
-  /DBOOTSTRAP, which takes the `uses` and the table's initialiser out, then
-  compiles the two loaders against the resulting .TPU, then compiles this unit
-  again for real. **The INTERFACE is identical either way**, which is what
-  makes the first pass's .TPU a valid thing to compile the loaders against.
 
   That is almost certainly what the author hit and never noticed: .TPUs
   accumulate in a build directory, and only a CLEAN build deadlocks. }
@@ -660,29 +481,7 @@ type
                           var Header : TSongHeader);
 
 const
-  { **TWO, NOT THE RELEASE'S EIGHT**, and one instruction says so: 14b9:00b8 is
-    `CMP WORD PTR [BP-0802],0002`. 1.39b recognises .669, .OKT, .S2M, .S3M,
-    .STM and self-extracting .EXEs as well; 1.31 keeps the first and the last of
-    its list and drops the middle six. That is consistent with everything else
-    known about this build -- 109c's extension list is the loaders the PLAYER
-    still advertises, and the two segments here are 164b (the 'JMPLAY'
-    recogniser) and 154d (the ProTracker loader), which are the only two loader
-    segments in the whole program's map.
-
-    THE TABLE IS AT DS:$0430 IN v1.51 -- it was $03c4 in v1.31b -- and the code
-    indexes it base-1; see the note at Load, because the displacement collides
-    with a real variable.
-
-    FOUR ENTRIES NOW, AND THE TABLE ITSELF IS THE MEASUREMENT. DS:$0430 holds
-    sixteen bytes, read straight out of ref/vt1.51.bin as four (offset, segment)
-    pairs:
-
-        [1] 1839:0000    UnkLoader   -- the 'JMPLAY' recogniser, unchanged
-        [2] 1664:0a8b    the segment this tree calls LOADER2
-        [3] 15d0:0764    the segment this tree calls LOADER1
-        [4] 173d:0bd4    ModLoader   -- the ProTracker loader
-
-    v1.31b's table at $03c4 held eight bytes and exactly entries [1] and [4].
+  {    v1.31b's table at $03c4 held eight bytes and exactly entries [1] and [4].
     So v1.51 inserts two loaders BETWEEN them, and the order here is the order
     `Load` tries them in. }
   NumLoaders = 4;
@@ -718,16 +517,7 @@ const
 var
   SongLoaders : array[1..NumLoaders] of TSongLoader;
 {$ELSE}
-  { ALL FOUR ARE REAL NOW. The two placeholders are gone: STMLOADE.PAS and
-    S3MLOADE.PAS exist and are byte-exact, so this names the routines the
-    original's DS:$0430 names, in the original's order -- JMPlayer, S3M, STM,
-    ProTracker.
 
-    `dgimage.py` IS THE ONLY INSTRUMENT THAT CAN CHECK THESE SIXTEEN BYTES.
-    A typed constant is initialised DGROUP data and `Load`'s call through it is
-    `CALLF [DI+0430]`, a linker fixup -- so a green `units.py` or `linkcmp.py`
-    has never said anything about them. This is the first build where the
-    DGROUP comparison means something. }
   SongLoaders : array[1..NumLoaders] of TSongLoader =
     (
       LoadJMFileFormat,     { the 'JMPLAY' recogniser  }
@@ -737,22 +527,7 @@ var
     );
 {$ENDIF}
 
-{ DS:$0440..$045f -- THE THIRTY-TWO BYTES `InitValues` COPIES INTO
-  `TSong.ChannelPan`, and the values are what name the field.
 
-  The image holds `40 B0 B0 40` repeated eight times. Two positions, alternating
-  L-R-R-L: $40 is 64 and $B0 is 176, symmetric about the 128 centre of a byte
-  pan range. That is the Amiga/ProTracker channel assignment -- channels 1 and 4
-  left, 2 and 3 right -- tiled across all thirty-two channels, and it is also
-  S3M's default. A table of thirty-two bytes taking two values in that pattern
-  is a panning default and is not plausibly anything else.
-
-  IT SITS AFTER `SongLoaders` BECAUSE THE ORIGINAL PUTS IT THERE. DGROUP holds
-  each unit's typed constants in DECLARATION order within the unit's block, so
-  this constant's position in this file is load-bearing: SongUnit's block runs
-  $0424 (the VMT) .. $045f, and the next unit's constants begin at $0460 with
-  the STM loader's '!Scream!' marker. Moving this declaration up moves twenty
-  bytes of a neighbour. }
 const
   DefaultChannelPan : TChannelPan =
     ($40, $B0, $B0, $40, $40, $B0, $B0, $40,
@@ -760,61 +535,25 @@ const
      $40, $B0, $B0, $40, $40, $B0, $B0, $40,
      $40, $B0, $B0, $40, $40, $B0, $B0, $40);
 
-{ ---------------------------------------------------------------------------
-  TRANSCRIBED STRICTLY TOP-DOWN, AND THE ORDER IS THE MEASUREMENT. Turbo Pascal
-  lays a unit's routines out in SOURCE order, so a routine written out of place
-  displaces everything below it. Routines still to do are PLACEHOLDERS holding
-  their position -- they are the wrong length, so every near-call displacement
-  and every routine after the first placeholder is wrong too. That is expected:
-  `units.py`'s prefix stops at the first such displacement and says nothing
-  about the bytes beyond it. Measure a half-written unit per block, not by the
-  prefix -- see docs/CONTINUATION.md, "THE PREFIX IS NOT THE MEASURE MID-ROUTINE".
-  --------------------------------------------------------------------------- }
 
-{ RETF 6 -- Self plus the hidden VMT word.
-  0000  PUSH BP / MOV BP,SP
-  0003  XOR DI,DI / CALLF 1ba1:04f5      the constructor prologue helper
-  000a  JZ 0022                          allocation/failure path
-  000c  XOR AX,AX / PUSH AX / <Self>     VMT word 0 -- an inherited construct
-  0014  CALLF 1891:0000                  TObject.Init
-  0019  <Self> / PUSH CS / CALL 072f     InitValues
-  0022  LES AX,[BP+06] / MOV DX,ES       the result is Self
-  The release writes `TObject.Init;` qualified rather than `inherited Init;`;
-  the two compile identically and the release's form is the one adopted. }
+
+
 constructor TSong.Init;
 begin
   TObject.Init;
   InitValues
 end;
 
-{ RETF 6.
-  002e  <Self> / PUSH CS / CALL 0687     Free
-  0037  XOR AX,AX / PUSH AX / <Self>     VMT word 0
-  003f  CALLF 1891:0031                  TObject.Done
-  0044  XOR DI,DI / CALLF 1ba1:0539      the destructor epilogue helper }
+{ Throw the module away and put the object back to its empty state, so the
+  same TSong can load the next file.}
 destructor TSong.Done;
 begin
   Free;
   TObject.Done
 end;
 
-{ 004f..00ff.  RETF 8, ENTER 0806,0 -- Header (2048), i (2), Pos (4), in the
-  release's declaration order laid out downward from BP.
-
-  THE ONE REAL DIFFERENCE FROM THE RELEASE IS THE LOADER COUNT, and it is a
-  single instruction: 14b9:00b8 is `CMP WORD PTR [BP-0802],0002`. 1.39b has
-  NumLoaders = 8 and eight recognisers; 1.31 has TWO. See the table above.
-
-  AND THE INDEXED CALL LANDS ON A REAL VARIABLE, WHICH IS A TRAP WORTH NAMING.
-  00ec is `MOV DI,[i] / SHL DI,2 / CALLF [DI+03c0]`, so the displacement is
-  $03c0 -- and `ModOffset` is the LongInt at DS:$03c0, which LoadFName pushes by
-  name at 0242. They are not the same object. `SongLoaders` is
-  `array[1..2]` of a four-byte procedure pointer, so its BASE-1 base is one
-  element low: the array itself starts at DS:$03c4 and $03c0 is what the
-  compiler subtracts to index it. `ModOffset` simply happens to occupy those
-  four bytes. **A displacement that matches a known variable is not evidence
-  that the code touches it** -- check the index scaling first. Same rule as the
-  six base-1 arrays in 12ba, with a coincidence on top. }
+{ RETF 8, ENTER 0806,0 -- Header (2048), i (2), Pos (4), in the
+  release's declaration order laid out downward from BP.}
 procedure TSong.Load(var St : TStream);
 var
   Header : TSongHeader;
@@ -850,16 +589,6 @@ end;
   THE FRAME IS THE RELEASE'S DECLARATION ORDER, laid out downward from the value
   parameter's copy, and every offset checks:
 
- FName   the value PathStr copy -- 80 bytes, and 010a's PUSH 004f
-                       is String[79], which is PathStr exactly
- St      8 bytes, TDosStream
- Dir     68 bytes, DirStr = String[67] -- the same arithmetic that
-                       settled DirStr in 116e
- IPath   13 bytes, String[12]
- OSongStart      [BP-00ae]  OSongLen
- a 256-byte compiler string TEMPORARY -- not a local. Inventing a
-               variable to explain it is the mistake 1b54 and 164b both made.
-
   AND A STRING FUNCTION'S RESULT POINTER IS REUSED AS THE ASSIGNMENT'S SOURCE.
   `IPath := GetInsidePath` at 0131 pushes the temp's address, calls, and then
   pushes only ONE more pointer before the string-assign helper -- because the
@@ -870,11 +599,7 @@ end;
   FOUR OFFSETS ARE CONFIRMED A SECOND TIME HERE. 0197 passes `Self+$16` and
   `Self+$1f` straight to `FSplit` as its NameStr and ExtStr, which is what those
   two fields are; 01c6 stores HNewStr's result into `+$12`, which is FileDir;
-  and 01ec's `PUSH 0004` is `FileExt := '.MOD'` against a String[4].
-
-  `msFileOpenError` IS NOW SEEN STORED. The constant list has carried it as
-  "not seen stored yet" since the reading pass; 14b9:025e writes 3 into `+$59`
-  on the stream-open failure path. }
+  and 01ec's `PUSH 0004` is `FileExt := '.MOD'` against a String[4].}
 procedure TSong.LoadFName(FName : PathStr);
 var
   St         : TDosStream;
@@ -919,12 +644,7 @@ begin
   St.Done
 end;
 
-{ RETF **4**, not 8: Turbo Pascal does not pop the hidden
-  string-result pointer, the caller does, so `[BP+0a]` is the result and only
-  Self is cleaned up. 116e's GetToken : STRING is RETF 4 for the same reason.
-  02c8  MOV AX,ES:[DI+0a] / OR AX,ES:[DI+0c]    Name <> NIL, tested as one LongInt
-  02d2  <Name^> / <result> / PUSH 00FF / CALLF 1ba1:0add    the string assign
-  02ea  MOV byte ES:[DI],0                      the empty-string case }
+
 function TSong.GetInsidePath : String;
 begin
   if InsidePath <> nil then
@@ -933,14 +653,7 @@ begin
     GetInsidePath := ''
 end;
 
-{ RETF 8, ENTER 0100,0 -- the 256-byte copy of the value String.
-  02f9  the parameter copy, PUSH 00FF / CALLF 1ba1:0add
-  030f  Name <> NIL again
-  0319  ADD DI,0a / <the heap object at DS:39ae> / CALLF [DI+34]   HDisposeStr
-  032c  CMP byte [BP-0100],0                    S <> ''
-  0333  <S> / <the heap object> / CALLF [DI+30] / store to +$0a    HNewStr
-  HDisposeStr takes the ADDRESS of the field (`ADD DI,0a` then PUSH ES/DI), so
-  it is a var parameter; that is the release's declaration too. }
+
 procedure TSong.SetInsidePath(S : String);
 begin
   if InsidePath <> nil then
@@ -951,18 +664,7 @@ begin
 end;
 
 { RETF 6, ENTER 000c,0 -- result, Instrument, j, and the FOR limit.
-  The release's body verbatim. Three things in it are worth reading off:
-
-  0359  MOV AX,ES:[DI+2f] / CWD / ... / XOR DX,DX / CMP DX,BX / JG / JL / CMP AX,CX
-        `i >= Instruments.Count` as a 32-bit compare, because Count is a SIGNED
-        Integer and i is an unsigned Word. This is what fixes Count's type.
-  0383  MOV [BP-0a],AX / JMP 038b / INC [BP-0a]      Borland's FOR
-  03a4  MOV AX,0566 / PUSH AX / <Instrument> / CALLF 165a:0000
-        THE $0566 IS THE VMT OFFSET, NOT A PARAMETER. `Instrument^.Init` is a
-        CONSTRUCTOR, so it carries the hidden VMT word -- and this one is a real
-        construction, where Init's own `TObject.Init` at 000c pushes ZERO because
-        an inherited call must not re-stamp the VMT.
-  0390  PUSH 000a / <the heap at DS:397e> / CALLF [DI+08]     Heap.HGetMem, 10 }
+  The release's body verbatim. Three things in it are worth reading off:}
 function TSong.GetInstrument(i : Word) : PInstrument;
 var
   Instrument : PInstrument;
@@ -991,9 +693,7 @@ Break:
     GetInstrument := PInstrument(Instruments.At(i))
 end;
 
-{ RETF 6.  The same body against Tracks at +$4d.
-  0442  PUSH 000e   SizeOf(TTrack) -- VMT + Name + Note + Comm
-  0456  MOV AX,056e / ... / CALLF 165a:081d     TTrack.Init, VMT offset $056e }
+
 function TSong.GetTrack(i : Word) : Pointer;
 var
   Track : SongElements.PTrack;
@@ -1051,22 +751,13 @@ Break:
     GetPattern := PPattern(Patterns.At(i))
 end;
 
-{ RETF 6, ENTER 4,0 -- the four bytes are the pointer result slot.
-  0579  PUSH [BP+0a] / <Self> / PUSH CS / CALL 059f     GetPatternSequence
-  0585  PUSH AX      / <Self> / PUSH CS / CALL 04b6     GetPattern
-  058f  store to [BP-4]/[BP-2], reload
-  One statement, nested, exactly as the release writes it. }
+
 function TSong.GetPatternSeq(i : Word) : PPattern;
 begin
   GetPatternSeq := GetPattern(GetPatternSequence(i))
 end;
 
-{ RETF 6, ENTER 2,0.
-  05a6  MOV AX,ES:[DI+39] / OR AX,ES:[DI+3b]    PatternSequence <> NIL
-  05b0  MOV AX,[BP+0a] / LES DI,ES:[DI+39] / ADD DI,AX / MOV AL,ES:[DI-1]
-  THE `-1` IS THE ARRAY'S BASE: TPatternSequence is `array[1..MaxSequence]`.
-  05c0  XOR AH,AH                                the result is a WORD
-  05c7  XOR AX,AX                                the NIL case }
+
 function TSong.GetPatternSequence(Seq : Word) : Word;
 begin
   if PatternSequence <> nil then
@@ -1087,22 +778,7 @@ begin
     GetPatternTempo := 0
 end;
 
-{ RETF 14 -- Seq, Row, Chan (6) + var Note (4) + Self (4), so
-  Self is [BP+06], Note [BP+0a], Chan [BP+0e], Row [BP+10] and Seq [BP+12].
-  ENTER 000c,0 is the release's FOUR locals -- Patt, Track, n and NOffs -- and
-  `NOffs` is declared because the frame is twelve bytes and the other three
-  account for ten. Nothing reads it. Declaring only three would shorten every
-  [BP-n] below it.
 
-  0632  MOV AX,[BP+0e] / SHL AX,1 / LES DI,[BP-04] / LES DI,ES:[DI+06]
-        ADD DI,AX / MOV AX,ES:[DI+02]
-  THE `+02` IS A BASE-1 ARRAY, not a field. TPatternRec is NNotes, NChans,
-  Tempo, BPM and then `Channels : array[1..MaxChannels] of Word` at +$04, so
-  `Channels[Chan]` is `+04 + (Chan-1)*2` = `+02 + Chan*2`. One element low,
-  which is the rule six of 12ba's arrays were identified by.
-
-  0673  JMP 0683   the release's `EXIT` -- straight to LEAVE, skipping FillChar
-  0675  PUSH 0006 / PUSH 0000 / CALLF 1ba1:0fd5     FillChar, SizeOf = 6 }
 procedure TSong.GetNote(Seq, Row, Chan : Word; var Note : TFullNote);
 var
   Patt  : SongElements.PPattern;
@@ -1139,19 +815,6 @@ end;
 { RETF 4, ENTER 0002,0 -- the release's `i : WORD`, which nothing
   reads; declaring it is what makes the frame two bytes rather than none.
 
-  EIGHT CALLS, AND THEIR OPERANDS ARE WHAT NAME THE POINTER FIELDS. Every one
-  is `LES DI,[BP+06] / ADD DI,<offset> / PUSH ES / PUSH DI`, so the field's
-  ADDRESS is passed -- a var parameter -- and the offset is in the instruction:
-
-    069c  +$06        CALLF [DI+34]   HDisposeStr   Name
-    06b2  +$0e $03d0  CALLF [DI+0c]   HFreeMem      Comment
-    06c5  +$12        CALLF [DI+34]   HDisposeStr   FileDir
-    06d7  +$29        CALLF [DI+04]   Done          Instruments
-    06ed  +$39 $0100  CALLF [DI+0c]   HFreeMem      PatternSequence
-    0703  +$3d $0100  CALLF [DI+0c]   HFreeMem      PatternTempos
-    0715  +$41        CALLF [DI+04]   Done          Patterns
-    0727  +$4d        CALLF [DI+04]   Done          Tracks
-
   THE $03d0 IS THE ONE THAT SETTLES IT: `SizeOf(TSongComment)` is
   `16 * 61` = 976 = $3d0 exactly, so +$0e is the comment block. With Comment
   pinned, the release's three-statement order fixes `Name` at +$06 and
@@ -1162,12 +825,7 @@ end;
 
   `[DI+04]` IS `TObject.Done`, the FIRST virtual slot -- a TP VMT holds the
   positive and negative size words at +$00 and +$02 and the first virtual method
-  at +$04 -- so three calls to it are three collections being destroyed.
-
-  AND IT USES `FullHeap` WHERE GetInstrument USES `Heap`. DS:$39ae here,
- there, which is exactly how the release writes the two routines.
-  Neither can be measured from the bytes -- a DGROUP address is a fixup -- so
-  this is the release settling a question the binary cannot. }
+  at +$04 -- so three calls to it are three collections being destroyed.}
 procedure TSong.Free;
 var
   i : Word;                      { the frame's two bytes; never read }
@@ -1198,12 +856,6 @@ end;
   is a far stronger instrument than any single accessor. Nine fields that were
   filler or an address-for-a-name are named from it, and the record's total size
   falls out of where it stops.
-
-  THE RELEASE'S LAST STATEMENT IS ABSENT. 1.39b ends with `PanPositions := DefPan`
-  and there is no trace of it here: 088e writes +$5d and the next instruction is
-  LEAVE. 1.31 keeps pan in 12ba -- `12ba:0275` writes it per channel -- so the
-  song does not carry a pan table. That also means no 32-byte typed constant in
-  this unit, which is consistent with survey.py finding no data here.
 
   THE THREE COLLECTION LIMITS ARE THE RELEASE'S EXACTLY: (32,32), (64,64) and
   (256,256), pushed as immediates at 07b0, 0844 and 085a. Unlike `NumBuffers` in
@@ -1252,11 +904,6 @@ begin
   FileFormat  := mffUnknown;
 
   { NEW IN v1.51, and the LAST statement of InitValues.
-
- MOV DI,0440 / PUSH DS / PUSH DI      the source constant
- LES DI,[BP+06] / ADD DI,0029         Self.ChannelPan
- PUSH 20                              32 bytes
- CALLF 1d89:09f7                      the ASSIGNMENT copy helper
 
     It must compile to 09f7 and not to 0fb2. Both are copy loops eleven bytes
     apart in SYSTEM; 0fb2 is `Move` and compares the pointers so it can copy
