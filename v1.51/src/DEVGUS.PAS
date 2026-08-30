@@ -1,16 +1,12 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1084 -- the Gravis UltraSound DRIVER. 384 bytes, ten routines.
+  The Gravis UltraSound DRIVER: the eight entry points the player core calls,
+  and the timer callback that drives them.
 
-  Not the hardware layer -- that is 1723, and every port write happens there.
-  This is the thin record of eight entry points that 1a17 walks, plus the
-  timer callback that drives them.
-
-  THIS UNIT DOES NOT COMPILE YET. It calls into 1723 (the GUS hardware) and
-  1a17 (the player core), neither of which is transcribed, so the calls are
-  written `Unit_<seg>_<ofs>` and the build reports it as blocked rather than
-  failing. See docs/06-transcription.md.
+  NOT THE HARDWARE LAYER. Every port write lives in the GUS unit next door;
+  this is the thin adapter that presents the card to the core in the shape the
+  core expects, and almost nothing else.
 
   WHY THE GUS DRIVER IS ALMOST EMPTY. Three of its eight slots do nothing and
   a fourth returns its argument unchanged. A GUS holds the samples in its own
@@ -18,14 +14,17 @@
   the poll only has to count. Compare the Sound Blaster driver in 193a, where
   the same slot has to move data.
 
-  NAMES ARE THE 1.39b RELEASE'S. LIB/DEVGUS.PAS is the counterpart and it
+  [re] Segment 1084 -- 384 bytes, ten routines. It calls into 1723 (the GUS
+  hardware) and 1a17 (the player core).
+
+  [re] NAMES ARE THE 1.39b RELEASE'S. LIB/DEVGUS.PAS is the counterpart and it
   supplies the unit name, the ID constant, the record and seven of the eight
   routines. `Poll` keeps an invented name: the release assigns
   SoundDevices.NullTimerHandler to the TimerHandler slot where 1.31 assigns
   this unit's own tick counter, which is the version drift already recorded in
   docs/06-transcription.md, so there is nothing to pair it with.
 
-  ADDRESS MAP
+  [re] ADDRESS MAP
     NullTimerHandler  1084:0000   Poll             1084:004c
     DevName           1084:0055   DevDetect        1084:0061
     DevInit           1084:0072   DevEnd           1084:00d5
@@ -50,7 +49,7 @@ uses
   VTDriver, GUS, SoundDevices, PlayMod;
 
 const
-  { The release keeps the ID as a named constant and initialises the record
+  { [re] The release keeps the ID as a named constant and initialises the record
     from it. 1caa:0060 holds `03 'G' 'U' 'S'`. }
   GUSDevID = 'GUS';
 
@@ -68,7 +67,7 @@ type
 const
   LastTick : Word    = 0;   { DS:$0014  1000:02a1 clears it, so it is exported }
 
-  { DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, AND 1.31b COULD NOT
+  { [re] DS:$0016 -- FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, AND 1.31b COULD NOT
     EITHER. The addresses either side are measured and the block is contiguous, so
     the bytes exist; nothing in the tree reads or writes them. Declared as filler
     rather than invented as a variable, which keeps the SIZE honest and says
@@ -88,7 +87,7 @@ const
 
   Busy     : Byte    = 0;   { DS:$001a in v1.51  the handler's guard          }
 
-  { FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
+  { [re] FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
     DS:$0020, and nothing in the segment touches what lies between. Declared as
     filler for the same reason Fill0016 above is: it keeps the SIZE honest and
     says plainly that the name is missing. }
@@ -97,7 +96,7 @@ const
     pad at $005f" -- one byte of guard, then one byte of padding, then an even
     address. The same pair is here: `Busy` at $001A and a pad at $001B.
 
-    THE ORDER WAS ALREADY MEASURED, which is what made the reading available.
+    [re] THE ORDER WAS ALREADY MEASURED, which is what made the reading available.
     `PollBusy` is at $0020 -- 106e:0029, 0032 and 0055 all name it -- so the five
     bytes between the two guards start at $001B, and a byte has to come first:
     declared LongInt-first the compiler aligns it to $001C and everything after
@@ -122,7 +121,7 @@ const
     Nothing in the segment touches them. }
   Fill001C : LongInt = 0;
 
-  { NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
+  { [re] NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
     handler's Busy cannot serve, because the whole point of the change is that
     the two now run at different times. }
   PollBusy : Byte    = 0;
@@ -140,7 +139,7 @@ const
 
 implementation
 
-{ ~~Busy, LastTick, UsingGUS, TicksPerSecond and DriverTicks were declared here.~~ ALL FIVE
+{ [re] ~~Busy, LastTick, UsingGUS, TicksPerSecond and DriverTicks were declared here.~~ ALL FIVE
   HAVE MOVED, and the DGROUP LAYOUT is what moved them.
 
   `UsingGUS` ($0bce), `TicksPerSecond` ($0bcc) and `DriverTicks` ($0bd0) are in SOUNDDEVICES'
@@ -157,7 +156,7 @@ implementation
   declarations down before its implementation ones. `LastTick` also has to be visible:
   1000:02a1 writes it. }
 
-{ THREE VARIABLES USED TO BE DECLARED HERE AND ALL THREE WERE DUPLICATES of
+{ [re] THREE VARIABLES USED TO BE DECLARED HERE AND ALL THREE WERE DUPLICATES of
   globals another unit already owns. Every reference to one is a linker fixup,
   so units.py could not see any of it -- the bytes agreed either way -- and
   `Callback` was standing in for TWO DIFFERENT ADDRESSES at once:
@@ -186,12 +185,12 @@ implementation
   which per the standing rule does NOT cross over as a number. An interrupt
   can arrive with any DS at all, so a callback has to establish its own.
 
-  A RE-ENTRANCY GUARD at DS:$005e. If a poll runs long enough for the next
+  [re] A RE-ENTRANCY GUARD at DS:$005e. If a poll runs long enough for the next
   timer tick to arrive, the second one turns round at the door rather than
   re-entering. The test is `JBE` rather than `JNZ`, which is what Borland
   Pascal emits for `if Busy <= 0`.
 
-  A PRIVATE STACK. SS:SP are saved to DS:$4302 and DS:$4304, then SS is
+  [re] A PRIVATE STACK. SS:SP are saved to DS:$4302 and DS:$4304, then SS is
   pointed at the data segment and SP at $4302 -- so the callback's stack
   grows downwards from just below the two words holding the caller's. The
   interrupted program's stack may be tiny, and a mixing routine's frame is
@@ -202,7 +201,7 @@ implementation
   is started and the tick counter has not moved since last time -- there is
   nothing new to do. When it is not started, the call happens unconditionally.
   -------------------------------------------------------------------------- }
-{ NOT AN `assembler` PROCEDURE -- an ordinary one with an asm block inside.
+{ [re] NOT AN `assembler` PROCEDURE -- an ordinary one with an asm block inside.
   The distinction is visible in the bytes. An `assembler` procedure that
   names no parameter gets NO frame at all, so it would begin straight at
   MOV AX,SEG @DATA. The original begins PUSH BP / MOV BP,SP at 1084:0000 and
@@ -219,8 +218,10 @@ begin
 @@Take:
   INC  Busy           { 106e:0011                                        }
   INC  LastTick       { 106e:0015                                        }
-  CALL FAR PTR FlushEventRow    { 106e:0019  CALLF 12ce:03d9  -- NOT      }
-                              { AdvanceEventRow; see PlayMod's interface  }
+  CALL FAR PTR FlushEventRow    { 106e:0019  hand the queued voice
+                                commands to the card                     }
+                              { [re] CALLF 12ce:03d9 -- NOT
+                                AdvanceEventRow; see PlayMod's interface  }
   DEC  Busy           { 106e:001e                                        }
 @@Out:
   end  { 106e:0022  LEAVE / RETF, supplied by Pascal      }
@@ -307,7 +308,7 @@ end;
   This looked for a long time like "clears one byte through a far pointer",
   because that is literally what the four instructions do:
 
-      LES DI,[BP+6] / MOV BYTE PTR ES:[DI],0 / LEAVE / RETF
+      [re] LES DI,[BP+6] / MOV BYTE PTR ES:[DI],0 / LEAVE / RETF
 
   The giveaway is the plain `RETF` with no immediate while a parameter at
   [BP+6] is being read: the routine does not pop what it was passed. That is
@@ -408,7 +409,12 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:00f5 and 1084:00fc -- slots +$22 and +$2e. Empty.
+  Change the sample rate, and poll the device: BOTH DO NOTHING. The card mixes
+  from its own DRAM at a rate it was given once, so there is no rate to change
+  mid-stream and nothing for a poll to move. The slots exist because the
+  driver record has them.
+
+  [re] 1084:00f5 and 1084:00fc -- slots +$22 and +$2e. Empty.
 
   The first takes a word and the second takes nothing, and neither does
   anything with it. Whatever these mean, the GUS has no use for them.
@@ -424,7 +430,7 @@ end;
 { --------------------------------------------------------------------------
   1084:0101 -- fill in the record and hand it to the player core.
 
-  Eight far addresses written straight into DS:$0076..DS:$0095. That range is
+  [re] Eight far addresses written straight into DS:$0076..DS:$0095. That range is
   DS:$0060 + $16 through + $35, which is what fixes the driver layout -- see
   VTDevData. No VMT is built and none is referenced.
 
@@ -432,7 +438,7 @@ end;
   initialised data, so the reconstruction gives it as a typed constant in the
   initialisation below rather than assigning it.
 
-  REGISTRATION ORDER DECIDES THE DEFAULT DEVICE. 1a17:02ba pushes onto the
+  [re] REGISTRATION ORDER DECIDES THE DEFAULT DEVICE. 1a17:02ba pushes onto the
   front of the list but only SELECTS when nothing is selected yet, so the
   first driver to register wins -- and this unit registers before 1065. That
   is why a machine with both ends up on the GUS.
