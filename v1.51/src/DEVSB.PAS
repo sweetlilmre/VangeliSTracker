@@ -1,10 +1,25 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 193a -- THE SOUND BLASTER DEVICE UNIT. **COMPLETE: 1,617 of 1,617
-  bytes**, seventeen blocks, 569 pending fixups, no real difference anywhere.
+  THE SOUND BLASTER DRIVER, and unlike the Gravis one it has real work to do.
 
-  BOTH BLOCKING NAMES ARE RESOLVED. They were:
+  A SOUND BLASTER PLAYS FROM HOST MEMORY OVER DMA. The card is handed a buffer
+  and a length, drains it at the sample rate, and raises an interrupt when it
+  is done -- so the driver must keep refilling ahead of the card, and its poll
+  actually moves data rather than only counting ticks. Compare DevGus, whose
+  card holds the samples itself and whose poll does nothing.
+
+  FOUR DEVICES OUT OF ONE UNIT. The same code registers four entries -- mono
+  and stereo, DMA and non-DMA -- differing only in which routines go in which
+  record slots. The core sees four drivers; there is one implementation.
+
+  THE HARDWARE IS NEXT DOOR. Every port write and every DSP command lives in
+  the SoundBlaster unit; this one decides WHEN, and calls in.
+
+  [re] Segment 193a. **COMPLETE: 1,617 of 1,617 bytes**, seventeen blocks, 569
+  pending fixups, no real difference anywhere.
+
+  [re] BOTH BLOCKING NAMES ARE RESOLVED. They were:
 
     * `DevInitSbDMA` -- `193a:0352` calls `1a17:1090`, nine bytes past
       `SelectOutput` at `1a17:1087`. Two entry points into one tail, and the
@@ -18,19 +33,19 @@
       FIRST; 1.31 runs it AFTER SbPlaySample. Two measured differences where a
       missing name was assumed.
 
-  1,617 bytes. It pairs with the release's `LIB/DEVSB.PAS` and stands to `19a0`
+  [re] It pairs with the release's `LIB/DEVSB.PAS` and stands to `19a0`
   exactly as `1084` (DevGus) stands to `1723` (GUS) -- a device unit calling a
   hardware unit -- which is the structural pairing CONTINUATION.md recorded long
   before either was read. All nine of its entry points into `19a0` exist.
 
   ---------------------------------------------------------------------------
-  THE ROUTINE MAP, AND THE INITIALISATION SECTION IS WHAT NAMED IT.
+  [re] THE ROUTINE MAP, AND THE INITIALISATION SECTION IS WHAT NAMED IT.
 
-  `193a:048a` onward fills four device records field by field with far
+  [re] `193a:048a` onward fills four device records field by field with far
   addresses, exactly as `1084:0101` does -- and those addresses ARE the routine
   table. It named eleven of the sixteen routines outright:
 
-      0000  Name (device 1)     0005 000a 000f  the other three
+      [re] 0000  Name (device 1)     0005 000a 000f  the other three
       0014  SetVars             NEAR -- ends in RET, which is why survey.py's
                                 far-return sweep does not see it
       002b  DevPoll             empty
@@ -49,12 +64,12 @@
       0442  DMASBEnd            -> 0486
       048a  the initialisation section
 
-  ONE `IRET` IN THE WHOLE SEGMENT, at 007d, so there is exactly one interrupt
+  [re] ONE `IRET` IN THE WHOLE SEGMENT, at 007d, so there is exactly one interrupt
   handler and it is 78 bytes. That single byte-pattern search settled a layout
   question the far-return census could not: a handler ends in IRET and a near
   routine in RET, and survey.py counts neither.
 
-  FOUR DEVICES, NOT THE RELEASE'S SIX. The records are at DS:$09f4, $0a2e,
+  [re] FOUR DEVICES, NOT THE RELEASE'S SIX. The records are at DS:$09f4, $0a2e,
   $0a68 and $0aa2 -- **58 bytes apart, which is SizeOf(TSoundDevice) exactly**,
   `Next` at +$36 included -- and the four `InitDevice` calls at 0630..064e
   register them in REVERSE, $0aa2 first. The release also has `SBData` (non-DMA)
@@ -257,7 +272,7 @@ asm
                 IRET                            { 007d }
 end;
 
-{ 007f..013b.  RETF 2.  Three LongInt divisions, which survey.py counts at
+{ [re] 007f..013b.  RETF 2.  Three LongInt divisions, which survey.py counts at
   00bf, 00ea and 0105 -- one per `DIV` in the release's body. }
 function DMASBGetRealFreq(Hz : Word) : Word; far;
 var
@@ -306,7 +321,7 @@ begin
   DMASBProGetRealFreq := NHz1
 end;
 
-{ 0206..02c1.  NEAR.  `020f` calls 1a17:037f -- SoundDevices.CalcTimerData --
+{ [re] 0206..02c1.  NEAR.  `020f` calls 1a17:037f -- SoundDevices.CalcTimerData --
   which is the release's first line. Four more LongInt divisions follow. }
 procedure DMASBCalcTimerData(Hz : Word);
 begin
@@ -481,7 +496,7 @@ begin
       asm PUSHF; STI end;                        { 0458 }
       asm POPF end;                              { 045a }
 
-      { 045f -- CALLF 1b24:02f0, which HARDWARE.PAS already names DMAReset.
+      { [re] 045f -- CALLF 1b24:02f0, which HARDWARE.PAS already names DMAReset.
         The release has this line COMMENTED OUT; 1.31 calls it. }
       DMAReset(SbDMAChan);                       { 045f }
 
@@ -495,7 +510,9 @@ end;
   048a..0650 -- FOUR DEVICE RECORDS FILLED AND REGISTERED.
 
   Every field is a far address written as two words, and reading them off is
-  what produced the routine map at the top of this file. Device 1's, in order:
+  what produced the routine map at the top of this file.
+
+  [re] Device 1's, in order:
 
     +$16 Name             193a:0000
     +$1a Autodetect       193a:02c2   SbMonoDetect
@@ -512,7 +529,7 @@ end;
   here 1.31's SB driver points at the core's. A DMA card is driven by its own
   DMA interrupt and only needs the core's periodic tick; the GUS is polled.
 
-  THE STEREO DEVICES USE THE OTHER RATE CALCULATOR: device 2's
+  [re] THE STEREO DEVICES USE THE OTHER RATE CALCULATOR: device 2's
   GetRealFreqProc is 193a:013c, DMASBProGetRealFreq, where device 1's is
   193a:007f.
 
