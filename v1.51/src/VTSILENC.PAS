@@ -1,8 +1,6 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1065 -- the "Silence" driver. 496 bytes, eight routines.
-
   A SOUND DRIVER THAT MAKES NO SOUND. Its name is in the driver record at
   DS:$001e, seven characters: 'Silence'.
 
@@ -23,16 +21,22 @@
   5-in-12 accumulator gets there exactly, with no drift, from a divisor the
   UART can actually produce -- which a direct 50 Hz divisor cannot.
 
-  ITS POLL IS NOT ITS OWN. Register below puts 1a17:1008 -- the player core's
-  shared poll -- in slot +$2a, not anything in this unit. So the core still
-  does all its mixing work on schedule; there is simply nowhere for the
-  result to go. Compare 1084, where the GUS supplies its own poll because the
-  card plays for itself.
+  ITS POLL IS NOT ITS OWN. Register below puts the player core's SHARED poll
+  in the timer slot, not anything in this unit -- so the core still does all
+  its mixing work on schedule and there is simply nowhere for the result to
+  go. Compare DevGus, which supplies its own poll because the card plays for
+  itself.
 
-  THIS UNIT DOES NOT COMPILE YET: the poll slot and InitDevice both live
-  in 1a17, which is not transcribed. See docs/06-transcription.md.
+  WHY HAVE IT AT ALL. A machine with no sound card, or one whose card is not
+  recognised, still has to run the demo: the music has to advance so the
+  semaphores fire and the visuals stay on their marks. This driver is what
+  makes that an ordinary case rather than an error path, and it is why the
+  driver chain ends with something that always succeeds.
 
-  ADDRESS MAP
+  [re] Segment 1065 -- 496 bytes, eight routines. Register puts 1a17:1008 in
+  slot +$2a.
+
+  [re] ADDRESS MAP
     DevName      1065:0000     IrqHandler  1065:0005 *
     Probe       1065:0039     Start       1065:0046
     AskRate     1065:00f3     ChgHz      1065:0104
@@ -57,7 +61,7 @@ uses
   VTDriver;
 
 const
-  { $0018..$001d -- `Frac` AND `OldVec` ARE TYPED CONSTANTS, AND THEY OPEN THIS UNIT'S
+  { [re] $0018..$001d -- `Frac` AND `OldVec` ARE TYPED CONSTANTS, AND THEY OPEN THIS UNIT'S
     BLOCK. Their addresses are named by this unit's own instructions -- `1065:0018` is
     `MOV AL,[0018]` and `1065:005e` tests `[001a]` -- and they are in the INITIALISED
     half of DGROUP, which is what makes them constants rather than vars. Declared as
@@ -73,7 +77,7 @@ const
     about the initialised half of DGROUP all hold. Only the numbers moved, which
     is what makes prose like this dangerous -- it stayed persuasive while every
     figure in it was wrong. }
-  { NEW IN v1.51, AND THEY OPEN THE BLOCK. v1.31b has these as UNTYPED
+  { [re] NEW IN v1.51, AND THEY OPEN THE BLOCK. v1.31b has these as UNTYPED
     constants -- `ComPort = $3F8; ComIrq = 4;` -- which occupy no DGROUP and
     compile to immediates: 1065:0013 is `MOV DX,03F8`. v1.51 makes both
     configurable (`/port:` and `/irq:` in WHATSNEW.DOC), so they become typed
@@ -98,29 +102,34 @@ const
   Frac    : Byte    = 0;      { DS:$0204  the 5-in-12 accumulator }
   OldVec  : Pointer = nil;    { DS:$0206  the displaced INT 0Ch vector }
 
-  { DS:$001e. A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
+  { [re] DS:$001e. A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
     DATA rather than something the unit assigns at run time -- exactly what
     DEVGUS does with 'GUS'. The old shape had a `begin Driver.DevID :=
     'Silence' end.` block, and that block is code the original has not got. }
-  { DMA IS **TRUE**, AND IT IS READ FROM THE IMAGE RATHER THAN REASONED. DS:$0033 is
+  { DMA IS **TRUE** ON A DRIVER THAT PLAYS NOTHING, which looks wrong and is
+    not. The mixer gates its work on `IsDmaDevice AND (TickSnapshot = Ticks)`,
+    so a device that only paces the tick wants that gate active. Claiming DMA
+    is how it gets it.
+
+    [re] IT IS READ FROM THE IMAGE RATHER THAN REASONED. DS:$0033 is
     this record's +$15, which is `DMA` -- DevID is a String[20] and so occupies +$00
     to +$14 -- and the original holds 01 there where this said False. It was the only
     byte of the whole initialised DGROUP whose VALUE disagreed once the layout lined
     up, which is what made it visible at all.
 
-    It also makes sense of the driver. 1065 is a UART on IRQ 4 driven purely as a
+    [re] It also makes sense of the driver. 1065 is a UART on IRQ 4 driven purely as a
     CLOCK, and 12ba:0c52 gates the mixer with `IF IsDmaDevice AND (TickSnapshot =
     Ticks)`. A device that produces no output and only paces the tick wants that gate
     active, which is what claiming DMA does. DevGus's own record has DMA FALSE at the
     same offset in both images, so the two are not simply copies of one default. }
   Driver : TSoundDevice = ( DevID : 'Silence'; DMA : True );    { DS:$020a }
 
-{ ~~Ticks : Word at DS:$0bc8~~ -- MOVED TO SOUNDDEV.PAS, where the note explains
+{ [re] ~~Ticks : Word at DS:$0bc8~~ -- MOVED TO SOUNDDEV.PAS, where the note explains
   why. In short: PlayMod reads $0bc8 and the original's link order forbids PlayMod
   from using this unit, so the counter cannot be declared here. This unit still
   advances it; it just does not own it. }
 
-{ ~~procedure Register; far;~~ -- 1065:0172 IS THE UNIT'S INITIALISATION
+{ [re] ~~procedure Register; far;~~ -- 1065:0172 IS THE UNIT'S INITIALISATION
   SECTION, not an exported procedure, and the LINK is what settled it: nothing
   anywhere calls `Register`, so the smart linker discarded it and everything it
   referenced, leaving VTSILENC at 30 bytes of a 489-byte segment. The original's
@@ -139,7 +148,7 @@ const
   CarryAt  = 12;         { ... and its modulus   }
 
 var
-  { ~~Frac and OldVec~~ are TYPED CONSTANTS in the interface now -- see the note there.
+  { [re] ~~Frac and OldVec~~ are TYPED CONSTANTS in the interface now -- see the note there.
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
   SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
@@ -151,7 +160,7 @@ var
     Left as it stands and marked, rather than replaced with a guess. }
   WasOn  : Boolean;     { DS:$0e36  STALE }
 
-{ ~~Flag0BC7, Flag0BBD, Flag0BBF, Flag0BBC~~ -- ALL FOUR GONE, and all four were
+{ [re] ~~Flag0BC7, Flag0BBD, Flag0BBF, Flag0BBC~~ -- ALL FOUR GONE, and all four were
   SoundDevices' own, in its CONSTANT-region block at $0bbc..$0bc7. The note here said
   "what they mean belongs to 1a17", which was right about the owner and did not follow
   it through to the declaration; the values are what name them, because Start writes
@@ -253,22 +262,24 @@ end;
 { --------------------------------------------------------------------------
   1065:0039 -- slot +$1a, the probe. Returns 1, unconditionally.
 
-  SLOT +$1a IS AN ERROR CODE, and zero is success -- 109c:0021 selects a
-  driver only when the probe returns zero. So returning 1 unconditionally
-  means this driver reports "cannot be used", every time.
+  IT ALWAYS SAYS YES, and there is nothing here to detect. A driver's probe
+  answers "is my hardware present?"; this one has no hardware, and a clock
+  that produces no sound cannot fail in a way a caller could act on.
 
-  That reads as nonsense until you notice how a driver is actually chosen.
-  Selection is by NAME out of the config file (1a17:0248) and by
-  registration order, not by probing: 109c:0000 looks up the named driver
-  and probes only that one. Nothing ever probes 'Silence' in the normal
-  path, because it is reached by being the last thing registered rather than
-  by passing a test.
+  IT IS ALSO NEVER ASKED, in the normal path. A driver is chosen by NAME out
+  of the config file and by registration order, not by probing -- the selector
+  looks up the named driver and probes only that one. 'Silence' is reached by
+  being the last thing registered, not by passing a test.
 
-  There is nothing here to detect in any case. The serial port addresses
+  [re] SLOT +$1a: 109c:0021 selects a driver only when the probe returns zero,
+  which would make returning 1 mean "cannot be used". Selection is by name out
+  of the config file (1a17:0248); 109c:0000 looks up the named driver.
+
+  [re] There is nothing here to detect in any case. The serial port addresses
   exist on every PC whether or not a UART answers, and a clock that produces
   no sound cannot fail in a way a caller could act on.
 
-  THIS ROUTINE MISLED THIS RECONSTRUCTION ONCE. Returning 1 unconditionally
+  [re] THIS ROUTINE MISLED THIS RECONSTRUCTION ONCE. Returning 1 unconditionally
   looks like "always available" if you assume the slot is a boolean, and
   that reading survived two other producers agreeing with it. The consumer
   at 109c:0021 settles NOTHING -- its JNZ has a zero displacement. The
@@ -323,7 +334,7 @@ begin
   Port[ComPort + 4] := 8;                         { 1065:00ab  OUT2 -- gate the IRQ }
   Port[ComPort + 3] := $83;                       { 1065:00b1  DLAB + 8N1 }
 
-  { READ THE ORDER HERE BACKWARDS. The original evaluates the HIGH byte
+  { [re] READ THE ORDER HERE BACKWARDS. The original evaluates the HIGH byte
     first -- IN from $3f9, SHL AX,8, MOV CX,AX, then IN from $3f8 and ADD --
     but Turbo Pascal 7 evaluates the RIGHT operand of a `+` first and stashes
     the left one in CX. Written the natural way round, `(Port[+1] shl 8) +
@@ -354,7 +365,11 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0104 and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
+  Change the sample rate, and poll the device: BOTH DO NOTHING. A driver that
+  plays no sound has no rate to change, and its polling is the core's shared
+  one rather than anything here. The slots exist because the record has them.
+
+  [re] 1065:0104 and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
   -------------------------------------------------------------------------- }
 procedure ChgHz(W : Word); far;
 begin
@@ -395,7 +410,7 @@ begin
     SetIRQVector(ComIrq, OldVec);                 { 1065:0155  1b24:00d7 }
     OldVec := nil;                                { 1065:015c }
 
-    { `not WasOn`, AND THE SENSE FLIPPED WITH THE SOURCE OF THE VALUE.
+    { [re] `not WasOn`, AND THE SENSE FLIPPED WITH THE SOURCE OF THE VALUE.
       v1.31b tested the 8259 mask bit directly, so its flag meant "was
       MASKED" and the IRQ was disabled again when it had been. v1.51 takes
       the flag from Hardware.IRQState, which answers the opposite question --
@@ -409,16 +424,16 @@ end;
 { --------------------------------------------------------------------------
   1065:0172 -- fill in the record and hand it to the player core.
 
-  The same shape as 1084:0101, eight far addresses into DS:$0034..DS:$0053,
+  [re] The same shape as 1084:0101, eight far addresses into DS:$0034..DS:$0053,
   which is DS:$001e + $16 .. + $35. That is the second independent
   confirmation of the driver layout.
 
-  SLOT +$2A IS THE ONE TO NOTICE. It is set to 1a17:1008 -- the CORE's shared
+  [re] SLOT +$2A IS THE ONE TO NOTICE. It is set to 1a17:1008 -- the CORE's shared
   poll -- rather than to anything here. The GUS supplies its own because the
   card plays by itself; this driver has no hardware to feed, so the core's
   general implementation does the work and the output goes nowhere.
 
-  REGISTRATION ORDER DECIDES THE DEFAULT. 1a17:02ba pushes onto the front of
+  [re] REGISTRATION ORDER DECIDES THE DEFAULT. 1a17:02ba pushes onto the front of
   the list but only selects when nothing is selected, so the FIRST driver to
   register wins -- and 1084 registers before this one. 'Silence' is therefore
   the last resort, which is exactly what it should be.
