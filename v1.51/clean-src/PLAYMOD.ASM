@@ -1,13 +1,29 @@
 ; ==========================================================================
 ; DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 ;
-; 12ba:148f .. 12ba:1745 -- the resampling kernels and the one Pascal entry
-; that chooses between them. THE WHOLE OF THE SEGMENT THAT IS NOT PASCAL.
+; THE RESAMPLING KERNELS: the innermost loop of the whole player, and the one
+; Pascal entry that chooses between them.
 ;
-; WHY THIS IS AN ASSEMBLER MODULE. Turbo Pascal lays a unit's initialisation
-; block down as the last PASCAL code in the segment, and that block is at
-; 141e..148e. Everything after it came from a `{$L}` object module, and the
-; first instruction says so on its own: 148f is
+; WHAT RESAMPLING IS, AND WHY IT IS THE HOT LOOP. A module's samples were
+; recorded at whatever rate they were recorded at, and each note plays them
+; back at a different speed -- that is what pitch IS on an Amiga tracker. The
+; output buffer, meanwhile, is filled at one fixed rate. So for every single
+; output sample, every channel has to be read at a fractional position that
+; advances by a per-channel step: 22,000 times a second, times eight channels.
+; Nothing else in the program runs that often, and it is the only reason any
+; of this is assembler.
+;
+; THREE THINGS HAPPEN PER SAMPLE, and the kernels differ only in how:
+;
+;     step the fractional source position, and take the whole part
+;     scale the sample by the channel's volume
+;     add it into the buffer, or store it, or skip it entirely
+;
+; DumpRaw mixes a channel in; EmptyRaw writes silence at the same cost, so a
+; silent channel does not need a branch in the caller; DumpInstrument is the
+; Pascal-callable entry that sets the registers up and picks one.
+;
+;
 ;
 ;       2E 89 16 E3 14     MOV WORD PTR CS:[14E3],DX
 ;
@@ -15,19 +31,12 @@
 ; No Pascal statement produces that. 1.39b builds the same code the same way,
 ; from LIB/PLAYMOD.ASM under a $L, and this file is its 1.31 counterpart.
 ;
-; AND THE ENCODINGS ARE TASM'S THROUGHOUT, which is the second, independent
-; reason. The disputed direction bits all fall the assembler's way, and the
-; contrast with the Pascal above is visible in one pair of instructions:
 ;
-;       12ba:1320   31 C0    XOR AX,AX     <- compiled Pascal, in PlayStart
-;       12ba:169d   33 C0    XOR AX,AX     <- this module
 ;
 ; Same instruction, same segment, two different encodings, because two different
 ; tools emitted them. Likewise AND CH,CH is 22 ED here and SUB AX,CX is 2B C1,
 ; both the forms Turbo Pascal's own inline assembler does not choose.
 ;
-; MASM mode, not IDEAL, and `.CODE` with bare PUBLIC labels -- the same
-; conventions SOUNDDEV.ASM settled on, for the same reasons.
 ;
 ;
 ; THE NOPs ARE THE ORIGINAL ASSEMBLER'S PADDING, NOT DEAD CODE.
@@ -106,17 +115,7 @@
 ;          16c9. It is only expressible in assembler, and it is a second reason
 ;          this run was never Pascal.
 ;
-; THE SEGMENT ENDS AT 1745 AND 1746..174F IS PADDING -- ten zero bytes, which
-; are the linker's and not this module's. `blockcmp.py` therefore tops out at
-; 5,958 of 5,968 bytes rather than the whole segment. Segment size is not code
-; size; the docs have that as a standing warning and this is a clean instance.
 ;
-; MEASURE THIS FILE WITH objcheck.py, NOT units.py's ZERO RULE. Every
-; `OFFSET DumpLoop` and every `CS:[DumpLoop+n]` displacement is a relocation,
-; and TASM leaves an ADDEND in the bytes where a .TPU would leave zeros -- which
-; is exactly the case units.py's heuristic gets wrong and cost SOUNDDEV.ASM its
-; first honest measurement.
-; ==========================================================================
 
                 MODEL   TPASCAL
                 P286
@@ -398,7 +397,9 @@ EmptyLoop:                                      ; 15a3
 
 
 ; --------------------------------------------------------------------------
-; 12ba:1600 -- the only entry Pascal calls. See the header for the frame.
+; DumpInstrument -- the only entry Pascal calls: set the registers up from the
+; stack frame, pick a kernel, run it.
+;
 ;
 ;   FUNCTION DumpInstrument(VAR Src; VAR Dest; Volume : Byte; Step : LongInt;
 ;                           SrcLimit, Max, ChanAdd : Word;
