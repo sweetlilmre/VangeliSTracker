@@ -583,7 +583,10 @@ const
                                    the last of the non-fatal codes       }
   msFileOpenError          = 3;  { not seen stored yet                  }
   msOutOfMemory            = 4;  { 154d:004a, 154d:0490                 }
+    { [1.39b] "There is not enough memory left. :-( Shouldn't happen." }
   msFileDamaged            = 5;  { 154d:09d7                            }
+  { [1.39b] "JMPlayer or ScreamTracker, for example." -- its own examples of a
+    format this recognises and will not play. }
   msFileFormatNotSupported = 6;  { 164b:003a -- recognised, not played  }
 
   { +$5d. TSongFileFormat. Only the values some routine stores are named, and
@@ -597,12 +600,14 @@ const
   mffUnknown     = 0;   { 14b9:088e }
   mffMod31M_K_   = 1;   { 154d:0c7f -- 'M.K.', four channels }
   mffMod31FLT4   = 2;   { 'FLT4' }
-  mffMod15       = 3;   { the 15-instrument SoundTracker fallback }
+  mffMod15       = 3;   { [1.39b] SoundTracker 15-instrument module }
   mffJMPlayer    = 4;   { 164b:0007 }
-  mffOktalizer   = 5;   { no loader in 1.31 }
+  mffOktalizer   = 5;   { [1.39b] 8 voices Oktalizer MOD (.OKT); no loader
+                          in 1.31 }
   mffComposer669 = 6;   { no loader in 1.31 }
-  mffWow8        = 7;   { 154d:0c6d -- '.WOW', eight channels }
-  mffFastTracker = 8;   { '6CHN' / '8CHN' }
+  mffWow8        = 7;   { 154d:0c6d -- [1.39b] "8 voices Grave" (.WOW) }
+  mffFastTracker = 8;   { '6CHN' / '8CHN' -- [1.39b] "6 or 8 voices Triton
+                          FastTracker" (.MOD) }
 
 { DS:$0564 -- the release's `LowQuality`, and its OWNER is the release's too:
   `LIB/SONGELEM.PAS` is this unit's counterpart and declares it. 11bb:0b0e's

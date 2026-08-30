@@ -128,17 +128,57 @@ uses
   --------------------------------------------------------------------------- }
 type
   TModCommand = (
-    mcNone,
-    mcArpeggio, mcTPortUp, mcTPortDown, mcNPortamento, mcVibrato,
-    mcT_VSlide, mcVib_VSlide, mcTremolo, mcNPI1, mcSampleOffs,
-    mcVolSlide, mcJumpPattern, mcSetVolume, mcEndPattern, mcExtended,
-    mcSetTempo,
-    mcSetFilter, mcFinePortaUp, mcFinePortaDn, mcGlissCtrl, mcVibCtrl,
-    mcFineTune, mcJumpLoop, mcTremCtrl, mcNPI2, mcRetrigNote,
-    mcVolFineUp, mcVolFineDown, mcNoteCut, mcNoteDelay, mcPattDelay,
-    mcFunkIt,
-    mcOktArp, mcOktArp2,
-    mcS3mRetrigNote,
+    mcNone,           { 0 00 }  { just play the note, with no special option    }
+    mcArpeggio,       { 0 xy }  { rotate through three notes rapidly            }
+    mcTPortUp,        { 1 xx }  { tone portamento up: gradual change of tone    }
+                                {   towards high frequencies                    }
+    mcTPortDown,      { 2 xx }  { tone portamento down: towards low frequencies }
+    mcNPortamento,    { 3 xy }  { note portamento: gradual change towards a
+                                  given note                                    }
+    mcVibrato,        { 4 xy }  { frequency changes around the note             }
+    mcT_VSlide,       { 5 xy }  { tone portamento up + volume slide; the
+                                  parameter means the volume slide              }
+    mcVib_VSlide,     { 6 xy }  { vibrato + volume slide; likewise              }
+    mcTremolo,        { 7 xy }  { "I don't know for sure. Fast volume
+                                  variations, I think."                         }
+    mcNPI1,           { 8 xx }  { "Do Nothing (as far as I know)" -- and DemoVT
+                                  took this one for its semaphores. See
+                                  ModCommands.StartRingEvent                     }
+    mcSampleOffs,     { 9 xx }  { start the sample from the middle              }
+    mcVolSlide,       { A xy }  { gradual change in volume                      }
+    mcJumpPattern,    { B xx }  { end the pattern and continue from a different
+                                  position in the sequence                      }
+    mcSetVolume,      { C xx }  { set the volume of the sound                   }
+    mcEndPattern,     { D xx }  { continue at the start of the next pattern     }
+    mcExtended,       { E xy }  { the extended set of commands (ProTracker)     }
+    mcSetTempo,       { F xx }  { set the tempo, in 1/50ths of a second         }
+
+    mcSetFilter,      { E 0x }  { set the output filter to its on or off value  }
+    mcFinePortaUp,    { E 1x }  { like TPortUp, but slower                      }
+    mcFinePortaDn,    { E 2x }  { like TPortDown, but slower                    }
+    mcGlissCtrl,      { E 3x }  { UNKNOWN -- the release did not know         }
+    mcVibCtrl,        { E 4x }  { set the vibrato waveform                      }
+    mcFineTune,       { E 5x }  { fine tune the frequency of the sound          }
+    mcJumpLoop,       { E 6x }  { make a loop inside a pattern                  }
+    mcTremCtrl,       { E 7x }  { "set the tremolo waveform (I think)"          }
+    mcNPI2,           { E 8x }  { "Do Nothing (as far as I know)"               }
+    mcRetrigNote,     { E 9x }  { UNKNOWN -- the release did not know         }
+    mcVolFineUp,      { E Ax }  { like VolSlide, but slower and upward          }
+    mcVolFineDown,    { E Bx }  { like VolSlide, but slower and downward        }
+    mcNoteCut,        { E Cx }  { UNKNOWN -- the release did not know         }
+    mcNoteDelay,      { E Dx }  { wait a little before starting the note        }
+    mcPattDelay,      { E Ex }  { UNKNOWN -- the release did not know         }
+    mcFunkIt,         { E Fx }  { "No idea, but sounds funny."                  }
+
+    mcOktArp,                   { Oktalizer arpeggio                            }
+    mcOktArp2,                  { Oktalizer arpeggio 2                          }
+    { ~~mcS3mRetrigNote~~ IS NOT IN THIS VERSION. v1.51 and the release both have
+      it here, between mcOktArp2 and mcLast, and 1.31 does not: MODCOMMA's tick
+      table is 36 entries and its guard is `CMP BX,46h`, which is `mcLast * 2`
+      with mcLast = 35, not 36. TCanal has no S3mRetAdd or S3mRetVal either.
+      Both of those findings were already recorded in this tree while this
+      enumeration went on listing the command -- AN ENUMERATION EMITS NO BYTES,
+      so no comparison here could ever have contradicted it. }
     mcLast
   );
 
@@ -155,6 +195,38 @@ type
     Parameter  : Byte;
   end;
 
+{ **WHAT A NOTE'S FOUR FIELDS MEAN, IN THE RELEASE'S OWN WORDS.** None of this
+  is recoverable from the image: a range, a unit and a sentinel are conventions
+  the code obeys without ever stating them.
+
+    Period      "A number in the range 0..2047 which states the period of the
+                note in units of 1/3584000 per sample. (this is a somewhat
+                empyric number. If anyone knows the exact Amiga number, please,
+                tell us). A zero means to keep using the same period used
+                before."
+
+    Instrument  "A number in range 0..63 meaning the number of the instrument
+                which will be used for the note. A zero means use the same."
+
+    Command     "A number (no real range) of the way the note should be played
+                (i.e. Vibrato) a change in the playing sequence (i.e. pattern
+                break) or a change in the general parameters of the module
+                player (i.e. set tempo). All the possible values are defined in
+                the TModCommand enumerated type" above.
+
+    Parameter   "A parameter for the command. Its meaning differs from one
+                command to another. Sometimes each nibble is considered as a
+                different parameter."
+
+  TWO ZEROES THAT MEAN "UNCHANGED" ARE THE PART WORTH HAVING. A zero period and
+  a zero instrument are not silence and not instrument zero -- they say to carry
+  the previous value forward, which is why a pattern can be mostly empty and
+  still play. An implementation that treated either as a value would sound wrong
+  in a way no byte comparison could ever show.
+
+  AND THE PERIOD UNIT IS ADMITTED TO BE APPROXIMATE. The author says so and asks
+  for the exact Amiga figure. It is preserved as written rather than corrected,
+  because this program's timing derives from the number it actually used. }
   PFullNote = ^TFullNote;
   TFullNote = record
     case Byte of
@@ -183,7 +255,11 @@ const
     Desample and Resample. }
   LowQuality : Boolean = True;
 
+  { [1.39b] "Set if the instrument is played always at the same freq (not
+    implemented)." -- so this bit is defined and does nothing, in the release and
+    here. }
   ipMonoFreq = $0001;
+  { [1.39b] "Set if the instrument's sample is longer than 65520 bytes." }
   ipLong     = $0002;
 
 type
@@ -192,19 +268,28 @@ type
 
   TIProperties = Word;
 
+{ [1.39b] "Instruments are fragments of sampled sound (long arrays of bytes
+  which describe the wave of the sound of the instrument). The samples used in
+  music modules have a default volume and also, they can have a loop (for
+  sustained instruments) and a fine tuning constant (not yet implemented)."
+
+  Every field description below is the release's. Two of them say a thing the
+  image cannot: `Ftune` is NOT IMPLEMENTED, and `Vol`'s range is 0..64 -- a
+  ceiling of 64 rather than 63 or 255, which is what makes S3M's 0..64 clamp at
+  $40 the same scale rather than a coincidence. }
   PInstrumentRec = ^TInstrumentRec;
   TInstrumentRec =
     record
-      Len,
-      Reps,
-      Repl  : LongInt;
-      Vol   : Byte;
-      Ftune : Byte;
-      NAdj  : Word;
-      DAdj  : Word;
-      Data  : ^TSample;
-      Xtra  : ^TSample;
-      Prop  : TIProperties;
+      Len,          { [1.39b] length of the instrument's sampled image      }
+      Reps,         { [1.39b] starting offset of the repeated portion       }
+      Repl  : LongInt;  { [1.39b] size of the repeated portion              }
+      Vol   : Byte;     { [1.39b] default volume of the instrument (0..64)  }
+      Ftune : Byte;     { [1.39b] fine tuning value -- NOT YET IMPLEMENTED  }
+      NAdj  : Word;     { [1.39b] numerator of the note adjustment          }
+      DAdj  : Word;     { [1.39b] denominator of the note adjustment        }
+      Data  : ^TSample; { [1.39b] pointer to the first 65520 bytes          }
+      Xtra  : ^TSample; { [1.39b] pointer to the second 65520 bytes, if any }
+      Prop  : TIProperties;  { [1.39b] bit mapped properties value          }
     end;
 
   PInstrument = ^TInstrument;
@@ -236,6 +321,10 @@ type
   in this unit computes its own length rather than using SizeOf.
   --------------------------------------------------------------------------- }
 type
+{ [1.39b] "Tracks are lists of notes and command values of which the empty
+  leading and trailing blanks have been removed (obviated)." The release's own
+  description of the shape below, and it says plainly what the two offsets are
+  for: a track stores only the span that holds anything. }
   PNoteTrack = ^TNoteTrack;
   TNoteTrack =
     record
@@ -290,6 +379,17 @@ const
   MaxChannels     = 8;
 
 type
+{ **THE RELEASE'S OWN PROSE DISAGREES WITH THE RELEASE'S OWN CONSTANTS**, and
+  the same disagreement lands here. Its section header reads "[1.39b] Patterns
+  are arrays of pointers to tracks (up to 12 tracks). A music module can have up
+  to 255 individual patterns, arranged in a sequence of up to 255."
+
+  Twelve is not 8, which is what this version's `MaxChannels` holds, and 255 is
+  not 256, which is what `MaxPatterns` and `MaxSequence` hold above. The prose
+  is the author describing the format in round numbers; the constants are what
+  the code compiles against, and where they differ the constants win. Quoted
+  because a reader who meets 12 or 255 elsewhere should know where they come
+  from and that they are not this program's limits. }
   PPatternRec = ^TPatternRec;
   TPatternRec =
     record

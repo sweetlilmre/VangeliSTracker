@@ -1011,7 +1011,15 @@ end;
   inside it, and the encodings are what separate the two halves.
   -------------------------------------------------------------------------- }
 
-procedure SetGusVoiceCtl(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc);
+{ [1.39b] "Start a new sample on one of the channels."
+
+  The release's own one-line description of this routine, in translation. Its
+  section header for the group this belongs to reads "[1.39b] Routines that
+  interpret the score."
+
+  ~~SetGusVoiceCtl~~ TAKES THE RELEASE'S NAME. It was never GUS-specific: 1.39b
+  has no GUS support in this unit at all and still has this routine. }
+procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PSampleDesc);
 begin
   { 03cf..03d9 -- compiled: `OR AX,[BP+6]` is the code generator's direction,
     and the `JNZ +3 / JMP` pair is what a large if-body gives when the skip is
@@ -1021,6 +1029,13 @@ begin
     { 03da..0413 -- HAND-WRITTEN, transcribed verbatim per the standing rule.
       Equivalent Pascal, REFERENCE ONLY -- the compiler does not produce these
       bytes from it, which is how the block was identified:
+
+      **THE RELEASE DOUBTS THE LOOP TEST IN WRITING**, and the doubt is worth
+      more than the test. At this point its own source says "[1.39b] If it has
+      a loop (not sure this test is a good one" -- the author was unsure whether
+      the condition below correctly decides that a sample loops. It is
+      transcribed as measured either way, but a reader who finds this behaving
+      oddly should know it was already suspected when it was written.
 
           Raw.SplOfs1 := the word at Desc^ + $12
           Raw.SplSeg1 := the word at Desc^ + $14
@@ -1063,6 +1078,10 @@ begin
 
     { 0414..042b -- compiled: Turbo Pascal's LongInt comparison, high word
       first, `CMP ES:[DI+2],0 / JG / JGE / CMP ES:[DI],$FFF0 / JA`. $FFF0 is
+      [1.39b] "Comes here if it is a long sample (more than 65520 bytes)", and
+      on the other arm "Comes here if it is a short sample (less than 65520
+      bytes)" -- the release's own words for the two branches below.
+
       65,520, which is what `rcfLongSample` means: a sample too long for one
       64K part. }
     if Desc^.SplLen > $FFF0 then
@@ -1074,7 +1093,9 @@ begin
             Raw.SplLimit1 := $FFF0;
             Raw.SplLimit2 := Desc^.SplLen - $FFF0;
 
-        so the first part is capped at 65,520 bytes and the remainder becomes
+        [1.39b] "Set up the values for the long sample" -- the release's own
+        note on this pair. So the first part is capped at 65,520 bytes and the
+        remainder becomes
         the second. `SBB DX,0` carries the subtraction into the high word even
         though only the low word is stored -- the compiler's own idiom, kept
         verbatim. }
@@ -1099,6 +1120,10 @@ begin
     Raw.SplOfs2 := Ofs(Desc^.Data2^);
     Raw.SplSeg2 := Seg(Desc^.Data2^);
 
+    { [1.39b] "If there is a loop, a small mess :-)" -- the author's own
+      assessment of the arithmetic below, and a fair one. A loop inside a sample
+      that spans two 64K parts has to be expressed in whichever part it lands
+      in, so each of the three quantities gets a test and a subtraction. }
     if NoLoop = 0 then                              { 0473..047c            }
     begin
       { 047d..04b1 -- two LongInt comparisons with short-circuit `or`. The loop
@@ -1290,6 +1315,10 @@ end;
   found -- `and 0` and all -- because tidying it would change the bytes. It also
   makes the MyMove below copy slot zero onto itself.
   -------------------------------------------------------------------------- }
+{ [1.39b] "Work out and process the next note of the score."
+
+  The release groups it under a section headed "[1.39b] Routines that interpret
+  the score", which is the same group `SetNewSample` belongs to. }
 procedure NextPattern(var Song : TSong);
 begin
   NullProcedure($FFFF, 0, 0);                        { 0697..069f            }
@@ -1467,10 +1496,10 @@ begin
         end;
 
         { 09c8..09e5 -- and hand the sample to the GUS voice. This is the call
-          site that gave SetGusVoiceCtl its signature back when 03cc was
+          site that gave SetNewSample its signature back when 03cc was
           transcribed: the channel number as a Byte, the raw channel by
           reference, the descriptor by value. }
-        SetGusVoiceCtl(ChanIdx, RawChannels[ChanIdx],
+        SetNewSample(ChanIdx, RawChannels[ChanIdx],
                        CurCanal^.Instrument)           { 09c8..09e5            }
       end;
 
@@ -1627,6 +1656,8 @@ end;
   the interrupt increments and DS:$0bca is this side's snapshot of it, so equal
   counters mean nothing new has happened yet.
   -------------------------------------------------------------------------- }
+{ [1.39b] "Process one tick of the music. Normally 50 ticks per second are
+          used, but that can be changed." }
 procedure SeqTick(var Song : TSong);
 begin
   if IsDmaDevice and (TickSnapshot = Ticks) then     { 0c52..0c64            }
