@@ -1,30 +1,26 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 15d0 -- the Scream Tracker 2 (.STM) loader. 2,368 bytes, of which
-  2,365 are the four routines. NEW IN v1.51; v1.31b has no such unit.
+  THE SCREAM TRACKER 2 LOADER: read a .STM file and build a playable song.
 
-  THERE IS NO RELEASE SOURCE FOR THIS UNIT. The 1.39b release is January 1994
-  and DemoVT 1.51 is April; S3M and STM support arrive in between, so every
-  other unit in this tree could be checked against LIB/*.PAS and this one
-  cannot. Nothing here is a release name. What IS available is `MODLOADE.PAS`,
-  which is byte-exact and which this unit shadows almost statement for
-  statement -- so the names are ITS names, and where the two units do the same
-  thing they are written the same way on purpose.
+  WHY A SECOND LOADER AT ALL. Scream Tracker was the PC answer to the Amiga
+  trackers, and its files are close enough to a MOD to play through the same
+  engine but different enough that they cannot share a reader. Four channels
+  either way, and 64-row patterns either way -- but the header is laid out
+  differently, the effects are NUMBERED differently, and the samples are
+  stored somewhere else.
 
-  HOW IT WAS FOUND. `segpair.py --pair` reports 15d0 as a segment of v1.51 that
-  nothing in v1.31b pairs with; the SongLoaders table at DS:$0430 names
-  15d0:0764 as entry [3] of four, where v1.31b's table at DS:$03c4 has two.
-  Ghidra's decompiler read the four routines.
+  THE EFFECT NUMBERING IS THE REAL WORK. ProTracker and Scream Tracker chose
+  different numbers for the same musical ideas, so a pattern read out of an
+  .STM has to be TRANSLATED command by command into the player's own
+  vocabulary before anything can play it. That translation table is the
+  substance of ProcessPatterns and the reason this unit is not simply
+  MODLOADE with a different header parser.
 
-  THE ROUTINE MAP, in address order -- which is SOURCE order, because Turbo
-  Pascal lays a unit's routines out as they are written. The return forms are
-  the signature and are measured:
-
-    0000  ENTER $a2a  RET  $0a   ProcessPatterns     Song, St, Num
-    03db  ENTER $12c  RET  $0c   ProcessInstruments  Song, St, Stm
-    0581  ENTER $28   RET  $08   LoadSamples         Song, St
-    0764  ENTER $206  RETF $0c   LoadSTMFileFormat   Song, St, Header
+  WHAT IT SHARES WITH THE MOD LOADER is the shape: read the header, work out
+  how many patterns from the order list, read the patterns, then read the
+  sample bytes. Anyone who has read MODLOADE will recognise every routine
+  here, which is deliberate.
 
   Only the last is far: the other three are near, so they are local to the
   implementation and nothing outside can call them. That matches MODLOADE
@@ -36,23 +32,7 @@
   for the pattern, because a MOD may have eight channels and an STM has four.
 
   WHAT THE FILE FORMAT IS. Scream Tracker 2, and the offsets are read off the
-  code rather than taken from a specification:
-
-    +$000  20 bytes  song name
-    +$014   8 bytes  '!Scream!'          the magic, DS:$0460
-    +$020   1 byte   initial tempo, in the HIGH nibble
-    +$021   1 byte   pattern count
-    +$022   1 byte   global volume
-    +$030  31 x 32   instrument headers  -- instrument i at +$010 + i*$20
-    +$410  128       the order table
-    +$490            pattern data begins  -- 0764 seeks here
-
-  ADDRESS MAP
-    ProcessPatterns    15d0:0000     '!Scream!'        DS:$0460, 8 raw bytes
-    ProcessInstruments 15d0:03db     the period table  DS:$04bc, VTNotes'
-    LoadSamples        15d0:0581
-    LoadSTMFileFormat  15d0:0764
-  =========================================================================== }
+  code rather than taken from a specification:}
 
 unit StmLoader;
 
@@ -79,13 +59,7 @@ var
     probe/IDXPROBE.PAS settles it: five candidate forms compiled with TP6, and
     only the two-subscript one reproduces the original's bytes. The other four
     -- both operand orders, an explicit *1 on the note term, and the index
-    built in a variable first -- all emit the scale-the-sum shape.
-
-    IT CANNOT BE VTNotes' OWN DECLARATION. MODCOMMANDS indexes NotePeriods with
-    a SINGLE subscript and is byte-exact in v1.31b, which a two-dimensional
-    declaration would not compile against at all. So the table is flat where it
-    is declared and this unit lays a grid over it. `absolute` costs no data and
-    no code: the base is the same DS:$4bc either way. }
+    built in a variable first -- all emit the scale-the-sum shape.}
   NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
 
 { ---------------------------------------------------------------------------
@@ -97,18 +71,11 @@ var
 
     TStmFileInstrument   14 + 2 + 2 + 2 + 2 + 1 + 1 + 2 + 4 + 2   =  32
     instrument i at      $10 + i * $20, so instrument 1 at $30
-    the order table at   $410 = $30 + 31*32 + 16
-
-  THE NAME IS FOURTEEN CHARACTERS, not the twelve a Scream Tracker 2 header
-  actually carries. 15d0:03db reads it as `StrASCIIZ(..., $0e)`, and $0e is 14:
-  the author declared the field over the two bytes that follow the name as
-  well. Transcribing what the code does rather than what the format says is the
-  standing rule, and it costs nothing here because StrASCIIZ stops at the NUL.
-  --------------------------------------------------------------------------- }
+    the order table at   $410 = $30 + 31*32 + 16}
 
 type
   TStmFileInstrument = record
-    Name      : array[1..14] of Char;  { StrASCIIZ over 14 at 15d0:0416      }
+    Name      : array[1..14] of Char;  { NUL-padded, not a Pascal string     }
     { TWO BYTES, AND WITHOUT THEM THE RECORD IS 30 AND EVERYTHING DOWNSTREAM
       MOVES. `Len` is read at record offset $10, which is 16, and the name runs
       to 13 -- so 14 and 15 are unaccounted for. Thirty bytes puts the order
@@ -119,15 +86,15 @@ type
       same two bytes as `fill1` and does not name them either, so this name has the
       published layout behind it and nothing else. }
     IntPos    : Word;                  { +$0e                                }
-    Len       : Word;                  { +$10  read at 15d0:0448            }
-    LoopStart : Word;                  { +$12  read at 15d0:0465            }
-    LoopEnd   : Word;                  { +$14  read at 15d0:0472            }
-    Vol       : Byte;                  { +$16  read at 15d0:04c1            }
+    Len       : Word;                  { +$10  the sample's length in bytes  }
+    LoopStart : Word;                  { +$12  where a sustained note loops  }
+    LoopEnd   : Word;                  { +$14  and where it loops back from  }
+    Vol       : Byte;                  { +$16  the instrument's own volume   }
     Reserved17: Byte;                  { +$17                                }
     { 1.39b calls this one `NAdj` and feeds it straight into an instrument's
       `DAdj`, its rate adjust -- so the ROLE is corroborated by the sibling loader
       even though the name is not. `C2Spd` is the format's own term for it. }
-    C2Spd     : Word;                  { +$18  read at 15d0:04d3            }
+    C2Spd     : Word;                  { +$18  the rate middle C plays at    }
     { 1.39b covers these four AND `ParaLen` with one `fill2 : ARRAY[1..6]`, so it
       never reads the paragraph length that 15d0 does. The sibling loader bounds
       the region and says nothing about what is in it. }
@@ -144,15 +111,8 @@ type
     b4 : Byte;                         { parameter                            }
   end;
 
-  { A pattern as the file stores it: 64 rows of four channels. 1,024 bytes,
-    which is the `St.Read` length at 15d0:00b2 and the largest local in
-    ProcessPatterns' $a2a frame. }
-  { BASE ONE IN BOTH SUBSCRIPTS, and 15d0:011e is the whole argument:
-    `LEA DI,[BP+DI-0414]` with DI = i*16 + j*4. The buffer itself is at -$400,
-    so the folded constant is -$400 - 1*16 - 1*4 -- one row and one channel
-    below the base, which is what a base-1 array of base-1 rows folds to. A
-    base-0 outer bound would give -$404. See the wiki's
-    `subscript-fold-names-the-bounds`. }
+
+
   TStmFilePattern = array[1..64] of array[1..4] of TStmFileNote;
 
   TStmFile = record
@@ -199,13 +159,12 @@ type
   its Patt4/Patt5/Patt6/Patt7 repacking is here -- an STM pattern is already
   four channels wide and is read straight into the array.
 
-  THE COMMAND MAP IS THE WHOLE POINT OF THE ROUTINE. Scream Tracker numbers its
-  effects A..Z from 1; the player's own `TModCommand` is the ProTracker set
-  shifted up by one, and the nine that correspond are translated by name. What
-  does NOT correspond is passed through as `Ord(mcLast) + code`, which is the
-  `+ $24` at 15d0:0288 -- an ordinal past the end of the enumeration, which
-  compiles only because the tree builds with range checking off.
-  --------------------------------------------------------------------------- }
+  TRANSLATING THE EFFECTS IS THE WHOLE POINT OF THE ROUTINE. Scream Tracker
+  and ProTracker chose different numbers for the same musical ideas, so every
+  command in every row has to be mapped into the player's own vocabulary on
+  the way in. A command with no counterpart becomes "no command" rather than
+  an error -- a file using an effect this player does not have still plays,
+  just without that effect.}
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TStmFilePattern;
@@ -426,9 +385,6 @@ begin
 
           045c is a signed LongInt `> 0`:
 
-            CMP [BP-1a],0 / JG take / JGE testlow / JMP skip
-            CMP [BP-1c],0 / JA take / JMP skip
-
           -- high word signed, low word unsigned, which is the shape of a
           32-bit `> 0` and not of `= 0`. An equality test is
           `MOV AX,lo / OR AX,hi / JNE`, which is what the draft emitted.
@@ -454,12 +410,7 @@ begin
                 Repl := 0
               end;
 
-            { THE ORDER IS Vol, DAdj, NAdj -- 04e5, 04f7, 04fe -- and the
-              constant goes LAST. Writing NAdj before DAdj moves the eighteen
-              bytes that fetch C2Spd (`MOV AX,[BP-22] / SHL AX,5 /
-              LES DI,[BP+04] / ADD DI,AX / MOV AX,ES:[DI+28] / MOV [BP-0c],AX`)
-              past the five that store the literal. Same three values, and the
-              statements are in the segment in the order they are written. }
+
             Vol  := Stm.Instruments[i].Vol;
             DAdj := Stm.Instruments[i].C2Spd;
             NAdj := $2100;
@@ -495,15 +446,6 @@ var
     Turbo Pascal allocates locals downward in declaration order, so the first
     declared sits closest to BP. Reading the routine's BP displacements back:
 
-      -$04  Instr        4   a far pointer
-      -$20  Instrument  28   TInstrumentRec -- and its OWN field offsets prove
-                             it: Data is at record +18, which is -$0e, and
-                             every `LES DI,[BP-0e]` in the routine is that
-                             field; Xtra is at +22, which is -$0a.
-      -$22  i            2   `MOV [BP-22],1` then INC, pushed to GetInstrument
-      -$24  j            2   NOTHING REFERENCES IT -- see below
-      -$28  Avail        4   a LongInt: GetSize - GetPos, in an AX/DX pair
-
     4 + 28 + 2 + 2 + 4 = 40 = $28, exactly.
 
     `j` IS DECLARED AND NEVER USED, and that is a claim the binary supports
@@ -532,10 +474,6 @@ begin
               straight into the local, then calls GetSize and subtracts the
               local from it in place:
 
-                05f8  MOV [BP-28],AX / MOV [BP-26],DX     Avail := GetPos
-                0609  SUB AX,[BP-28] / SBB DX,[BP-26]     GetSize - Avail
-                060f  MOV [BP-28],AX / MOV [BP-26],DX     Avail := that
-
               Written as the single expression `St.GetSize - St.GetPos` it is
               six bytes longer and starts `PUSH DX / PUSH AX`: Borland
               evaluates the right operand first and has nowhere to put it but
@@ -551,10 +489,7 @@ begin
               end;
 
             if Instrument.Len > 0 then
-              { $FFF0 WITH `<=`, NOT $FFF1 WITH `<`. The two are the same
-                set of values and they are not the same instruction: 0657 is
-                `CMP [BP-20],F0 / JA`, and `< $FFF1` emits `CMP ...,F1 / JAE`.
-                One byte of immediate and one of opcode. }
+
               if Instrument.Len <= MaxSample then
                 begin
                   FullHeap.HGetMem(Pointer(Instrument.Data), Instrument.Len);
@@ -602,10 +537,9 @@ begin
             Instr^.Change(@Instrument)
           end;
 
-      { `CMP BYTE PTR [060c],00` -- and DS:$060c is SongElements'
-        `LowQuality`, which sits at DS:$0564 in v1.31b and moved with the rest
-        of the initialised half by +$a8. Not MODLOADE's `DeltaSamples`, which
-        is a different byte in a different unit's block. }
+      { Halve the sample rate of everything, if the user asked for it. Trades
+        fidelity for the mixer's time, which on a slow machine is the
+        difference between playing and stuttering.}
       if LowQuality then
         Instr^.Desample
     end
@@ -616,14 +550,7 @@ end;
 
   The recogniser. `FileFormat` is written BEFORE the comparison and stays
   written even when the routine declines -- safe only because callers test
-  `Status`, which is the same contract every loader here keeps.
-
-  THE FRAME IS TWO 256-BYTE STRING TEMPORARIES and six bytes of counters. Turbo
-  Pascal converts each side of a char-array comparison into a String temporary
-  and compares those, which is two calls to 1d89:0c05 and one to 1d89:0bc8; the
-  temporaries are the compiler's and must NOT be declared. Declaring them is
-  the mistake UNKLOADE.PAS records costing forty bytes.
-  --------------------------------------------------------------------------- }
+  `Status`, which is the same contract every loader here keeps.}
 procedure LoadSTMFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const
@@ -634,14 +561,7 @@ const
   StmIdString : array[1..8] of Char = '!Scream!';
 var
   Stm : TStmFile absolute Header;
-  { DECLARED FIRST, AND THE DISPLACEMENT IS WHAT SAYS SO. 0782 is
-    `MOV [BP-04],AX / MOV [BP-02],DX`, so the LongInt sits at -$04..-$01 --
-    closest to BP, which is where Turbo Pascal puts the FIRST local. Declared
-    after `i` it lands at -$06 and every reference in the routine is two bytes
-    out: same frame size, 233 differing bytes.
 
-    It is a named LongInt rather than an inline `St.GetPos + $490` because 0770
-    calls GetPos and stores the result before adding to it. }
   Pos : LongInt;
   i   : Word;
 begin
@@ -698,17 +618,7 @@ begin
 
     Move(Stm.PatternList, Song.PatternSequence^, Song.SequenceLength);
 
-    { NO `Len` LOCAL AND NO ZERO GUARD, and the second is the subtler of the
-      two. A `for` limit that is not a constant is evaluated once into a
-      compiler temporary, and the loop's own entry test compares against it --
-      so `if Song.SequenceLength <> 0 then for i := 1 to Song.SequenceLength`
-      emits that test TWICE, and the surplus copy is eleven bytes:
-      `LES DI,[BP+0e] / CMP WORD ES:[DI+55],0 / JE +32`.
 
-      What made it look necessary was Ghidra rendering the loop as
-      `local_a = Song.SequenceLength; if (local_a != 0) then a for loop` -- but
-      `local_a` IS the limit temporary and the test IS the loop's. A decompiler
-      showing a guard is not evidence of a guard in the source. }
     for i := 1 to Song.SequenceLength do
       Inc(Song.PatternSequence^[i]);
 
