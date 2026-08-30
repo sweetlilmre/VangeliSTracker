@@ -1,30 +1,43 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1b24 -- the 8259 interrupt controllers and the 8237 DMA channels.
-  768 bytes. Under every sound driver in the program: the Sound Blaster needs
-  a DMA channel and an IRQ, the GUS needs an IRQ, and both go through here.
+  The two chips every sound card on a PC has to be wired through: the 8259
+  interrupt controllers and the 8237 DMA channels.
 
-  Eight framed routines that the prologue scanner finds, and SIX FRAMELESS
-  ONES that it cannot -- the DMA kernels are entered with registers already
-  loaded and end in a near RET, so they only turn up by following calls.
+  UNDER EVERY DRIVER IN THE PROGRAM. A Sound Blaster needs a DMA channel and
+  an IRQ; a Gravis needs an IRQ. Neither card can be told to play until
+  somebody has unmasked its interrupt line and pointed a DMA channel at a
+  buffer, and this is where that happens -- once, for all of them.
 
-  NAMES ARE THE 1.39b RELEASE'S. LIB/HARDWARE.PAS is the counterpart and all
+  WHAT MAKES IT FIDDLY IS THE ADDRESSING, not the logic. There are TWO 8259s,
+  cascaded, so an IRQ above 7 lives on the second one and needs a different
+  port and a different bit. And an 8237 channel's page register is not beside
+  its other registers at all: the page bits live on a separate chip at
+  unrelated port numbers, in an order that is not the channel order. Most of
+  this unit is tables that say where each thing actually is.
+
+  [re] Segment 1b24 -- 768 bytes. Eight framed routines that the prologue
+  scanner finds, and SIX FRAMELESS ONES that it cannot -- the DMA kernels are
+  entered with registers already loaded and end in a near RET, so they only
+  turn up by following calls.
+
+  [re] NAMES ARE THE 1.39b RELEASE'S. LIB/HARDWARE.PAS is the counterpart and all
   seventeen routines pair off body by body: the two 8259 masks, the state test,
   the vector swap, the six frameless DMA kernels, the three selectors and the
   four entry points. It has more besides -- 1b24 is 765 bytes and stops where
   it stops -- but nothing here is unpaired.
 
-  ONE NAME IS KEPT AGAINST THE RULE. The release calls the interrupt number
+  [re] ONE NAME IS KEPT AGAINST THE RULE. The release calls the interrupt number
   `i` in all four 8259 routines; that stays `IRQ` here, because `i` would be
   substituted into every prose mention of an IRQ in this file's documentation
   and the risk is not worth the letter. Its other parameter and local names ARE
   the release's, single letters included: SetIRQVector(IRQ, Vec) with `p` for
   the displaced vector and `j` for the interrupt number it computes.
 
-  Nothing proves 1.31 spelled any of this the same way: no debug information.
+  [re] Nothing proves 1.31 spelled any of this the same way: no debug
+  information.
 
-  ADDRESS MAP
+  [re] ADDRESS MAP
     EnableIRQ       1b24:0000     DisableIRQ      1b24:0044
     IRQState        1b24:007e     SetIRQVector    1b24:00d7
     DMA16Set        1b24:0128 *   DMA8Set         1b24:0172 *
@@ -48,7 +61,9 @@ unit Hardware;
 interface
 
 uses
-  Dos;                 { GetIntVec / SetIntVec -- 1b6f:007b and 1b6f:0093 }
+  Dos;                 { for GetIntVec and SetIntVec, to swap an IRQ's
+                         handler and put the old one back            }
+                       { [re] 1b6f:007b and 1b6f:0093 }
 
 { ---- the 8259s ---------------------------------------------------------- }
 
@@ -64,14 +79,14 @@ function  SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer; far;
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
 
 { 1b24:0267 / 1b24:02f0 }
-{ Channel IS A BYTE, and the caller settles it: 1a17:06ea loads it with
+{ [re] Channel IS A BYTE, and the caller settles it: 1a17:06ea loads it with
   `MOV AL,[DMAChannel] / PUSH AX` and NO zero-extension, which Turbo Pascal
   only emits when the parameter is byte-sized. Declared Word, the caller gains
   a `XOR AH,AH` the original does not have. Nothing changes inside this unit --
   a byte argument still occupies a word on the stack, so `BYTE PTR Channel` at
   [BP+06] and the RETF 2 are unaffected. }
 function  GetDMACount(Channel : Byte) : Word; far;
-{ A Byte, NOT a Word, and 193a is what settles it: 193a:045b is
+{ [re] A Byte, NOT a Word, and 193a is what settles it: 193a:045b is
   `MOV AL,[0b18] / PUSH AX` -- a byte load -- where a Word parameter gives the
   one-instruction `PUSH [0b18]` that DMASet gets four lines later in the same
   caller. Two calls to two routines in this unit from one routine in another,
@@ -197,7 +212,7 @@ end;
 { --------------------------------------------------------------------------
   1b24:00d7 -- point an IRQ's vector somewhere, and hand back the old one.
 
-  Plain Pascal in the binary: `ENTER $0a,0`, locals, and two calls into the
+  [re] Plain Pascal in the binary: `ENTER $0a,0`, locals, and two calls into the
   Dos unit (1b6f:007b GetIntVec, 1b6f:0093 SetIntVec).
 
   The vector number is the only arithmetic. IRQ 0..7 are INT $08..$0F and
@@ -208,7 +223,7 @@ end;
   -------------------------------------------------------------------------- }
 function SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer;
 var
-  { FOUR UNUSED BYTES AGAIN. ENTER $0a,0 reserves ten; `p` is at [BP-8]
+  { [re] FOUR UNUSED BYTES AGAIN. ENTER $0a,0 reserves ten; `p` is at [BP-8]
     (1b24:00f8 is LEA DI,[BP-8]) and `j` at [BP-$a], which leaves [BP-1]
     to [BP-4] referenced by nothing.
 
@@ -587,7 +602,7 @@ var
   Segm : Word;           { [BP-2] }
   Offs : Word;           { [BP-4] }
 begin
-  { `Seg(Buf^)`, NOT a record cast. The original loads the pointer and takes
+  { [re] `Seg(Buf^)`, NOT a record cast. The original loads the pointer and takes
     the register -- `LES DI,[BP+8] / MOV AX,ES` -- which is what Seg and Ofs
     compile to when applied to what a pointer POINTS AT. Reading the halves
     through a TPtrRec cast, as this file did, fetches [BP+0a] and [BP+08]
@@ -603,12 +618,12 @@ begin
   begin
     Inc(Segm, $1000);                             { 1b24:02a1  next page   }
 
-    { THE `- $10000` IS IN THE BINARY AND IT LOOKS POINTLESS. 1b24:02b6 is
+    { [re] THE `- $10000` IS IN THE BINARY AND IT LOOKS POINTLESS. 1b24:02b6 is
       `SUB AX,0 / SBB DX,1` -- a 32-bit subtraction of 65536 -- and the
       result is then stored as a WORD at 1b24:02c0, so the borrow is thrown
       away and the answer is the same as a plain 16-bit add.
 
-      It is not decoration: writing the constant is what makes the whole
+      [re] It is not decoration: writing the constant is what makes the whole
       expression LongInt, and without it Turbo Pascal emits a two-byte
       `ADD AX,[BP-4]` where the original has fourteen bytes of 32-bit
       arithmetic. Transcribed as found. }

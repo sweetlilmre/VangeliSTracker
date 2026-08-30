@@ -783,7 +783,7 @@ end;
   TTrack.
   =========================================================================== }
 
-{ and 165a:083f. Unlike TInstrument.Done this one calls `HDisposeStr` directly
+{ Unlike TInstrument.Done this one calls `HDisposeStr` directly
   -- site `0852` -- and does not guard against a nil `Name`, because HDisposeStr does. }
 constructor TTrack.Init;
 begin

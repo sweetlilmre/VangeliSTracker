@@ -526,7 +526,7 @@ var
 implementation
 
 { ==========================================================================
- and 1a17:0001 -- the two null callbacks.
+ -- the two null callbacks.
 
   What the hook slots hold before anything real is installed. The first is a
   bare RETF -- ONE byte, and `assembler` with an empty body is the only way to

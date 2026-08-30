@@ -190,7 +190,7 @@ uses
 
 
 { ===========================================================================
- and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
+ -- the two device/rate helpers. Both are in the INTERFACE, so
   both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
   count that `survey.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
@@ -480,7 +480,7 @@ begin
 end;
 
 
-{ and 109c:04ca -- one port and one IRQ for both cards, because only one of
+{ -- one port and one IRQ for both cards, because only one of
   them can be present. `off` at 0518's neighbour is the odd one out; see CmdModOffset. }
 procedure CmdSetPort(s : String);
 var
@@ -867,7 +867,7 @@ begin
 end;
 
 
-{ and 109c:0c9d -- save and restore the four settings a shelled-to program
+{ -- save and restore the four settings a shelled-to program
   might change. `PUSH BP` with no frame, because a `var` parameter needs no copy, and
   `RETF 8` for Self plus the pointer.
 

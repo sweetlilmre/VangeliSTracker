@@ -909,7 +909,7 @@ var
     The client-facing `LoopMod` it was named after is a DIFFERENT variable, at
     $02c8; see its declaration in the interface. }
   { MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
- and 142f:04bc write from the F-command. Names unchanged; the release
+ write from the F-command. Names unchanged; the release
     calls them Tempo and BPMIncrement and the rename is declined there for reasons
     given at the declaration. }
 
@@ -2595,7 +2595,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
- and 12ba:105d -- the two buffer callbacks the sound device asks
+ -- the two buffer callbacks the sound device asks
   through. Both are FAR functions of no arguments returning a PSampleBuffer,
   which is `SoundDevices.TAskBufferProc`, and both are the release's: it declares
   `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION BufferGiver :

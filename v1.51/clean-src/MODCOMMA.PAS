@@ -749,7 +749,7 @@ end;
 
 
 { --------------------------------------------------------------------------
- and 142f:0356 -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
+ -- commands 5 and 6, PORTAMENTO-PLUS-VOLUME-SLIDE and
   VIBRATO-PLUS-VOLUME-SLIDE. Two instructions each: do one effect, then fall into
   the other. The release is identical.
 
@@ -1047,7 +1047,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
- and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
+ -- commands E1x and E2x, FINE PORTAMENTO up and down.
   CONFIRMED at both addresses by the near calls at 142f:0114 and 142f:0163.
 
   THEY ARE THE MIRROR OF StartTPortUp AND StartTPortDown, and the pair of pairs is
@@ -1182,7 +1182,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
- and 147d:05d8 -- RETRIGGER, START AND TICK, and 1.31b has neither: it
+ -- RETRIGGER, START AND TICK, and 1.31b has neither: it
   carries an empty `TickRetrigNote` and no Start at all. `CommandStart` maps command
   $1a to 05b9, and $1a is `mcRetrigNote`.
 
@@ -1211,7 +1211,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
- and 142f:05cd -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
+ -- commands EAx and EBx, FINE VOLUME SLIDE up and down.
   The same borrow-the-coarse-routine trick StartVolSlide uses: set the increment,
   clear the fine flag so TickVolSlide will act, call it once, set the flag again.
 
@@ -1435,7 +1435,7 @@ so the plain retrigger does the counting and this routine only decides what
   the format reference and this program disagree. }
 procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all, and so is
+  { BOTH TABLES ARE THE RELEASE'S, names and all, and so is
     `RetAdd` being SHORTINT: the transcription had it as Byte with $FF..$F0, which is
     the same sixteen bytes and says nothing about the sign. Reading them as signed is
     what makes the tick's `ADD AH,AL / JNC / MOV AH,0` obviously an underflow test

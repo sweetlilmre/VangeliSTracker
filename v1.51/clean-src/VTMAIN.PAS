@@ -142,7 +142,7 @@ uses
 const
   Guard     : Byte = 0;  { the poll re-entrancy guard }
 
-  { and DS:$0004, AND THE LAYOUT IS WHAT FOUND THEM. `dgroup.py` puts this
+  { AND THE LAYOUT IS WHAT FOUND THEM. `dgroup.py` puts this
     unit's block at 20 bytes in the original against our 24, and the original's
     version string starts at $0006 where 1.31b's starts at $0004 -- so two bytes went
     in ahead of it. A scan of the image for absolute references to $0004 finds
@@ -392,7 +392,7 @@ var
   { ~~Obj0E38 : TObject~~ and ~~Var0F82 : TCollection~~ ARE GONE. They were
     VTCmd's own `Cmd` and `SongColl`, and declaring stand-ins here is what kept
     both CMDLINE and VTCMD out of the linked image -- see the body at 1000:05bb.
- and DS:$0f82 are their measured addresses; VTCMD.PAS carries them. }
+ are their measured addresses; VTCMD.PAS carries them. }
   { ~~Var0F3A $0f3a~~ -- ALSO NOT A VARIABLE. `Cmd` is at $0e38 and $0e38 + $102 is
     `FileDir`, which CMDLINE.PAS declares at that offset in TCmdLineInterpreter -- VMT,
     then `Line : String` at +$002, then `FileDir : DirStr` at +$102. So the last
@@ -876,7 +876,7 @@ end;
 the body. The init chain that precedes it is at 1000:04b3:
 
  the RTL      193a:0488   1931:0029   17cf:0a93
- 1065:0172
+      14b7:0000  12ba:141e    11bb:0f2e   1084:0101   1065:0172
   -------------------------------------------------------------------------- }
 { ~~Self : String at [BP-$100]~~ -- NOT A VARIABLE. `[BP-$100]` is the COMPILER'S
   256-byte temporary for `ParamStr`'s result: 1000:0542 is `LEA DI,[BP-0100] / PUSH SS /

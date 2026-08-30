@@ -551,7 +551,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
- and 1723:01db -- a timer expired.
+ -- a timer expired.
 
   Compiler output, near, private. Clearing the enable bit and setting it
   straight back is what acknowledges the timer to the GF1; the shadow is not
