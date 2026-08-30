@@ -353,15 +353,32 @@ const
   ChanRec          : PModRawChan   = nil;      { DS:$030c                       }
   OutPtr           : Pointer       = nil;      { DS:$0310                       }
   ModRec           : PSampleBuffer = nil;      { DS:$0314                       }
-  Fill0318         : Word          = 0;        { DS:$0318  UNIDENTIFIED         }
+  { **THE RELEASE'S `incr`, AND THE SEQUENCE IS THE WHOLE EVIDENCE.** Nothing in
+    either version reads it, so there is no use to name it from -- but it sits
+    between `ModRec` and `PrevTick` here and in v1.51, it is two bytes in both, and
+    `LIB/PLAYMOD.PAS` declares `incr` in exactly that position. A variable nothing
+    reads has no witness in the code; the order of its neighbours is the only
+    witness there is, and here it is exact. }
+  Incr             : Integer       = 0;        { DS:$0318  the release's `incr`  }
   PrevTick         : Word          = 0;        { DS:$031a                       }
   CanalPtr         : PCanal        = nil;      { DS:$031c                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0320                       }
-  Fill0324         : LongInt       = 0;        { DS:$0324  UNIDENTIFIED         }
+  { The release's `NoteHzFreq`, a LONGINT there and four bytes here, sitting after
+    `RawPtr` in both versions. Unread here and unread in 1.39b. }
+  NoteHzFreq       : LongInt       = 0;        { DS:$0324  unread, as in 1.39b   }
   TmpVal           : Word          = 0;        { DS:$0328                       }
-  Fill032A         : Word          = 0;        { DS:$032a  UNIDENTIFIED         }
+  { The release's `j`, the second of ProcessTick's two Word indices -- `TmpVal`
+    above is its `i`. NEITHER VERSION READS IT, which is why it keeps a name that
+    claims only what the sequence shows rather than a role it never performs. }
+  UnusedIdx        : Word          = 0;        { DS:$032a                        }
   StepVal          : Word          = 0;        { DS:$032c                       }
-  Fill032E         : LongInt       = 0;        { DS:$032e  UNIDENTIFIED         }
+  { **A LONGINT HERE WHERE v1.51 HAS A WORD, AND THAT ASYMMETRY IS THE POINT.**
+    The two ends pinned it before the release confirmed it: `StepVal` above is a
+    Word in this version and a LongInt in v1.51, and this one is the reverse, so
+    the six bytes between `StepVal` and `TickChans` divide the other way round in
+    the two builds. 1.39b calls it `FBCount` -- a fall-back counter, beside
+    `CanFallBack` and `FBTicks` elsewhere in this unit -- and never reads it. }
+  FBCount          : LongInt       = 0;        { DS:$032e  unread                }
   TickChans        : Byte          = 0;        { DS:$0332                       }
 
 { THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
