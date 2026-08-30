@@ -1,22 +1,30 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1b54 -- residency: the INT 2Fh server, the chain to whoever held
-  the vector before, and the exit handler that gives it back. 432 bytes, all
-  of it, nothing left unread.
+  HOW A DEMO FINDS THE PLAYER: an INT 2Fh handler that answers a password.
 
-  This is the half of the handshake that the Psycho Neurosis reconstruction's
-  own src/DEMOVT.PAS talks to. Everything that file assumes is confirmed here
-  -- see ../v1.31b/docs/01-int2f.md.
+  THE PROBLEM THIS SOLVES. DemoVT runs first and stays in memory; the demo
+  runs afterwards, as a separate program, and has to locate the player's
+  control block in someone else's address space. DOS offers no way to ask
+  "is program X running, and where is its data?" -- so DemoVT hooks INT 2Fh,
+  the multiplex interrupt, which exists precisely for programs to shout into
+  and see who answers.
 
-  NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information, so no unit
-  or routine name survives.
+  THE PASSWORD IS 'VTrac' SPREAD ACROSS THREE REGISTERS. A caller loads AX,
+  BX and CX with 'VT', 'Tr' and 'ac' and issues INT 2Fh. Anything else on the
+  chain sees a request it does not recognise and passes it on; this handler
+  sees its own name and answers. The reply is the request XORed with two
+  masks, so a caller can be sure it is talking to DemoVT and not to some other
+  resident that happened to return zero.
 
-  ADDRESS MAP
-    OldInt2F     1b54:0000     Handler      1b54:0006
-    ExitHandler  1b54:002f     'Ojo...'     1b54:0061
-    ' residente' 1b54:007b     Install      1b54:0088
-  =========================================================================== }
+  AND THE ANSWER CARRIES AN ADDRESS. ES:DI comes back pointing at the player's
+  own name, with the control block's far pointer in THE FOUR BYTES BELOW IT --
+  so a client reads `ES:[DI-4]` and has everything. That negative offset is not
+  a trick; it is what lets one pointer answer two questions.
+
+  INSTALLING TWICE IS REFUSED. Install runs the handshake itself before
+  hooking anything, and if a DemoVT is already there it prints that copy's
+  name and stops. Two players on one timer would fight over the sound card.}
 
 unit VTResid;
 
@@ -33,15 +41,15 @@ const
   MaskBX = $6B65;   MaskCX = $7220;   { $5472 xor $6B65 = $3F17 }
                                       { $6163 xor $7220 = $1343 }
 
-  { and 1b54:007b. CP437: #173 is the inverted exclamation mark,
-    #162 an o-acute. }
+  { The refusal message, in Spanish: "watch out, the <name> is resident!!".
+    Written with character codes so this file stays seven-bit -- #173 is the
+    inverted exclamation mark and #162 an o-acute, both CP437.}
   Already = #13#10'    ' + #173#173 + 'Ojo, que est' + #160 + ' el ';
   Resident = ' residente!!';
 
-  { ten characters, stood in for the name of a resident that
-    answered the handshake but returned a null ES:DI. Written with #168 for
-    the inverted question mark so this file stays seven-bit; the binary holds
-    it as CP437 $A8.
+  { Shown instead of a name when a resident answers the handshake but returns
+    a null ES:DI -- it identified itself as a DemoVT and then gave nowhere to
+    read its name from.
 
     TYPED, not a plain constant, because Install takes its ADDRESS. An
     untyped Pascal constant has no storage and `@` on one will not compile;
@@ -61,35 +69,43 @@ var
   SavedExit : Pointer;   { the ExitProc we displaced            }
 
 { --------------------------------------------------------------------------
-the chain to the previous INT 2Fh handler.
+  Pass an INT 2Fh call on to whoever held the vector before us.
 
-  HAND ASSEMBLER, and it must be: like the timer chain in the program itself,
-  this is a five-byte JMP FAR whose OPERAND is the storage. Install patches
-  the two words at +1 and +3 with the vector it displaced, and ExitHandler
-  reads them straight back out of the instruction.
+  THE INSTRUCTION IS ITS OWN STORAGE. This is a five-byte JMP FAR, and the
+  four bytes of its operand ARE where the displaced vector is kept: Install
+  writes the old segment and offset into the instruction, and from then on
+  jumping here jumps there. No variable holds the old vector, and the handler
+  chains with one three-byte jump rather than an indirect call through memory.
 
-  It is assembled pointing at itself, which is why the disassembly shows
-  `JMP FAR 1b54:0000` at 1b54:0000.
-  -------------------------------------------------------------------------- }
+  It is assembled pointing at itself, so an unpatched stub is an infinite loop
+  -- which is safe only because Install always patches it before hooking.}
 procedure OldInt2F; assembler;
 asm
   DB   0EAh              { JMP FAR seg:ofs                        }
   DW   OFFSET OldInt2F   { patched with the old INT 2Fh offset     }
   DW   SEG OldInt2F      { patched with the old INT 2Fh segment    }
-                         { RET -- supplied by Pascal, not written  }
-                         { here: an assembler procedure already gets an  }
-                         { epilogue and a written one duplicates it.     }
+
 end;
 
 { --------------------------------------------------------------------------
-the INT 2Fh handler.
+  Answer the handshake, or pass the call on.
 
-  HAND ASSEMBLER, verbatim. Pascal cannot express it: it must not touch a
-  single register it has not been asked about, it answers in AX/BX/CX/ES/DI
-  rather than by returning anything, and it either IRETs or falls through to
-  a JMP FAR at another address entirely.
+  EVERY PROGRAM ON THE MACHINE SEES EVERY INT 2Fh CALL, so the first thing this
+  does is decide whether the call is for it. Three compares; any mismatch and
+  the call goes down the chain untouched. That is why the tests come before
+  anything else and why nothing is saved first: a handler that clobbered a
+  register before deciding the call was not its own would break somebody else's
+  driver.
 
-  EQUIVALENT PASCAL, for reference -- the assembler below is what runs:
+  ON A MATCH it answers in registers and IRETs -- AX zero for "yes", BX and CX
+  XORed into a signature the caller can verify, ES:DI pointing at the player's
+  name with the control block just below it.
+
+  IT IS ASSEMBLER BECAUSE PASCAL CANNOT EXPRESS ANY OF THAT: it must not touch
+  a register it has not been asked about, it answers in registers rather than
+  by returning, and it either IRETs or jumps somewhere else entirely.
+
+  EQUIVALENT PASCAL, REFERENCE ONLY -- the assembler below is what runs:
 
       if (AX = $5654) and (BX = $5472) and (CX = $6163) then
       begin
@@ -104,35 +120,38 @@ procedure Handler; assembler;
 asm
   STI                    { DOS multiplex handlers run enabled     }
   CMP  AX, ReqAX         { 'VT'                                   }
-  JNZ  @@NotUs
+  JNZ  @@NotUs           { not our password -- pass it on         }
   CMP  BX, ReqBX         { 'Tr'                                   }
   JNZ  @@NotUs
   CMP  CX, ReqCX         { 'ac'                                   }
-  JNZ  @@NotUs
+  JNZ  @@NotUs           { all three must match                   }
   XOR  AX, AX            { AX := 0 says "yes, and it is me"       }
   XOR  BX, MaskBX        { -> $3F17                               }
   XOR  CX, MaskCX        { -> $1343                               }
   MOV  DI, SEG @DATA     { the binary has MOV DI,1CAAh -- an
                                       absolute segment, not ours to copy     }
-  MOV  ES, DI
+  MOV  ES, DI            { ES:DI will point at SelfName          }
   MOV  DI, OFFSET SelfName  { the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
                               reads its control block from ES:[DI-4].        }
-  IRET
+  IRET                   { answered; do NOT chain                }
 @@NotUs:
-  { A NEAR JUMP, not a far one. The original is `E9 D2FF` -- three bytes
-    back to offset 0000 -- because the chain target IS the JMP FAR stub
-    above, whose operand holds the displaced vector. Jumping FAR here
-    assembles a five-byte JMP to the stub's address instead, which is two
-    bytes longer and one indirection short of the idiom. }
+
   JMP  OldInt2F          { every failed test lands here           }
 end;
 
 { --------------------------------------------------------------------------
-the ExitProc. Put INT 2Fh back and hand the exit chain on.
+  Put INT 2Fh back the way it was found, on the way out of the program.
 
-  The old vector is read out of the JMP FAR's own operand bytes, +1 and +3.
-  -------------------------------------------------------------------------- }
+  THE OLD VECTOR IS READ OUT OF THE JMP FAR'S OWN OPERAND BYTES, which is the
+  other half of the trick above: the chain stub was the storage all along, so
+  restoring means copying two words out of an instruction.
+
+  IT WRITES THE VECTOR TABLE DIRECTLY rather than calling DOS. That is the
+  usual hazard with unhooking -- if another program hooked INT 2Fh after this
+  one and is still resident, this overwrites ITS handler and the machine is
+  left with a dangling chain. Nothing here checks; DemoVT expects to be the
+  last thing installed and the first thing removed.}
 procedure ExitHandler; far;
 begin
   ExitProc := SavedExit;
@@ -140,40 +159,28 @@ begin
     LES  DI, Stub
     MOV  AX, ES:[DI+1]     { the displaced offset                 }
     MOV  DX, ES:[DI+3]     { and segment                          }
-    MOV  SI, 0             { MOV, not XOR -- the original loads an }
-                           { immediate zero, and BASM emits what it is told   }
+    MOV  SI, 0             { [re] MOV, not XOR -- the original
+                             loads an immediate zero, and BASM emits what it
+                             is told }
     MOV  ES, SI            { ES := 0000, the vector table         }
-    MOV  ES:[0BCh], AX     { $2F * 4                              }
-    MOV  SI, 0
+    MOV  ES:[0BCh], AX     { $2F * 4 -- the offset half           }
+    MOV  SI, 0             { ES is reloaded rather than kept       }
     MOV  ES, SI
-    MOV  ES:[0BEh], DX
+    MOV  ES:[0BEh], DX     { and the segment half                  }
   end;
 end;
 
 { --------------------------------------------------------------------------
-go resident.
+  Hook INT 2Fh, publish `Name` and `Block`, and arrange to unhook on exit.
 
-  RETF 8: Name at [BP+$0a], Block at [BP+6]. The program calls it as
-  Install('DemoVT v1.31 (beta)', @CtrlBlock).
+  IT RUNS THE HANDSHAKE ITSELF FIRST, exactly as a client would, and refuses
+  to install over a copy that is already there -- printing that copy's name,
+  read from the ES:DI it answered with. Two players sharing one timer and one
+  sound card would fight, so this is a refusal rather than a warning.
 
-  It runs the very same handshake a client would first, and refuses to
-  install over a copy that is already there. The name it prints in that case
-  is the OTHER copy's, read from the ES:DI it answered with -- which is why
-  there is a fallback string for a resident that answers 0:0.
-  -------------------------------------------------------------------------- }
-{ THE FRAME IS `ENTER 0206,0` AND ONLY $106 OF IT IS DECLARED. The other 256
-  bytes are at [BP-$206] and they are a COMPILER TEMPORARY, not a variable: the
-  string the WriteLn below concatenates. This procedure previously declared an
-  `S : String` to account for them and copied `Name` into it, which put every
-  local 256 bytes lower than the original's -- eleven single-byte divergences,
-  all of them the high byte of a `[BP-nnnn]` displacement.
+  AFTER THIS RETURNS the program is findable: any process that knows the
+  password can reach `Block` through `ES:[DI-4]`.}
 
-  Two ways to tell a temporary from a variable here. `Name` is a value
-  `String` parameter, so the compiler ALREADY copies it to [BP-$100] on entry;
-  a second copy into a local would be visible and there is none at 1b54:009a,
-  which goes straight to the INT 2Fh call. And 1b54:0137 copies [BP-$100] --
-  the parameter's own slot -- into `SelfName`, so the assignment is
-  `SelfName := Name` with nothing in between. }
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;
@@ -184,20 +191,20 @@ begin
     MOV  AX, ReqAX
     MOV  BX, ReqBX
     MOV  CX, ReqCX
-    XOR  DI, DI
+    XOR  DI, DI            { ES:DI := 0:0, so a reply is visible  }
     MOV  ES, DI
-    INT  2Fh
-    XOR  DL, DL
-    AND  AX, AX
+    INT  2Fh               { anyone out there answering to this?  }
+    XOR  DL, DL            { assume not                           }
+    AND  AX, AX            { zero means somebody claimed it       }
     JNZ  @@None
-    CMP  BX, 3F17h
+    CMP  BX, 3F17h         { and the signature must be OURS       }
     JNZ  @@None
     CMP  CX, 1343h
     JNZ  @@None
-    INC  DL
+    INC  DL                { a DemoVT is already resident         }
   @@None:
     MOV  Found, DL
-    MOV  WORD PTR Other+2, ES
+    MOV  WORD PTR Other+2, ES  { where its name is, if anywhere   }
     MOV  WORD PTR Other, DI
   end;
 
@@ -205,30 +212,7 @@ begin
   if Other = nil then
     Other := @NoName;
 
-  { ONE WriteLn OF A CONCATENATION, not three Writes and a WriteLn. The
-    original pushes `Output` once, at 1b54:00ec, and then builds the whole line
-    in the [BP-$206] temporary before writing it:
 
-      00ec  MOV DI,4536 / PUSH DS / PUSH DI     Output
-      00f1  LEA DI,[BP-$206] / PUSH SS / PUSH DI    the concatenation temp
-      00f7  MOV DI,0061  / PUSH CS / PUSH DI    'Ojo, que est. el ' -- CS!
-      00fc  CALL 0ba1:0ac3                      temp := that
-      0101  LES DI,Other / PUSH ES / PUSH DI
-      0107  CALL 0ba1:0b50                      temp := temp + Other^
-      010c  MOV DI,007b  / PUSH CS / PUSH DI    ' residente!!'
-      0111  CALL 0ba1:0b50                      temp := temp + that
-      0116  PUSH 0 / CALL 0ba1:0972             write it, width 0
-      011d  CALL 0ba1:08ec                      the line break
-
-    Three separate Writes emit three of those push-and-call groups and no
-    temporary at all, which is a different shape and a different frame.
-
-    The two literals are pushed from CS, and that is the reason they are plain
-    untyped constants above rather than typed ones: an untyped string constant
-    is a literal, and Turbo Pascal lays a literal down in the CODE segment --
-    at 1b54:0061 and 1b54:007b, in the gap between ExitHandler and here. A
-    typed constant would live in DGROUP and be pushed from DS. `NoName` is the
-    exception and has to be typed, because Install takes its address. }
   if Found then
   begin
     WriteLn(Already + String(Other^) + Resident);
@@ -242,20 +226,20 @@ begin
   { take INT 2Fh, and leave the displaced vector inside the
     JMP FAR so the chain works without a variable to hold it. }
   asm
-    MOV  SI, 0             { MOV SI,0000 -- NOT `XOR SI,SI`       }
-    MOV  ES, SI
-    MOV  AX, ES:[0BCh]
+    MOV  SI, 0             { [re] MOV SI,0000 -- NOT `XOR SI,SI` }
+    MOV  ES, SI            { ES := 0, the vector table            }
+    MOV  AX, ES:[0BCh]     { read the old INT 2Fh offset          }
     MOV  SI, 0
     MOV  ES, SI
-    MOV  DX, ES:[0BEh]
-    LES  DI, Stub
-    MOV  ES:[DI+1], AX
+    MOV  DX, ES:[0BEh]     { and its segment                      }
+    LES  DI, Stub          { the JMP FAR that will chain to it    }
+    MOV  ES:[DI+1], AX     { patch it INTO the instruction        }
     MOV  ES:[DI+3], DX
     MOV  AX, OFFSET Handler{ the binary has 0006h                 }
     MOV  DX, SEG Handler   { and 1B54h                            }
     MOV  SI, 0
     MOV  ES, SI
-    MOV  ES:[0BCh], AX
+    MOV  ES:[0BCh], AX     { and only NOW take the vector         }
     MOV  SI, 0
     MOV  ES, SI
     MOV  ES:[0BEh], DX
