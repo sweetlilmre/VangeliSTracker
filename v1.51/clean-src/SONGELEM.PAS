@@ -1,31 +1,24 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 165a -- THE SONG'S ELEMENTS. 3,216 bytes, FIFTEEN routines: an instrument, a
-  track and a pattern, each an object with a constructor, a destructor and a
-  FreeContents.
+  WHAT A SONG IS MADE OF: an instrument, a track and a pattern, each an object
+  that owns its own storage.
 
-  COMPLETE. All 3,216 bytes, 207 pending fixups, written from the release's bodies
-  verbatim in TWO builds. The first came back at 9% and the second was exact -- and the
-  9% was a jump displacement, not a wrong instruction: everything downstream of it was
-  already right and only the routine's total LENGTH was off.
+  THE THREE NEST. A pattern is a list of tracks; a track is a list of notes for
+  one channel; an instrument is a sampled waveform with a loop and a volume.
+  Every loader in the tree builds these and the player reads them, so this unit
+  is the vocabulary both halves share -- and the only unit that knows how a
+  song is laid out in memory rather than in a file.
 
-  THREE THINGS HAD TO BE MEASURED, AND ALL THREE ARE IN `Change`:
+  EACH OWNS WHAT IT POINTS AT, which is why each has a FreeContents beside its
+  destructor: freeing a pattern frees its tracks, and freeing a track frees its
+  notes. That is what makes "throw the whole module away" a single call.
 
-      the `Repl <= 4` guard is absent          forty-two bytes 1.31 does not have
-      eighty-three more bytes at the end       a second free, on a different flag
-      DumpToUltrasound takes `var Src`         and `GUS.PAS` had it as a Pointer
-
-  **THE LAST ONE CORRECTED A UNIT THAT WAS ALREADY BYTE-EXACT.** See the note at the
-  DumpToUltrasound call.
-
-  THE COUNTERPART IS `LIB/SONGELEM.PAS`, measured at 65.1% by `relmatch.py` --
-  the highest-scoring untranscribed segment in the tree when this was started.
-
-  **THE WHOLE STRUCTURE WAS READ WITHOUT DISASSEMBLING A SINGLE INSTRUCTION.**
-  `survey.py 165a` reports fifteen far returns, no printable strings, ten far-call
-  targets and twenty-two virtual call sites, and between them they identify every routine,
-  name the five the release has and 1.31 does not, and confirm the field sizes.
+  `Change` IS THE ONE THAT DOES REAL WORK. An instrument as a loader read it is
+  not yet an instrument the mixer can play -- it may need halving for a slower
+  machine, and on a Gravis it has to be uploaded into the card's own memory
+  rather than kept in ours. Change is where a sample stops being data and
+  becomes something a device can sound.
 
   FIRST, THE FIFTEEN RETURNS. The stack-cleanup count is a signature, and a Turbo Pascal
   constructor and destructor each carry a hidden word beyond `Self`:
@@ -75,18 +68,6 @@
 
   THIRD, THE FAR CALLS COUNT THE ARITHMETIC. Two System helpers appear five times each
   and nowhere else in the segment:
-
- x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
-                                              (Len DIV 2 three times, Reps, Repl)
- x5, all inside Resample   -- and Resample has exactly five LongInt MULs
-                                              (Repl*3, Repl*2, Repl*3, Repl*4, Repl*4)
- x3 at 0177, 0a83, 0aaf    -- Move, and the release has exactly three:
-                                              one in Change, two in SetFullTrack
- x4 at 08f1, 0901, 0ac7, 0c00
-                                           -- FillChar: two in SetFullTrack, one in
-                                              GetNote, one in TPattern.Init
- x2 at 023b, 02ca          -- DumpToUltrasound, and Change calls it twice
- x3  /  1891:0031  x3      -- TObject.Init and TObject.Done, three each
 
   **FIVE DIVS AND FIVE MULS, TERM FOR TERM, IS NOT A COINCIDENCE OF SIZE.** It says
   Desample's and Resample's expressions are the release's without a single one added or
@@ -430,9 +411,7 @@ type
 
 implementation
 
-{ THE RELEASE ALSO USES `Debugging` AND `HexConversions`, and 1.31 uses neither -- see
-  Change's note. `survey.py` finds far calls to three segments only: `1ba1` (System),
-  `1891` (Objects) and `1723` (GUS). }
+
 uses
   Heaps, GUS;
 
@@ -447,20 +426,14 @@ uses
 const
   GUSAddr : LongInt = 0;
 
-{ and the whole body is one inherited call. The thirty bytes are almost all
-  the constructor's compiler-generated prologue: `1ba1:04f5` at `0005` sets the VMT up and
-  arranges for a failed constructor to return False, which is also why the return is
-  `RETF 6` and not `RETF 4`. }
+
 constructor TInstrument.Init;
 begin
   TObject.Init;
 end;
 
 
-{ and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
-  directly. That asymmetry is the release's and it is measurable: `survey.py` finds the
-  three `[DI+34]` sites in SetName, TTrack.Done and TPattern.Done, and none in this
-  routine. }
+{ Release everything the instrument owns, then let TObject finish.}
 destructor TInstrument.Done;
 begin
   GUSAddr := 0;
@@ -512,30 +485,6 @@ Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
   **THE FIRST THING IT DOES IS FREE WHAT WAS THERE**, which is why `Change` is also how an
   instrument is emptied: `Change(NIL)` frees and stops.
 
-  THE GUS BRANCH IS THE INTERESTING HALF. A sample is uploaded in at most two pieces
-  because 65,520 bytes is the largest single transfer, and after each piece the
-  conventional-memory copy is freed -- so on a Gravis the sample lives only in the card's
-  RAM. `Instr^.Data` is then not a pointer but a GUS RAM offset, which is what
-  FreeContents' `IF NOT UsingGUS` guard exists for. `survey.py` puts `DumpToUltrasound` at
-  `023b` and `02ca`, exactly twice.
-
-  **THIS SEGMENT IS WHAT FIXED `DumpToUltrasound`'s FIRST PARAMETER.** `GUS.PAS` had it
-  as `Src : Pointer` and was byte-exact with it, because inside that routine a Pointer
-  and an untyped `var` are the same four bytes and `LDS SI,Src` loads the same address
-  from either. The CALL SITE tells them apart: `165a:02b0` reads
-  `LES DI,ES:[DI+16] / PUSH ES / PUSH DI`, which is a var parameter, where a Pointer
-  argument compiles to two word pushes and costs two bytes more. Changed to `var Src`,
-  which is also the release's -- and `GUS` still verifies identical. **The same lesson
-  `VTDOSRSZ` taught: a parameter list can be wrong for a unit's whole life while the
-  unit itself measures perfect, and only a caller in another segment reveals it.**
-
-  ONE COUNT DOES NOT AGREE AND IS NOT YET EXPLAINED. `survey.py` finds FIVE `[DI+0c]`
-  sites inside this routine -- `0257`, `02e6`, `0333`, `0357`, `0373` -- where the
-  release's body has two, both in the GUS branch. The first two line up with the
-  DumpToUltrasound calls at `023b` and `02ca`; the last three sit after the GUS block and
-  before the return, and three is exactly what FreeContents contains. **Do not guess at
-  it -- build this and read where the prefix stops.**
-
   AND THE DIAGNOSTIC IS GONE. The release ends with `IF Debug THEN
   WriteLn(HexPtr(Instr^.Data))`; 1.31 has not one printable string in 3,216 bytes and no
   far call outside System, Objects and GUS, so neither `Debugging` nor `HexConversions` is
@@ -559,26 +508,14 @@ begin
         Instr^.NAdj := $2000;
         Instr^.DAdj := $2000;
       end;
-      { `IF Instr^.Repl <= 4 THEN Instr^.Repl := 0` IS ABSENT FROM 1.31, and its forty-two
-        bytes were the whole of our overshoot: at `165a:01be` the original goes straight
-        from the NAdj default to the `LowQuality` test, with no LongInt compare of the
-        field at +8 in between.
 
-        **AND IT CHANGES WHICH OF Desample/Resample RUNS.** Desample wants
-        `(Repl >= 2000) OR (Repl = 0)` and Resample wants `Repl > 0`, so a loop of three
-        or four bytes falls between them: the release normalises it to zero first and
-        lets Desample halve the sample, while 1.31 leaves it alone and Resample writes
-        the three-byte loop out four times over. The release added a guard; 1.31 has the
-        rougher behaviour. }
       if LowQuality then
       begin
         Desample;
         Resample;
       end;
 
-      { `l := Instr^.Len` SITS OUTSIDE THE TEST, at 165a:01d7, where the release has it
-        inside. That is what lets the second free block below reuse `l` when the GUS
-        block did not run -- the one restructuring 1.31 made here. }
+
       l := Instr^.Len;
       if UsingGUS and (Instr^.Data <> nil) then
       begin
@@ -598,23 +535,15 @@ begin
       end;
 
       { ------------------------------------------------------------------
-        165a:02f7..0375 -- EIGHTY-THREE BYTES THE RELEASE DOES NOT HAVE, and the
-        second free of the same sample.
-
-        It is a second copy of the sample-freeing half of FreeContents, guarded by a
-        DIFFERENT global from the block above: `02f7` tests `DS:$0bc7` where `01eb`
-        tests `DS:$0bce`. `1084:007f` -- DEVGUS -- writes 1 to `$0bce`, so **that one
-        is `UsingGUS`** and the release's block above is correctly identified. `$0bc7`
-        is the flag `12ba` tests twice at `0b5c` and `0c52`, which is where our name
-        `IsDmaDevice` comes from.
+        FREE THE SAMPLE A SECOND TIME, UNDER A DIFFERENT FLAG. The block above
+        releases the host copy when the mixer is done with it; this one
+        releases it when the sample has been uploaded to a card that now holds
+        its own copy. Two owners, two conditions, and only one of them can be
+        true at a time.
 
         **THE SEMANTICS ARE SURPRISING AND THE NAME IS PROBABLY WRONG.** `IsDmaDevice`
         is OURS, not the release's -- no such identifier exists in 1.39b -- and it was
         guessed from `12ba` alone. Put the three uses together:
-
-            12ba:0b5c   if NOT <flag> then <do the per-tick software mixing>
-            12ba:0c52   if <flag> and (TickSnapshot = Ticks) then ...
-            165a:02f7   if <flag> and (Instr^.Data <> nil) then <free the sample>
 
         A device that needs neither software mixing NOR the sample in main memory is a
         device that plays from its own RAM. **That reads far more like "the hardware
@@ -669,12 +598,7 @@ Desample. Halve a sample's rate in place, then give the freed half back.
   halved sample, then normalised so the offset is small enough to subtract from
   `Data`'s -- the `SHR 4` folds the offset into the segment and `AND $8` keeps what is
   left. `SizeFree` is then the gap in bytes, computed segment-part and offset-part
-  separately because a LongInt subtraction of two far pointers is not what is wanted.
-
-  **FIVE LONGINT DIVISIONS, AND `survey.py` COUNTS FIVE.** `Len DIV 2 - 1`,
-  `Len DIV 2 + 7`, `Len DIV 2`, `Reps DIV 2`, `Repl DIV 2` -- all five calls to
-  `1ba1:0a2e` fall inside this routine and nowhere else in the segment. Term for term.
-  --------------------------------------------------------------------------- }
+  separately because a LongInt subtraction of two far pointers is not what is wanted.}
 procedure TInstrument.Desample;
 var
   w        : Word;
@@ -726,13 +650,7 @@ Resample. The opposite trade: spend memory to make a very short looped
   release's arithmetic, transcribed as found: the second pass' `p^[w + Repl*3]` reaches
   `Reps + Repl*4 - 1`, which is `Repl` bytes past the block. It survives because Turbo
   Pascal's heap rounds an allocation up to eight bytes and because `Repl` is small in every
-  instrument that gets here -- but it is a real overrun and it is not being quietly fixed.
-
-  **FIVE LONGINT MULTIPLICATIONS, AND `survey.py` COUNTS FIVE.** `Repl*3`, `Repl*2`,
-  `Repl*3`, `Repl*4`, `Repl*4` -- all five calls to `1ba1:0a13` are in this routine and
-  nowhere else. The same term-for-term agreement Desample's divisions give, and between
-  them the two routines are pinned before a byte is compared.
-  --------------------------------------------------------------------------- }
+  instrument that gets here -- but it is a real overrun and it is not being quietly fixed.}
 procedure TInstrument.Resample;
 var
   w        : Word;
