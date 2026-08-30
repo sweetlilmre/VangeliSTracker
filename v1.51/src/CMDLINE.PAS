@@ -1,13 +1,30 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 116e -- THE COMMAND LINE. 1,232 bytes, nine routines.
+  A REUSABLE COMMAND-LINE PARSER, and nothing about DemoVT's own switches.
 
-  COMPLETE at 1,232 of 1,232 bytes, 158 pending fixups. Our code is 1,282: the two empty
-  overrides at the bottom are routines the ORIGINAL'S LINKER DROPPED, which is why they
-  sit last. Read the note there before moving them.
+  It is a base object. This unit knows how to walk a line, split it into
+  tokens, tell a switch from a bare argument, and pull a parameter off a
+  switch -- and then hands each token to a method that DOES NOTHING HERE. A
+  descendant overrides `InterpretSwitch` and `InterpretNoSwitch` and supplies
+  the meanings; VTCmd is that descendant.
 
-  THE COUNTERPART IS `LIB/CMDLINE.PAS`, measured at 59.5% by `relmatch.py` with
+  So a reader looking for what `-nb` does will not find it here. What is here
+  is the machinery every switch goes through on the way to being recognised.
+
+  `@file` IS THE FEATURE WORTH KNOWING ABOUT. A token beginning `@` names
+  another file, and the parser reads it line by line as though its contents had
+  been typed on the command line -- which is what makes `DEMOVT @PLAY.CFG`
+  work, and what makes a playlist possible at all. It nests: an included file
+  may include another, because the parse state is saved and restored around
+  the recursion rather than kept in locals.
+
+  [re] Segment 116e -- 1,232 bytes, nine routines. COMPLETE at 1,232 of 1,232,
+  158 pending fixups. Our code is 1,282: the two empty overrides at the bottom
+  are routines the ORIGINAL'S LINKER DROPPED, which is why they sit last. Read
+  the note there before moving them.
+
+  [re] THE COUNTERPART IS `LIB/CMDLINE.PAS`, measured at 59.5% by `relmatch.py` with
   nothing else above 7%. Its own header describes it as "a workframe for a command line
   options interpreter -- you just have to make a descendant object overriding the
   InterpretNoSwitch and InterpretSwitch methods", and that is exactly the shape of the
@@ -15,7 +32,7 @@
   holding the switch table. `109c` scores 42.1% against the release's own descendant,
   `VTCMD.PAS`.
 
-  THE VMT LAYOUT IS READ OFF THE CALL SITES, and it says 1.31 has ONE MORE VIRTUAL
+  [re] THE VMT LAYOUT IS READ OFF THE CALL SITES, and it says 1.31 has ONE MORE VIRTUAL
   METHOD than the release:
 
       +04  Done               Objects.TObject's
@@ -29,20 +46,20 @@
       +24  InterpretNoSwitch  called once, from ParseLine's else branch
       +28  InterpretSwitch    called once, from ParseLine's switch branch
 
-  `GetToken` AT +14 IS THE ANOMALY. The release declares ParseLine, ParseFile, GetToken,
+  [re] `GetToken` AT +14 IS THE ANOMALY. The release declares ParseLine, ParseFile, GetToken,
   which would put GetToken at +10; four calls land on +14 instead, so something sits
   between ParseFile and GetToken. That something is `116e:02ac`, fourteen bytes that set
   `Idx := 255` and nothing else. `Abort` still exists separately at +20 and sets
   `Aborting`.
 
-  **AND `109c` NAMED IT.** The method had no caller inside this segment and was
+  [re] **AND `109c` NAMED IT.** The method had no caller inside this segment and was
   `Rut_0110` until one turned up: `109c:0835` is a `CALLF [DI+10]` and it is the LAST
   thing `TVTCmdSwitch.CmdInitShell` does, immediately after
   `ShellParam := Copy(Line, Idx, 255)`. A method that has just read the rest of the line
   out of `Line` directly needs the tokeniser to stop handing the same text back as
   switches -- so `SkipRest` it is. **The name is ours; the release has no such method.**
 
-  AND `Idx` AT +$146 CONFIRMS THE RELEASE'S FIELD LAYOUT EXACTLY. `116e:02b2` writes a
+  [re] AND `Idx` AT +$146 CONFIRMS THE RELEASE'S FIELD LAYOUT EXACTLY. `116e:02b2` writes a
   Word 255 at Self+$146, which is 326. With the VMT link at +0, `Line : String` at +2
   and `FileDir : DirStr` after it, Idx lands at 2 + 256 + 68 = 326 -- and 68 is
   `DirStr`, which is `String[67]` and not the 80 of `PathStr`. Turbo Pascal splits a
@@ -64,15 +81,27 @@ type
   PCmdLineInterpreter = ^TCmdLineInterpreter;
   TCmdLineInterpreter =
     object(TObject)
+      { The line being parsed and how far along it the tokeniser has reached.
+        They are FIELDS RATHER THAN LOCALS so that `@file` can nest: ParseFile
+        saves and restores them around each included line, which a local
+        could not survive.
+
+        [re] Idx at +$146 is ANCHORED by 116e:02b2. }
       Line     : String;          { +$002                                     }
-      FileDir  : DirStr;          { +$102  String[67], so 68 bytes            }
-      Idx      : Word;            { +$146  ANCHORED by 116e:02b2              }
-      Aborting : Boolean;         { +$148                                     }
+      FileDir  : DirStr;          { +$102  the directory an @file came from,
+                                     so a relative name inside it resolves    }
+      Idx      : Word;            { +$146  how far along Line we have got    }
+      Aborting : Boolean;         { +$148  set by Abort; stops the walk       }
 
       procedure ParseLine(S : String);                                virtual;
       procedure ParseFile(FName : PathStr);                           virtual;
 
-      { 116e:02ac -- the extra virtual, VMT +$10; see the header. }
+      { Abandon the rest of the line without tokenising it. A switch whose
+        parameter IS the remainder -- a shell command, say -- reads it out of
+        `Line` directly and then calls this, so the tokeniser does not hand
+        the same text back as more switches.
+
+        [re] 116e:02ac -- the extra virtual, VMT +$10; see the header. }
       procedure SkipRest;                                             virtual;
 
       function  GetToken : TCmdLine;                                  virtual;
@@ -199,7 +228,7 @@ end;
   to leave the loop and every enclosing `@file` with it. **Two ways to stop, and this is
   the gentler one.**
 
-  ITS ONE CALLER IS `109c:0835`, at the end of `CmdInitShell`, which is what gives it its
+  [re] ITS ONE CALLER IS `109c:0835`, at the end of `CmdInitShell`, which is what gives it its
   name: `-sh PROG args...` hands everything after the switch to the shelled program, so
   the interpreter must not then read those arguments as its own. }
 procedure TCmdLineInterpreter.SkipRest;
@@ -332,7 +361,7 @@ end;
   **TURBO PASCAL SMART-LINKS AT THE ROUTINE LEVEL WHEN IT BUILDS THE EXE**, and these two
   are the only routines in the unit that nothing surviving refers to:
 
-      ParseLine, ParseFile, SkipRest, GetToken, CmpSwitch, TokenParam, Abort
+      [re] ParseLine, ParseFile, SkipRest, GetToken, CmpSwitch, TokenParam, Abort
           all reached through `TVTCmd`'s VMT, because `109c` overrides none of them --
           and `SkipRest` is called from `109c:0835` as well.  KEPT.
 
@@ -342,7 +371,7 @@ end;
           objects that are -- so the base's own VMT is dead and is dropped, taking the
           last reference to these two with it.  DISCARDED BY THE LINKER.
 
-  `109c:0b7c` IS WHAT PROVED THE SLOT COUNT: it is a `CALLF [DI+2c]`, and +$2c is the first
+  [re] `109c:0b7c` IS WHAT PROVED THE SLOT COUNT: it is a `CALLF [DI+2c]`, and +$2c is the first
   virtual `TVTCmdSwitch` ADDS. A new virtual at +$2c means the inherited ones stop at +$28,
   so nine slots is right and `InterpretSwitch` really is the base's ninth.
 
