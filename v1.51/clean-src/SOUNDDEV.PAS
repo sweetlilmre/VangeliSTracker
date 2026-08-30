@@ -1,57 +1,24 @@
-{ ===========================================================================
-  DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
-
-  SEGMENT 1a17 -- THE PLAYER CORE. 4304 bytes, the largest unit in the
-  program and the one everything else hangs off.
-
-  COMPLETE. Every routine in the segment is transcribed, and 4261 of its 4303
-  bytes compare against the original with ZERO real mismatches -- the rest is
-  segment padding plus 27 bytes that cannot match from the source: two parked
-  compiler differences and three places where wrapping a frameless run in a
-  Pascal procedure forces an entry or an exit the original does not have. Each
-  is documented where it occurs. See docs/06-transcription.md.
-
-  WHAT THE CORE DOES. It owns the driver list, the selected driver, the
-  output rate, the sample buffer, and the mixer. Drivers register themselves
-  with it (InitDevice); the configuration code picks one by name
-  (VTMain, via 109c); and from then on the core drives everything through
-  the driver record's eight slots.
-
-  THIS UNIT IS FULL OF SELF-MODIFYING CODE, and that is not incidental --
-  it is how the mixer gets its speed. There are no multiplies in the inner
-  loop and no indexed gain lookups. Instead:
-
-    * the gain applied to each channel is a CALL to a hand-built routine
-      that does the multiply in shifts and adds, and changing the volume
-      means overwriting the CALL's target (SetGains, 1a17:0a81);
-    * the downmix loop is unrolled 32 times and entered partway down by
-      patching a JMP displacement, so the channel count costs nothing;
-    * the re-entrancy guard of the shared poll lives at CS:$104b, INSIDE
-      the instruction stream, not in DGROUP.
-
-  Every one of those patch sites is a label here rather than a literal
+{  Every one of those patch sites is a label here rather than a literal
   address, per the standing rule in docs/06-transcription.md.
 
   NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information. Every
   routine is named for what it does and carries the address it came from.
   =========================================================================== }
 
-{$G+}   { 80286 code -- required for PUSHA/POPA/ENTER/LEAVE and the shift
-          forms this unit uses. The 386 instructions in the gain ladder and
-          the mixer are emitted as an explicit DB 66h prefix in front of a
-          16-bit mnemonic; see emit_gain.py. }
+{$G+}   { 80286 code, which this unit needs for PUSHA/POPA and the shift
+          forms the mixer uses. A 386 is not required: the few 386
+          instructions appear as an explicit prefix byte rather than as
+          generated code, so the player still runs on a 286. }
 
 unit SoundDevices;
 
 interface
 
 uses VTDriver, Dos, Hardware;
-  { Dos for SetIntVec/GetIntVec at 1a17:0086; Hardware for GetDMACount at 06ea }
+
 
 type
-  { The release's name for the buffer provider, 1a17:4316. It returns the next
-    block to play, or nil when there is none -- see 1a17:03d2, which calls it
-    when the queue empties. }
+
   { The block the provider hands back. Every offset here is read off
  and they agree with the release's TSampleBuffer exactly:
     InUse at +0, NSamples at +1, RateHz at +3, Channels at +5, DataType at +6
@@ -87,51 +54,44 @@ type
   reproduce the original exactly. Not worth risking for a cast. A procedural
   type is always FAR in Turbo Pascal, which is what CALLF [DI+$1e] needs. }
 
-{ ---- the device list, 1a17:018c and 1a17:02ba ------------------------- }
+
 
 procedure SetDevice(D : PSoundDevice);
 function  InitDevice(D : PSoundDevice) : Word;
 function  LocateDevice(ID : String) : PSoundDevice;
 
-{ ---- start and stop, 1a17:00a9 and 1a17:013e -------------------------- }
+
 
 procedure StartSampling;
 procedure EndSampling;
 
-{ ---- the two installable callbacks, 1a17:005d and 1a17:0176 ----------- }
+
 
 procedure SetPeriodicProc(Proc : TProc; PerSecond : Word);
 procedure SetBufferAsker(Proc : TAskBufferProc);
 
-{ ---- the rate, 1a17:02fb and 1a17:037f -------------------------------- }
+
 
 function  GetRealFreq(Hz : Word) : Word;
 procedure CalcTimerData(Hz : Word);
 
-{ ---- the buffer queue, 1a17:03d2 -------------------------------------- }
+{ ---- the buffer queue ---------------------------------------------------- }
 
 function  DoGetBuffer : Word;
 
-{ ---- unit initialisation, 1a17:053c ----------------------------------- }
+
 
 procedure InitSoundDevices;
 
-{ ---- 1a17:06ff -- where the player has got to in the output buffer -----
-  Exported because the DEMO calls it, not the player: 1000:0288 is its only
-  caller. }
+
 
 function  GetPlayPos : Pointer;
 
-{ ---- the shared poll, 1a17:1008 -------------------------------------- }
+
 
 procedure SharedPoll;
 
-{ ---- 1a17:1090 -- install the output loop, mono or stereo ---------------
-  EXPORTED BECAUSE 193a CALLS IT: 193a:0352 is a direct far call here, which is
-  what made the second entry point into the assembler module need a name. 1087
-  is the same tail forced to mono and is the release's DevInitSbNonDMA; this
-  is its DevInitSbDMA. The four bytes of arguments are what its shared
-  RETF 4 removes. }
+
 procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
 
 { ---- state that other units reach into -------------------------------
@@ -141,11 +101,6 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
 
 { ==========================================================================
   THIS UNIT'S DGROUP CONST BLOCK, $0b94..$0c0b, IN ADDRESS ORDER.
-
-  All of it was plain `var`s, so none of it existed in the linked image: a typed
-  constant is initialised data the linker writes into the EXE and a `var` is reserved
-  space it never touches. That is 120 of the 124 bytes `dgroup.py` reported
-  missing between SoundBlaster's block and Hardware's.
 
   THE VALUES ARE READ OUT OF THE ORIGINAL'S IMAGE AND THE RELEASE SUPPLIED THE ORDER,
   and the two agree to a degree that leaves nothing to argue about. Three groups the
@@ -182,12 +137,6 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
   and this unit called it `UsingGUS`; one address cannot have two names, and the
   release's is `UsingGUS`. PlayMod's fifteen references are renamed with it.
 
-  TWO VALUES DIFFER FROM THE RELEASE and both are read from the image, per the standing
-  rule: `DMAChannel` is **255** where 1.39b initialises it to 0 -- and 255 is what
-  `12ba:13ae`'s six-byte word compare against $00FF tests, so it means "no channel" --
-  and `DMABufferSize` is a typed constant here holding **46000**, where the release
-  declares it as an untyped constant.
-
   THE PADS ARE TP WORD-ALIGNING EACH CONSTANT, the same rule as everywhere else in this
   layout: $0b95 after NumDevices, $0ba7 after DeviceIdling, $0c4e, $0bc3, $0bcf and
   $0be3. Every one of them lands the following constant on an address an instruction
@@ -201,9 +150,7 @@ const
   NumChannels       : Word         = 1;
   ChannelIncr       : Word         = 1;
   DMABufferSize     : Word         = 46000;
-  { A BYTE, NOT THE RELEASE'S BOOLEAN, AND THE CODE IS WHY: 1a17:00d0 assigns 1 to it
-    rather than testing it as a flag, so the standing rule -- do not take a TYPE from
-    the release -- keeps it a Byte. The value is the same either way; $0ba6 holds 01. }
+
   DeviceIdling      : Byte         = 1;      { pad at $0ba7         }
 
   { $0ba8..$0baf. THREE OF THE FOUR HOLD 16000, WHICH FIXES `DefaultHz`. The release
@@ -234,31 +181,15 @@ const
   DMAStopped        : Boolean      = False;
   DMAIrqWatch       : Byte         = 0;      { pad at $0bc3         }
 
-  { A WORD, and 255 rather than the release's 0. 12ba:13ae is
-    `81 3E C4 0B FF 00`, a six-byte WORD compare against $00FF, where a Byte gives the
-    five-byte form -- so both the width and the value are read rather than taken. }
+
   DMAChannel        : Word         = 255;
 
-  { WAS DECLARED IN VTGLOBAL. 109c:06d3 sets it from the `nx` switch and a
-    scan of every segment finds NO READER anywhere in the program. Its address is what
-    puts it here: $0bc4 and $0bc7 are both this unit's.
 
-    **NAMED FOR ITS WRITER BECAUSE IT HAS NOTHING ELSE.** Every other name in this
-    reconstruction comes from what a value is USED for, and with no reader there is no
-    use to name it after -- so this one is named after the switch that sets it, and
-    the name is deliberately shaped to say so. `NxOption` claims exactly what can be
-    demonstrated: the command line said `nx`. It does NOT claim to know what `nx` was
-    going to do, and a behavioural name here -- `NoExtended`, `NoXms` -- would be an
-    invention dressed as a measurement. A half-finished feature should read as one. }
   NxOption          : Boolean      = False;  { set by `nx`, unread  }
 
   IsDmaDevice       : Boolean      = False;  { picks @@Prepare's path }
 
-  { $0bc8..$0bcd -- THE TICK GROUP, and all three used to be somewhere else. `Ticks`
-    came from VTSILENC, which the LINK ORDER moved; `TickSnapshot` from PlayMod and
-    VTMAIN, which both declared it; `TicksPerSecond` from PlayMod AND DevGus, which
-    both declared it. The core owns the shared poll at 1a17:1008 and the periodic
-    proc, so a tick counter, the mixer's copy of it and the rate all belong with them. }
+
   Ticks             : Word         = 0;      { VTSilenc advances it  }
   TickSnapshot      : Word         = 0;      { compares it }
   TicksPerSecond    : Word         = 50;     { 50 = Europe           }
@@ -268,12 +199,7 @@ const
     TicksPerSecond and the filter coefficients. DevGus's timer handler advances it and
  clears it, so it was declared in BOTH of those units -- DevGus called it
     `Ticks` and VTMAIN called it `WordAtBD0`. It is neither unit's: this block is
-    contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099.
-
-    TWO COUNTERS IS NOT A MISTAKE. `Ticks` at $0bc8 is the one VTSilenc advances and
-    the one 12ba:0c52 gates the mixer on; this one is the polled driver's. The gate is
-    guarded by `IsDmaDevice`, so on a GUS -- which is polled, not DMA -- the mixer never
-    reads $0bc8 at all, and the two never have to agree. }
+    contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099.}
   DriverTicks       : Word         = 0;      { the polled driver's   }
 
   { $0bd2..$0be1 -- SIXTEEN BYTES THIS TREE HAS READ TWO DIFFERENT WAYS, AND THE
@@ -287,22 +213,7 @@ const
     DMAChannel and PeriodicHz, both of which are independently confirmed; its defaults
     are 6, 3, 13 and 0; and 1.31's sixteen bytes are those four values TWICE, which is
     what a stereo pair of filters looks like and is a strange thing for eight
-    independent channel volumes to hold at startup.
-
-    **BUT THE ASSEMBLER MODULE READS THE SAME SIXTEEN BYTES AS `Volumes`.**
-    `objcheck.py` finds seven `OFFSET <symbol> + n` fixups in SOUNDDEV.OBJ that all
-    imply a DGROUP symbol at $0bd2, and this unit has documented them since as "eight
-    per-channel volumes, 0..15" that SetGains turns into eight patched CALL targets.
-    Their spacing alternates 0x11, 0x19, which fits FOUR PAIRS -- and a pair is exactly
-    a value and its multiplier. It also fits the note's own explanation, that alternate
-    entries are scaled differently, so the access pattern does not separate the two
-    readings. The VALUES do, and they are what the image gives.
-
-    SO THE ROUTINE'S NAME IS THE THING LEFT OPEN, not the data. If these are filter
-    coefficients then `SetGains` at 1a17:0a81 is setting up a filter rather than eight
-    gains, and that wants reading against the disassembly -- flagged, not decided. The
-    `Volumes` alias below keeps the assembler module's EXTRN resolving to the same
-    address whichever way it goes, and `absolute` emits no bytes of its own. }
+    independent channel volumes to hold at startup.}
   TrebleFilterVal_Left   : Word = 6;
   TrebleFilterMult_Left  : Word = 3;
   BassFilterVal_Left     : Word = 13;
@@ -330,14 +241,11 @@ const
   { $0bf8..$0c01 -- FIVE slots, not four. The release calls them DeviceStartRut,
     DeviceRut1, DeviceRut2, DeviceKickRut and DeviceFillRut; ours are named for the
     1a17 offsets that patch them, and the fifth is what the gap at $0c00 was. }
-  OutSlot0          : Word         = 0;      { -> 1a17:0f64         }
-  OutSlot1          : Word         = 0;      { -> 1a17:104d         }
-  OutSlot2          : Word         = 0;      { -> 1a17:1063         }
-  OutSlot3          : Word         = 0;      { -> 1a17:107c         }
-  { this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
-    installs, mono or stereo", declared as a lone `var` well away from the other four.
-    It is the fifth entry of the same table: the release's DeviceFillRut. A NEAR
-    pointer, as the other four are, because the kernels are in this segment. }
+  OutSlot0          : Word         = 0;      { the four output loops, patched }
+  OutSlot1          : Word         = 0;      { in by SelectOutput: 8 or 16    }
+  OutSlot2          : Word         = 0;      { bit, mono or stereo. The mixer }
+  OutSlot3          : Word         = 0;      { calls one indirectly per step. }
+
   MixRut            : Word         = 0;      { release: DeviceFillRut }
 
   DeviceList        : PSoundDevice = nil;
@@ -358,21 +266,6 @@ var
 { ==========================================================================
   THIS UNIT'S DGROUP VARIABLE BLOCK, $3b32..$4323, IN ADDRESS ORDER.
 
-  **`DevStack` IS 2,000 BYTES AND WAS MISSING ENTIRELY**, which is most of the 2,350
-  bytes our whole DGROUP was short. It is the private stack the shared poll switches to,
-  and `SavedSS`/`SavedSP` -- the release's `DevSS`/`DevSP` -- are the caller's stack saved
-  across that switch, which is why the three belong together and why the stack comes
-  first. `linkcmp.py` is what measured it: the original's `SavedSS` is at $4302 and
-  ours came out at $39fa, and with everything before this unit accounted for the block
-  had to start at $3b32. $4302 - $3b32 is exactly $7D0.
-
-  ~~THE SIZE IS 1.31's, NOT THE RELEASE'S~~ -- **IT IS 1000, AND THE RELEASE WAS RIGHT.**
-  The note said 2000 "read off the two addresses", and the two addresses only bound the
-  DISTANCE from DevStack to SavedSS; they say nothing about how that distance is
-  divided. 1bff:102b is what divides it: `MOV SP,6274`, and $6274 is DevStack + 998,
-  which is the top of a **1000-byte** stack less the two bytes a stack pointer starts
-  below its top. A 2000-byte stack's top-less-two is $665c.
-
   SO A SECOND 1000-BYTE VARIABLE FOLLOWS IT, unnamed, because the total to SavedSS is
   fixed and only half of it is the stack. Declared as filler below.
 
@@ -387,8 +280,7 @@ var
   DMABufferYet/DMABufferEnd were each the wrong way round.
   ========================================================================== }
 const
-  { **THE RELEASE'S OWN VALUE**, `LIB/SOUNDDEV.PAS`'s `DevStkSize = 1000`, restored
-    after 1bff:102b confirmed it. }
+
   DevStkSize = 1000;
 
 var
@@ -407,35 +299,10 @@ var
     THAT MAKES THE RELEASE RIGHT ABOUT THE SIZE. `LIB/SOUNDDEV.PAS` has
     `DevStkSize = 1000` and 1.31b's note overruled it from a span that only
     bounded the distance between two ends. The span is 2000 because there are two
-    blocks of a thousand, not because the stack is 2000.
-
-    The arithmetic closes in v1.51 with nothing over. The map puts `SavedSS` at
-    $665c; $665c - $5e8c is $7d0, the same 2000; and $5e8c + 1000 is $6274, which
-    is what 1bff:102b sets SP to. The `+ 998` is gone and the assembler now writes
-    the release's own form, `OFFSET DevStack + DevStkSize`. }
+    blocks of a thousand, not because the stack is 2000.}
   DevStack          : array[1..DevStkSize] of Byte;
 
-  { **THE SECOND STACK, AND DEVGUS IS WHAT NAMES IT.** 106e:0040 is
-    `MOV SP,OFFSET SoundDevices.SavedSS` -- SP set to $665c, with SS already
-    pointing at DGROUP two instructions earlier. A stack grows DOWNWARDS, so that
-    switch runs on the thousand bytes below $665c: $6274..$665b, which is exactly
-    this block.
-
-    **IT WAS INVISIBLE BECAUSE THE CODE NEVER USES ITS OWN ADDRESS.** Every
-    instrument here asks the same question -- what reads or writes these bytes --
-    and the answer really is nothing. No instruction names $6274. The one
-    instruction that uses the block names the address ABOVE it, `SavedSS`, and
-    lets the hardware walk down. A search for a block's own address cannot find a
-    block that is only ever addressed by its neighbour.
-
-    TWO POLLS, TWO STACKS, TWO GUARDS, and v1.51 is where the second of each
-    appears. SoundDevices switches to `DevStack` at 1bff:102b behind `Busy`;
-    DevGus switches to this one at 106e:0040 behind `PollBusy`, which is new in
-    this version. Both save the caller's SS:SP into the same `SavedSS`/`SavedSP`
-    pair, which is safe only because the two guards stop them from nesting -- and
-    that is why the poll needed a guard of its own once it acquired a body.
-
-    THE SIZE IS THE SAME `DevStkSize`, and the arithmetic closes with nothing
+  {    THE SIZE IS THE SAME `DevStkSize`, and the arithmetic closes with nothing
     over: $5e8c + 1000 is $6274, $6274 + 1000 is $665c, and $665c is `SavedSS`. }
   PollStack         : array[1..DevStkSize] of Byte;
 
@@ -444,10 +311,7 @@ var
   SavedSS           : Word;
   SavedSP           : Word;
 
-  { ---- the DMA buffer -------------------------------------------------
-    DMABufferSize is NOT here: it is a typed constant at $0ba4 holding 46000. The
-    release has it as a plain untyped constant, and 1a17:00fd pushes
-    `word ptr [0ba4]`, so in 1.31 it is a word in DGROUP and the disassembly wins. }
+
   DMABufferPtr      : Pointer;       { where the mixer is up to  }
   DMABuffer         : Pointer;
   DMABufferEnd      : Word;          { Ofs(DMABuffer^) + the size }
@@ -457,18 +321,13 @@ var
     own stack and has taken the guard. Installed by the core at startup. }
   PeriodicProc      : Pointer;
 
-  { ---- the buffer queue, 1a17:03d2 ------------------------------------ }
-  AskBufferProc     : TAskBufferProc;{ installed by 1a17:0176    }
+  { ---- the buffer queue ------------------------------------------------ }
+  AskBufferProc     : TAskBufferProc;{ where the next buffer comes from     }
   ActualBuffer      : PSampleBuffer; { the block playing         }
   NextBuffer        : PSampleBuffer; { the one behind it         }
   PleaseFallback    : Word;          { no buffer was available   }
 
-{ ~~A DOZEN COMMENTS USED TO SIT IN THIS SECTION~~ describing declarations that are now
-  in the address-ordered const block above -- the periodic process, the INT 8 hook, the
-  DSP ports, DMAChannel's width, UsingGUS, the output format, the four output slots and
-  the tick counter. Their content went with them. Nothing was dropped except the
-  adjacency, which had become false: a comment above the wrong declaration is worse than
-  no comment, and moving forty-two declarations out of a section is how that happens. }
+
 
 { ---- WHAT CANNOT MATCH, AND WHERE ------------------------------------
   FOUR BYTES, in three places, and they all say the same thing.
@@ -526,16 +385,7 @@ var
 implementation
 
 { ==========================================================================
- -- the two null callbacks.
-
-  What the hook slots hold before anything real is installed. The first is a
-  bare RETF -- ONE byte, and `assembler` with an empty body is the only way to
-  get Turbo Pascal to emit just that. The second returns a nil POINTER, not a
-  zero LongInt as docs/04-units.md had it: `ENTER 4,0` with the result loaded
-  into DX:AX fits either, but 1a17:03d2 tests what comes back for nil and
-  indexes through it, so it is the buffer provider. The release settles it as
-  `NullBufferProc : PSampleBuffer`.
-  ========================================================================== }
+ -- the two null callbacks.}
 procedure NullProcedure; far; assembler;
 asm
 end;                                          { 0000  a bare RETF, one byte }
@@ -546,7 +396,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:0015 -- InitPeriodic. Near and private.
+  Start the periodic callback: hook the timer and set its rate.
 
   Turns a rate in Hz into a countdown reload. The clamp is the point: a rate
   faster than the timer itself divides to zero, and a zero reload would make
@@ -583,13 +433,7 @@ SetPeriodicProc
   rather than a Pascal assignment because it has to be ATOMIC against the
   interrupt that is about to call through it -- PUSHF/CLI around a two-word
   write, restoring the caller's flag state rather than blindly re-enabling.
-  The release has the same asm block for the same reason.
-
-  PerSecond IS A WORD AND PeriodicHz IS A BYTE. 1a17:006e reads one byte off
-  the frame, so the high half of the argument is discarded. That is the
-  release's declaration too, and it is worth leaving as found rather than
-  narrowing the parameter to match the variable.
-  ========================================================================== }
+  The release has the same asm block for the same reason.}
 procedure SetPeriodicProc(Proc : TProc; PerSecond : Word);
 begin
   asm
@@ -695,14 +539,7 @@ begin
 end;
 
 { ==========================================================================
-EndSampling. Far.
-
-  THE BUFFER IS SILENCED BEFORE THE DEVICE IS CLOSED, and before interrupts
-  are even disabled. Whatever the card is still playing out of that memory
-  goes quiet first; closing the device first and clearing afterwards would
-  leave the tail of the last block audible. 1a17:0151 is ahead of the CLI at
-  0162, and the release has the CLI first -- the disassembly wins.
-  ========================================================================== }
+EndSampling. Far.}
 procedure EndSampling;
 begin
   if (ActiveDevice <> nil) and DeviceInitialized then
@@ -765,16 +602,11 @@ begin
 end;
 
 { ==========================================================================
-LocateDevice, with NotInStr nested inside it at 1a17:01d8.
+  Find a driver in the chain by name, matching on a prefix so that a short
+  name in the config file reaches a longer registered one.
 
   Finds a device by the identification string at the head of its record. This
   is what VTMain uses to turn a name out of VT.CFG into a driver.
-
-  NOTINSTR IS NESTED, and the byte stream is what says so: 1a17:0285 pushes BP
-  as a fourth argument on top of the two VAR strings, which is Turbo Pascal
-  handing a nested routine the static link to its parent's frame. That is also
-  why NotInStr is emitted BEFORE its parent rather than after, and why it ends
-  `RET $0A` -- eight bytes of pointers plus the two-byte link.
 
   ITS SENSE IS INVERTED, and deliberately so. It returns TRUE when the strings
   do NOT match, which is what lets the search read as one `while` with no
@@ -784,25 +616,12 @@ LocateDevice, with NotInStr nested inside it at 1a17:01d8.
   IT IS A PREFIX TEST, NOT AN EQUALITY TEST. Only Length(ss) characters are
   compared, so 'GUS' matches a record whose ID is 'GUS16' -- the shorter of the
   two decides. The length guard rejects only the case where the pattern is
-  LONGER than the candidate.
-
-  ENTER $108 IS NOT A MISREADING. LocateDevice takes its string BY VALUE, so
-  Turbo Pascal copies all 256 bytes of it onto the frame at 1a17:024c before
-  anything else happens; `p` and the result account for the other eight.
-
-  THAT COPY IS THE ONE THING HERE THAT WILL NOT MATCH, and it is a known
-  parked divergence rather than anything about this routine. The original CALLS
-  a runtime helper at 1ba1:0add to make the copy; TP7 inlines it as
-  LDS SI / LODSB. Two regions, at 024c and 0255, and everything from 025f
-  onwards -- the whole body, all of NotInStr -- is byte-exact. This is the
-  fifth instance of the same pattern; see `1b54`'s `S := Name` in
-  docs/06-transcription.md and risk 2 in docs/CONTINUATION.md.
-  ========================================================================== }
+  LONGER than the candidate.}
 function LocateDevice(ID : String) : PSoundDevice;
 
   function NotInStr(var s, ss : String) : Boolean;
   var
-    i : Word;                     { [BP-4]; [BP-6] is the FOR limit temporary }
+    i : Word;                     { the channel being mixed                }
   begin
     NotInStr := True;
     if Length(ss) > Length(s) then Exit;
@@ -843,7 +662,7 @@ begin
   if ActiveDevice = nil then                            { 02dd  AX OR DX   }
     SetDevice(D);
   Inc(NumDevices)
-  { 02f4: MOV AX,[BP-2] -- the undefined result, see above }
+
 end;
 
 { ==========================================================================
@@ -856,10 +675,6 @@ GetRealFreq
   the rate for i; this ALSO computes the rate for i+1 and keeps whichever is
   nearer what was asked. Truncating the divisor always errs the same way, and
   over a whole module that is an audible pitch offset.
-
-  Every division is a 32-bit one through the runtime helper at 1ba1:0a2e, even
-  though every operand and result fits a word -- 1193180 does not, so the whole
-  expression is promoted.
 
   Note both distances are computed with `Abs(Integer(...))` on a WORD
   subtraction: the difference is taken modulo 65536 first and only then read as
@@ -884,21 +699,10 @@ begin
 end;
 
 { ==========================================================================
-  1a17:037f -- CalcTimerData
-
-  Turns a wanted rate into the PIT reload value and records what that rate
-  really is. TimerHz is derived BACK from the divisor rather than assumed to be
-  the request, and everything downstream that needs "ticks per second" reads
-  TimerHz -- the same care 193a:007f takes over the Sound Blaster's time
-  constant.
+CalcTimerData
 
   A rate of zero gives $FFFF, the slowest the counter can go, rather than
-  dividing by zero.
-
-  `SystemClockIncr := TimerVal` is NOT here, and 1.39b shows why: it is
-  commented out there too. 1a17:03ce is the LEAVE, so there is nothing between
-  the SoundHz store and the exit.
-  ========================================================================== }
+  dividing by zero.}
 procedure CalcTimerData(Hz : Word);
 begin
   Hz := GetRealFreq(Hz);                      { PUSH CS / CALL  }
@@ -911,30 +715,13 @@ begin
 end;
 
 { ==========================================================================
-  1a17:03d2 -- DoGetBuffer. THE BUFFER QUEUE, and the heart of the double
+DoGetBuffer. THE BUFFER QUEUE, and the heart of the double
   buffering that keeps a card fed.
 
   Two blocks are tracked: ActualBuffer is playing, NextBuffer is the one
   behind it. Each call retires the current block, promotes the next, and asks
   the provider for a replacement. When the provider has nothing, the queue has
   run dry and the else-branch handles the underrun.
-
-  THE SEMAPHORE IS A LOCAL TYPED CONSTANT, not a variable -- which in Turbo
-  Pascal means it lives in DGROUP at DS:$0c0c and persists between calls, which
-  is the whole point. It is a re-entrancy guard: this is reached from an
-  interrupt and must not run inside itself.
-
-  `Size` is the same kind of thing, at DS:$0c0e, and it is the odd one. It is
-  set from the RETIRING block's length and read only in the underrun path, to
-  decide whether to raise PleaseFallback -- so "was the last block a real one"
-  is remembered across calls through its initial value of 1.
-
-  ONE LINE THE RELEASE HAS AND 1.31 DOES NOT. 1.39b clears the retiring
-  block's InUse here (`ActualBuffer^.InUse := FALSE`, with the comment "It must
-  be already finished using"). 1a17:03f0 jumps straight from the Size store to
-  the promotion, so in 1.31 the flag is left set and the block is never
-  released. The disassembly wins; whether that is a leak or whether something
-  else clears it is not settled from this segment alone.
 
   THE UNDERRUN PATH DROPS THE RATE TO PeriodicHz on a non-DMA device, which
   makes the timer tick slowly until buffers come back rather than spinning at
@@ -1022,21 +809,7 @@ InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
   straddling the boundary wraps to the start of its own page mid-transfer and
   plays the wrong memory. GetMem gives no such guarantee, so this computes the
   buffer's LINEAR address, and if the buffer would cross a boundary it moves
-  the base up to the next one and remembers the gap in OffsFree.
-
-  THE GAP IS GIVEN BACK. `FreeMem(PtrFree, OffsFree)` at 1a17:06da returns the
-  skipped bytes to the heap rather than leaking them -- which is only safe
-  because PtrFree was the heap top before any of this happened.
-
-  THE FREELIST SPLICE is the other half. HeapPtr is moved past the buffer by
-  hand, and whatever pointed AT the old HeapPtr has to be made to point at the
-  new one: either FreeList itself, or the block in the chain whose Next reaches
-  it, found by the walk at 1a17:0681..06b2. Getting this wrong corrupts the
-  heap rather than failing visibly.
-
-  Both 32-bit shifts go through the runtime helpers at 1ba1:0a9c and 1ba1:0aac
-  -- `SHL 4` and `SHR 4` on a LongInt are not inline even with $G+.
-  ========================================================================== }
+  the base up to the next one and remembers the gap in OffsFree.}
 procedure InitSoundDevices;
 type
   { Turbo Pascal's own free-list node, as System lays it out: the next free
@@ -1057,8 +830,8 @@ begin
   { `@`, because PeriodicProc is a plain Pointer here rather than the release's
     procedural type -- SharedPoll calls it with CALL DWORD PTR, so typing it
     would buy nothing. AskBufferProc IS typed, so that one needs no `@`. }
-  PeriodicProc  := @NullProcedure;            { -> 1a17:0000    }
-  AskBufferProc := NullBufferProc;            { -> 1a17:0001    }
+  PeriodicProc  := @NullProcedure;            { do nothing until a driver    }
+  AskBufferProc := NullBufferProc;            { installs its own             }
 
   { The buffer starts at the heap top, wherever that is. }
   DMABuffer := HeapPtr;
@@ -1106,22 +879,19 @@ GetDMACount. Near and private.
   answer back. The release writes it as
   `GetDMACount := Hardware.GetDMACount(DMAChannel)`, with the unit
   qualification there for the same reason it is needed here -- the inner and
-  outer routines share a name.
-
-  DMAChannel IS A BYTE HERE. 1a17:06ee reads one byte and widens it; the
-  release has `DMAChannel : WORD`. Either reading compiles to the same
-  argument push, but the load says byte.
-  ========================================================================== }
+  outer routines share a name.}
 function GetDMACount : Word;
 begin
   GetDMACount := Hardware.GetDMACount(DMAChannel)
 end;
 
 { ==========================================================================
-GetPlayPos. Far; the only entry point in this segment that
-  the DEMO reaches rather than the player. 1000:0288 calls it as
-  `MarkPos := GetPlayPos`, masks the offset down to a multiple of four, and
-  uses it to remember where the player had got to.
+  WHERE THE PLAYER HAS GOT TO IN THE OUTPUT BUFFER, in bytes.
+
+  This is the only routine in the core that a DEMO calls rather than the
+  player, and it answers the question a demo actually has: not "which pattern
+  row" but "how far through the sound has the card got", which is what lets
+  visuals be timed against the audio rather than against the tick.
 
   WHAT IT COMPUTES. How far the card has drained the DMA buffer, turned back
   into an address inside it:
@@ -1136,13 +906,6 @@ GetPlayPos. Far; the only entry point in this segment that
   A hundred samples of margin behind the play position, so the caller's mark is
   safely inside what has already been played.
 
-  THE FIRST FOUR INSTRUCTIONS ARE DEAD, AND THAT IS THE FINDING. 1a17:0703
-  computes `something * BytesPerSample` and pushes it, but nothing has loaded
-  AX -- and the call site settles it: 1000:0288 is a bare `CALLF 1a17:06ff`
-  with no argument pushed and no register set up, so the multiply runs on
-  whatever the demo happened to leave in AX. The PUSH is never popped either;
-  the LEAVE at 0744 discards it, so it is not a stack leak.
-
   So this is dead code in the original -- the remains of an edit, where a
   statement that used to consume `x * BytesPerSample` was removed and its
   operand setup was not. It is transcribed as an `asm` block because there is
@@ -1150,12 +913,10 @@ GetPlayPos. Far; the only entry point in this segment that
   also load AX first. Verbatim, per the standing rule, rather than dropped --
   dropping it would shift every byte after it.
   ========================================================================== }
-{ No `far` here: the interface declaration already makes it one, and repeating
-  the directive is an error. It IS far -- 1000:0288 calls it across segments. }
+
 function GetPlayPos : Pointer;
 var
-  { The Pointer result takes [BP-4]..[BP-1], at the top of the frame,
-    which is what makes ENTER 6,0 six and not four. }
+
   Left : Word;
 begin
   { HAND-WRITTEN, and 0703..070b of it is DEAD. See above.
@@ -1189,30 +950,7 @@ begin
                     mod DMABufferSize)
 end;
 
-{ ---- 1a17:0746..1a17:10c3 -- THE ASSEMBLER MODULE ----------------------
-  `src/SOUNDDEV.ASM`, assembled by TASM and linked with $L. It holds the
-  gain ladder and its patcher, the mixing chain, SharedPoll and the output
-  selectors: one frameless run with three entry points and two different
-  returns, which is a shape no Pascal procedure has.
 
-  IT USED TO BE THREE `assembler` PROCEDURES HERE, and that cost four bytes --
-  an epilogue at 1007 where the original has a 00 pad, another at 104d, and a
-  near RET at 10c1 where the original ends RETF 4. The encodings inside the run
-  are TASM's throughout (see the table at the head of this file), the 1.39b
-  release builds this same unit with $L over `LIB/SOUNDDEV.ASM`, and TP6 places
-  object-module code AFTER all of a unit's Pascal code -- which is exactly where
-  0746 has to be, immediately after GetPlayPos.
-
-  THE PASCAL SIDE OF THE LINK. Everything the module reaches is declared above:
-  the DGROUP variables it names in its EXTRN list, and the two near routines
-  DoGetBuffer and GetDMACount that the chain calls. Nothing here calls SetGains
-  or SelectOutput by name -- they are declared so that the module has something
-  to be PUBLIC for, and so that the unit reads as what it links.
-
-  The generated half is still generated: `python emit_gain.py >
-  src/VTGAIN.INC`, now emitting TASM syntax, INCLUDEd by SOUNDDEV.ASM.
-  The generator still asserts the closed form of all 48 gains and checks the
-  patcher's length, so it fails rather than emitting something plausible. }
 {$L SOUNDDEV.OBJ}
 procedure SetGains; external;
 procedure SharedPoll; external;
