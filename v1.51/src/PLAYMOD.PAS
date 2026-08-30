@@ -1,40 +1,71 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 12ba -- 5,968 bytes, the largest thing in the program after the
-  program itself. IN PROGRESS: transcribed from the top of the segment down,
-  which is the only order that works, because Turbo Pascal lays procedures out
-  in source order and a missing routine displaces everything below it.
-  `units.py` reports it as PARTIAL and measures what is here.
+  THE PLAYER. Everything between a loaded module and sound coming out of the
+  card is in this unit: it walks the pattern data in time, decides what each
+  channel should be doing, and turns that into a stream of samples.
 
-  NAMES ARE THE 1.39b RELEASE'S. `LIB/PLAYMOD.PAS` is the later version of this
-  unit and the pairing is confirmed rather than assumed:
+  IT IS THE BIGGEST UNIT IN THE PROGRAM, and it is big because it sits at the
+  junction of three different clocks.
+
+    * THE MUSIC'S CLOCK: rows, ticks and the tempo that converts between them.
+      One row every few ticks, one tick every few milliseconds.
+    * THE MIXER'S CLOCK: samples. Each channel is a sample being stepped
+      through at its own rate, and the rates have nothing to do with each other
+      or with the tick.
+    * THE HARDWARE'S CLOCK: buffers. The card asks for a block of samples when
+      it is ready and will not wait, so the mixer must always be far enough
+      ahead to answer.
+
+  THE MIXING KERNEL IS NOT HERE. It is hand-written assembler in PLAYMOD.ASM,
+  linked in as an external, because mixing is where every cycle shows: it is
+  the one routine that touches every sample of every channel.
+
+  AND IT DRIVES TWO KINDS OF HARDWARE THAT WANT OPPOSITE THINGS. A
+  SoundBlaster has one DMA channel, so this unit must mix all the voices into
+  one stream itself. A Gravis Ultrasound has 32 voices of its own and wants to
+  be TOLD what to play, not handed the result -- so for the GUS the same
+  sequencer output goes down a different path entirely: instead of samples, it
+  publishes a table of what changed on each row, and the GUS driver turns those
+  into voice commands. Two output paths from one sequencer, which is why so
+  much of this unit is about publishing state rather than producing sound.
+
+  ROWS ARE PUBLISHED AHEAD OF TIME, and that is the shape to hold on to. The
+  mixer runs ahead of what is audible by a whole buffer, so "what the music is
+  doing now" and "what the mixer is working on" are different rows. Anything
+  that has to line up with what a listener HEARS -- the GUS, the demo's own
+  cues, the display -- reads from a ring of published rows rather than from the
+  sequencer directly.
+
+  [re] Segment 12ba -- 5,968 bytes, the largest thing in the program after the
+  program itself.
+
+  [re] NAMES ARE THE 1.39b RELEASE'S. `LIB/PLAYMOD.PAS` is the later version of
+  this unit and the pairing is confirmed rather than assumed:
 
     12ba:0007  UnCanal          the release's routine, statement for statement
     12ba:0664  MyMove           a hand-written Move, ASSEMBLER in both
     12ba:1600  DumpInstrument   the resampling kernel, EXTERNAL from PLAYMOD.ASM
 
   and `TModRawChan`'s FIELD LAYOUT lands on every offset the reading pass had
-  already recorded from the disassembly -- `+$0b` the non-looping limit, `+$19`
-  and `+$1b` the 16.16 step, `+$1d` the byte handed to the kernel, `+$1e` and
-  `+$20` the loop, 34 bytes in total. That is why it is adopted here and
-  `TSong`'s was not: this one is CONFIRMED by the binary, field by field, and
-  1.39b's `TSong` demonstrably did not fit.
+  already recorded -- `+$0b` the non-looping limit, `+$19` and `+$1b` the 16.16
+  step, `+$1d` the byte handed to the kernel, `+$1e` and `+$20` the loop, 34
+  bytes in total. That is why it is adopted here and `TSong`'s was not: this one
+  is CONFIRMED by the binary, field by field, and 1.39b's `TSong` demonstrably
+  did not fit.
 
-  TWO THINGS THE RELEASE SETTLED THAT THE READING HAD LEFT OPEN.
-
-  `+$1d` IS THE VOLUME. `docs/CONTINUATION.md` carried it as "step or volume,
-  the kernel at 12ba:1600 would say" -- the release passes `Raw.Volume` in that
+  [re] `+$1d` IS THE VOLUME, which the reading had left open as "step or volume,
+  the kernel at 12ba:1600 would say". The release passes `Raw.Volume` in that
   argument position, and the DumpEmpty call at `12ba:012c` passes a literal 0
   there, which only makes sense for a volume.
 
-  `+$19`/`+$1b` ARE THE STEP, NOT THE POSITION. The reading called them "sample
-  position, low word of a 16.16 fixed point". They are `StepFrac`/`StepInt`, the
-  per-sample INCREMENT; the position is `SplPosFrac`/`SplPosInt` at `+$01`/`+$03`.
-  The arithmetic is the same either way, which is why reading alone could not
-  separate them.
+  [re] `+$19`/`+$1b` ARE THE STEP, NOT THE POSITION. The reading called them
+  "sample position, low word of a 16.16 fixed point". They are
+  `StepFrac`/`StepInt`, the per-sample INCREMENT; the position is
+  `SplPosFrac`/`SplPosInt` at `+$01`/`+$03`. The arithmetic is the same either
+  way, which is why reading alone could not separate them.
 
-  AND ONE THING THE DISASSEMBLY SETTLED AGAINST THE RELEASE. 1.39b has two
+  [re] AND ONE THING THE DISASSEMBLY SETTLED AGAINST THE RELEASE. 1.39b has two
   kernels, `DumpInstrument` and `DumpEmpty`. 1.31 has ONE, at `12ba:1600`, with
   a final Boolean argument -- `6a 00` at `009b` and `0111`, `6a 01` at `016f`.
   The release split it in two later. The release settles shapes and names; the
@@ -46,42 +77,62 @@ unit PlayMod;
 
 interface
 
-{ --------------------------------------------------------------------------
-  NINE GLOBALS THAT USED TO BE DECLARED HERE ARE NOW IN MODCOMMA.PAS, and the DGROUP
-  LAYOUT is what moved them:
+{ THE SEQUENCER'S POSITION AND SPEED ARE DECLARED IN MODCOMMA, not here, even
+  though this unit does the sequencing. The effect commands WRITE those
+  variables -- a Bxx jumps to another pattern -- and this unit `uses`
+  ModCommands, so the dependency only runs one way. See the note above their
+  declaration there.
+
+  [re] Nine of them moved out of this file, and the DGROUP LAYOUT is what moved
+  them:
 
       MyLoopMod  $0334    TempoDiv  $0336 (release: BPMDivider)
       TempoAccum $033a    RangeStart $033c   RangeEnd $033e
       ReqStart   $0342    ReqEnd    $0344    ReqLen   $0346    TickInRow $034e
 
-  Their addresses INTERLEAVE with `MySongLen` at $0340, `FilterIsOn` at $0348 and the
-  tempo pair, which were already ModCommands' -- and two units' data cannot interleave,
-  because the linker lays DGROUP down one unit at a time in link order. So all of them
-  belong to the unit this one `uses`, which is also where the release declares them, in
-  its own CONST section, in exactly the address order above.
+  Their addresses INTERLEAVE with `MySongLen` at $0340, `FilterIsOn` at $0348
+  and the tempo pair, which were already ModCommands' -- and two units' data
+  cannot interleave, because the linker lays DGROUP down one unit at a time in
+  link order. Nothing about the code changes -- a DGROUP reference is a linker
+  fixup either way -- so PLAYMOD still verifying identical with the same 1,187
+  pending fixups was the check. }
 
-  This unit still reads every one of them; they are just not its own. Nothing about the
-  code changes -- a DGROUP reference is a linker fixup either way -- so PLAYMOD still
-  verifying identical with the same 1,187 pending fixups is the check.
-  -------------------------------------------------------------------------- }
-
-{ ~~VTSilenc~~ IS NOT A DEPENDENCY, AND THE LINK ORDER IS WHAT SAYS SO. It was here
-  for one identifier, `Ticks`, which is now declared in SoundDevices -- see the note
-  at its declaration there. The original's segment addresses put `1065`/VTSilenc at
-  the very END of the unit order and `12ba`/PlayMod in the middle, and TP6's order is
-  reverse DFS post-order over the `uses` graph, so a dependency in this direction is
+{ [re] VTSilenc IS NOT A DEPENDENCY, AND THE LINK ORDER IS WHAT SAYS SO. It was
+  listed here for one identifier, `Ticks`, which is SoundDevices' now. The
+  original's segment addresses put `1065`/VTSilenc at the very END of the unit
+  order and `12ba`/PlayMod in the middle, and TP6's order is reverse DFS
+  post-order over the `uses` graph, so a dependency in this direction is
   impossible. `linkorder.py` checks every edge in the tree against it. }
 uses
   SongUnit, SongElements, SoundDevices, VTCtrl, GUS, ModCommands, Filters,
   Heaps, Hardware;
 
 { --------------------------------------------------------------------------
-  The raw channel -- 34 bytes, one per voice, DS:$13a6 upward ($1384 is the
-  base-1 base the compiler indexes from, not the array's address).
+  THE RAW CHANNEL: what the MIXER needs, as opposed to what the music means.
+  There is one of these per voice, and it is deliberately dumb -- no notes, no
+  commands, no instruments, just a pointer walking through memory at a rate.
+  The sequencer decides what should happen; this record is the instruction the
+  mixer gets, and it is shaped so the kernel can run without a single decision
+  it does not have to make.
 
-  Names and layout are `LIB/PLAYMOD.PAS`'s. Every offset below was already in
-  docs/04-units.md from the disassembly; the release supplied the names and the
-  three fields nothing had touched yet.
+  THE POSITION IS 48 BITS: a segment, an offset, and a FRACTION. Playing a
+  sample at any pitch other than its own means stepping through it by a
+  non-whole amount per output sample, so the position has to carry a fraction
+  and the step is a 16.16 fixed-point number added to it every sample. That one
+  representation is the whole of pitch on a SoundBlaster.
+
+  THE SAMPLE IS DESCRIBED THREE TIMES, and that is a real-mode problem showing
+  through. A sample longer than 64K cannot be addressed as one block, so it is
+  split in two parts, each with its own segment, offset and limit -- and the
+  third triple is whichever part is CURRENTLY being played, copied into place
+  so the kernel only ever reads one. Swapping parts is a few stores when the
+  first runs out, instead of a test in the inner loop.
+
+  [re] 34 bytes, one per voice, DS:$13a6 upward; $1384 is the base-1 base the
+  compiler indexes from, not the array's address. Names and layout are
+  `LIB/PLAYMOD.PAS`'s. Every offset below was already recorded from the
+  disassembly; the release supplied the names and the three fields nothing had
+  touched yet.
   -------------------------------------------------------------------------- }
 type
   PModRawChan = ^TModRawChan;
@@ -114,37 +165,49 @@ type
   end;                          { 34 bytes                                   }
 
 { --------------------------------------------------------------------------
-  The event ring -- DS:$14b6, 400 bytes, 25 rows of 8 entries.
+  THE EVENT RING: cues waiting to be heard. The mixer runs a buffer ahead of
+  the speaker, so a cue written by the sequencer has not happened YET -- it
+  belongs to sound that is mixed but not yet played. Holding cues in a ring,
+  one row per buffer, lets them be released at the moment the sound they
+  belong to actually reaches the listener.
 
-  What `12ba:0202` posts and `12ba:0187` consumes. Two bytes per entry, and
-  both are read: `+$01` is the marker the consumer tests and `+$00` an index
-  into the published control block. No counterpart in the 1.39b release, so
-  these names are ours and provisional.
+  THAT DELAY IS THE WHOLE REASON THE RING EXISTS. Without it a demo would cut
+  its visuals a buffer early, which at these buffer sizes is plainly visible.
+
+  [re] DS:$14b6, 400 bytes, 25 rows of 8 entries; `12ba:0202` posts and
+  `12ba:0187` consumes. Two bytes per entry and both are read: `+$01` is the
+  marker the consumer tests and `+$00` an index into the published control
+  block. No counterpart in the 1.39b release, so these names are ours.
   -------------------------------------------------------------------------- }
 const
-  { **SIXTEEN IN v1.51, EIGHT IN 1.31b, AND `TPlayingNote`'s SIZE IS THE PROOF.**
-    12ce:07e9 is `IMUL DI,[02fc],77h` where 1.31b has `IMUL DI,..,3Fh`, and 0807
-    pushes `6A 77` where 1.31b pushes `6A 3F` -- so the record is 119 bytes against
-    63. 1.39b's field list makes that arithmetic decisive: four fixed bytes, then
-    `Volume : TVolumes` which is one byte a channel, then `Note` which is a 6-byte
-    TFullNote a channel, then a Word and a filler. 119 - 7 is 112, and 112 divided by
-    seven is 16. No other channel count gives 119.
+  { HOW MANY VOICES THE PLAYER WILL MIX. Not a format limit -- a four-channel
+    MOD and a sixteen-channel S3M both fit -- but a cost limit: every extra
+    channel is another pass over every output sample.
 
-    SIXTEEN AND NOT THE RELEASE'S THIRTY-TWO. 1.39b's SOUNDDEV says
-    `MaxChannels = 32`; DemoVT 1.51 went half way. It agrees with the GUS event row,
-    which is also sixteen, and it does NOT agree with the wide note ring, which is
-    thirty-two -- so the published row can describe more channels than the player can
-    sound. Three different widths live in this build at once and each one is
-    measured separately. }
+    THREE DIFFERENT WIDTHS LIVE IN THIS BUILD AT ONCE, and they are not the
+    same number by accident. The player mixes sixteen; the published row
+    describes thirty-two, because publishing costs almost nothing and a wider
+    row outlives this player's limits.
+
+    [re] SIXTEEN IN v1.51, EIGHT IN 1.31b, AND `TPlayingNote`'s SIZE IS THE
+    PROOF. 12ce:07e9 is `IMUL DI,[02fc],77h` where 1.31b has `IMUL DI,..,3Fh`,
+    and 0807 pushes `6A 77` where 1.31b pushes `6A 3F` -- so the record is 119
+    bytes against 63. 1.39b's field list makes that arithmetic decisive: four
+    fixed bytes, then `Volume : TVolumes` which is one byte a channel, then
+    `Note` which is a 6-byte TFullNote a channel, then a Word and a filler.
+    119 - 7 is 112, and 112 divided by seven is 16. No other channel count gives
+    119. The release's own SOUNDDEV says `MaxChannels = 32`; DemoVT 1.51 went
+    half way. }
   MaxChannels = 16;
 
 type
-  { THE RELEASE'S NAMED TYPE, AND IT IS LOAD-BEARING. Turbo Pascal only allows a
-    whole-array assignment between operands of the SAME named type, and 12ba:075e and
-    12ba:119e are assignments rather than `Move` calls -- see the note at each. Declared
-    as two anonymous `array[1..8] of Byte` the assignment does not compile at all, which
-    is why both sites were read as `Move`. Eight is written out rather than `MaxChannels`
-    because that constant is declared further down, after the records that use it. }
+  { A NAMED type on purpose: Turbo Pascal will only assign one array to another
+    when both are the SAME named type, and two places in this unit copy a whole
+    set of channel volumes in one statement. Declared anonymously they would
+    have to be `Move` calls instead.
+
+    [re] 12ba:075e and 12ba:119e are those assignments -- see the note at each.
+    Reading them as `Move` was what the anonymous declaration forced. }
   TVolumes = array[1..MaxChannels] of Byte;
 
   PRingEntry = ^TRingEntry;
@@ -160,79 +223,95 @@ type
   TRingRow = array[0..7] of TRingEntry;      { 16 bytes                      }
 
 
-  { --- THE SAMPLE BUFFERS, DS:$1394 ----------------------------------------
-    NOT A NEW RECORD: this is `SoundDevices.TSampleBuffer`, already declared in
-    SOUNDDEV with these exact offsets -- InUse, NSamples, RateHz, Channels,
-    DataType, IData, eleven bytes. It was transcribed here first as an invented
-    `TModEntry` with the offsets right and every name wrong, and 12ba:1049 is what
-    exposed that: a far function returning a pointer to one of these with no
-    arguments is `SoundDevices.TAskBufferProc`, the driver's buffer callback.
+  { [re] THE SAMPLE BUFFERS, DS:$1394. NOT A NEW RECORD: this is
+    `SoundDevices.TSampleBuffer`, already declared in SOUNDDEV with these exact
+    offsets -- InUse, NSamples, RateHz, Channels, DataType, IData, eleven bytes.
+    It was transcribed here first as an invented `TModEntry` with the offsets
+    right and every name wrong, and 12ba:1049 is what exposed that: a far
+    function returning a pointer to one of these with no arguments is
+    `SoundDevices.TAskBufferProc`, the driver's buffer callback.
 
-    The release confirms the rest: `Buffers : ARRAY[1..NumBuffers] OF
-    TSampleBuffer` with `NumBuffers = 3`, and `BuffIdx, BuffGive : WORD` -- "Tail
-    of the buffer" and "Head of the buffer" -- which are DS:$1390 and DS:$1392.
+    [re] The release confirms the rest: `Buffers : ARRAY[1..NumBuffers] OF
+    TSampleBuffer` with `NumBuffers = 3`, and `BuffIdx, BuffGive : WORD` --
+    "Tail of the buffer" and "Head of the buffer" -- which are DS:$1390 and
+    DS:$1392. AND `InUse` SETTLES THE FLAG SENSE INDEPENDENTLY: 12ba:0b57 exits
+    when it is non-zero, which the reading notes had backwards. }
 
-    AND `InUse` SETTLES THE FLAG SENSE INDEPENDENTLY. 12ba:0b57 exits when it is
-    non-zero, which the reading notes had backwards; "set while the device is
-    playing it" is exactly that, arrived at from the other direction. }
+  { The buffer's data is declared as an untyped Pointer and used as an array of
+    16-bit samples; this is the type that makes the second view legal.
 
-  { For indexing through TSampleBuffer.IData, which is a Pointer in the record and
-    an array of Words in use: 12ba:0b98 dereferences it and adds `(MixChan-1)*2`. }
+    [re] 12ba:0b98 dereferences it and adds `(MixChan-1)*2`. }
   PWordArray = ^TWordArray;
   TWordArray = array[0..0] of Word;
 
-  { The row the sequencer hands on, 63 bytes. `EoMod` is the release's name and
-    its only confirmed field; see the note beside NoteBuff below. }
+  { A PUBLISHED ROW: everything about one moment of the music, in one record,
+    for anybody who is not the mixer. The player fills one of these as it
+    crosses a row and posts it; the GUS driver, the display and the demo all
+    read from the posted copy rather than from the player's own variables.
+
+    THAT SEPARATION IS THE POINT. The player's variables are always ahead of
+    what is audible, and they change under an interrupt. A published row is a
+    snapshot, complete and consistent, tied to a moment that will arrive. }
   PPlayingNote = ^TPlayingNote;
-  { COMPLETE, and every field is confirmed against the binary. The last one to
-    fall was `Note`: 12ba:094b computes `ChanIdx*6 + 6` and adds it to the record's
+  { [re] Every field is confirmed against the binary. The last one to fall was
+    `Note`: 12ba:094b computes `ChanIdx*6 + 6` and adds it to the record's
     address, which is Turbo Pascal's base-1 indexing of an `array[1..8] of
     TFullNote` starting at +$0c. That fixes the whole layout, and the total is
-    exactly 63 bytes -- the record's real size.
-
-    IT IS THE RELEASE'S FIELD LIST IN THE RELEASE'S ORDER: EoMod, Tempo,
-    NotePlaying, SeqPlaying, Volume, Note, NMuestras, fill. 1.39b's record is 32
-    bytes because its own `MaxChannels` differs; ours is 63 because 1.31 has
-    eight channels. Same shape, different width -- which is why the fields carry
-    over and the SIZE does not. }
+    exactly 63 bytes in 1.31b. IT IS THE RELEASE'S FIELD LIST IN THE RELEASE'S
+    ORDER: EoMod, Tempo, NotePlaying, SeqPlaying, Volume, Note, NMuestras, fill.
+    1.39b's record is 32 bytes because its own `MaxChannels` differs. Same
+    shape, different width -- which is why the fields carry over and the SIZE
+    does not. }
   TPlayingNote = record
     EoMod       : Boolean;      { +$00                                       }
     Tempo       : Byte;         { +$01                                       }
-    NotePlaying : Byte;         { +$02  written from NextNote at 12ba:074a    }
-    SeqPlaying  : Byte;         { +$03  written from NextSeq at 12ba:0754    }
-    Volume      : TVolumes;                 { +$04  assigned from UserVols   }
-    Note        : array[1..MaxChannels] of TFullNote;   { +$14 in v1.51      }
-    NMuestras   : Word;         { +$3c  the release's name; unused so far    }
-    Fill        : Byte;         { +$3e                                       }
+    NotePlaying : Byte;         { the row this snapshot is of              }
+    SeqPlaying  : Byte;         { and the order position it came from      }
+    Volume      : TVolumes;     { every channel's volume                   }
+    Note        : array[1..MaxChannels] of TFullNote;   { and every note   }
+    NMuestras   : Word;         { the release's name; unused so far        }
+    Fill        : Byte;
+
+    { [re] +$02 and +$03 are written from NextNote and NextSeq at 12ba:074a and
+      12ba:0754; Volume at +$04 is assigned from UserVols; Note is +$14 in
+      v1.51, +$0c in 1.31b; NMuestras +$3c, Fill +$3e. }
   end;
 
 { --------------------------------------------------------------------------
-  The GUS event ring -- DS:$1646, 3,200 bytes, the same 25 rows of 8 but with
-  a 16-byte entry: one queued voice command per slot per voice.
+  THE GUS EVENT RING: the same delayed-release idea as the cue ring, but
+  carrying voice commands. A Gravis card plays its own samples out of its own
+  memory, so it is not handed audio -- it is handed instructions. Those
+  instructions still have to arrive when the sound they belong to would have
+  been heard, so they queue in a ring exactly as the cues do.
 
-  THE FIELDS ARE `1723.TriggerVoice`'s PARAMETER LIST, which is what identifies
-  them. `12ba:02ea` flushes a slot by passing `+$0c`, `+$08`, `+$06`, `+$04`,
-  `+$03`, `+$01`, `+$00` and the voice number straight into
-  `TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan : Byte; StartA, LoopA,
-  EndA : LongInt)`, and every size lines up: a byte, a word, a byte and three
-  longs, 16 bytes exactly. `Freq` is a Word here and a LongInt there -- the ring
-  stores 16 bits and the flush widens it.
+  ONE ENTRY IS ONE `TriggerVoice` CALL, ALREADY PACKED. Everything the driver
+  needs -- volume, frequency, pan, and the three addresses that define the
+  sample and its loop -- sits in one 18-byte slot, so flushing a row is
+  reading the fields back out in order and calling. No decisions at flush time.
 
-  Names are ours: there is no counterpart in the 1.39b release, whose GUS
-  support was rebuilt elsewhere.
+  [re] DS:$1646, 3,200 bytes, 25 rows of 8. THE FIELDS ARE `1723.TriggerVoice`'s
+  PARAMETER LIST, which is what identified them. `12ba:02ea` flushes a slot by
+  passing `+$0c`, `+$08`, `+$06`, `+$04`, `+$03`, `+$01`, `+$00` and the voice
+  number straight into `TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan :
+  Byte; StartA, LoopA, EndA : LongInt)`, and every size lines up. Names are
+  ours: there is no counterpart in the 1.39b release, whose GUS support was
+  rebuilt elsewhere.
   -------------------------------------------------------------------------- }
 type
-  { EIGHTEEN BYTES IN v1.51, SIXTEEN IN 1.31b, AND `Freq` IS WHERE THE TWO WENT.
-    12ce:02de is `IMUL AX,AX,12h` where 1.31b has `SHL AX,4`, so the record is 18;
-    and 12ce:0305/0309 store a WORD PAIR into +$1 and +$3 from [BP+12] and [BP+14],
-    which is a LongInt where 1.31b stored one word. Every field after it moves up
-    two, and FlushEventRow's "is this slot free" test at 12ce:0413 is
-    `MOV AX,ES:[DI+1] / OR AX,ES:[DI+3]` -- a 32-bit zero test, which it could not
-    have been while Freq was a Word.
+  { `Freq` IS 32 BITS BECAUSE THAT IS WHAT THE DRIVER TAKES. Storing it any
+    narrower means widening it again at every flush, and the flush runs under
+    an interrupt; carrying the driver's own width costs two bytes a slot and
+    nothing else. It also gives the flush a free emptiness test -- a slot with
+    no frequency in it is a slot with nothing to do.
 
-    IT ALSO REMOVES A WIDENING. 1.31b's flush had to `XOR DX,DX` before passing Freq
-    to TriggerVoice, which takes a LongInt; 12ce:043e pushes +$3 and +$1 straight
-    through. The ring now carries what the driver wants. }
+    [re] EIGHTEEN BYTES IN v1.51, SIXTEEN IN 1.31b. 12ce:02de is `IMUL AX,AX,12h`
+    where 1.31b has `SHL AX,4`; 12ce:0305/0309 store a WORD PAIR into +$1 and +$3
+    from [BP+12] and [BP+14], where 1.31b stored one word. Every field after it
+    moves up two, and FlushEventRow's free-slot test at 12ce:0413 is `MOV
+    AX,ES:[DI+1] / OR AX,ES:[DI+3]` -- a 32-bit zero test, which it could not
+    have been while Freq was a Word. 1.31b's flush had to `XOR DX,DX` before
+    passing Freq to TriggerVoice; 12ce:043e pushes +$3 and +$1 straight
+    through. }
   TGusEvent = record
     Vol    : Byte;              { +$00                                       }
     Freq   : LongInt;           { +$01  a Word in 1.31b                      }
@@ -242,51 +321,56 @@ type
     EndA   : LongInt;           { +$0e  the flush tests this for the long form }
   end;
 const
-  { The GUS event ring's width. 12ce:02e1 multiplies the row index by $120, and $120
-    divided by the 18-byte event is 16 -- the same number `MaxChannels` turned out to
-    be, and kept separate because the two were measured from different instructions
-    and nothing says the author had to keep them equal. }
+  { How many GUS voices a queued row can describe. It happens to equal
+    `MaxChannels`, and it is declared separately anyway: one is what this player
+    will mix and the other is what that card can be told, and nothing requires
+    them to stay equal.
+
+    [re] 12ce:02e1 multiplies the row index by $120, and $120 divided by the
+    18-byte event is 16. The two were measured from different instructions. }
   GusVoices = 16;
 
 type
-  { SIXTEEN VOICES IN v1.51 AND EIGHT IN 1.31b. 12ce:02e1 multiplies the row index
-    by $120 -- 288, which is 16 x 18 -- and FlushEventRow's loop closes on
-    `CMP [02f8],0Fh`, so the last voice is 15. }
+  { [re] SIXTEEN VOICES IN v1.51 AND EIGHT IN 1.31b. 12ce:02e1 multiplies the
+    row index by $120 -- 288, which is 16 x 18 -- and FlushEventRow's loop closes
+    on `CMP [02f8],0Fh`, so the last voice is 15. }
   TGusEventRow = array[0..GusVoices - 1] of TGusEvent;   { 288 bytes            }
 
-{ --- the channel state, DS:$1260 -----------------------------------------
-    `TCanal` and `TFullNote` ARE the release's, head for head, and 12ba:0820
-    proves it: the four stores in that loop land on `Note.Period`, `Note.Instrument`,
-    `Note.Command` and `Period`, at +$01, +$00, +$04 and +$0b, which is exactly
-    where `TFullNote` (Instrument, Period, Volume, Command, Parameter -- six
-    bytes) followed by `Instrument : PInstrumentRec`, `Volume` and `Period` puts
-    them. And `Period := 800` twice is a ProTracker period, not a coincidence.
-
-    THE TAIL DOES NOT CARRY OVER. 1.31's record is 38 bytes and 1.39b's is far
-    larger -- it grew S3M fields (`S3mRetAdd`, `TPortIsFine`, retrigger state) --
-    so everything past +$0d is filler here, exactly as with TSong. }
+{ [re] THE CHANNEL STATE, DS:$1260. `TCanal` and `TFullNote` ARE the release's,
+    head for head, and 12ba:0820 proves it: the four stores in that loop land on
+    `Note.Period`, `Note.Instrument`, `Note.Command` and `Period`, at +$01, +$00,
+    +$04 and +$0b, which is exactly where `TFullNote` (Instrument, Period,
+    Volume, Command, Parameter -- six bytes) followed by `Instrument :
+    PInstrumentRec`, `Volume` and `Period` puts them. And `Period := 800` twice
+    is a ProTracker period, not a coincidence. The record itself is declared in
+    MODCOMMA, which is where the effects that give its fields meaning live. }
 
 
 
 const
   RingRows = 25;
 
-  { NEW IN v1.51. 12ce:0243's `SHL DI,5` fixes the flag grid at 32 bytes a row and
-    12ce:0258 stops the loop at 20h, so the wide ring carries thirty-two channels
-    where `MaxChannels` below still says eight. Both numbers are live at once: the
-    8-channel ring at 0183 and the 32-channel one at 0202 run back to back. }
+  { THE PUBLISHED ROW IS TWICE AS WIDE AS THE PLAYER. Publishing costs a table
+    entry; mixing costs a pass over every sample. So the row that goes out to
+    the display and the demo describes thirty-two channels even though this
+    player will only ever sound sixteen -- the ring outlives the limit.
+
+    [re] NEW IN v1.51. 12ce:0243's `SHL DI,5` fixes the flag grid at 32 bytes a
+    row and 12ce:0258 stops the loop at 20h. Both ring widths are live at once:
+    the narrow ring at 0183 and the wide one at 0202 run back to back. }
   WideChans = 32;
 
 
 
-  { The release's names for both. `MaxChannels` is 8 here and not 32 as 1.39b has
-    it -- every base-1 array in this segment is eight elements long and
-    `TPlayingNote` is 63 bytes rather than the release's 32 for exactly that
-    reason. It is used as a MULTIPLIER at 12ba:1224, where `MaxSplPerTick *
-    MaxChannels * 2` folds to `SHL AX,3 / SHL AX,1`; a different value would give
-    a different pair of shifts, so the byte confirms the 8.
+  { ONE BUFFER, WHERE THE RELEASE USES THREE. More buffers mean more latency
+    between a note being mixed and being heard, and this player is driving a
+    demo: everything on screen is cut to the music, so the delay is visible as
+    well as audible. One buffer is the tightest the hardware allows.
 
-    `NumBuffers` is 1, against the release's 3 -- see the note beside Buffers. }
+    [re] The release's name. `NumBuffers` is 1 against the release's 3 -- see
+    the note beside Buffers. `MaxChannels` is used as a MULTIPLIER at 12ba:1224,
+    where `MaxSplPerTick * MaxChannels * 2` folds to a pair of shifts, so the
+    byte confirms its value. }
   NumBuffers  = 1;
 
 { **THE CHANNEL FLAGS, AND FOUR OF THE SEVEN EXIST ONLY BECAUSE OF 64K.** A
@@ -309,154 +393,165 @@ const
                                   until something retriggers it              }
 
 { ==========================================================================
-  THIS UNIT'S WHOLE DGROUP CONST BLOCK, $02c4..$0333, IN ADDRESS ORDER.
+  THIS UNIT'S GLOBAL STATE, IN ONE BLOCK. What the player is playing, what the
+  output hardware can do, and where the published rows have got to.
 
-  It used to be six separate `const` and `var` sections scattered down the file in no
-  particular order, and that was invisible until the program linked. **DGROUP is laid
-  out per unit in LINK order and, within a unit, in DECLARATION order**, with a unit's
-  TYPED CONSTANTS in one region and its plain vars in another. So the order of these
-  lines IS the layout, and a var here is not a slower constant -- it is a variable in a
-  different part of DGROUP entirely. `dgroup.py` measures it.
+  THE ORDER OF THESE LINES IS THE MEMORY LAYOUT, which is why they are one
+  block and not six scattered ones. Turbo Pascal lays a unit's typed constants
+  down in declaration order, so moving a declaration moves an address --
+  something that does not show up until the program is linked.
 
-  EVERY VALUE IS READ OUT OF THE ORIGINAL'S IMAGE, never taken from the release, and
-  one of them differs: `MaxOutputFreq` is 44000 here and 45000 in 1.39b. `MaxSplPerTick`
-  agrees at 880 and the pan table agrees byte for byte.
+  [re] $02c4..$0333, in address order. It used to be six separate `const` and
+  `var` sections scattered down the file, and that was invisible until the
+  program linked. **DGROUP is laid out per unit in LINK order and, within a
+  unit, in DECLARATION order**, with a unit's TYPED CONSTANTS in one region and
+  its plain vars in another -- so a var here is not a slower constant, it is a
+  variable in a different part of DGROUP entirely. `dgroup.py` measures it.
 
-  THE RELEASE SETTLED THE ORDER AND THE ADDRESSES CONFIRMED IT, sixteen at a time:
-  `LIB/PLAYMOD.PAS`'s interface declares PlayingSong, LoopMod, ForceLoopMod,
-  CanFallBack, FilterOn, FilterOff, FilterIsOn, MaxOutputFreq, DontExecute, Playing,
-  ModTickProcValid, NoteTl, NoteHd, NoteSound, NoteProcessed, MaxSplPerTick in that
-  sequence, and every one lands on an address an instruction in this segment already
-  named. `AltMode` at $02d1 is the single insertion 1.31 makes -- it has no counterpart
-  in the release, which fits what it is for, the INCONEXI.EXE rename.
+  [re] EVERY VALUE IS READ OUT OF THE ORIGINAL'S IMAGE, never taken from the
+  release, and one of them differs: `MaxOutputFreq` is 44000 here and 45000 in
+  1.39b. `MaxSplPerTick` agrees at 880 and the pan table agrees byte for byte.
 
-  FOUR RUNS ARE UNIDENTIFIED AND ARE DECLARED AS FILLER, NOT INVENTED AS VARIABLES.
-  The addresses either side of each are measured and the block is contiguous, so the
-  bytes certainly exist; what is not known is what they are called. Filler keeps the
-  SIZE honest and says plainly that the name is missing, which is better than either a
-  guessed name or a wrong length. $0308 is the interesting one: it is the only non-zero
-  pair in the unidentified set, and it holds 1.
+  [re] THE RELEASE SETTLED THE ORDER AND THE ADDRESSES CONFIRMED IT, sixteen at
+  a time: `LIB/PLAYMOD.PAS`'s interface declares PlayingSong, LoopMod,
+  ForceLoopMod, CanFallBack, FilterOn, FilterOff, FilterIsOn, MaxOutputFreq,
+  DontExecute, Playing, ModTickProcValid, NoteTl, NoteHd, NoteSound,
+  NoteProcessed, MaxSplPerTick in that sequence, and every one lands on an
+  address an instruction in this segment already named. `AltMode` at $02d1 is
+  the single insertion 1.31 makes -- it has no counterpart in the release, which
+  fits what it is for, the INCONEXI.EXE rename.
+
+  [re] FOUR RUNS ARE UNIDENTIFIED AND ARE DECLARED AS FILLER, NOT INVENTED AS
+  VARIABLES. The addresses either side of each are measured and the block is
+  contiguous, so the bytes certainly exist; what is not known is what they are
+  called. Filler keeps the SIZE honest and says plainly that the name is
+  missing. $0308 is the interesting one: it is the only non-zero pair in the
+  unidentified set, and it holds 1.
   ========================================================================== }
 const
-  PlayingSong      : PSong         = nil;      { DS:$02ca                      }
-  LoopMod          : Boolean       = True;     { DS:$02ce  nothing reads it     }
-  ForceLoopMod     : Boolean       = False;    { DS:$02cf  the ForceLoopMod key }
-  CanFallBack      : Boolean       = True;     { DS:$02d0  12ba:1325 reads it   }
-  FilterOn         : TFilterMethod = fmNone;   { DS:$02d1  the FilterOn key     }
-  FilterOff        : TFilterMethod = fmNone;   { DS:$02d2  the FilterOff key    }
+  PlayingSong      : PSong         = nil;      { the module, or nil            }
+  LoopMod          : Boolean       = True;     { nothing reads it              }
+  ForceLoopMod     : Boolean       = False;    { the ForceLoopMod key          }
+  CanFallBack      : Boolean       = True;     { may a cheaper mixer be used?  }
 
-  { DS:$02cd -- **NOT** ModCommands' `FilterIsOn`, which is a different variable at
-    DS:$0348. 1.31 has two of them; so, it turns out, does the release, which declares
-    one in each of the same two interfaces -- this file used to say the release had
-    only one, and that was wrong. Both are exported here because the ADDRESS requires
-    it: $02d3 sits between two interface globals, and a unit's implementation
-    declarations all come after its interface ones, so a private declaration cannot
-    land there.
+  { WHICH MIXING KERNEL EACH FILTER SETTING SELECTS. The Amiga's low-pass
+    filter has no equivalent on a PC, so it is emulated by choosing a different
+    kernel; these two say which. }
+  FilterOn         : TFilterMethod = fmNone;
+  FilterOff        : TFilterMethod = fmNone;
 
-    THE ADDRESS IN THAT ARGUMENT WAS $02cd UNTIL THE LINKER WAS ASKED. It is $02d3 --
-    `MaxOutputFreq` is the next declaration and the map puts it at $02d4, one byte
-    on. The reasoning was right and the number it was built on was v1.31b's, which
-    is the whole hazard: prose that argues FROM an address reads as corroboration
-    for it. The shadowing hazard the old note worried about is handled where it
-    actually bites -- VTCFG writes ModCommands' and now says so by qualifying it. }
-  FilterIsOn       : Boolean       = False;    { DS:$02d3                       }
+  { [re] DS:$02ca, $02ce, $02cf, $02d0, $02d1, $02d2. 12ba:1325 reads
+    CanFallBack; the ForceLoopMod, FilterOn and FilterOff keys write three of
+    the others. }
 
-  MaxOutputFreq    : Word          = 44000;    { DS:$02d4  ab e0; release 45000 }
-  DontExecute      : Boolean       = False;    { DS:$02d6                       }
-  AltMode          : Boolean       = False;    { DS:$02d7  1.31 only            }
-  Playing          : Boolean       = False;    { DS:$02d8                       }
-  ModTickProcValid : Boolean       = False;    { DS:$02d9                       }
-  NoteTl           : Word          = 0;        { DS:$02da                       }
-  NoteHd           : Word          = 0;        { DS:$02dc                       }
-  NoteSound        : PPlayingNote  = nil;      { DS:$02de                       }
-  NoteProcessed    : PPlayingNote  = nil;      { DS:$02e2                       }
-  MaxSplPerTick    : Word          = 880;      { DS:$02e6  03 70, the release's }
+  { THE FILTER AS THE MIXER HAS IT. There are two variables of this name in
+    the program: this one is what the mixer is DOING, and ModCommands' is what
+    the E0x command last ASKED for. Whoever means one must not silently get the
+    other, which is why every reference outside this unit qualifies it. }
+  FilterIsOn       : Boolean       = False;
 
-  { DS:$02e2 -- EIGHT PAN POSITIONS, one per channel, and this unit already had them
-    under this name. What it did not have was their VALUES or their BOUNDS.
+  { The ceiling on the output rate, in Hz. Higher costs proportionally more
+    mixing per second of sound, so this is where quality is traded for CPU. }
+  MaxOutputFreq    : Word          = 44000;
 
-    **THE BOUNDS WERE THE BASE-1 TRAP, and this file already records the rule under a
-    different array.** It was `array[0..8] of Byte` with its address given as $02e1,
-    and $02e1 is not where it starts -- it is the BASE-1 BASE, the number the compiler
-    subtracts so that `Pannings[Chan]` with Chan running 1..8 reaches $02e2..$02e9.
-    The image settles it: $02e0 holds `03 70`, MaxSplPerTick, so $02e1 is that Word's
-    high byte and cannot be the array's first element. Declared `array[1..8]` at $02e2
-    the displacement is identical -- `[$02e2 - 1 + Chan]` is `[$02e1 + Chan]` -- which
-    is why nine bytes where there are eight was invisible to `units.py`. Exactly the
-    mistake recorded for `RawChannels`: "$13A6 IS THE BASE-1 BASE, not the address".
+  DontExecute      : Boolean       = False;
+  AltMode          : Boolean       = False;    { 1.31 onwards                  }
+  Playing          : Boolean       = False;
+  ModTickProcValid : Boolean       = False;
 
-    $40 and $b0 are a third of the way in from each side, in the pattern
-    L R R L L R R L, which is the Amiga's own channel assignment. The release keeps pan
-    in the SONG (`PanPositions`, initialised from its `DefPan`) and 1.31 keeps it in
-    the player -- which is why `InitValues` in 14b9 has no trace of the release's last
-    statement, a thing this project had already found from the other end. }
-  { ~~Pannings~~ **IS GONE IN v1.51, AND THE PREVIOUS COMMIT'S GUESS NEVER HAD TO BE
-    RESOLVED.** Last time round this array needed sixteen entries where only eight
-    were measured, and the second eight went in as the Amiga L R R L pattern repeated
-    with a note saying it was a guess. It is not needed: the original's DGROUP has
-    `00 00 01 00` at $02e8 where ours had the table, and MODCOMMANDS' block starts 20
-    bytes lower than ours -- sixteen of which are exactly this.
+  { THE PUBLISHED-ROW RING'S THREE CURSORS. `NoteHd` is where the sequencer is
+    writing, `NoteTl` where the oldest unread row sits, and the two pointers
+    name the row the SOUND has reached and the row the demo has already dealt
+    with. Four positions into one ring, because four different things are
+    reading it at four different delays. }
+  NoteTl           : Word          = 0;
+  NoteHd           : Word          = 0;
+  NoteSound        : PPlayingNote  = nil;
+  NoteProcessed    : PPlayingNote  = nil;
 
-    NOTHING REFERENCES IT ANY MORE. All three readers moved to
-    `PlayingSong^.ChannelPan` over the last few commits -- SetNewSample's two
-    SetEvent calls and both PostEvent calls -- so the declaration was the only thing
-    keeping it alive, and Turbo Pascal emits a typed constant whether or not anything
-    reads it. **A dead typed constant is invisible to every code comparison and
-    sixteen bytes wide in the layout.**
+  { The most samples one tick may produce -- what sizes the mix buffer. }
+  MaxSplPerTick    : Word          = 880;
 
-    THE VALUES ARE KEPT IN THIS NOTE because they are 1.31b's and measured: $40, $b0,
-    $b0, $40, $40, $b0, $b0, $40 -- a third of the way in from each side, in the
-    L R R L L R R L pattern the Amiga uses. 1.51 gets the same effect from the song's
-    own per-channel pan, which is where the release always had it. }
+  { [re] DS:$02d3..$02e6. `FilterIsOn` is NOT ModCommands' at DS:$0348; 1.31 has
+    two, and so does the release, which declares one in each of the same two
+    interfaces. Both are exported because the ADDRESS requires it: $02d3 sits
+    between two interface globals, and a unit's implementation declarations all
+    come after its interface ones. THE ADDRESS IN THAT ARGUMENT WAS $02cd UNTIL
+    THE LINKER WAS ASKED -- prose that argues FROM an address reads as
+    corroboration for it. MaxOutputFreq is `ab e0`, 45000 in the release;
+    MaxSplPerTick is `03 70` and agrees. }
 
-  { **THE ORDER OF THIS RUN IS MEASURED, AND IT IS NOT 1.31b's.** Every address below
-    is named by an instruction in 12ce, and the declaration order is the only thing
-    that can put them there -- a typed constant lands where the ones before it leave
-    off. 1.31b runs Rest, EventSlot, EventChan, then the ring pair; 1.51 puts the ring
-    pair FIRST, moves the wide ring's three in ahead of RingVoice, and leaves
-    RingVoice where FlushEventRow's loop names it.
+  { THE RING CURSORS. A ring buffer needs a producer and a consumer, and the
+    GUS ring has three sets of them because three different things write and
+    read it at three different points in the delay.
 
-    THE INITIALISER ON FlushSlot IS WHY THIS WAS NOTICED. Setting it to 1 changed no
-    byte of the image, because the declaration sat at the wrong address -- `dgroup.py`
-    went from 164 blocks in place to 163 and one MOVED, which is the only reading
-    that says "right content, wrong place". }
-  RingSlot         : Word          = 0;        { DS:$02e8  the PRODUCER's cursor }
+    THE CONSUMER STARTS ONE SLOT AHEAD OF THE PRODUCER, not level with it. A
+    ring that is empty and a ring that is full look identical when both cursors
+    coincide; leaving one slot of daylight makes the two states distinguishable
+    without a separate count, at a cost of one wasted slot. }
+  RingSlot         : Word          = 0;        { the producer's cursor         }
+  FlushSlot        : Word          = 1;        { the consumer's                }
 
-  { **IT STARTS AT ONE, NOT ZERO,** and two independent places say so: DGROUP holds
-    `01 00` at $02ea in the original's initialised image, and 1000:02b0 sets it again
-    at run time with `MOV word [02ea],1` beside `RingSlot := 0`. One slot of daylight
-    between producer and consumer is what stops the full test firing on the first
-    tick. }
-  FlushSlot        : Word          = 1;        { DS:$02ea  the CONSUMER's        }
+  Rest             : Word          = 0;
+  EventSlot        : Word          = 0;
+  EventChan        : Word          = 0;
 
-  Rest             : Word          = 0;        { DS:$02ec                       }
-  EventSlot        : Word          = 0;        { DS:$02ee  AdvanceEventRow's    }
-  EventChan        : Word          = 0;        { DS:$02f0                       }
+  { The wide ring's own three, for the 32-channel published row. }
+  WideSlot         : Word          = 0;
+  WideChan         : Word          = 0;
+  WidePrev         : Word          = 0;
 
-  { NEW IN v1.51 -- the wide ring's own three, named by 12ce:0206, 023c and 02cd. }
-  WideSlot         : Word          = 0;        { DS:$02f2                       }
-  WideChan         : Word          = 0;        { DS:$02f4                       }
-  WidePrev         : Word          = 0;        { DS:$02f6                       }
+  RingVoice        : Word          = 0;
+  NewFlags         : Byte          = 0;
+  NoLoop           : Byte          = 0;
+  NextIdx          : Word          = 0;
+  ChanIdx          : Word          = 0;
 
-  RingVoice        : Word          = 0;        { DS:$02f8  FlushEventRow's loop }
-  NewFlags         : Byte          = 0;        { DS:$02fa                       }
-  NoLoop           : Byte          = 0;        { DS:$02fb                       }
-  NextIdx          : Word          = 0;        { DS:$02fc                       }
-  ChanIdx          : Word          = 0;        { DS:$02fe                       }
+  { [re] DS:$02e8..$02fe. THE ORDER OF THIS RUN IS MEASURED, AND IT IS NOT
+    1.31b's: every address is named by an instruction in 12ce, and declaration
+    order is the only thing that can put them there. 1.31b runs Rest, EventSlot,
+    EventChan, then the ring pair; 1.51 puts the ring pair FIRST, moves the wide
+    ring's three in ahead of RingVoice, and leaves RingVoice where
+    FlushEventRow's loop names it. The wide three are named by 12ce:0206, 023c
+    and 02cd; RingVoice by FlushEventRow's loop.
 
-  { DS:$02fa, six bytes. The initialiser names the FIRST variant's fields, which is
-    the only form Turbo Pascal accepts for a variant record's typed constant --
-    Instrument, Period, Volume, Command, Parameter is 1 + 2 + 1 + 1 + 1, and $02fa + 6
-    is $0300, which is CurCanal. }
+    [re] `FlushSlot`'s INITIALISER IS WHY THAT WAS NOTICED. Setting it to 1
+    changed no byte of the image, because the declaration sat at the wrong
+    address -- `dgroup.py` went from 164 blocks in place to 163 and one MOVED,
+    which is the only reading that says "right content, wrong place". Two
+    independent places give the value: DGROUP holds `01 00` at $02ea in the
+    original's initialised image, and 1000:02b0 sets it again at run time with
+    `MOV word [02ea],1` beside `RingSlot := 0`.
+
+    [re] ~~Pannings~~ IS GONE IN v1.51 and the previous commit's guess never had
+    to be resolved. The original's DGROUP has `00 00 01 00` at $02e8 where ours
+    had the table, and MODCOMMANDS' block starts 20 bytes lower than ours --
+    sixteen of which are exactly this. All three readers had moved to
+    `PlayingSong^.ChannelPan`, so the declaration was the only thing keeping it
+    alive, and Turbo Pascal emits a typed constant whether or not anything reads
+    it. A dead typed constant is invisible to every code comparison and sixteen
+    bytes wide in the layout. 1.31b's values were $40, $b0, $b0, $40, $40, $b0,
+    $b0, $40 -- a third of the way in from each side, in the L R R L L R R L
+    pattern the Amiga uses; 1.51 gets the same effect from the song's own
+    per-channel pan, which is where the release always had it. }
+
+  { [re] DS:$02fa, six bytes. The initialiser names the FIRST variant's fields,
+    which is the only form Turbo Pascal accepts for a variant record's typed
+    constant -- Instrument, Period, Volume, Command, Parameter is
+    1 + 2 + 1 + 1 + 1, and $02fa + 6 is $0300, which is CurCanal. }
   NewNote          : TFullNote     = (Instrument : 0; Period : 0; Volume : 0;
                                       Command    : mcNone; Parameter : 0);
   CurCanal         : PCanal        = nil;      { DS:$0306                       }
   Pattern          : PPattern      = nil;      { DS:$030a in v1.51             }
 
-  { NEW IN v1.51, DS:$030e -- and it is the release's, carried since 1993. 1.39b
-    declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own typed
-    constants and uses it for exactly one thing: to know, after CommandStart has
-    run, whether this row started a sample that a 9xx could still be moved. }
+  { Set when this row started a sample. A 9xx sample offset can only be applied
+    to a sample that is actually starting, and the command runs AFTER the note
+    is set up -- so the note's half leaves this behind for the command's half to
+    find.
+
+    [re] NEW IN v1.51, DS:$030e, and it is the release's, carried since 1993:
+    1.39b declares `NewSample : BOOLEAN = FALSE` among ProcessNewNote's own
+    typed constants. }
   NewSample        : Boolean       = False;    { DS:$030e                       }
 
   { **`FirstTick`, AND THE RELEASE NEVER READS IT EITHER.** This was the only non-zero
@@ -482,88 +577,89 @@ const
   ChanRec          : PModRawChan   = nil;      { DS:$0314                       }
   OutPtr           : Pointer       = nil;      { DS:$0318                       }
   ModRec           : PSampleBuffer = nil;      { DS:$031C                       }
-  { **THE WHOLE OF ProcessTick's CONSTANT BLOCK IS HERE, IN THE RELEASE'S ORDER**,
-    and matching it end to end is what named the four unknowns in this run. 1.39b's
+  { FOUR OF THE VARIABLES IN THIS RUN ARE NEVER READ, HERE OR IN THE RELEASE.
+    They are leftovers of an earlier version of the tick routine, and they were
+    already leftovers in 1993. They are declared because their SPACE is real --
+    everything after them sits where it sits because they are there.
+
+    [re] THE WHOLE OF ProcessTick's CONSTANT BLOCK IS HERE, IN THE RELEASE'S
+    ORDER, and matching it end to end is what named the four unknowns. 1.39b's
     LIB/PLAYMOD.PAS:1024 declares, after an untyped SizeOf:
 
         incr : INTEGER   OTempoCt : WORD   Can : PCanal   Raw : PModRawChan
         NoteHzFreq : LONGINT   i : WORD   j : WORD   t : WORD   step : LONGINT
         FBCount : WORD   NumChannels : BYTE
 
-    Every width matches ours, in sequence, with no slack -- and FOUR OF THEM ARE
-    DEAD IN THE RELEASE TOO. `incr`, `NoteHzFreq`, `FBCount` and `j` occur exactly
-    once each in the whole of 1.39b's PlayMod: their own declarations. They are
-    leftovers of an earlier ProcessTick, and they were leftovers in 1993.
-
-    THAT IS WHY NO AMOUNT OF READING THIS IMAGE COULD NAME THEM. A variable nothing
-    reads has no witness in the code, and these have none in either version. The
-    sequence is the only evidence there is, and it is enough because it is exact. }
+    Every width matches ours, in sequence, with no slack. `incr`, `NoteHzFreq`,
+    `FBCount` and `j` occur exactly once each in the whole of 1.39b's PlayMod:
+    their own declarations. A variable nothing reads has no witness in the code,
+    so the sequence is the only evidence there is -- and it is enough because it
+    is exact. }
   Incr             : Integer       = 0;        { the release's `incr`, unread    }
   PrevTick         : Word          = 0;        { the release's `OTempoCt`        }
 
   CanalPtr         : PCanal        = nil;      { DS:$0324                       }
   RawPtr           : PModRawChan   = nil;      { DS:$0328                       }
   NoteHzFreq       : LongInt       = 0;        { unread here and in 1.39b       }
-  { **DS:$0330 IN v1.51, AND IT DOES TWO JOBS** -- which the layout is what forced.
-    A separate `TickSpan` was declared for the tempo loop's span last commit and it
-    put this unit's block four bytes over; the original has only six bytes between
-    `NoteHzFreq` and `StepVal`, not eight. The same address serves both: 12ce:0f2f stores
-    the span into [0330] and 12ce:11b1 reads [0330] as the channel index in the
-    volume pass. The first use is finished before the second begins.
+  { ONE VARIABLE, TWO UNRELATED JOBS -- a tempo span first, then a channel
+    index -- because the first use is finished before the second begins. This
+    unit does that in three places, and it is the original's habit rather than
+    an accident, which is why the name here claims nothing about either role.
 
-    THAT IS THE THIRD TIME THIS UNIT REUSES ONE GLOBAL FOR TWO ROLES -- the notes at
-    $02f6 and $0328 record the other two, both found the same way. It is the
-    release's habit, not an accident, and it is why neutral names are right here. }
-  TmpVal           : Word          = 0;        { DS:$0330 in v1.51  TWO JOBS    }
-  { The release's `j`, the second of ProcessTick's two Word indices -- `TmpVal` above
-    is its `i`. Neither version reads it, so there is no role to name it for and it
-    keeps a name that claims only what the sequence shows. }
-  UnusedIdx        : Word          = 0;
+    [re] DS:$0330 IN v1.51, and the layout is what forced it. A separate
+    `TickSpan` put this unit's block four bytes over; the original has only six
+    bytes between `NoteHzFreq` and `StepVal`, not eight. 12ce:0f2f stores the
+    span into [0330] and 12ce:11b1 reads [0330] as the channel index in the
+    volume pass. The notes at $02f6 and $0328 record the other two reuses, both
+    found the same way. }
+  TmpVal           : Word          = 0;
+  UnusedIdx        : Word          = 0;        { never read; see above          }
 
-  { 1.39b's `t`, the tempo loop's counter. It IS its own variable -- 12ce:0f45's
-    `DEC word [0334]` and 0fa5's `CMP [0334],1` are two bytes the span's address
-    cannot account for. }
-  TickIter         : Word          = 0;        { DS:$0334                       }
-  { A LONGINT IN v1.51, A WORD IN 1.31b, AND THE ZERO STORE IS WHAT SETTLES IT.
-    12ce:11a5 is `MOV word [0336],1000 / MOV word [0338],0` -- two immediate stores.
-    Written as two separate Word variables the second would be `XOR AX,AX /
-    MOV [x],AX`, because Turbo Pascal special-cases assigning zero and five bytes
-    beat six; it only emits the immediate form for BOTH halves when they are one
-    32-bit assignment. Our build proved that by emitting the XOR when it was tried
-    the other way.
+  TickIter         : Word          = 0;        { the tempo loop's counter       }
 
-    AND THE SHIFTS BELOW ARE CAST BACK DOWN. 121d and 122b are `SHL AX,4` and
-    `SHR AX,0Ch` on the low word alone; a LongInt shift would be an RTL call, so the
-    source has to narrow it first. }
-  StepVal          : LongInt       = 0;        { DS:$0336 in v1.51              }
-  { A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends pinned it before the
-    release confirmed it: StepVal occupies four bytes and TickChans follows two later,
-    not four. 1.39b calls it `FBCount` -- a fall-back counter, beside `CanFallBack`
-    and `FBTicks` elsewhere in the unit -- and never reads it. }
-  FBCount          : Word          = 0;
-  TickChans        : Byte          = 0;        { DS:$033C                       }
+  { [re] `UnusedIdx` is the release's `j`, the second of ProcessTick's two Word
+    indices -- `TmpVal` is its `i`. `TickIter` is 1.39b's `t`, and it IS its own
+    variable: 12ce:0f45's `DEC word [0334]` and 0fa5's `CMP [0334],1` are two
+    bytes the span's address cannot account for. }
+  StepVal          : LongInt       = 0;
+  FBCount          : Word          = 0;        { never read                     }
+  TickChans        : Byte          = 0;
 
-{ THE OLD SCATTERED NOTES FOLLOW, kept for their content only --
-  the declarations they described are in the block above.
-  DS:$02ca -- the release's `CanFallBack`, "TRUE if fall-back is allowed", and a
-  TYPED constant there as it must be here: 12ba:1325 reads it with `MOV AL,[02ca]`
-  and an untyped constant would have folded to an immediate. It is the client's
-  standing permission; `MyCanFallBack` at $121e is the working copy PlayStart
-  clears while it is setting up and restores on the way out. }
-{ DS:$02ce -- the release's `LoopMod`, "TRUE if music CAN be played forever", and
-  the client's half of the pair whose working copy is `MyLoopMod` at $0334. Typed,
-  and its address proves the release's declaration order again: `LoopMod` then
-  `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes.
+  { [re] `StepVal` IS A LONGINT IN v1.51 AND A WORD IN 1.31b, AND THE ZERO STORE
+    IS WHAT SETTLES IT. 12ce:11a5 is `MOV word [0336],1000 / MOV word [0338],0`
+    -- two immediate stores. Written as two separate Word variables the second
+    would be `XOR AX,AX / MOV [x],AX`, because Turbo Pascal special-cases
+    assigning zero and five bytes beat six; it only emits the immediate form for
+    BOTH halves when they are one 32-bit assignment. Our build proved that by
+    emitting the XOR when it was tried the other way. AND THE SHIFTS BELOW ARE
+    CAST BACK DOWN: 121d and 122b are `SHL AX,4` and `SHR AX,0Ch` on the low word
+    alone, because a LongInt shift would be an RTL call.
 
-  NOTHING IN 1.31 READS IT. The initialisation section clears it at 12ba:1426 and
-  no other instruction in the segment touches $02c8 -- because the operand that
-  would have read it is COMMENTED OUT in the expression at 1121, which is where
-  the stray `True and` comes from. The release still carries it the same way.
-  Declared for the one store, and to keep the pair together. }
-{ --------------------------------------------------------------------------
-  EXPORTED BECAUSE 11bb WRITES THEM, and for no other reason. These five were in the
-  implementation section until segment 11bb -- the configuration file reader -- turned
-  out to set every one of them from a key in VT.CFG:
+    [re] `FBCount` IS A WORD IN v1.51 WHERE 1.31b HAS A LONGINT, and the two ends
+    pinned it before the release confirmed it: StepVal occupies four bytes and
+    TickChans follows two later, not four. 1.39b calls it a fall-back counter,
+    beside `CanFallBack` and `FBTicks`, and never reads it. }
+
+{ [re] NOTES ON INDIVIDUAL DECLARATIONS IN THE BLOCK ABOVE, kept for their
+  content. DS:$02ca is the release's `CanFallBack`, "TRUE if fall-back is
+  allowed", and a TYPED constant there as it must be here: 12ba:1325 reads it
+  with `MOV AL,[02ca]` and an untyped constant would have folded to an
+  immediate. It is the client's standing permission; `MyCanFallBack` at $121e is
+  the working copy PlayStart clears while it is setting up and restores on the
+  way out.
+
+  [re] DS:$02ce is the release's `LoopMod`, "TRUE if music CAN be played
+  forever", the client's half of the pair whose working copy is `MyLoopMod` at
+  $0334. Its address proves the release's declaration order again: `LoopMod`
+  then `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes. NOTHING IN 1.31
+  READS IT -- the initialisation section clears it at 12ba:1426 and no other
+  instruction in the segment touches $02c8, because the operand that would have
+  read it is COMMENTED OUT in the expression at 1121, which is where the stray
+  `True and` comes from. The release still carries it the same way.
+
+  [re] FIVE ARE EXPORTED BECAUSE 11bb WRITES THEM, and for no other reason. They
+  were in the implementation section until segment 11bb -- the configuration
+  file reader -- turned out to set every one from a key in VT.CFG:
 
       ForceLoopMod   $02c9   the `ForceLoopMod` key      11bb:0b0e
       FilterOn       $02cb   the `FilterOn` key
@@ -571,55 +667,64 @@ const
       MaxOutputFreq  $02d4   the `MaxFreq` key
       TicksPerSecond $0bcc   the `TicksPerSec` key
 
-  Moving a declaration from the implementation section to the interface cannot change
-  a byte of either unit: every reference to a global is a linker fixup either way, and
-  `units.py` is the check. What it does change is who may write them, and the answer
-  turns out to be "a text file".
+  [re] Moving a declaration from the implementation section to the interface
+  cannot change a byte of either unit: every reference to a global is a linker fixup
+  either way, and `units.py` is the check. What it does change is who may write
+  them, and the answer turns out to be "a text file".
 
-  ~~`FilterIsOn` IS NOT IN THIS LIST, deliberately.~~ **IT IS NOW EXPORTED, and the
-  DGROUP ADDRESS is what forced it.** $02cd sits between `FilterOff` at $02cb and
-  `MaxOutputFreq` at $02ce, both interface globals, and a unit lays its interface
-  declarations down before its implementation ones -- so nothing private can land
-  there. It is in the ordered block at the top of this file with the rest. The
-  shadowing hazard is real and is handled at the one place it bites: VTCFG writes
-  ModCommands' `FilterIsOn` at $0348 and now says so by qualifying the reference.
-  -------------------------------------------------------------------------- }
-{ ~~TicksPerSecond~~ IS GONE FROM HERE. It is SoundDevices' typed constant at $0bcc,
-  holding 50 -- see the note there. This unit had it AND DevGus had it, and the DGROUP
-  layout says it is neither's: $0bcc sits between `TickSnapshot` at $0bca and `UsingGUS`
-  at $0bce, both of which are the core's. Left as a declaration here it would SHADOW the
-  real one for every reference in this unit, which is a bug no byte comparison can see. }
+  [re] `FilterIsOn` IS EXPORTED TOO, and the DGROUP ADDRESS is what forced it.
+  $02cd sits between `FilterOff` at $02cb and `MaxOutputFreq` at $02ce, both
+  interface globals, and a unit lays its interface declarations down before its
+  implementation ones -- so nothing private can land there. The shadowing hazard
+  is handled at the one place it bites: VTCFG writes ModCommands' `FilterIsOn`
+  at $0348 and says so by qualifying the reference.
 
-  { DS:$1208 -- EXPORTED, because `1000:0311` fills it: the program does
-    `FillChar(UserVols, 8, VtVolume)` to set every channel to its master volume before
-    a module starts. The release keeps it in its interface too, in the same VAR group as
-    ActualHz and Permisos. It was private here, which the program could not reach. }
+  [re] `TicksPerSecond` IS GONE FROM HERE. It is SoundDevices' typed constant at
+  $0bcc, holding 50. This unit had it AND DevGus had it, and the DGROUP layout
+  says it is neither's: $0bcc sits between `TickSnapshot` at $0bca and `UsingGUS`
+  at $0bce, both of which are the core's. Left as a declaration here it would
+  SHADOW the real one for every reference in this unit, which is a bug no byte
+  comparison can see.
+
+  [re] `UserVols` at DS:$1208 is EXPORTED because `1000:0311` fills it: the
+  program does `FillChar(UserVols, 8, VtVolume)` to set every channel to its
+  master volume before a module starts. The release keeps it in its interface
+  too, in the same VAR group as ActualHz and Permisos. }
 
 { ==========================================================================
-  THIS UNIT'S DGROUP VARIABLE BLOCK, $11f0..$1745, IN ADDRESS ORDER.
+  THIS UNIT'S VARIABLES -- the ones that hold no initial value and so are
+  reserved space rather than data: the channel array, the raw mixer channels,
+  the sample buffers, and the rings.
 
-  The addresses were all correct and the ORDER was not, which is a distinction nothing
-  could measure until the program linked: a `var` is space the linker never writes, so
-  `dgroup.py` cannot see it, and inside a `.TPU` every reference to one is an unresolved
-  fixup that `units.py` excuses. `linkcmp.py` compares the LINKED code, where
-  each of those fixups is a real address, and it reported this block scattered over
-  fourteen different deltas -- +3530, +3976, -428, -700 and the rest -- which is what a
-  correctly-sized block in the wrong internal order looks like.
+  THEY ARE IN ADDRESS ORDER FOR THE SAME REASON THE CONSTANTS ARE. Declaration
+  order is layout, and layout is not something a reader can guess back from the
+  code.
 
-  THE RELEASE'S INTERFACE VAR GROUP IS THIS ORDER EXACTLY: SplBuf, then ActualHz, NoteHz,
-  NoteCalcVal, UserVols, Permisos, TickCount, ModTickProc, MyCanFallBack, FilterVal.
-  1.31 continues with NoteBuff where 1.39b has `PlayModStack`, and then agrees again on
-  Canales, BuffGive, Buffers and SizeOfABuffer.
+  [re] $11f0..$1745. The addresses were all correct and the ORDER was not, which
+  is a distinction nothing could measure until the program linked: a `var` is
+  space the linker never writes, so `dgroup.py` cannot see it, and inside a
+  `.TPU` every reference to one is an unresolved fixup that `units.py` excuses.
+  `linkcmp.py` compares the LINKED code, where each of those fixups is a real
+  address, and it reported this block scattered over fourteen different deltas
+  -- +3530, +3976, -428, -700 and the rest -- which is what a correctly-sized
+  block in the wrong internal order looks like.
 
-  FIVE OF THE ADDRESSES BELOW ARE BASE-1 BASES rather than the arrays themselves, and
-  this file already records the rule: `$11ee` is SplBuf's, `$12E0` UserVols', `$12e0`
-  Permisos', `$1260` Canales' and `$13A6` RawChannels'. An instruction naming one of
-  those is indexing the array, not touching the byte.
+  [re] THE RELEASE'S INTERFACE VAR GROUP IS THIS ORDER EXACTLY: SplBuf, then
+  ActualHz, NoteHz, NoteCalcVal, UserVols, Permisos, TickCount, ModTickProc,
+  MyCanFallBack, FilterVal. 1.31 continues with NoteBuff where 1.39b has
+  `PlayModStack`, and then agrees again on Canales, BuffGive, Buffers and
+  SizeOfABuffer.
 
-  Only the first five need to be visible: `UserVols` because 1000:0311 fills it, and the
-  four above it because they have to precede it. The rest follow in the implementation,
-  which keeps them private without moving them -- a unit's implementation variables come
-  after all of its interface ones, so the order is preserved either way.
+  [re] FIVE OF THE ADDRESSES BELOW ARE BASE-1 BASES rather than the arrays
+  themselves: `$11ee` is SplBuf's, `$12E0` UserVols', `$12e0` Permisos', `$1260`
+  Canales' and `$13A6` RawChannels'. An instruction naming one of those is
+  indexing the array, not touching the byte.
+
+  [re] Only the first five need to be visible: `UserVols` because 1000:0311
+  fills it, and the four above it because they have to precede it. The rest
+  follow in the implementation, which keeps them private without moving them --
+  a unit's implementation variables come after all of its interface ones, so the
+  order is preserved either way.
   ========================================================================== }
 var
   { **THE THIRD LITERAL EIGHT IN THIS FILE, AND THE LAYOUT IS WHAT FOUND IT.**
@@ -639,68 +744,71 @@ var
   NoteCalcVal     : LongInt;  { DS:$12DC }
   UserVols        : TVolumes;             { DS:$12E0  base-1 base $1207 }
 
-{ 12ba:132f -- negotiate the rate, size the buffers, program the DMA. Declared
-  here because 12ba:0d4e calls it and it lives 1,500 bytes further down the
-  segment; the release exports it too, as `PROCEDURE ChangeSamplingRate(Hz:
-  WORD)`. Its body is a PLACEHOLDER until the transcription reaches 132f. }
+{ NEGOTIATE AN OUTPUT RATE. The caller ASKS for a rate; the card answers with
+  what it can actually do, the buffers are sized for that, and the DMA is
+  programmed. It can also be called again mid-song, which is why it exists as a
+  routine rather than as part of starting playback.
+
+  [re] 12ba:132f. Declared here because 12ba:0d4e calls it and it lives 1,500
+  bytes further down the segment; the release exports it too, as
+  `PROCEDURE ChangeSamplingRate(Hz: WORD)`. }
 procedure ChangeSamplingRate(Hz : Word); far;
+{ RELEASE ONE ROW OF QUEUED GUS COMMANDS. Called from the GUS driver's
+  interrupt handler, once per buffer, which is what ties the queue to the sound
+  actually being heard rather than to the sequencer's position.
 
-{ 12ba:1008 -- the release exports this too. }
-{ ~~NEW IN v1.51: AdvanceEventRow IS EXPORTED~~ **WITHDRAWN. IT IS
-  `FlushEventRow`, AND THE EVIDENCE WAS RIGHT WHILE THE NAME WAS WRONG.**
+  [re] Exported for that caller: DEVGUS's handler calls it at 106e:0019 as
+  `CALLF 12ce:03d9`, and it ends `LEAVE / RETF` at 12ce:04b9. THAT ADDRESS WAS
+  READ AS `AdvanceEventRow` FOR A WHILE, and the evidence was right while the
+  name was wrong: 03d9 is `ENTER 4,0 / CLD / INC [02ea]`, then
+  `IMUL DI,[02ea],0120` into a ring at $29fa, walking the row calling two FAR
+  routines before FillChar-ing it -- FlushEventRow, instruction for instruction.
+  AdvanceEventRow is at 0183 and ends `LEAVE / RET` at 0201, near.
 
-  The note said "v1.51's ends `LEAVE / RETF` at 12ce:04b9, and DEVGUS's interrupt
-  handler calls it at 106e:0019 as `CALLF 12ce:03d9`". Both facts hold. What does
-  not is that 03d9..04b9 is AdvanceEventRow: 03d9 is `ENTER 4,0 / CLD /
-  INC [02ea]`, then `IMUL DI,[02ea],0120` into a ring at $29fa, and it walks the
-  row calling two FAR routines in 1a?? before FillChar-ing the row -- that is
-  `FlushEventRow`, instruction for instruction. AdvanceEventRow is still at 0183
-  and still ends `LEAVE / RET` at 0201, near, exactly as 1.31b has it.
-
-  **NOTHING IN DEVGUS COULD HAVE CAUGHT THIS.** The call is `9A` plus a segment
+  [re] NOTHING IN DEVGUS COULD HAVE CAUGHT THAT. The call is `9A` plus a segment
   fixup and an offset the linker supplies, so DEVGUS assembles to the same bytes
-  whichever PlayMod routine the name resolves to, and it verified byte-exact under
-  the wrong one. The same shape as SOUNDDEV's unlinked fixups and MODCOMMA's
-  shadowed `mcLast`: a cross-unit reference that only the CALLEE's own bytes can
-  check. Look at what is AT the address, not at what you expected to be. }
+  whichever PlayMod routine the name resolves to, and it verified byte-exact
+  under the wrong one -- the same shape as SOUNDDEV's unlinked fixups and
+  MODCOMMA's shadowed `mcLast`. A cross-unit reference can only be checked by
+  the CALLEE's own bytes. }
 procedure FlushEventRow; far;
 
 procedure ProcessTickEntry; far;
 
-{ 12ba:13d7 -- stop playing and give the buffers back. Declared here because
-  12ba:127c calls it from inside PlayStart's out-of-memory path, 1,300 bytes
-  above it; the release exports it too, as `PROCEDURE PlayStop`. Its body is a
-  PLACEHOLDER until the transcription reaches 13d7. }
+{ Stop playing and hand the buffers back. Also called from inside PlayStart's
+  own failure path, which is why it has to work on a player that never fully
+  started.
+
+  [re] 12ba:13d7, called from 12ba:127c 1,300 bytes above it; the release
+  exports it too. }
 procedure PlayStop; far;
 
-{ 12ba:10a1 -- start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
-  1000:0381 is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
-  was read nothing outside this unit was known to reach it, so it was declared
-  in the implementation only. The release exports it too, as
-  `PROCEDURE PlayStart(VAR Song: TSong)`.
+{ Start playing a module: take the requested range, set up the channels, size
+  and claim the buffers, and hand the first of them to the card.
 
-  SEVENTH INTERFACE CORRECTED BY A CALLER IN ANOTHER SEGMENT -- see VTDOSRSZ,
-  VTDOSMEM, GUS, UNKLOADE, TSong.Status and HARDWARE.DMAReset. Exporting an
-  already-far routine cannot move a byte; PLAYMOD verifying unchanged is the
-  check. }
+  [re] 12ba:10a1. EXPORTED BECAUSE 1000 CALLS IT: 1000:0381 is
+  `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000 was read
+  nothing outside this unit was known to reach it. SEVENTH INTERFACE CORRECTED
+  BY A CALLER IN ANOTHER SEGMENT -- see VTDOSRSZ, VTDOSMEM, GUS, UNKLOADE,
+  TSong.Status and HARDWARE.DMAReset. Exporting an already-far routine cannot
+  move a byte; PLAYMOD verifying unchanged is the check. }
 procedure PlayStart(var Song : TSong); far;
 
 implementation
 
-{ ======================= NOTES WITHOUT DECLARATIONS =======================
-  Everything from here to the next `type` section describes a global that now
-  lives in one of this unit's two ORDERED blocks -- the typed constants at the top
-  of the file, $02c4..$0333, or the variables further down, $11f0..$1745. The notes
-  are kept because several of them record measurements that are not repeated there;
-  what they no longer do is sit next to the declaration they describe, and the
-  address each one opens with is how to find it. ======================= }
-  { DS:$13a4. The release keeps this in its implementation section too, which
+{ [re] NOTES WITHOUT DECLARATIONS. Everything from here to the next `type`
+  section describes a global that now lives in one of this unit's two ORDERED
+  blocks -- the typed constants at the top of the file, $02c4..$0333, or the
+  variables further down, $11f0..$1745. They are kept because several record
+  measurements that are not repeated there; the address each one opens with is
+  how to find the declaration. }
+  { [re] DS:$13a4. The release keeps this in its implementation section too, which
     is where the disassembly puts it -- nothing outside 12ba reads it. }
 
 
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$02d1, THE RENAME FLAG, and it is declared in two units. VTMAIN owns it
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] DS:$02d1, THE RENAME FLAG, and it is declared in two units. VTMAIN owns it
     as `AltMode` -- set when the executable is called INCONEXI.EXE -- and
     nothing in THAT segment reads it; this is the only reader. A global's
     address is a linker fixup, so the byte comparison cannot see the
@@ -709,7 +817,7 @@ implementation
     flagged rather than resolved: settling it needs the DGROUP layout. }
 
 
-  { ~~ONE cursor, shared~~ -- **v1.51 SPLITS IT, AND ADDS THE FULL TEST THAT GOES
+  { [re] ~~ONE cursor, shared~~ -- **v1.51 SPLITS IT, AND ADDS THE FULL TEST THAT GOES
     WITH A REAL RING.** 1.31b had SetEvent, PostEvent and FlushEventRow all indexing
     by DS:$02f0. In 1.51 the two producers use $02e8 and the flush uses $02ea, and
     12ce:0e78 is what makes the pair mean something:
@@ -725,7 +833,7 @@ implementation
     The 1.31b note said the shared cursor "is why neither producer needs a cursor of
     its own". That was true of 1.31b and is the thing 1.51 changed. }
 
-  { DS:$02f4 -- `Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
+  { [re] DS:$02f4 -- `Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
     so: 12ba:03cc starts it at 2 and then adds $01, $04, $10 and $20, which are
     exactly rcfActiveChannel, rcfLongSample, rcfDoesLoop, rcfLongLoopLen and
     rcfLongLoopEnd. It was read as "a GUS voice control byte" until the last two
@@ -735,7 +843,7 @@ implementation
     four bytes -- treated as no loop at all -- and 0 when it loops, which is why
     every test of it reads `= 0`. }
 
-  { DS:$0bce -- THE SECOND DUPLICATED GLOBAL IN THIS UNIT, and the same shape as
+  { [re] DS:$0bce -- THE SECOND DUPLICATED GLOBAL IN THIS UNIT, and the same shape as
     AltMode above. DevGUS declares it as `Started` in its IMPLEMENTATION section,
     so it is private there and invisible here, yet 12ba:05a8 plainly reads it: the
     routine below posts nothing unless the GUS driver has started. One of the two
@@ -743,9 +851,9 @@ implementation
     no guidance because 1.39b rebuilt its GUS support elsewhere. Flagged, not
     resolved -- and invisible to the byte comparison either way. See risk 1. }
 
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { --- the sequencer's state, DS:$02d6 upward -----------------------------
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] --- the sequencer's state, DS:$02d6 upward -----------------------------
     The 63-byte record at DS:$1220 is the release's `TPlayingNote` -- ITS FIRST
     FIELD IS CONFIRMED and nothing else is. 1.39b describes `EoMod` as "TRUE if
     it is the note following the last", and 12ba:06fe sets exactly that from a
@@ -754,18 +862,18 @@ implementation
 
     The two indices and the pointer follow the release's naming where the role
     matches; they are provisional. }
-  { DS:$13a6, AND $1384 IS THE BASE-1 BASE RATHER THAN THE ARRAY. Every access
+  { [re] DS:$13a6, AND $1384 IS THE BASE-1 BASE RATHER THAN THE ARRAY. Every access
     is `IMUL DI,i,$22 / ADD DI,$1384`, which for i=1 lands on $13a6 -- one 34-byte
     element above $1384, exactly as the base-1 rule says. 12ba:12ba settles it
     outright: `FillChar(RawChannels, SIZEOF(RawChannels), 0)` passes $13a6 and
     $0110, and $0110 is 272, which is 8 x 34. The earlier comment here gave $1384
     as the array's own address and it was the base. }
 
-  { All four names are the release's, and each is confirmed by what 12ba does
+  { [re] All four names are the release's, and each is confirmed by what 12ba does
     with it: ActualHz divided by the tick rate gives samples per tick, capped by
     MaxSplPerTick -- whose release comment is literally "Maximum samples in the
     buffer. Means maximum samples per tick." }
-  { THE RELEASE'S DECLARATION ORDER, AND THE ADDRESSES CONFIRM IT: `BuffIdx,
+  { [re] THE RELEASE'S DECLARATION ORDER, AND THE ADDRESSES CONFIRM IT: `BuffIdx,
     BuffGive : WORD;` then `Buffers` then `SizeOfABuffer` is $1390, $1392, $1394,
     $13a0 -- four consecutive declarations landing on four consecutive addresses,
     which is far stronger than any single name matching.
@@ -783,18 +891,18 @@ implementation
     IS the arithmetic, and `if BuffIdx > NumBuffers` with NumBuffers = 1 is
     exactly what the release writes. 1.31 simply had one. }
 
-  { Both the release's names. `SplBuf` carries each channel's filter state from
+  { [re] Both the release's names. `SplBuf` carries each channel's filter state from
     one call to the next -- it is what FilterChunkWord takes as `OldSpl` and
     returns -- and `FilterVal` is the method in force. Base-1 again: the compiler
     addresses SplBuf from $11ee, one element below its real start. }
 
-  { All four the release's names, and each confirmed by its use here: the pair of
+  { [re] All four the release's names, and each confirmed by its use here: the pair of
     methods and the switch between them at 12ba:0f15, and the per-channel
     permission at 12ba:0f2a -- "permissions for playing the channels", which is
     exactly what it gates. Base-1 again for the array. }
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$02cd -- AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] DS:$02cd -- AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
     142f:04da writes that one from the E0x command and nothing reads it; this one is
     read by the initialisation section at 12ba:1430 to choose between FilterOn and
     FilterOff. Two variables where the release has one. ModCommands keeps its copy in
@@ -802,25 +910,25 @@ implementation
     if both were exported, every reference in this unit would silently bind to this
     one and no byte comparison could see it. }
 
-  { DS:$02d4 -- the release's `MaxOutputFreq`, whose comment is "Maximum frequency
+  { [re] DS:$02d4 -- the release's `MaxOutputFreq`, whose comment is "Maximum frequency
     of the output sound. Less means less memory for buffers." Divided by the tick
     rate at 12ba:1174 it gives exactly MaxSplPerTick, which is that sentence. }
 
-  { DS:$0bca -- THE FOURTH DUPLICATED GLOBAL. VTMAIN owns it as `Snapshot` and
+  { [re] DS:$0bca -- THE FOURTH DUPLICATED GLOBAL. VTMAIN owns it as `Snapshot` and
     12ba compares it against `VTSilenc.Ticks` at DS:$0bc8, which IS exported and
     is used from here directly. So one of the pair resolves cleanly and the other
     does not, in the same comparison. Risk 1 again. }
 
-  { DS:$034e IS A TICK COUNTER WITHIN THE ROW, not the row number, and
+  { [re] DS:$034e IS A TICK COUNTER WITHIN THE ROW, not the row number, and
     docs/04-units.md has it as "the current row". 12ba:0cdf compares it against
     `NoteProcessed^.Tempo` -- the release's "number of ticks the note will last"
     -- and 12ba:0cf7 resets it to zero when the pattern advances. A row number
     would be compared against a pattern length and would not reset. }
 
-  { DS:$121e -- the release's `MyCanFallBack`, "actual permission to fall back",
+  { [re] DS:$121e -- the release's `MyCanFallBack`, "actual permission to fall back",
     and the use fits exactly: with permission withheld, SoundDevices' request to
     fall back to a lower rate is simply cleared. }
-  { DS:$0328 -- ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ba:0d14 it
+  { [re] DS:$0328 -- ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ba:0d14 it
     holds a candidate sample rate while the driver is negotiated; from 12ba:0da1
     it is the control variable of a loop over the channels. The name is neutral
     because neither role owns it. }
@@ -879,64 +987,79 @@ var
   WideSeqRing    : array[0..RingRows - 1] of Byte;
   EventRing       : array[0..RingRows - 1] of TGusEventRow;  { DS:$1646 }
 
-{ ---- MORE NOTES WITHOUT DECLARATIONS ----------------------------------------
-  Same as the run above: these described variables that are now in the ordered
-  block at $11f0..$1745, a few lines up. ---------------------------------- }
-  { The release's name, confirmed by 12ba:1008 along with the guard it returns on,
+{ [re] MORE NOTES WITHOUT DECLARATIONS. Same as the run above: these described
+  variables that are now in the ordered block at $11f0..$1745, a few lines up. }
+  { [re] The release's name, confirmed by 12ba:1008 along with the guard it returns on,
     the song it plays and the flag that says the procedure has been set up -- the
     other four of that group are typed constants and are in the ordered block at the
     top of this file. }
 
 
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$0c74 `TicksPerSecond` -- THE THIRD DUPLICATED GLOBAL, after AltMode and
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] DS:$0c74 `TicksPerSecond` -- THE THIRD DUPLICATED GLOBAL, after AltMode and
     UsingGUS. DevGUS
     declares it privately in its implementation section, where a comment already
     records that the release moved it to SoundDevices and that ownership is the
     open question rather than the name. 12ba reads it here. Risk 1 again. }
-  { DS:$02f6 -- ONE GLOBAL, TWO JOBS. At 06bc it is the note buffer's next slot;
+  { [re] DS:$02f6 -- ONE GLOBAL, TWO JOBS. At 06bc it is the note buffer's next slot;
     from 0802 it is the control variable of a `for` loop over the channels. The
     first use is finished before the second starts, so the reuse is harmless --
     but it is why the name is neutral rather than either role's. }
 
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$0334 -- THE RELEASE'S `MyLoopMod`, no longer provisional. Its assignment
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] DS:$0334 -- THE RELEASE'S `MyLoopMod`, no longer provisional. Its assignment
     at 1121..113d is the release's `(TRUE AND (MyRepStart <> 0)) OR ForceLoopMod`
     character for character, including the commented-out LoopMod operand that is why a
     literal 1 is tested there, and 0717 reads it as the release's line 821 does.
     The client-facing `LoopMod` it was named after is a DIFFERENT variable, at
     $02c8; see its declaration in the interface. }
-  { MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
+  { [re] MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
     142f:04a6 and 142f:04bc write from the F-command. Names unchanged; the release
     calls them Tempo and BPMIncrement and the rename is declined there for reasons
     given at the declaration. }
 
-  { MOVED TO ModCommands: `NextSeq` ($034c), `NextNote` ($034a) and `MySongLen`
+  { [re] MOVED TO ModCommands: `NextSeq` ($034c), `NextNote` ($034a) and `MySongLen`
     ($0340), which this unit knew as NextSeq, NextNote and MySongLen. 142f writes all
     three from its effect routines, and PlayMod uses ModCommands rather than the
     other way round, so ModCommands has to own them. See the note at their
     declaration; the release splits them the same way. }
-  { The range a caller ASKS for, copied into the working three at 12ba:10b4.
+  { [re] The range a caller ASKS for, copied into the working three at 12ba:10b4.
     Provisional names: nothing outside 12ba has been seen to set them. }
-{ NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
-  OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$02cf -- the release's `ForceLoopMod`, "TRUE if music must be played
+{ [re] The declaration this note describes now lives in the ordered const
+  block at the top of this file; it is NOT the declaration below. }
+  { [re] DS:$02cf -- the release's `ForceLoopMod`, "TRUE if music must be played
     forever", and 12ba:112e uses it exactly that way: it forces LoopMod on. }
 
 
 { --------------------------------------------------------------------------
-  12ba:1600 -- the resampling kernel, and the whole reason this unit links an
-  object module. `PUSH BP / MOV BP,SP` is not what starts it; the prologue
-  scanner found `ENTER $000`, which is the hand-written frame of an assembler
-  routine, and 1.39b builds its equivalent from `LIB/PLAYMOD.ASM` under a $L.
+  THE RESAMPLING KERNEL, and the whole reason this unit links an object module.
+  It is the inner loop of the entire program: for each output sample it reads
+  the source at the current position, scales it by the volume, adds it to what
+  is already there, and advances the position by the step. Everything else in
+  this unit exists to set up one call to this.
 
-  NOT TRANSCRIBED YET. `PLAYMOD.ASM` currently holds a stub so that the link
-  resolves and everything above it can be measured; the stub is the LAST thing
-  in the segment, so it displaces nothing.
+  IT IS HAND-WRITTEN ASSEMBLER because it runs tens of thousands of times a
+  second and a compiler's output would not keep up on the hardware this was
+  written for. It lives in PLAYMOD.ASM and is linked in below.
 
-  The signature is read off the call sites at 009b, 0111 and 016f -- eight
+  IT IS CALLED IN BOUNDED RUNS, AND THAT IS WHAT KEEPS IT STRAIGHT-LINE. The
+  caller works out how far the kernel can go before it hits something -- the
+  end of the sample, the end of a loop, the end of what is owed -- and asks for
+  no more than that. So the kernel needs no wrap test, no end-of-sample test
+  and no branch inside its loop; the caller handles the boundary and calls
+  again. `Rest` is both the request and the answer: how many samples are owed
+  going in, how many are still owed coming out.
+
+  ONE KERNEL DOES TWO JOBS. A silent channel still has to advance its position
+  and still has to leave the output untouched, so rather than a second routine
+  there is a `Silent` flag. The release later split it in two.
+
+  [re] 12ba:1600. `PUSH BP / MOV BP,SP` is not what starts it; the prologue
+  scanner found `ENTER $000`, the hand-written frame of an assembler routine,
+  and 1.39b builds its equivalent from `LIB/PLAYMOD.ASM` under a $L. The
+  signature is read off the call sites at 009b, 0111 and 016f -- eight
   arguments, 22 bytes, so the kernel ends `RET $16`:
 
     Src        VAR, the channel's SplPosFrac onward -- the kernel's state
@@ -948,15 +1071,13 @@ var
     ChanAdd    Word, NumChannels * 2, the stride between output samples
     Silent     Boolean, 1.31's single kernel doing 1.39b's two jobs
   -------------------------------------------------------------------------- }
-{ **`units.py` REPORTS THIS UNIT AS MISMATCHED, AND THAT IS THE INSTRUMENT'S
-  LIMIT RATHER THAN A DEFECT.** It compares .TPU files, and this unit's code is
+{ [re] `units.py` REPORTS THIS UNIT AS MISMATCHED, AND THAT IS THE INSTRUMENT'S
+  LIMIT RATHER THAN A DEFECT. It compares .TPU files, and this unit's code is
   partly in the .OBJ linked below -- so the TPU holds a call to something that
   is not in it, and the comparison diverges at the first such site. SoundDevices
   reports the same for the same reason, and they are the only two units in the
-  tree with an external module.
-
-  THE LINKED IMAGE IS THE CHECK THAT COUNTS, and it reports zero differing bytes.
-  A per-unit tool cannot see a unit that is not all in one place. }
+  tree with an external module. THE LINKED IMAGE IS THE CHECK THAT COUNTS, and
+  it reports zero differing bytes. }
 {$L PLAYMOD.OBJ}
 function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         SrcLimit, Max, ChanAdd : Word;
