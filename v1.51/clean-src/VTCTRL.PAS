@@ -226,6 +226,6 @@ wipe the block and stamp it.
   wrong was the KIND of thing they are, and only linking exposes it.
   -------------------------------------------------------------------------- }
 begin
-  FillChar(CtrlBlock, CtrlBlockSize, 0);          { .. 14b7:000d }
+  FillChar(CtrlBlock, CtrlBlockSize, 0);
   CtrlBlock.SoundVolume := $FF;
 end.

@@ -142,7 +142,7 @@ var
   { ~~Frac and OldVec~~ are TYPED CONSTANTS in the interface now -- see the note there.
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
-  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { .. $0e34 }
+  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
   { **STALE, AND UNANCHORED.** This unit links at position 4 and VTCmd at 2, so
     this variable must sit above VTCmd's $0ef6. It does not. The claim is
     consistent with nothing else in the file -- it is the only variable here with

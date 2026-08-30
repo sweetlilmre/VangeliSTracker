@@ -114,7 +114,7 @@ begin
     INT  21h
     JNC  @@Got
     MOV  Paras, BX         { BX now holds the largest available }
-    MOV  AH, 48h           { ... so ask for exactly that        }
+    MOV  AH, 48h           { 1880:0023  ... so ask for exactly that        }
     INT  21h
     JNC  @@Got
     MOV  AX, 0             { give up                            }
@@ -174,7 +174,7 @@ asm
   MOV  AH, 0             { the answer if it failed              }
   JC   @@Out
   MOV  AH, AL            { keep the old state                   }
-  PUSH AX                { ... across the second call           }
+  PUSH AX                { 1880:0085  ... across the second call           }
   MOV  AX, 5803h         { DOS: set UMB link state              }
   XOR  BH, BH
   MOV  BL, State

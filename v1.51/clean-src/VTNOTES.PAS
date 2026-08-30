@@ -192,7 +192,7 @@ begin
       number a sample rate is worked out from; the high byte is the nibble
       pair a pattern display wants. }
   Store:
-    NoteOf[P] := ((Oct shl 4) + Note) shl 8       { .. 1650:007e }
+    NoteOf[P] := ((Oct shl 4) + Note) shl 8
                  + (Oct * Semis + Note);
   end;
 end;

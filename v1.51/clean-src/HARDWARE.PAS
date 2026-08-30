@@ -146,10 +146,10 @@ let an IRQ through.
 procedure EnableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then
-    Port[$21] := Port[$21] and not (1 shl IRQ)    { .. 1b24:001b }
+    Port[$21] := Port[$21] and not (1 shl IRQ)
   else
   begin
-    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  { .. 0038 }
+    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));
     Port[$21] := Port[$21] and not (1 shl 2)      { -> AND AL,0FBh }
   end
 end;
@@ -166,9 +166,9 @@ shut an IRQ out.
 procedure DisableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then
-    Port[$21] := Port[$21] or (1 shl IRQ)         { .. 1b24:005d }
+    Port[$21] := Port[$21] or (1 shl IRQ)
   else
-    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))   { .. 1b24:0078 }
+    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))
 end;
 
 { --------------------------------------------------------------------------
@@ -258,7 +258,7 @@ asm
   AND  AH, 3             { DMA 4..7 -> 0..3 on this controller   }
   SHR  CL, 1             { CL:BX >> 1 -- 16-bit DMA counts words }
   RCR  BX, 1
-  ADD  CL, CL            { ... but the page is NOT halved        }
+  ADD  CL, CL            { 1b24:012f  ... but the page is NOT halved        }
   MOV  AL, AH
   ADD  AL, 4             { bit 2 = set mask                      }
   OUT  0D4h, AL          { mask the channel                      }
@@ -612,7 +612,7 @@ begin
       expression LongInt, and without it Turbo Pascal emits a two-byte
       `ADD AX,[BP-4]` where the original has fourteen bytes of 32-bit
       arithmetic. Transcribed as found. }
-    Offs := Offs - $10000 + Ofs(Buf^);            { .. 02c0 }
+    Offs := Offs - $10000 + Ofs(Buf^);
   end
   else
     Offs := Ofs(Buf^) + Offs;

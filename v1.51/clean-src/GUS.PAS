@@ -450,17 +450,17 @@ copy a sample into the card's own DRAM.
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
-  SetGusRegister8(grDRAMHighIO, DramAt shr 16);      { .. 1723:009f }
-  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);  { .. 1723:00b2 }
+  SetGusRegister8(grDRAMHighIO, DramAt shr 16);
+  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);
   asm
   PUSH DS          { LODSB will take DS away              }
   MOV  CX, Count   { [BP+0Ch]                             }
   LES  DI, DramAt  { the DRAM address, low word in DI     }
-  MOV  BX, ES      { ... high half in BL                  }
+  MOV  BX, ES      { 1723:00bc  ... high half in BL                  }
   MOV  BH, BYTE PTR Signed { [BP+06h]                           }
   CMP  BH, 1        { carry when the caller said 0         }
   SBB  BH, BH       { $FF when signed, else $00            }
-  SHL  BH, 7        { ... becomes the $80 XOR mask         }
+  SHL  BH, 7        { 1723:00c6  ... becomes the $80 XOR mask         }
   MOV  DX, GUSPort
   LDS  SI, Src      { [BP+0Eh]                             }
   ADD  DX, 0103h    { the register select port             }
@@ -958,7 +958,7 @@ begin
   { ONE STATEMENT. The release's SwapGusAddress is
     `Addr := (Addr SHL 9) AND $1FFFFE00;` -- a single shift and a single
     32-bit mask, not a shift followed by a rebuild from two halves. }
-  A := (A shl 9) and $1FFFFE00;  { .. 1723:0553 }
+  A := (A shl 9) and $1FFFFE00;
 end;
 
 { --------------------------------------------------------------------------
@@ -1194,7 +1194,7 @@ begin
       ChangeSample(i);
       Vol := LastVolumes[i];
       LastVolumes[i] := 0;
-      ChangeVol(i, Vol, $1F);  { .. 07da }
+      ChangeVol(i, Vol, $1F);
     end;
 
   { --- pass two: collect the ready voices, then start them together -- }
@@ -1365,13 +1365,13 @@ begin
     end
   end
   else
-    ChangeVol(Channel, Vol, $1F);  { .. 09c2 }
+    ChangeVol(Channel, Vol, $1F);
 
   if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then
   begin
     LastFreqs[Channel] := Freq;
     SetGusRegister16(grFreqControl, ((Freq shl 9) + LongInt(GUSDivisor shr 1))
-                    div LongInt(GUSDivisor shr 1));  { .. 0a31 }
+                    div LongInt(GUSDivisor shr 1));
   end;
 
   if LastPans[Channel] <> Panning then
