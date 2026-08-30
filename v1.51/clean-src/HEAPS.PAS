@@ -1,32 +1,23 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 17cf -- THE MEMORY POOL. 2,832 bytes, 46 routines.
+  THE MEMORY POOL: where a module's samples and patterns actually live.
 
-  COMPLETE. All 2,832 bytes; our code is 2,821 and the last eleven are padding.
-  This file WAS a declared stub, written when 12ba needed something to call.
+  WHY NOT JUST USE THE TURBO PASCAL HEAP. Because a sample is bigger than a
+  segment. Pascal's own heap hands out pointers within 64K, and a single
+  instrument in a module can exceed that -- so this pool deals in FLAT
+  addresses, treating everything DOS gave back as one linear space and doing
+  its own arithmetic across segment boundaries. That is what LinealPtr and its
+  two companions are for, and why they exist at all.
 
-  ESSENTIALLY THE WHOLE UNIT CAME FROM THE RELEASE VERBATIM. Forty-three routines, and
-  the only things that had to be measured rather than copied were three ABSENCES and one
-  corrected signature:
+  IT IS AN OBJECT WITH VIRTUAL METHODS, which is unusual for 1993 Pascal and
+  deliberate: the player asks its heap for memory without knowing which kind of
+  heap it has. A pool in upper memory and a pool in conventional memory answer
+  the same calls.
 
-      InitTempHeap, DoneTempHeap   absent -- ChangeSystemHeap has one caller, not three
-      DoneHeapVariables            absent -- no `CALLF [DI+3c]` anywhere in the segment
-      the `WriteLn` in HFreeMem    absent -- not one printable string in the segment
-      SetMemTop(P : Pointer)       188f took a Pointer, not two Words
-
-  **EVERY ONE OF THOSE FOUR WAS FOUND BY COUNTING RATHER THAN READING** -- callers,
-  virtual-call sites, strings. See the notes at each.
-
-  THE PAIRING WITH `LIB/HEAPS.PAS` WAS CONFIRMED FROM THE OTHER SIDE, BEFORE THIS
-  SEGMENT WAS TOUCHED AT ALL, and it is the only one in the project that happened
-  that way round. 12ba:1263 is `CALLF [DI+8]` on the object at DS:$39ae and 12ba:1261
-  is `MOV DI,[DI]`, which between them fixed
-
-    * that HGetMem is virtual method number two, so the declaration order below is
-      the release's `Done, HGetMem, HFreeMem, HMemAvail, ...`;
-    * that the VMT link is at object offset 0, so THeap descends from an ancestor
-      with no fields of its own -- `OBJECT(TObject)` exactly as the release has it.
+  ALLOCATION IS COARSE AND FREEING IS WHOLESALE. A module is loaded, played,
+  and thrown away entire; nothing frees one sample and keeps another. That is
+  what makes a pool viable where a general allocator would fragment.
 
   A one-byte difference in the call site is what proved the second of those: a THeap
   declared as a BASE object carries its VMT link after its four Pointer fields, at
@@ -36,10 +27,6 @@
   five heap utilities, fifteen THeap methods, two TUmbHeap, fourteen THeapColl and
   two unit-level initialisers -- plus the nested closures ForEach and FirstThat need.
   The prologue scanner finds 46 frames.
-
-  IT CALLS `Objects` AT SIX ENTRY POINTS (1891:0000, 0031, 03a7, 04ec, 0520, 055b),
-  which is TCollection and its iterators -- THeapColl keeps its sub-heaps in one. It
-  also calls 1880 (DOS $48/$49) and 188f (DOS $4A), both of which are transcribed.
 
   `TObject` IS DECLARED HERE rather than imported, and that is deliberate: it needs to
   be a fieldless object with one virtual method and nothing else, which is all the VMT
@@ -143,11 +130,7 @@ type
     the first virtual THeapColl adds, so it lands there -- but only if THeap has
     exactly THIRTEEN virtuals, running Done, HGetMem, HFreeMem, HMemAvail, HMaxAvail,
     HTotalAvail, TransferToSystem, TransferFromSystem, BeginOperation, EndOperation,
-    InHeap, HNewStr, HDisposeStr. Drop the string pair and AddHeap would be at +$30.
-
-    So a call site in a routine that has not been transcribed yet confirms the last
-    two entries of a different object's method list. That is the same shape of
-    evidence as `12ba:1263` proving the ancestry before this segment was touched. }
+    InHeap, HNewStr, HDisposeStr. Drop the string pair and AddHeap would be at +$30.}
   PHeapColl = ^THeapColl;
   THeapColl = object(THeap)
     HeapColl : TCollection;
@@ -174,9 +157,7 @@ type
   end;
 
 var
-  { The release's five, in its declaration order. `FullHeap` at DS:$5d08 is the one
- reaches; it is a THeapColl here rather than the THeap the stub had,
-    which changes no byte at that call site because HGetMem is at +$08 either way. }
+
   InitialHeapEnd : Pointer;
   Heap           : THeap;
   UmbHeap        : THeapColl;
@@ -184,11 +165,10 @@ var
   TempHeap       : THeap;
 
 { --------------------------------------------------------------------------
-  `InitTempHeap` AND `DoneTempHeap` ARE ABSENT FROM 1.31, and the proof is a call
-  count rather than a search. Both of them call `ChangeSystemHeap`, and so does
-  `ShrinkSystemHeap` -- so the release's ChangeSystemHeap has THREE callers inside its
-  own segment. 17cf:010c has exactly ONE. Scanning every near call in the segment
-  settles it without reading a byte of either routine.
+  THE TEMPORARY HEAP IS DECLARED AND NEVER BUILT. It is what the tracker's swap
+  system carves out of the system heap when it needs scratch space, and a
+  player that does nothing but play has nothing to swap -- so the routines that
+  would set it up and tear it down are not here.
 
   Which makes sense: the temporary heap is what the tracker's swap system carves out
   of the system heap when it needs scratch space, and a player that does nothing but
@@ -214,18 +194,7 @@ THE THREE POINTER HELPERS, and all three are one-liners
 
       IncPtr(P, L)     P advanced by L bytes, renormalised
       NormalizePtr(P)  P renormalised in place
-      LinealPtr(P)     P as a single 20-bit linear address
-
-  `LinealPtr` IS WHY THE OTHER TWO EXIST: the heap compares and subtracts addresses,
-  and it can only do that on the linear form. 17cf:0081 is called fourteen times from
-  inside this segment, more than any other routine here.
-
-  THE 32-BIT SHIFTS ARE RTL CALLS, not instruction sequences: 17cf:0016 calls
- for `shr 4` on a LongInt and 17cf:0091 calls 1ba1:0aa8 for `shl 4`. An
-  8086 has no 32-bit shift, so Turbo Pascal calls a helper -- which is why `IncPtr`'s
-  one line is fifty bytes and why `NormalizePtr`, whose shift is on a WORD, gets the
-  inline `SHR AX,4` instead and is twenty bytes shorter.
-  -------------------------------------------------------------------------- }
+      LinealPtr(P)     P as a single 20-bit linear address}
 { ===========================================================================
   **THE THREE POINTER HELPERS, AND WHY REAL MODE NEEDS THEM AT ALL.**
 
@@ -308,8 +277,11 @@ end;
 
 
 { --------------------------------------------------------------------------
-ChangeSystemHeap. Move Turbo Pascal's OWN heap boundary, clamped at
-  both ends, and then let `Heap` take whatever that freed.
+  Move Turbo Pascal's OWN heap boundary, so that the pool and the compiler's
+  heap do not grow into each other, and let `Heap` take whatever that frees.
+
+  It is clamped at both ends, and the clamps are the interesting part -- see
+  below.
 
   IT IS CLAMPED IN LINEAR SPACE, WHICH IS WHY LinealPtr EXISTS. The floor is however
   much the system heap has already handed out (`HeapPtr - HeapOrg`) -- shrinking past
@@ -341,14 +313,6 @@ end;
 ShrinkSystemHeap. Move the boundary and then give the memory back to
   DOS, which is the irreversible half.
 
-  IT IS THE RELEASE'S `SetMemTop(HeapEnd)` AFTER ALL, AND FINDING THAT CORRECTED
-  ANOTHER UNIT. The call at 01e8 reaches 188f:0000, which the tree had declared as
-  `VTDosRsz.SetBlockTop(TopSeg, ExtraBytes : Word)`. Written that way this line gives
-  `LES DI,[..] / PUSH ES / LES DI,[..] / PUSH DI`; the original has
-  `PUSH [0c4a] / PUSH [0c48]`, which is a POINTER VARIABLE pushed whole. So the callee
-  takes one `Pointer` -- and read that way its arithmetic is Borland's
-  `Memory.SetMemTop` exactly.
-
   **A PARAMETER LIST CAN BE WRONG IN A WAY ONLY A CALLER IN ANOTHER SEGMENT REVEALS.**
   Both spellings put the same four bytes on the stack, so 188f verified identical under
   the wrong one and still does under the right one -- nothing inside that unit could
@@ -363,23 +327,7 @@ end;
 
 { ==========================================================================
   EVERYTHING BELOW IS STILL A STUB, and they are in the RELEASE'S FILE ORDER, which
-  the addresses confirm as far as they have been checked:
-
-      0000  IncPtr            ENTER 0004   done
-      0052  NormalizePtr      ENTER 0004   done
-      0081  LinealPtr         ENTER 0004   done
-      00b5  InitUmbHeap       ENTER 0004   done
-      010c  ChangeSystemHeap  PUSH BP      done
-      01d3  ShrinkSystemHeap  PUSH BP      done
-      01f1  THeap.Init        PUSH BP      -- NOT InitTempHeap; see above. 01f6
-                                          calls 1891:0000, which is TObject.Init,
-                                          and a constructor is what calls that
-      ...   the rest of the THeap methods, then TUmbHeap, then THeapColl, then the
-            two unit-level initialisers
-
-  The bodies below are deliberately wrong. `units.py` reports the prefix, which is
-  the right measure while the unit is built in address order.
-  ========================================================================== }
+  the addresses confirm as far as they have been checked:}
 
 { --------------------------------------------------------------------------
 THeap.Init. Build a heap inside a caller-supplied buffer.
@@ -640,13 +588,6 @@ end;
 THeapColl.Done, and the NESTED PROCEDURE is why the segment has more
   frames than the release has routines.
 
-  `HeapColl.ForEach(@DoFree)` TAKES THE ADDRESS OF A LOCAL PROCEDURE, so `DoFree` is
-  compiled as a routine in its own right -- one of the frames `scan_funcs.py` counts
-  and the release's routine list does not mention. It has to be `far`, because ForEach
-  calls it through a pointer, and it can still see `HeapColl` because Turbo Pascal
-  passes the enclosing frame alongside. That is the "real TP7 nested-procedure closure"
-  the reading pass noted when it first identified this segment.
-
   `if Seg(H^) <> Seg(Heap)` IS THE GUARD THAT SAVES THE SYSTEM HEAP. `Heap` is a
   static variable, not a `New`-allocated object, so disposing it would hand the RTL a
   pointer it never allocated. Comparing SEGMENTS rather than full addresses is enough
@@ -686,14 +627,6 @@ end;
 { --------------------------------------------------------------------------
 THeapColl's SIX DELEGATING METHODS, and every one is the same shape: a
   nested `far` procedure handed to `HeapColl.ForEach` or `.FirstThat`.
-
-  THE CLOSURES READ THE ENCLOSING FRAME, which is what makes this work at all. `Get`
-  assigns to its parent's `Buf`; `Add` increments its parent's `Sum`; `IsIn` reads its
-  parent's `P`. None of those is a parameter of the closure -- Turbo Pascal passes the
-  enclosing frame pointer alongside the code address, and `ForEach` hands it back. That
-  is why each closure must be `far`, and why each is compiled as a routine in its own
-  right: **the six of them plus DoFree are the seven frames `scan_funcs.py` counts
-  beyond the release's routine list.**
 
   `FirstThat` VERSUS `ForEach` IS THE WHOLE ALGORITHM. Allocation stops at the first
   heap that can satisfy it, freeing stops at the heap that owns the pointer, and
