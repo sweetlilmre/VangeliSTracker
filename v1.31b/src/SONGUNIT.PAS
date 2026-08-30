@@ -108,9 +108,30 @@ type
 { --------------------------------------------------------------------------
   The sample descriptor 165a fills in, as much of it as 12ba establishes.
 
-  ONLY THE FIELDS THIS UNIT PROVES ARE NAMED; 165a is not transcribed and
-  guessing at the rest would put invented names into a record other segments
-  share. Same policy as VTCtrl's control block.
+  THE POLICY HERE USED TO BE "ONLY THE FIELDS THIS UNIT PROVES", because 165a
+  was not transcribed and guessing would have put invented names into a record
+  other segments share. **165a IS TRANSCRIBED NOW**, and SONGELEM.PAS's own
+  `TInstrumentRec` accounts for this record field for field:
+
+      +$00  Len       LongInt   SplLen
+      +$04  Reps      LongInt   LoopStart
+      +$08  Repl      LongInt   LoopLen
+      +$0c  Vol       Byte      Volume
+      +$0d  Ftune     Byte      was Pad0D -- a FINETUNE byte, not padding
+      +$0e  NAdj      Word      PeriodMul
+      +$10  DAdj      Word      PeriodDiv
+      +$12  Data      ^TSample  Data1
+      +$16  Xtra      ^TSample  Data2
+      +$1a  Prop      Word      was the first two bytes of Filler2
+
+  TEN FIELDS IN A ROW AGREEING ON WIDTH AND ORDER IS NOT A COINCIDENCE, and the
+  two names it settles are ones no instruction could have given: nothing in the
+  transcribed tree reads +$0d or +$1a, so they had no witness in the code at all.
+  The neighbour that does have one is the record next door.
+
+  WHAT IT DOES NOT SETTLE: SONGELEM.PAS's record ENDS at +$1b and this one runs
+  to +$1f. Those four bytes stay filler. The correspondence is quoted where it
+  reaches and stops where it stops.
   -------------------------------------------------------------------------- }
   PSampleDesc = ^TSampleDesc;
   TSampleDesc = record
@@ -118,7 +139,7 @@ type
     LoopStart : LongInt;        { +$04  added to LoopLen and compared to 64K }
     LoopLen   : LongInt;        { +$08  and its low three bytes are the test }
     Volume    : Byte;           { +$0c  -> TCanal.Volume at 12ba:0a03        }
-    Pad0D     : Byte;           { +$0d                                        }
+    Ftune     : Byte;           { +$0d  SongElements' `Ftune` -- see below    }
     { +$0e and +$10 -- a RATIO applied to the period: 12ba:0e9f multiplies by the
       first and divides by the second to turn a channel's period into the one the
       hardware wants. Named for that; what they really are is 165a's business. }
@@ -131,7 +152,12 @@ type
       offset. }
     Data1     : LongInt;        { +$12                                       }
     Data2     : Pointer;        { +$16  DEREFERENCED, then Ofs and Seg taken }
-    Filler2   : array[$1A..$1F] of Byte;
+    { +$1a -- SongElements' `Prop : TIProperties`, a Word. The four bytes after
+      it are NOT accounted for by that record, which ends at +$1b; this local
+      look-alike is 32 bytes where SONGELEM.PAS's is 28. Left as filler because
+      the difference is real and unexplained, not because nothing was looked at. }
+    Prop      : Word;           { +$1a                                        }
+    Filler1C  : array[$1C..$1F] of Byte;
   end;
 
   TModCommand = Byte;
@@ -213,20 +239,32 @@ type
   PPatternData = ^TPatternData;
   TPatternData = record
     RowCount : Byte;            { +$00  12ba:0792 compares it against the row }
-    Filler1  : Byte;            { +$01                                        }
+    NChans   : Byte;            { +$01  SongElements' `TPatternRec.NChans`    }
     Speed    : Byte;            { +$02  12ba:08d7 -- a per-pattern override   }
   end;
 
+  { **THESE SIX BYTES ARE NOT PADDING, AND THAT IS WHY THE POINTER IS AT +$06.**
+    SONGELEM.PAS declares both of these as OBJECTS descending from TObject --
+    `TInstrument` and `TPattern`, each `Name : PString` then its payload pointer.
+    An object's first word is its VMT pointer and `Name` is four bytes, so the
+    payload lands at +$06 in both. The local look-alikes here are records, which
+    is why the same six bytes read as filler.
+
+    NONE OF THAT WAS RECOVERABLE FROM THE INSTRUCTIONS. Six bytes ahead of a
+    pointer look identical whether they are padding or a base object's fields.
+    14b9:0390's `PUSH 000a` for SizeOf(TInstrument) -- quoted in the uses clause
+    above -- was already being read correctly as VMT + Name + Instr while these
+    declarations went on calling the same six bytes filler. }
   PInstrumentRec = ^TInstrumentRec;
   TInstrumentRec = record
-    Filler1 : array[$00..$05] of Byte;
-    Data    : Pointer;          { +$06  -> TCanal.Instrument at 12ba:09b4     }
+    VmtAndName : array[$00..$05] of Byte;  { TObject's VMT word, then Name    }
+    Data       : Pointer;       { +$06  -> TCanal.Instrument at 12ba:09b4     }
   end;
 
   PPattern = ^TPattern;
   TPattern = record
-    Filler1 : array[$00..$05] of Byte;
-    Rows    : PPatternData;     { +$06                                        }
+    VmtAndName : array[$00..$05] of Byte;  { the same six, for the same reason }
+    Rows       : PPatternData;  { +$06                                        }
   end;
 
   { --------------------------------------------------------------------------

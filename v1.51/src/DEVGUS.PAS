@@ -106,11 +106,21 @@ const
     release supplies the REASON for the shape the addresses had already forced. }
   Pad001B  : Byte    = 0;   { DS:$001b  alignment, as 1.31b's $005f is    }
 
-  { **FOUR BYTES NEITHER VERSION NAMES.** 1.31b has them too, as `Fill005A`, in
-    the same place relative to its neighbours -- between the tick counter and the
-    guard -- and its transcription could not name them either. So this is not
-    something v1.51 introduced and not something a later reading of this image
-    will settle: nothing in either program touches them. }
+  { **FOUR BYTES v1.51 HAS AND 1.31b DOES NOT.** This note used to say 1.31b
+    carried them too, as `Fill005A`, "between the tick counter and the guard" --
+    and that is `Fill0016`'s position, which the note above already claims. 1.31b
+    has ONE four-byte filler in this unit and two declarations here were both
+    calling it their counterpart.
+
+    THE NEIGHBOURS SETTLE IT. `Fill0016` sits between `LastTick` and `Busy`, and
+    so does 1.31b's `Fill005A` -- same two neighbours, same width. These four sit
+    between `Pad001B` and `PollBusy`, and `PollBusy` is NEW IN v1.51, so the whole
+    region is. 1.31b goes $005e Busy, $005f pad, $0060 DevData with nothing in
+    between; v1.51 goes $001a Busy, $001b pad, these four, then $0020 PollBusy.
+    Five bytes that version does not have.
+
+    So these are v1.51's own and only a reader in THIS image can name them.
+    Nothing in the segment touches them. }
   Fill001C : LongInt = 0;
 
   { NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
