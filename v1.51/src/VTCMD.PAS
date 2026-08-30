@@ -1,11 +1,30 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 109c -- THE COMMAND-LINE SWITCHES. 3,296 bytes, twenty-two routines.
+  THE COMMAND-LINE SWITCHES: what every option DemoVT accepts actually does.
 
-  COMPLETE. All 3,296 bytes, 484 pending fixups, from the release's bodies in five builds.
+  THIS IS THE DESCENDANT CmdLine WAS WRITTEN FOR. That unit knows how to walk a
+  line and split it into tokens and knows nothing about DemoVT; this one
+  overrides its two interpret methods and supplies the meanings. Anyone looking
+  for what `-nb` or `-gus` does is in the right file.
 
-  FIVE THINGS HAD TO BE MEASURED, and every one was a jump displacement first:
+  A SWITCH IS MATCHED BY PREFIX AND HANDLED BY A METHOD. The vocabulary is a
+  run of names, tested in order, and the first that matches wins -- so the
+  ORDER of the table is part of the behaviour, and a shorter name that is a
+  prefix of a longer one would shadow it.
+
+  IT ALSO BUILDS THE PLAYLIST. A token that is not a switch is a file to play,
+  and this is where it is added to the collection the player walks -- which is
+  why an `@file` of names, read by the parent's `@` handling, becomes a
+  playlist without either unit knowing that word.
+
+  THE OTHER WRITER OF THE GLOBALS IS VTCfg. Neither owns them; a setting given
+  on the command line and in the config file is decided by whichever runs last.
+
+  [re] Segment 109c -- 3,296 bytes, twenty-two routines. COMPLETE: all 3,296
+  bytes, 484 pending fixups, from the release's bodies in five builds.
+
+  [re] FIVE THINGS HAD TO BE MEASURED, and every one was a jump displacement first:
 
       SetVTDevice loses three statements    no DeviceSet guard, no UsingGUS := FALSE,
                                            no GUS fallback -- the `then` is EMPTY
@@ -14,11 +33,11 @@
       CmdInitShell calls SkipRest          which is what NAMED 116e's extra virtual
       CmdInitFreq has ONE Val              the release's duplicate line is not here
 
-  THE COUNTERPART IS `VTCMD.PAS`, measured at 42.1% by `relmatch.py`. It is
+  [re] THE COUNTERPART IS `VTCMD.PAS`, measured at 42.1% by `relmatch.py`. It is
   `116e`'s DESCENDANT -- two descendants, in fact -- and it is the unit that finally
   explained `116e`'s missing two routines.
 
-  **`survey.py` MAPPED ALL TWENTY-TWO ROUTINES AND ALL TWENTY-ONE SWITCH BRANCHES, and
+  [re] **`survey.py` MAPPED ALL TWENTY-TWO ROUTINES AND ALL TWENTY-ONE SWITCH BRANCHES, and
   the switch table did most of the work.** `109c:0844..088f` is a solid run of
   length-prefixed Pascal strings and it is the whole switch vocabulary:
 
@@ -27,7 +46,7 @@
       0878 'ss'    087b 'sl'    087e 'sr'    0881 'sh'    0884 'nx'    0887 'nb'
       088a 'd'     088c 'f'     088e 'v'
 
-  **TWENTY-ONE NAMES, ENDING EXACTLY WHERE `InterpretSwitch` BEGINS at 0890, and
+  [re] **TWENTY-ONE NAMES, ENDING EXACTLY WHERE `InterpretSwitch` BEGINS at 0890, and
   `survey.py` counts exactly twenty-one `CALLF [DI+18]`** -- one CmpSwitch per name, in
   this order. The release's list is the same but for three changes:
 
@@ -45,7 +64,7 @@
       'nx' -> 06d3  PUSH BP, near RET, no parameters   NEW
       'nb' -> 05b2  PUSH BP, near RET, no parameters   NEW
 
-  **`109c:0b7c` IS WHAT RESOLVED `116e`'s OPEN QUESTION.** It is a `CALLF [DI+2c]`, and
+  [re] **`109c:0b7c` IS WHAT RESOLVED `116e`'s OPEN QUESTION.** It is a `CALLF [DI+2c]`, and
   +$2c is the first virtual `TVTCmdSwitch` ADDS to what it inherits. A new virtual at
   +$2c means the inherited ones stop at +$28 -- so `TCmdLineInterpreter` really does
   declare nine virtuals, and `116e`'s eight bodies really are one short of two. The
@@ -56,7 +75,7 @@
 
   THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM:
 
-      116a:0000  AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
+      [re] 116a:0000  AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
       1b6f:0178  FExpand      x4   Dir, ModPath, DefaultPath, Path
       1b6f:0241  FSplit       x2
       1b6f:0000  FindFirst    x1   and 1b6f:003e FindNext x1
@@ -64,7 +83,7 @@
       1a17:018c  SetDevice    x1   also SetVTDevice
       12ba:132f  ChangeSamplingRate x1  from SetVTFreq at 0038
 
-  AND `1ba1:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
+  [re] AND `1ba1:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
   `CmdInitFreq` has `VAL(s, i, r);` written TWICE in a row, plainly by accident; 1.31 has
   it once. One Val per routine, and the count is what says so.
   =========================================================================== }
@@ -72,7 +91,7 @@ unit VTCmd;
 
 interface
 
-{ ~~DevGUS~~ IS NOT A DEPENDENCY OF THIS UNIT, and the LINK ORDER is what says so.
+{ [re] ~~DevGUS~~ IS NOT A DEPENDENCY OF THIS UNIT, and the LINK ORDER is what says so.
   The original's segments put `1084`/DevGus at position 3 and `109c`/VTCmd at 4, and
   TP6 lays segments out in reverse DFS post-order over the `uses` graph -- so DevGus
   finishes AFTER VTCmd and cannot be something VTCmd uses. Checked against the source
@@ -128,9 +147,9 @@ type
     end;
 
 var
-  Cmd      : TVTCmd;      { DS:$0ef6  VMT $009e -- 1000:05b2 }
+  Cmd      : TVTCmd;      { the parser itself, one per program }
 
-  { A PLAIN `TCollection`, AND THE CONSTRUCTOR IS WHAT SETTLES IT. This was
+  { [re] A PLAIN `TCollection`, AND THE CONSTRUCTOR IS WHAT SETTLES IT. This was
     declared a `TStringCollection` on the strength of holding strings, and
     `1000:05cd` far-calls `1891:03a7`, which this tree has established as
     `TCollection.Init` (it is the target of `InitValues`'s three `Init(n,n)`
@@ -144,7 +163,7 @@ var
   { A `TStringCollection`, AND THE LINKED IMAGE IS WHAT SETTLED IT -- after this file
     had argued the opposite and been WRONG.
 
-    THE EARLIER ARGUMENT, now withdrawn: `1000:05cd` far-calls `1891:03a7`, which this
+    [re] THE EARLIER ARGUMENT, now withdrawn: `1000:05cd` far-calls `1891:03a7`, which this
     tree established as `TCollection.Init` (it is the target of `InitValues`'s three
     `Init(n,n)` calls in 14b9), and a TStringCollection's constructor was assumed to be
     TSortedCollection's own. It is not. **TP6's `Objects` gives TSortedCollection no
@@ -162,9 +181,9 @@ var
     Declaring this one a TStringCollection recovers all 48 bytes and the block then
     matches. **A VMT is measurable data, and it names a type that no call site could.**
 
-    So `dgroup.py` has now found something no byte comparison and no call-site
+    [re] So `dgroup.py` has now found something no byte comparison and no call-site
     reading could: an object's TYPE, from the size word of its virtual method table. }
-  SongColl : TStringCollection; { DS:$1040  VMT $07fe -- 1000:05c4 }
+  SongColl : TStringCollection; { the playlist, in the order given }
 
 procedure SetVTFreq;
 procedure SetVTDevice;
@@ -174,7 +193,7 @@ function DoSongColl(Path : PathStr) : Boolean;
 
 implementation
 
-{ The release also uses `VTScreens`, which 1.31 has not got. `SongUnit` IS needed and
+{ [re] The release also uses `VTScreens`, which 1.31 has not got. `SongUnit` IS needed and
   was not here: `CmdModOffset` assigns `ModOffset`, which the DGROUP layout has just
   moved out of VTGlobal and into SongUnit -- $03c0 is four bytes below SongUnit's own
   `SongLoaders` at $03c4. Adding it cannot move a segment, because everything in this
@@ -190,16 +209,22 @@ uses
 
 
 { ===========================================================================
-  109c:0000 and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
-  both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
-  count that `survey.py` finds at `0037` and `0045`, the only two in the segment.
+  THE TWO DEVICE HELPERS: choose the sound device by name, and set its rate.
+
+  They are separate from the switch handlers because the same choices arrive
+  from two directions -- the command line and the config file -- and both have
+  to end up doing the same thing.
+
+  [re] 109c:0000 and 109c:0038. Both are in the INTERFACE, so both are FAR, and
+  both take no parameters -- which is exactly the two `RETF` with no count that
+  `survey.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
 
 { --------------------------------------------------------------------------
   109c:0000 -- SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
   bytes, and every one of them accounted for:
 
-      0003  MOV DI,0882 / PUSH DS / PUSH DI     DevID -- DS:$0882, agreeing with 11bb
+      [re] 0003  MOV DI,0882 / PUSH DS / PUSH DI     DevID -- DS:$0882, agreeing with 11bb
       0008  CALLF 1a17:0248                     LocateDevice
       000d  MOV [087e],AX / MOV [0880],DX       DevPtr := ...  -- DS:$087e, NEW
       0014  MOV AX,[087e] / OR AX,[0880]        DevPtr = nil ?
@@ -235,7 +260,7 @@ begin
 end;
 
 
-{ 109c:0038 -- fourteen bytes: `PUSH [0bae] / CALLF 12ba:132f`, and `DS:$0bae` is
+{ [re] 109c:0038 -- fourteen bytes: `PUSH [0bae] / CALLF 12ba:132f`, and `DS:$0bae` is
   `DesiredHz` exactly where SOUNDDEV.PAS already documents it. }
 procedure SetVTFreq;
 begin
@@ -251,7 +276,7 @@ end;
   two `PathStr` value parameters at four bytes each plus a four-byte procedural
   parameter. `ENTER $284` is the frame.
 
-  **`DoOne` IS CALLED THROUGH `[BP+04]`**, and `survey.py` finds exactly one such site,
+  [re] **`DoOne` IS CALLED THROUGH `[BP+04]`**, and `survey.py` finds exactly one such site,
   at `03c0`. A procedural parameter is a frame slot, not a VMT slot, which is why it
   shows up in the same scan as the virtual calls and why it is the only `[BP+nn]` there.
 
@@ -277,7 +302,11 @@ end;
   --------------------------------------------------------------------------- }
 function DoAllMODs(DefaultPath : PathStr; Path : PathStr; DoOne : TDoOneProc) : Boolean;
 const
-  { EIGHT EXTENSIONS, NOT THE RELEASE'S SEVEN, and the array is READ OUT OF THE IMAGE
+  { THE EXTENSIONS TRIED WHEN A NAME HAS NONE. A playlist may say `TUNE` and
+    mean `TUNE.MOD`, so each is appended in turn until a file opens -- which
+    makes the ORDER below part of the behaviour.
+
+    [re] EIGHT EXTENSIONS, NOT THE RELEASE'S SEVEN, and the array is READ OUT OF THE IMAGE
     rather than guessed. `109c:02e0` is `MOV word [BP-0150],0007` where ours had 0006 --
     that is `ExtL := NumExts` -- and the initialised data sits at file offset $00d7b5 in
     the unpacked EXE, immediately before the four empty `Dirs` strings:
@@ -290,7 +319,7 @@ const
     has `.STM` where the release has `.STX`. So the release traded two entries for one and
     changed a third -- and 1.31 is the earlier, longer form.
 
-    A TYPED CONSTANT ARRAY LIVES IN DGROUP, NOT THE CODE SEGMENT, which is why 3,296 bytes
+    [re] A TYPED CONSTANT ARRAY LIVES IN DGROUP, NOT THE CODE SEGMENT, which is why 3,296 bytes
     of `109c` contain no extension text at all and why this had to be read from the data
     image. `units.py` compares code only, so **nothing here is checked by the byte
     comparison** -- only `NumExts` is, through that one immediate. }
@@ -464,7 +493,7 @@ begin
 end;
 
 
-{ 109c:0435 -- ONE `Val`, WHERE THE RELEASE HAS `VAL(s, i, r);` TWICE IN A ROW. The
+{ [re] 109c:0435 -- ONE `Val`, WHERE THE RELEASE HAS `VAL(s, i, r);` TWICE IN A ROW. The
   duplicate is plainly accidental in 1.39b and 1.31 does not have it: `1ba1:0f81` is
   called nine times in this segment for nine routines that parse a number, so exactly
   one apiece. **The count is the whole argument.** }
@@ -493,7 +522,9 @@ begin
   begin
     SbPort  := i;
     GUSPort := i;
-    { 1086:04c6 -- NEW IN v1.51. `/port:` now reaches the silence device's
+    { Set the serial port the silence driver clocks from.
+
+      [re] 1086:04c6 -- NEW IN v1.51. `/port:` now reaches the silence device's
       serial port as well as the two sound cards': a third
       `MOV AX,[BP-0102] / MOV [0200],AX` on the end of the same block. }
     ComPort := i;
@@ -685,17 +716,17 @@ label
 begin
   DoSongColl := True;
 
-  { NEW IN v1.51. `1086:074b` tests `[4821]` and jumps the whole body, epilogue
+  { [re] NEW IN v1.51. `1086:074b` tests `[4821]` and jumps the whole body, epilogue
     included -- the `JMP` at `0752` reaches `0803`, which is `MOV AL,[BP-1] / LEAVE /
     RETF 4`. The result is already True by then, so the flag makes this succeed
     without doing anything. See the note on the variable in VTGlobal. }
   if CtrlBlock.Abort then Exit;
 
-  { ~~THE EMPTY CASE JUST RETURNED TRUE~~ -- IN v1.51 IT RUNS THE SHELL.
+  { [re] ~~THE EMPTY CASE JUST RETURNED TRUE~~ -- IN v1.51 IT RUNS THE SHELL.
     `1086:075c..0799` is the Turbo Pascal `Exec` idiom in full, and every part of it
     is forced:
 
-      Saved := Heap.HTotalAvail   `MOV DI,5cd8 / PUSH DS / PUSH DI / MOV DI,[DI] /
+      [re] Saved := Heap.HTotalAvail   `MOV DI,5cd8 / PUSH DS / PUSH DI / MOV DI,[DI] /
                                    CALLF [DI+18]`. $5cd8 is `Heap` and not one of the
                                    other four heap variables, and HEAPS itself proves
                                    it: `ChangeSystemHeap` ends `MOV DI,5cd8 ... CALLF
@@ -711,7 +742,7 @@ begin
                                    with `MOV AH,4E / INT 21`.
       ShrinkSystemHeap(Saved)     take the memory back.
 
-    `Exec` GETS TWO ADDRESSES AND NO COPIES -- `MOV DI,5e38 / PUSH DS / PUSH DI` and
+    [re] `Exec` GETS TWO ADDRESSES AND NO COPIES -- `MOV DI,5e38 / PUSH DS / PUSH DI` and
     the same for $0970 -- which is what an open `string` parameter looks like. $5e38 is
     VTShell's `ProgName` and $0970 is `ShellParam`; v1.31b's `CmdInitShell` fills both
     and that release never ran them from here, because `1000:03af` did the Exec instead.
@@ -777,14 +808,14 @@ end;
   takes the untokenised remainder verbatim, quotes and switches and all. It is the only
   place in either segment that reaches past `GetToken` into the cursor itself.
 
-  **AND THE LAST STATEMENT IS WHY `116e` HAS AN EXTRA VIRTUAL.** `109c:0835` is
+  [re] **AND THE LAST STATEMENT IS WHY `116e` HAS AN EXTRA VIRTUAL.** `109c:0835` is
   `CALLF [DI+10]`, the ninth slot, whose whole body is `Idx := 255` -- and this is its only
   caller anywhere. Having swallowed the rest of the line into `ShellParam`, the interpreter
   must not then read the same text back as its own switches, so it winds the tokeniser past
   the end. A softer stop than `Abort`, which would unwind the nested `@file` chain too.
   **That call is what let the method be named `SkipRest` instead of `Rut_0110`.**
 
-  THREE ADDRESSES FALL OUT OF THESE FOUR LINES, and all three agree with units already
+  [re] THREE ADDRESSES FALL OUT OF THESE FOUR LINES, and all three agree with units already
   verified: `ProgName` at `DS:$3ade` (VTShell), `ShellParam` at `DS:$08c8` with its
   `PUSH 007f` confirming `String[127]` a second time, and **`Idx` at `+$146`, which is the
   third independent confirmation of `TCmdLineInterpreter`'s field layout.**
