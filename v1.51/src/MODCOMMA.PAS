@@ -1,47 +1,90 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 142f -- NOTES AND EFFECTS. 2,176 bytes, seventeen routines.
+  THE EFFECT ENGINE. A tracker module is a grid of notes, and next to almost
+  every note sits a COMMAND: slide the pitch up, wobble it, fade the volume,
+  jump to another pattern. This unit is where those commands live. It knows
+  nothing about mixing samples and nothing about reading files -- it is handed
+  one channel and one note, and it changes the channel.
 
-  COMPLETE. All 2,175 bytes of code; 142f:087f is one byte of padding. `units.py` reports the prefix,
-  which is the right measure while the unit is being built strictly top-down:
-  Turbo Pascal lays procedures out in source order, so a stub of the wrong size
-  displaces everything below it and the prefix stops at the first one.
+  EVERY COMMAND HAS TWO HALVES, AND THAT IS THE SHAPE OF THE WHOLE UNIT.
 
-      transcribed   0000..087e   COMPLETE. Forty-three routines and the dispatch
-                                 table; 087f is one byte of linker padding.
+    * A `Start` routine runs ONCE, at the moment the row is read. It decodes
+      the command's parameter and arms the channel: sets a step size, a target
+      period, a waveform, a counter.
+    * A `Tick` routine runs on EVERY tick afterwards until the next row. It
+      applies whatever the Start armed -- adds the step, advances the position,
+      decrements the counter.
 
-  THE RELEASE IS THE COUNTERPART AND THE MAPPING IS 1:1 SO FAR. `LIB/MODCOMMA.PAS`
-  is 1.39b's version of this unit -- 959 lines against 1.31's 2,176 bytes, because
-  it grew the S3M and Oktalizer effects -- and its first six routines are these
-  six, in this order, with the same bodies -- twelve now, and the three after those
-  are empty in both. That is twelve consecutive confirmations rather than one
-  plausible name, which is what the standing rule asks for.
+  So a portamento is not one action but fifty small ones, and the Start half
+  only decides how big each of them will be. Commands with nothing to do
+  between rows (set volume, jump to pattern) have a Tick half that returns
+  immediately; commands with nothing to decode (the E-series fine slides) do
+  their whole job in the Start half. Both empty halves still exist, because
+  both tables must have an entry for every command number.
 
-  IT IS ALSO THE HOME OF `TCanal`, because 142f takes it and 12ba fills it, so
-  neither can own it. The release splits it the same way.
+  THE TWO TABLES ARE THE DISPATCH. `CommandStart` and `CommandTick` do nothing
+  but range-check the command number, index a table of routine offsets and
+  jump. Adding a command means writing two routines and filling in two slots.
 
-  WHERE 1.31 AND 1.39b DIVERGE, so far:
+  TICK ROUTINES TAKE THEIR ARGUMENTS IN REGISTERS, NOT ON THE STACK -- SI
+  points at the channel, BX holds the tick number -- which is why they are
+  assembler and why they cannot be called from Pascal. They run once per
+  channel per tick at the mixer's rate, and a stack frame per call was a cost
+  the original was not willing to pay.
 
-  * **THE PORTAMENTO STEP IS UNSCALED HERE AND SCALED BY FOUR IN THE RELEASE**, and
-    it is specific to the portamentos rather than a change of units across the
-    unit -- `StartVibrato` keeps the release's `SHL 2` on its depth at 02dd, so the
-    tidier story of "1.31 counts whole periods everywhere" is NOT what the bytes
-    say. `StartTPortUp` stores the parameter unscaled where the release has
-    `can.TPortaIncr := WORD(n.Parameter) SHL 2`; `StartNPortamento` reads and writes
-    `PeriodIncr` unscaled where the release has a `SHR 2` on the way out and a
-    `SHL 2` on the way in. Two routines, four places, no shift in any of them --
-    142f:00d9 is `MOV AL,[DI+5] / XOR AH,AH / MOV [DI+1f],AX` and there is nothing
-    between the load and the store. So the same pattern data slides four times
-    faster in 1.31, which is a behavioural difference and worth knowing before
-    anyone compares the two players by ear.
-  * `StartArpeggio` uses A PERIOD TABLE where the release uses a MULTIPLY TABLE.
-    1.39b computes `f SHL 14 DIV ArpTable[semitones]`, which works for any tuning;
-    1.31 looks the period's note up in `VTNotes.NoteOf`, adds the semitones, and
-    reads `VTNotes.NotePeriods` -- the classic ProTracker way, and it only works
-    on the twelve-tone table. That is the earlier design, and it is why 142f is
-    the consumer of the table 1650 builds.
+  WHY THE CHANNEL RECORD IS DECLARED HERE. `TCanal` is filled by the player
+  and consumed by the mixer, so neither of those owns it; the effects are what
+  give most of its fields meaning, so it lives with them.
+
+  AND SO DOES THE SEQUENCER POSITION. `NextSeq`, `NextNote` and `MySongLen`
+  are the pattern-order cursor, and they are declared here rather than in the
+  player because the Bxx and Dxx commands WRITE them -- a jump command changes
+  where the song goes next. The player `uses` this unit, so this unit cannot
+  reach back into the player; the variables have to sit on this side of the
+  dependency.
+
+  [re] Segment 142f -- 2,176 bytes, seventeen routines. COMPLETE: all 2,175
+  bytes of code, and 142f:087f is one byte of linker padding.
+
+  [re] `units.py` reports the prefix, which is the right measure while a unit
+  is being built strictly top-down: Turbo Pascal lays procedures out in source
+  order, so a stub of the wrong size displaces everything below it and the
+  prefix stops at the first one.
+
+      transcribed   0000..087e   COMPLETE. Forty-three routines and the
+                                 dispatch table; 087f is one byte of padding.
+
+  [re] THE RELEASE IS THE COUNTERPART AND THE MAPPING IS 1:1 SO FAR.
+  `LIB/MODCOMMA.PAS` is 1.39b's version of this unit -- 959 lines against
+  1.31's 2,176 bytes, because it grew the S3M and Oktalizer effects -- and its
+  first twelve routines are these twelve, in this order, with the same bodies;
+  the three after those are empty in both. That is twelve consecutive
+  confirmations rather than one plausible name.
+
+  [re] WHERE 1.31 AND 1.39b DIVERGE, so far:
+
+  [re] **THE PORTAMENTO STEP IS UNSCALED HERE AND SCALED BY FOUR IN THE
+  RELEASE**, and it is specific to the portamentos rather than a change of
+  units across the unit -- `StartVibrato` keeps the release's `SHL 2` on its
+  depth at 02dd, so the tidier story of "1.31 counts whole periods everywhere"
+  is NOT what the bytes say. `StartTPortUp` stores the parameter unscaled where
+  the release has `can.TPortaIncr := WORD(n.Parameter) SHL 2`;
+  `StartNPortamento` reads and writes `PeriodIncr` unscaled where the release
+  has a `SHR 2` on the way out and a `SHL 2` on the way in. Two routines, four
+  places, no shift in any of them -- 142f:00d9 is `MOV AL,[DI+5] / XOR AH,AH /
+  MOV [DI+1f],AX` and there is nothing between the load and the store. So the
+  same pattern data slides four times faster in 1.31, which is a behavioural
+  difference and worth knowing before anyone compares the two players by ear.
+
+  [re] `StartArpeggio` uses A PERIOD TABLE where the release uses a MULTIPLY
+  TABLE. 1.39b computes `f SHL 14 DIV ArpTable[semitones]`, which works for any
+  tuning; 1.31 looks the period's note up in `VTNotes.NoteOf`, adds the
+  semitones, and reads `VTNotes.NotePeriods` -- the classic ProTracker way, and
+  it only works on the twelve-tone table. That is the earlier design, and it is
+  why 142f is the consumer of the table 1650 builds.
   =========================================================================== }
+
 unit ModCommands;
 
 interface
@@ -50,13 +93,41 @@ uses
   SongUnit, SongElements, VTNotes;
 
 type
-  { --- the channel state, DS:$1260 in 12ba's array ------------------------
-    `TCanal` and `TFullNote` ARE the release's, head for head. 12ba:11fd..121d
-    proves the head -- four stores landing on `Note.Period`, `Note.Instrument`,
-    `Note.Command` and `Period` at +$01, +$00, +$04 and +$0b -- and 142f now
-    proves five more fields further in.
+  { ONE CHANNEL'S LIVE STATE. A four- or eight-channel module gives each
+    channel its own copy of this record, and between them they are everything
+    the player remembers from one tick to the next.
 
-    FIFTEEN OFFSETS ARE NOW ANCHORED BY AN INSTRUCTION IN THIS SEGMENT:
+    IT DIVIDES INTO THREE PARTS.
+
+      * WHAT IS PLAYING: the note as it was read from the pattern, the
+        instrument it selected, the current volume, and the period -- the pitch,
+        expressed the way the format expresses it, as an Amiga sample-clock
+        divisor where SMALLER means HIGHER.
+      * WHAT IS MOVING: one small group of fields per continuous effect, each
+        holding the step size, position or target its Tick routine needs. The
+        arpeggio keeps three periods and a counter; the vibrato keeps a
+        waveform, a position, a width and a depth; each portamento keeps a
+        step, and the note portamento a destination as well.
+      * WHAT HAPPENS NEXT: the one-shot flags -- a sample offset to apply, a
+        retrigger due, a ring event to publish -- each a small value plus a
+        boolean saying whether it is armed.
+
+    THE PERIOD IS KEPT TWICE, and the pair is the reason the effects compose.
+    `Period` is what the mixer is actually playing; `RealPeriod` is the note's
+    own pitch with no effect applied. Vibrato writes `Period` every tick and
+    leaves `RealPeriod` alone, so when the vibrato ends the note returns to
+    where it started rather than to wherever the wobble left it.
+
+    THE FIELD ORDER IS NOT NEGOTIABLE. Assembler routines in this unit and in
+    the mixer reach fields by fixed offset from SI, so inserting a field would
+    silently move every field below it.
+
+    [re] DS:$1260 in 12ba's array. `TCanal` and `TFullNote` ARE the release's,
+    head for head. 12ba:11fd..121d proves the head -- four stores landing on
+    `Note.Period`, `Note.Instrument`, `Note.Command` and `Period` at +$01,
+    +$00, +$04 and +$0b -- and 142f now proves five more fields further in.
+
+    [re] FIFTEEN OFFSETS ARE ANCHORED BY AN INSTRUCTION IN THIS SEGMENT:
 
         +$0f  PeriodIncr   142f:01c6 tests it signed, 142f:0216 stores a Word
         +$11  PeriodDest   142f:019b stores the note's period, 142f:0258 compares
@@ -74,312 +145,379 @@ type
         +$22  TPortIsFine  142f:00ec clears it, 142f:00f6 tests it
         +$23  VSldIsFine   142f:0370 clears it, 142f:03ac tests it
 
-    THERE ARE NO GAPS LEFT. Every field from +$00 to +$23 is anchored by an
-    instruction rather than taken from the release, which is what the standing rule
-    wants and what the record did not have two sessions ago -- +$0f and +$11 fell to
+    [re] THERE ARE NO GAPS LEFT. Every field from +$00 to +$23 is anchored by an
+    instruction rather than taken from the release -- +$0f and +$11 fell to
     StartNPortamento, +$1a..+$1e to StartVibrato, and +$21 and +$23 to
-    StartVolSlide. That is the pattern to expect from here on: each routine confirms
-    the fields it touches, and a layout that was "determined by the gaps" becomes one
-    that is determined by use. Only +$24 and +$25 keep names from elsewhere.
+    StartVolSlide. That is the pattern to expect: each routine confirms the
+    fields it touches, and a layout that was "determined by the gaps" becomes
+    one determined by use. Only +$24 and +$25 keep names from elsewhere.
 
-    THE TAIL DOES NOT CARRY OVER, AND 142f SAYS WHY. The record is 38 bytes,
-    $00..$25. The release runs to +$2b and its +$24/+$25 are `RetrigCt`/`S3mRetVal`
-    -- but **1.31 HAS NO RETRIGGER COMMAND AT ALL**: where 1.39b puts
-    StartRetrigNote and TickRetrigNote, 142f:0584 goes straight to the fine volume
-    slide. With no retrigger routine there is nothing for those two bytes to hold,
-    which is why 12ba is free to use them as the note ring's `Chan` and `Note`
-    (12ba:0a8a and 12ba:0a6f). Ours keep the names their USE gives them, and the
-    reason the release's names do not apply is now a fact rather than a caution. }
+    [re] THE TAIL DOES NOT CARRY OVER FROM 1.31, AND 142f SAYS WHY. There the
+    record is 38 bytes, $00..$25, and the release's +$24/+$25 are
+    `RetrigCt`/`S3mRetVal` -- but **1.31 HAS NO RETRIGGER COMMAND AT ALL**:
+    where 1.39b puts StartRetrigNote and TickRetrigNote, 142f:0584 goes
+    straight to the fine volume slide. With no retrigger routine there is
+    nothing for those two bytes to hold, which is why 12ba is free to use them
+    as the note ring's `Chan` and `Note` (12ba:0a8a and 12ba:0a6f). }
   PCanal = ^TCanal;
   TCanal = record
-    Note       : TFullNote;     { +$00                                       }
-    { `PInstrumentRec`, which is SongElements' own -- and the release declares this
-      very field as `Instrument : PInstrumentRec` with the comment "Pointer to the
-      instrument data". It pointed at a SongUnit-local look-alike until that copy
-      was removed. }
-    Instrument : PInstrumentRec; { +$06  and 12ba:09ff dereferences it       }
-    Volume     : Byte;          { +$0a                                       }
-    Period     : Word;          { +$0b                                       }
-    RealPeriod : Word;          { +$0d  the release's name; 12ba:0eaf writes it }
+    { WHAT IS PLAYING. The note exactly as the pattern gave it, the instrument
+      it selected, and the two pitches -- see the record's header for why there
+      are two. `Volume` is 0..64, the tracker's range, not the hardware's. }
+    Note       : TFullNote;     { the row's note, verbatim                   }
+    Instrument : PInstrumentRec; { the sample it selected                    }
+    Volume     : Byte;          { 0..64                                      }
+    Period     : Word;          { what is being played NOW                   }
+    RealPeriod : Word;          { the note's own pitch, unmodulated          }
 
-    { +$0f, +$11 -- the note portamento's step and target, the release's names,
-      and BOTH ARE NOW ANCHORED by StartNPortamento: 142f:0194 stores the note's
-      period into +$11, and 142f:01c6 tests +$0f with a signed `JLE`, so the step
-      is an Integer and the sign of it carries the slide's direction. }
-    PeriodIncr : Integer;       { +$0f  ANCHORED                             }
-    PeriodDest : Integer;       { +$11  ANCHORED                             }
+    { [re] +$00, +$06, +$0a, +$0b, +$0d. 12ba:09ff dereferences the pointer and
+      12ba:0eaf writes RealPeriod. `PInstrumentRec` is SongElements' own, and
+      the release declares this very field as `Instrument : PInstrumentRec`
+      with the comment "Pointer to the instrument data". }
 
-    ArpCt      : Byte;          { +$13  ANCHORED                             }
-    Arp0       : Word;          { +$14  ANCHORED                             }
-    Arp1       : Word;          { +$16  ANCHORED                             }
-    Arp2       : Word;          { +$18  ANCHORED                             }
+    { THE NOTE PORTAMENTO, command 3xx: slide from the pitch being played
+      TOWARDS a target and stop there. The step is SIGNED, and its sign is the
+      direction -- the Start half works out which way to go once, so the Tick
+      half only has to add and test for arrival. }
+    PeriodIncr : Integer;       { how far to move each tick, signed          }
+    PeriodDest : Integer;       { the period to stop at                      }
 
-    { +$1a..+$1e -- the vibrato state. Five bytes for five fields, forced by the
-      anchors either side; TickVibrato is a stub, so none is confirmed by use. }
-    VibWave    : Byte;          { +$1a  not yet confirmed                    }
-    VibPos     : Byte;          { +$1b  not yet confirmed                    }
-    VibWidth   : Byte;          { +$1c  not yet confirmed                    }
-    VibDepth   : Byte;          { +$1d  not yet confirmed                    }
-    VibReset   : Boolean;       { +$1e  not yet confirmed                    }
+    { THE ARPEGGIO, command 0xy: cycle between three pitches on successive
+      ticks, fast enough to sound like a chord. The three periods are computed
+      once and the counter says which of them is due. }
+    ArpCt      : Byte;          { 0, 1 or 2 -- which pitch is due            }
+    Arp0       : Word;          { the note itself                            }
+    Arp1       : Word;          { plus x semitones                           }
+    Arp2       : Word;          { plus y semitones                           }
 
-    TPortaIncr : Integer;       { +$1f  ANCHORED                             }
-    VolumeIncr : ShortInt;      { +$21  ANCHORED                             }
-    TPortIsFine : Boolean;      { +$22  ANCHORED                             }
-    VSldIsFine : Boolean;       { +$23  ANCHORED                             }
+    { [re] +$0f..+$19, all six anchored. 142f:0194 stores the note's period into
+      +$11 and 142f:01c6 tests +$0f with a signed `JLE`, so the step is an
+      Integer and its sign carries the direction. 142f:0007 clears ArpCt,
+      142f:00a3 increments it; 142f:002c, 0064 and 009b store the three
+      periods. }
 
-    { +$24 and +$25 -- named for WHERE THEY GO rather than what they are:
-      12ba:0a8a copies +$24 into the note ring's `Chan` byte and 12ba:0a6f copies
-      +$25 into its `Note`. The consumer at 12ba:01ce tests the second and uses
-      the first to index the published control block. }
-    { ~~RingSem AND RingPending~~ -- IN v1.51 THESE THREE BYTES ARE A RETRIGGER.
-      147d:05d8 is `INC [SI+24] / MOV AL,[SI+24] / CMP AL,[SI+25] / JB out /
-      MOV [SI+24],0 / MOV [SI+26],1` -- a counter, a period and a flag -- and
-      147d:05b9 stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
-    RetrigCt   : Byte;          { +$24  was RingSem in 1.31b                 }
-    RetrigVal  : Byte;          { +$25  was RingPending in 1.31b                 }
-    DoRetrig  : Boolean;       { +$26                                        }
+    { THE VIBRATO, command 4xy: walk a repeating waveform and add it to the
+      pitch. The position advances by `VibWidth` each tick and the sample it
+      lands on is scaled by `VibDepth` -- so x is the SPEED and y is how far it
+      swings. `VibReset` says whether a new note restarts the waveform from
+      zero or lets it carry on through. }
+    VibWave    : Byte;          { which waveform: sine, ramp, square         }
+    VibPos     : Byte;          { how far through it                         }
+    VibWidth   : Byte;          { how far to step each tick -- the speed     }
+    VibDepth   : Byte;          { how hard to swing                          }
+    VibReset   : Boolean;       { restart the waveform on a new note?        }
 
-    { +$27 and +$28: 147d:0369 is `StartSampleOffs`, reached from `CommandStart` on
-      command $0a, `mcSampleOffs`. It sets the flag and stores `N.Parameter shl 8` --
-      a 9xx sample offset is the parameter times 256, which is the format's own
-      definition. The names are the release's, quoted in this file's 1.31b note a
-      version before the routine existed. }
-    SOffs      : Boolean;       { +$27                                        }
-    SOffsVal   : Word;          { +$28                                        }
+    { THE PLAIN SLIDES: pitch up/down (1xx and 2xx) and volume up/down (Axy).
+      Each keeps one signed step. The `IsFine` flags mark the E-series
+      variants, which move by their step ONCE at the row rather than on every
+      tick -- same arithmetic, different trigger. }
+    TPortaIncr : Integer;       { pitch step per tick, signed                }
+    VolumeIncr : ShortInt;      { volume step per tick, signed               }
+    TPortIsFine : Boolean;      { E1x/E2x: move once, not per tick           }
+    VSldIsFine : Boolean;       { EAx/EBx: the same for volume               }
 
-    { +$2a and +$2b -- THE S3M Qxy RETRIGGER'S VOLUME CHANGE, and the flag says which
-      of two arithmetics to use. 147d:0785 looks the high nibble up in a MULTIPLIER
-      table and sets +$2a when that entry is ZERO, meaning "this x is not a multiply";
-      147d:0818 then either multiplies the volume by +$2b and shifts down four, or
-      adds +$2b as a signed step. Two tables, one selector byte. }
-    S3mRetAdd : Boolean;       { +$2a  True -> +$2b is an ADDEND, not a factor }
-    S3mRetVal  : Byte;          { +$2b                                        }
+    { [re] +$1a..+$23. Five vibrato bytes forced by the anchors either side;
+      142f:028e reads VibWave, 142f:02fe clears VibPos and 142f:034b advances
+      it, 142f:029c reads VibWidth in all three CASE arms, 142f:02e3 stores
+      VibDepth and 142f:0348 adds it, 142f:02f4 tests VibReset. Then
+      142f:00e5/016d for TPortaIncr, 142f:038e/03d7 for VolumeIncr,
+      142f:00ec/00f6 and 142f:0370/03ac for the two flags. }
 
-    { +$2c and +$2d -- **THE RING EVENT, AND THIS IS WHERE IT WENT.** The collision
-      recorded in the previous commit is resolved, and by the routine that was
-      missing rather than by argument: 147d:085d stores `N.Parameter` into +$2c and 1
-      into +$2d, which is 1.31b's `StartRingEvent` moved two fields down the record
-      and nothing else changed. `CommandStart` maps command $09 to it -- `mcNPI1`,
-      ProTracker's do-nothing 8xx, exactly as 1.31b's note said.
+    { THE RETRIGGER, command E9x: play the note again every x ticks within the
+      row. The counter runs up to the period, and when it gets there it is
+      cleared and the flag is raised -- the flag is what the mixer reads, so
+      the effect never touches the sample pointer itself. }
+    RetrigCt   : Byte;          { ticks since the last retrigger             }
+    RetrigVal  : Byte;          { retrigger every this many ticks            }
+    DoRetrig   : Boolean;       { raised for one tick when one is due        }
 
-      THE LESSON IS THE ONE THE SOUNDDEV CORRECTION TAUGHT LAST WEEK: an address that
-      two readings both claim is not a contradiction to be argued out, it is a
-      MISSING MEASUREMENT. Both readings were right about their own version. }
-    RingSem   : Byte;          { +$2c                                        }
-    RingPending   : Byte;          { +$2d   46 bytes in all                      }
+    { [re] +$24..+$26, and IN 1.31b THESE THREE BYTES ARE NOT A RETRIGGER -- they
+      are the note ring's `Chan` and `Note` (12ba:0a8a, 12ba:0a6f), read by the
+      consumer at 12ba:01ce. In v1.51, 147d:05d8 is `INC [SI+24] / MOV AL,[SI+24]
+      / CMP AL,[SI+25] / JB out / MOV [SI+24],0 / MOV [SI+26],1`, and 147d:05b9
+      stores `N.Parameter` into +$25 from command $1a, `mcRetrigNote`. }
+
+    { THE SAMPLE OFFSET, command 9xx: start the sample part-way in rather than
+      at its beginning, which is how a drum loop is chopped into hits. The
+      parameter counts 256-byte units, so the reachable offsets are coarse and
+      the whole 64K of a sample is addressable in one byte.
+
+      IT IS A REQUEST, NOT AN ACTION. The effect cannot move the sample pointer
+      itself, because the note it applies to has not been started yet; it
+      leaves the offset and a flag, and the mixer applies them when it does. }
+    SOffs      : Boolean;       { an offset is waiting to be applied         }
+    SOffsVal   : Word;          { the parameter, times 256                   }
+
+    { [re] +$27, +$28. 147d:0369 is `StartSampleOffs`, reached from
+      `CommandStart` on command $0a, `mcSampleOffs`; it sets the flag and stores
+      `N.Parameter shl 8`. }
+
+    { SCREAM TRACKER'S Qxy RETRIGGER, which does what E9x does AND changes the
+      volume each time it fires. The x nibble picks one of sixteen behaviours,
+      and they are not all the same KIND of arithmetic: some scale the volume
+      by a fraction, others add or subtract a fixed step. So the parameter is
+      decoded once into a value plus a flag saying how to apply it, and the
+      Tick half never has to know which nibble it came from. }
+    S3mRetAdd : Boolean;       { True: add S3mRetVal. False: scale by it     }
+    S3mRetVal : Byte;          { the step, or the multiplier                 }
+
+    { [re] +$2a, +$2b. 147d:0785 looks the high nibble up in a MULTIPLIER table
+      and sets +$2a when that entry is ZERO, meaning "this x is not a
+      multiply"; 147d:0818 then either multiplies the volume by +$2b and shifts
+      down four, or adds +$2b as a signed step. Two tables, one selector byte. }
+
+    { THE RING EVENT, AND IT IS NOT A SOUND EFFECT AT ALL. The demo needs to
+      know when the music reaches particular moments, so that lights, wipes and
+      scene changes can be cut to the beat. Command 8xx does nothing to a
+      ProTracker channel -- so this player borrows it as a CUE: the parameter
+      is a label the demo chooses, and the flag says one is waiting to be
+      collected. The music is the timeline, and this is how it speaks.
+
+      A SEMAPHORE, NOT A QUEUE. One slot per channel, raised by the effect and
+      lowered by whoever reads it; a second cue before the first is collected
+      overwrites it. That is enough when the reader runs every frame. }
+    RingSem     : Byte;         { the cue's parameter                        }
+    RingPending : Byte;         { non-zero: a cue is waiting                 }
   end;
 
+  { [re] +$2c, +$2d; 46 bytes in all. 147d:085d stores `N.Parameter` into +$2c
+    and 1 into +$2d, which is 1.31b's `StartRingEvent` moved two fields down the
+    record and nothing else changed. `CommandStart` maps command $09 to it --
+    `mcNPI1`, ProTracker's do-nothing 8xx. The two versions put these bytes in
+    different places, and reading only one of them made that look like a
+    contradiction rather than a missing measurement. }
+
 { --------------------------------------------------------------------------
-  THE SEQUENCER STATE LIVES HERE, NOT IN PLAYMOD, AND 142f IS WHAT FORCED IT.
+  THE SEQUENCER'S POSITION AND SPEED, and they are declared in the EFFECTS unit
+  rather than in the player because the effects are what MOVE them. Bxx jumps
+  to another order position, Dxx breaks to the next pattern, Fxx changes the
+  speed -- all three write the variables below. The player `uses` this unit, so
+  this unit cannot reach back into the player; the state has to sit on this
+  side of the dependency, and the release resolves it the same way.
 
-  `142f:03ed` reads DS:$034c, DS:$0340 and DS:$034a, and all three were declared in
-  PLAYMOD.PAS. That cannot stand: PlayMod `uses` ModCommands, so ModCommands cannot
-  use PlayMod, and the effect routines in this segment write the sequencer's
-  position directly. The release resolves it the same way -- `LIB/MODCOMMA.PAS`
-  declares `NextNote`, `NextSeq` and `MySongLen` in its own interface, with the
-  comment "Values set from outside this UNIT ... They both must have been set BEFORE
-  calling this UNIT."
+  THERE ARE TWO KINDS OF SPEED HERE AND CONFUSING THEM IS THE CLASSIC TRACKER
+  MISTAKE.
 
-  SO THE OWNERSHIP IS SETTLED BY THE CALL GRAPH RATHER THAN BY PREFERENCE, which is
-  the first time anything in this project has settled a DGROUP question for a
-  structural reason instead of an address. Compare `DEVGUS`, where three globals sat
-  in the wrong unit and nothing could see it.
+    * `CurSpeed` is TICKS PER ROW -- how many times the effects run before the
+      next row is read. Six is the ProTracker default. Lowering it makes
+      effects coarser, not the song faster in any musical sense.
+    * `CurTempo` is the TICK RATE itself, in the beats-per-minute units the
+      format uses, and `TempoDiv`/`TempoAccum` are the divider and accumulator
+      that turn it into an interval on the actual timer.
 
-  THE NAMES ARE THE RELEASE'S and the pairing is confirmed by reading both bodies:
-  ours called them `PlayPos`, `PlayRow` and `OrderLen`, and every statement they
-  appear in matches the release's line for line.
+  Fxx sets one or the other depending on its parameter, which is why both live
+  next to each other.
 
-      NextSeq    $034c   was PlayPos    the order position being played
-      NextNote   $034a   was PlayRow    the row; $FFFF means past the end
-      MySongLen  $034A   was OrderLen   the last order position in the range
+  THE PLAY RANGE IS KEPT TWICE, and the pair is a handshake. `Req*` is what a
+  caller has ASKED for; `Range*`/`MySongLen` is what the player is currently
+  working through. Starting playback copies one set to the other, so a request
+  can be lodged at any time without disturbing a song mid-row.
 
-  ~~DECLARED `var`, NOT AS TYPED CONSTANTS.~~ **WITHDRAWN, AND THE ARGUMENT FOR IT WAS
-  WRONG IN ITS PREMISE.** The note said "a `var` and a typed constant compile to
-  identical accesses, so the shape that claims less is the one to use". The ACCESSES
-  are identical; the IMAGE is not. A typed constant is initialised data written into
-  the EXE, and a plain `var` is reserved space the linker never writes -- and the two
-  live in different regions of DGROUP, so the choice fixes the ADDRESS as well. It was
-  unmeasurable until the program linked, and `dgroup.py` measures it now.
+  [re] DS:$033e..$0359, and `142f:03ed` reads DS:$034c, DS:$0340 and DS:$034a.
+  Nine of these were declared in PLAYMOD.PAS, which could not have been right:
+  their addresses INTERLEAVE with the three already here -- $033c and $033e sit
+  either side of $0340 -- and two units' blocks cannot interleave when DGROUP
+  is laid out one unit at a time. That contradiction is what found them; the
+  release then confirmed all nine in its own `CONST` section.
 
-  It also was not a case of taking DATA from the release. The values below are read out
-  of the original's DGROUP image, and four of them are non-zero and land exactly where
-  the release's initialisers say: 125, 125, 6, 1 and 1.
+  [re] DECLARED AS TYPED CONSTANTS, NOT `var`, and the difference is the image
+  rather than the accesses. A typed constant is initialised data written into
+  the EXE; a plain `var` is reserved space the linker never writes. The two
+  live in different regions of DGROUP, so the choice fixes the ADDRESS as well.
+  Four of the values are non-zero and land exactly where the release's
+  initialisers say: 125, 125, 6, 1 and 1.
 
-  **SIXTEEN DECLARATIONS ON SIXTEEN KNOWN ADDRESSES, IN ONE PASS.** DGROUP is laid out
-  in link order, `12ba`/PlayMod comes immediately before `142f`/ModCommands, and this
-  unit's block runs $0334..$034f. Laying the release's declaration order into it lands
-  every one of the sixteen on an address some instruction in the tree already named:
-
-      $033E MyLoopMod          $033F PermitFilterChange   $0340 TempoDiv    = 125
-      $0342 CurTempo    = 125  $0344 TempoAccum           $0346 RangeStart
-      $0348 RangeEnd          $034A MySongLen            $034C ReqStart
-      $034E ReqEnd            $0350 ReqLen               $0348 FilterIsOn
-      $0353 CurSpeed    = 6    $0354 NextNote      = 1     $0356 NextSeq     = 1
-      $0358 TickInRow
-
-  **AND NINE OF THEM WERE DECLARED IN PLAYMOD.PAS, WHICH COULD NOT HAVE BEEN RIGHT.**
-  Their addresses INTERLEAVE with the three that were already here -- $033c and $033e
-  sit either side of $0340 -- and two units' blocks cannot interleave when DGROUP is
-  laid out one unit at a time. That contradiction is what found them; the release then
-  confirmed all nine in its own `CONST` section. Same lesson as the three that moved
-  before: **the call graph settled those, and the LAYOUT settles these.**
-
-  THE RENAMES ARE STILL DECLINED, for the reason recorded below: the release's `Tempo`
-  collides with a field of `TPlayingNote`. Our names are kept and the release's are
-  quoted beside them. Moving a declaration between units cannot change a byte of
-  either one's code, so `units.py` reporting both units unchanged is the check.
+  [re] THE RENAMES ARE DECLINED where the release's `Tempo` would collide with a
+  field of `TPlayingNote`. Our names are kept and the release's quoted beside
+  them. Moving a declaration between units cannot change a byte of either
+  unit's code, so `units.py` reporting both unchanged is the check.
   -------------------------------------------------------------------------- }
 const
-  { $0334..$0337 -- both of these were declared in PLAYMOD until the layout moved them. }
-  MyLoopMod          : Boolean = False;  { DS:$033E                            }
-  PermitFilterChange : Boolean = False;  { DS:$033F  the `FilterChange` key     }
-  TempoDiv           : Word    = 125;    { DS:$0340  release: BPMDivider        }
+  MyLoopMod          : Boolean = False;  { repeat the song at its end?         }
+  PermitFilterChange : Boolean = False;  { may E0x touch the hardware filter?  }
 
-  { The release calls these `BPMIncrement` and `BPMCount`. 142f:04a6 and 142f:04bc
-    write CurTempo from the F-command. }
-  CurTempo           : Word    = 125;    { DS:$0342  release: BPMIncrement      }
-  TempoAccum         : Word    = 0;      { DS:$0344  release: BPMCount          }
+  { THE TICK CLOCK. `CurTempo` is the rate in the format's BPM units;
+    `TempoDiv` and `TempoAccum` are the fixed-point divider and running
+    remainder that turn it into whole timer intervals without a division per
+    tick. Fxx writes CurTempo. }
+  TempoDiv           : Word    = 125;    { release: BPMDivider                 }
+  CurTempo           : Word    = 125;    { release: BPMIncrement               }
+  TempoAccum         : Word    = 0;      { release: BPMCount                   }
 
-  { THE TWO HALVES OF THE PLAY RANGE. `My*` is the copy the player is working
-    through and the bare name is what a client asked for; PlayStart copies one to
-    the other, which is where both sets were read from (12ba:10b4, 10ba, 10c0). }
-  RangeStart         : Word    = 0;      { DS:$0346  release: MyFirstPattern    }
-  RangeEnd           : Word    = 0;      { DS:$0348  release: MyRepStart        }
-  MySongLen          : Word    = 0;      { DS:$034A                            }
-  ReqStart           : Word    = 0;      { DS:$034C  release: FirstPattern      }
-  ReqEnd             : Word    = 0;      { DS:$034E  release: RepStart          }
-  ReqLen             : Word    = 0;      { DS:$0350  release: SongLen           }
+  { [re] DS:$033e, $033f, $0340, $0342, $0344. Both flags were declared in
+    PLAYMOD until the layout moved them; $033f is the `FilterChange` key.
+    142f:04a6 and 142f:04bc write CurTempo from the F-command. }
 
-  { NOT PlayMod's `FilterIsOn`, which is a DIFFERENT variable at DS:$02cd. 1.31 has
-    two of them and the release has one; see the long note that used to sit below.
-    11bb:0b0e's `FilterIsOn` key writes THIS one, which is why it is exported --
-    safe only because PlayMod's copy stays private, so no unit can see both. }
-  FilterIsOn         : Boolean = False;  { DS:$0352                             }
+  { THE PLAY RANGE, twice over: what the player is working through, then what
+    a caller has asked it to play next. Starting playback copies the second set
+    into the first. `Range*` is the live copy. }
+  RangeStart         : Word    = 0;      { release: MyFirstPattern             }
+  RangeEnd           : Word    = 0;      { release: MyRepStart                 }
+  MySongLen          : Word    = 0;      { the live range's last position      }
+  ReqStart           : Word    = 0;      { release: FirstPattern               }
+  ReqEnd             : Word    = 0;      { release: RepStart                   }
+  ReqLen             : Word    = 0;      { release: SongLen                    }
 
-  { $0349..$034f. The release's names are `Tempo`, `NextNote`, `NextSeq`, `TempoCt`;
-    `Tempo` is the one rename this tree declines on purpose. }
-  CurSpeed           : Byte    = 6;      { DS:$0353  release: Tempo             }
-  NextNote           : Word    = 1;      { DS:$0354                             }
-  NextSeq            : Word    = 1;      { DS:$0356                             }
-  TickInRow          : Byte    = 0;      { DS:$0358  release: TempoCt           }
+  { [re] DS:$0346..$0350. PlayStart copies one set to the other, which is where
+    both were read from: 12ba:10b4, 10ba, 10c0. }
 
-{ NEW IN v1.51, DS:$035a -- THE EQUAL-TEMPERED SEMITONE TABLE, and it is what the
-  new arpeggio divides by. Sixteen words, indexed by a nibble, and each one is
-  16384 * 2**(n/12) to the nearest unit: 16384, 17358, 18390 ... 32768 at the twelfth,
-  which is the octave and the check that fixes the formula. A period divided by
-  2**(n/12) is the period n semitones higher, so `(Period shl 14) div Table[n]` raises
-  a pitch by n semitones with no note table involved at all.
+  { What E0x last asked for. Exported so that the key handler can set it. }
+  FilterIsOn         : Boolean = False;
 
-  THAT IS THE WHOLE POINT OF THE CHANGE. v1.31b's arpeggio looked the note up in
-  `NoteOf`, added the semitone count and read `NotePeriods` back -- which only works
-  when the channel is sitting exactly on a table entry. S3M and finetuned MOD periods
-  are not, and 1.51 loads both. Arithmetic replaces the lookup.
+  { THE CURSOR. `NextSeq` is the position in the order list, `NextNote` the row
+    within that pattern, and `TickInRow` counts ticks until the row advances --
+    it runs up to `CurSpeed` and resets. Together they are exactly where the
+    song is. }
+  CurSpeed           : Byte    = 6;      { ticks per row. release: Tempo       }
+  NextNote           : Word    = 1;      { the row                             }
+  NextSeq            : Word    = 1;      { the order position                  }
+  TickInRow          : Byte    = 0;      { release: TempoCt                    }
 
-  THIS BLOCK'S ADDRESSES ALL MOVED +$0a, which is what puts the table at $035a and
-  not $0350: verdiff's largest bucket across the two versions is seventeen bytes
-  shifting by exactly ten, with old values $35..$4c -- the low halves of $0334..$034c.
-  So the unit's block runs $033e..$0359 in 1.51 and the table follows it. }
+  { [re] DS:$0352..$0358. This `FilterIsOn` is NOT PlayMod's, which is a
+    different variable at DS:$02cd -- 1.31 has two and the release has one, and
+    11bb:0b0e's key writes this one. Exporting it is safe only because
+    PlayMod's copy stays private, so no unit can see both. }
+
+{ THE SEMITONE TABLE: HOW TO TRANSPOSE A PITCH WITHOUT A NOTE TABLE.
+
+  Sixteen words indexed by a semitone count, each 16384 * 2**(n/12) rounded --
+  16384, 17358, 18390 ... 32768 at the twelfth, which is the octave and the
+  check that fixes the formula. Because a period is INVERSELY proportional to
+  frequency, dividing it by 2**(n/12) raises the pitch by n semitones, so
+  `(Period shl 14) div SemitoneScale[n]` transposes ANY period at all.
+
+  THAT IS WHY IT REPLACED A LOOKUP. The older arpeggio found the note in a
+  table, added the semitones, and read the new period back out -- which only
+  works when the channel is sitting exactly on a table entry. Finetuned MOD
+  notes are not, and S3M pitches are not remotely; this player loads both.
+  Arithmetic works everywhere a lookup only worked on the twelve-tone grid.
+
+  [re] NEW IN v1.51, DS:$035a. This block's addresses all moved +$0a, which is
+  what puts the table at $035a and not $0350: verdiff's largest bucket across
+  the two versions is seventeen bytes shifting by exactly ten, with old values
+  $35..$4c -- the low halves of $0334..$034c. So the unit's block runs
+  $033e..$0359 in 1.51 and the table follows it. }
   SemitoneScale : array[0..15] of Word =
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
 
-{ 142f:064b -- start whatever effect the note carries. STILL A STUB. }
+{ THE TWO ENTRY POINTS. Everything else in this unit is reached through one of
+  these; nothing outside calls an individual effect.
+
+  Arm the note's command. Called once, as the row is read, for every channel
+  that has a command on it. }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote); far;
 
-{ 142f:063f -- the per-tick effect dispatcher. STILL A STUB.
+{ Advance whatever is armed. Called once per channel on every tick.
 
-  IT TAKES ITS ARGUMENTS IN REGISTERS: SI points at the channel and BX holds the
-  command number DOUBLED, which is a jump-table index. The release documents the
-  convention in `LIB/MODCOMMA.PAS`: "En las del tick, se entra con SI apuntando al
-  TCanal correspondiente." So the declaration below carries no parameters and the
-  caller sets the registers up by hand -- see 12ba:0d75. }
+  IT TAKES ITS ARGUMENTS IN REGISTERS, so it cannot be called from Pascal: SI
+  points at the channel and BX holds the command number DOUBLED, ready to index
+  the jump table. The declaration carries no parameters and the caller sets the
+  registers up by hand.
+
+  [re] 142f:064b and 142f:063f; the caller is 12ba:0d75. The release documents
+  the convention in `LIB/MODCOMMA.PAS`: "En las del tick, se entra con SI
+  apuntando al TCanal correspondiente." }
 procedure CommandTick; far;
 
 implementation
 
 { --------------------------------------------------------------------------
-  TWO FLAGS THAT STAY PRIVATE, and the first of them is a genuine oddity.
+  THE FILTER FLAGS ARE PRIVATE, AND THERE ARE TWO `FilterIsOn`s IN THIS PROGRAM.
 
-  `FilterIsOn` at DS:$0348 is what the E0x command writes (142f:04da). The release
-  has exactly ONE variable of that name, in this unit's interface -- but 1.31 HAS
-  TWO: PlayMod's own filter flag is at DS:$02cd, next to FilterOn and FilterOff, and
-  it is the one the initialisation section reads at 12ba:1430 to choose which kernel
-  is in force. Two addresses, two variables, and nothing in the transcribed tree
-  reads $0348 at all.
+  E0x switches the Amiga's low-pass filter, which on a PC means switching which
+  mixing kernel is in force. This unit's flag records what the COMMAND asked
+  for; the player has a flag of its own recording what the MIXER is actually
+  doing, and the two are separate variables.
 
-  SO IT IS DECLARED IN THE IMPLEMENTATION SECTION RATHER THAN THE INTERFACE, which
-  is the least-claim option: exporting it would put a second `FilterIsOn` in scope
-  wherever PlayMod is compiled, and Pascal would silently resolve those references
-  to PlayMod's own. That is a shadowing bug waiting to happen and no byte comparison
-  could ever see it. Whether 1.31 MEANT one variable and ended up with two is not
-  something the bytes can answer; it is the same shape as `LoopMod` at $02c8, which
-  is also written and never read.
+  KEEPING THIS ONE OUT OF THE INTERFACE IS THE POINT. Exporting it would put a
+  second `FilterIsOn` in scope wherever the player is compiled, and Pascal
+  would quietly resolve those references to the player's -- a shadowing bug no
+  byte comparison could ever see. `PermitFilterChange` gates the whole thing:
+  a module that fiddles with the filter can be told to leave it alone.
 
-  `PermitFilterChange` at DS:$0335 gates the whole thing and is the release's name.
+  [re] DS:$0348, written by 142f:04da; PlayMod's is DS:$02cd, next to FilterOn
+  and FilterOff, and the initialisation section reads it at 12ba:1430 to choose
+  the kernel. Nothing in the transcribed tree reads $0348 at all. Whether 1.31
+  MEANT one variable and ended up with two is not something the bytes can
+  answer; it is the same shape as `LoopMod` at $02c8, also written and never
+  read. `PermitFilterChange` is DS:$0335 and is the release's name.
   -------------------------------------------------------------------------- }
 
-{ --------------------------------------------------------------------------
-  EVERY ROUTINE IN THIS UNIT IS NEAR. `RET 0C` at 142f:00a0 is a near return with
-  twelve bytes of parameters -- three `var` references -- so the internal effect
-  routines are called near from within the segment, and only the two the interface
-  publishes are far. That is also why the parameters sit at [BP+04] upward rather
-  than [BP+06]: Song at [BP+0C], Can at [BP+08], N at [BP+04], which is Pascal
-  order with the first-declared pushed first.
-  -------------------------------------------------------------------------- }
+{ [re] EVERY ROUTINE IN THIS UNIT IS NEAR. `RET 0C` at 142f:00a0 is a near
+  return with twelve bytes of parameters -- three `var` references -- so the
+  internal effect routines are called near from within the segment, and only the
+  two the interface publishes are far. That is also why the parameters sit at
+  [BP+04] upward rather than [BP+06]: Song at [BP+0C], Can at [BP+08], N at
+  [BP+04], which is Pascal order with the first-declared pushed first. }
 
-{ Forward, because StartTPortUp and StartTPortDown fall back on them and their
-  bodies are 1,000 bytes further down the segment -- 142f:0114 calls 142f:04e2
-  and 142f:0163 calls 142f:052f. The release declares them FORWARD for the same
+{ Forward: the two portamento Start routines fall back on the fine variants,
+  which are declared a long way below.
+
+  [re] 142f:0114 calls 142f:04e2 and 142f:0163 calls 142f:052f, 1,000 bytes
+  further down the segment. The release declares them FORWARD for the same
   reason and in the same place. }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
                            var N : TFullNote); forward;
 procedure StartFinePortaDown(var Song : TSong; var Can : TCanal;
                              var N : TFullNote); forward;
 
-{ 142f:03cd -- CONFIRMED by the two near jumps at 142f:0352 and 142f:0359, which
-  the release writes as `JMP TickVolSlide` from both TickT_VSlide and
-  TickVib_VSlide. The prologue scanner never found it: it is frameless. Forward
-  because those two jump to it from 120 bytes above, which is also why both jumps
-  take the three-byte form. STILL A STUB. }
+{ Forward: the combined commands (5xy tone-portamento-plus-volume-slide, 6xy
+  vibrato-plus-volume-slide) do their own half and then JUMP straight into this
+  one rather than duplicating it. A jump, not a call, because the volume slide
+  is the last thing either of them does.
+
+  [re] 142f:03cd, confirmed by the two near jumps at 142f:0352 and 142f:0359,
+  which the release writes as `JMP TickVolSlide` from both TickT_VSlide and
+  TickVib_VSlide. The prologue scanner never found it: it is frameless. Both
+  jumps take the three-byte form because the target is 120 bytes below. }
 procedure TickVolSlide; forward;
 
 
 { --------------------------------------------------------------------------
-  142f:0000 -- command 0, ARPEGGIO. Precompute the three periods it rotates
-  through; TickArpeggio just cycles them.
+  ARPEGGIO, command 0xy. Alternate between the note, the note x semitones up,
+  and the note y semitones up, on successive ticks -- fast enough that the ear
+  hears a chord rather than three notes. It is how a four-channel machine plays
+  a triad, and it is the oldest trick the format has.
 
-  THE TWO TABLE LOOKUPS ARE THE WHOLE ROUTINE, and they are why 1650 exists:
-  `NoteOf[Period]` turns a period back into a note number, the semitone offset
-  from the effect's nibble is added, and `NotePeriods` turns it back into a
-  period. Both tables live in VTNotes and both are now exported.
+  ALL THE WORK HAPPENS HERE, ONCE. The two transposed periods are computed at
+  the row and stored; the Tick half only picks one of the three and hands it to
+  the mixer, which is three instructions and no arithmetic.
 
-  THE INDEX ARITHMETIC IS 32-BIT AND THAT IS THE SOURCE TALKING. 142f:0042 is
-  `CWD` on the semitone count and 142f:0053 is `XOR DX,DX` on the masked table
-  entry, then `ADD AX,CX / ADC DX,BX` -- a LongInt add whose high word is then
-  thrown away by the indexing. Turbo Pascal promotes `Integer + Word` to LongInt,
-  so the widening is forced by the operand types and not by anything written: the
-  semitone count is signed and `NoteOf[..] and $FF` is not.
+  THE TRANSPOSITION IS A DIVIDE, NOT A TABLE LOOKUP -- see `SemitoneScale`
+  above for why. The period is shifted up by fourteen bits first because the
+  table is written in that fixed point; the shift and the divide together are a
+  fractional multiply, and 32 bits is enough that no precision is lost on any
+  period the format can express.
 
-  THE OPERAND ORDER IS READ OFF THE BYTES, and it is the reverse of what reads
-  naturally. Turbo Pascal evaluates the RIGHT operand of a 32-bit add first, into
-  CX:BX, then the left into DX:AX -- 142f:003f loads the semitone count and
-  sign-extends it into CX:BX before touching either table, so the semitone count
-  is the RIGHT-hand operand and the table lookup is the left. Written the other way
-  round the two halves swap and nothing else changes, which is why it had to be
-  measured rather than reasoned.
+  [re] 142f:0000. THE INDEX ARITHMETIC IS 32-BIT AND THAT IS THE SOURCE TALKING.
+  142f:0042 is `CWD` on the semitone count and 142f:0053 is `XOR DX,DX` on the
+  masked table entry, then `ADD AX,CX / ADC DX,BX` -- a LongInt add whose high
+  word is then thrown away by the indexing. Turbo Pascal promotes `Integer +
+  Word` to LongInt, so the widening is forced by the operand types.
 
-  AND THE SEMITONE COUNT IS SIGNED, which the `CWD` settles. It comes from a
-  nibble so it can only be 0..15, but the variable it is kept in is an Integer --
-  had it been a Word the compiler would have emitted `XOR DX,DX` here too.
+  [re] THE OPERAND ORDER IS READ OFF THE BYTES, and it is the reverse of what
+  reads naturally. Turbo Pascal evaluates the RIGHT operand of a 32-bit add
+  first, into CX:BX, then the left into DX:AX -- 142f:003f loads the semitone
+  count and sign-extends it into CX:BX before touching either table, so the
+  semitone count is the RIGHT-hand operand and the table lookup is the left.
+  Written the other way round the two halves swap and nothing else changes.
+
+  [re] AND THE SEMITONE COUNT IS SIGNED, which the `CWD` settles. It comes from
+  a nibble so it can only be 0..15, but the variable it is kept in is an Integer
+  -- had it been a Word the compiler would have emitted `XOR DX,DX` here too.
   -------------------------------------------------------------------------- }
 procedure StartArpeggio(var Song : TSong; var Can : TCanal; var N : TFullNote);
 var
-  { `ENTER 8,0` in 1.51 where 1.31b has `ENTER 4,0`, and both slots are LONGINT now.
-    `147d:0015` stores AX to [BP-4] and DX to [BP-2] after an `XOR DX,DX`, which is a
-    32-bit store of a zero-extended word, and `147d:001b` tests the value with
+  { Both LongInt: `Scaled` needs the width for the fixed point, and `Period`
+    matches it so the divide has no conversion in front of it. }
+  Period : LongInt;               { the pitch to transpose FROM              }
+  Scaled : LongInt;               { the same, shifted up 14 bits             }
+
+  { [re] `ENTER 8,0` in 1.51 where 1.31b has `ENTER 4,0`; [BP-4] and [BP-8].
+    147d:0015 stores AX to [BP-4] and DX to [BP-2] after an `XOR DX,DX`, a
+    32-bit store of a zero-extended word, and 147d:001b tests the value with
     `MOV AX,[BP-4] / OR AX,[BP-2]`. Nothing else in the routine is 16-bit. }
-  Period : LongInt;               { [BP-4]                                   }
-  Scaled : LongInt;               { [BP-8]                                   }
 begin
   Can.ArpCt := 0;                                  { 0004..000b              }
 
@@ -387,23 +525,29 @@ begin
   if Period = 0 then                               { 001b..0022              }
     Period := Can.Note.Period;                     { 0023..0031              }
 
-  { `MOV CX,0e / XOR BX,BX / CALLF 1d89:0aa8`, and 0aa8 is `AND CX,1F / SHL AX,1 /
-    RCL DX,1 / LOOP` -- Turbo Pascal's LongInt shift-left, with the count arriving as
-    a whole LongInt in BX:CX because that is how it loads an integer constant. Fourteen
-    bits is the fixed point the table is written in: 1 << 14 is 16384. }
+  { Into the table's fixed point: 1 shl 14 is 16384, which is the table's
+    entry for "no semitones at all".
+
+    [re] `MOV CX,0e / XOR BX,BX / CALLF 1d89:0aa8`, and 0aa8 is `AND CX,1F /
+    SHL AX,1 / RCL DX,1 / LOOP` -- Turbo Pascal's LongInt shift-left, with the
+    count arriving as a whole LongInt in BX:CX because that is how it loads an
+    integer constant. }
   Scaled := Period shl 14;                         { 0032..0047              }
 
-  { `MOV AX,[BP-4]` and nothing more -- a LongInt assigned to a Word field keeps the
-    low half. }
+  { [re] `MOV AX,[BP-4]` and nothing more -- a LongInt assigned to a Word field
+    keeps the low half. }
   Can.Arp0 := Period;                              { 0048..0051              }
 
-  { BOTH ARPEGGIO STEPS COME FROM `Can.Note.Parameter`, NOT FROM `N.Parameter`, and
-    the base register is what says so: `LES DI,[BP+8]` is the CHANNEL, and the note is
-    at [BP+4]. `Can.Note` is a TFullNote at offset zero, so its `Parameter` is +$5.
+  { The two nibbles are the two intervals: high nibble first, low nibble
+    second. They are read from the CHANNEL's copy of the note, not from the note
+    passed in -- so an arpeggio survives a row that carries no command of its
+    own, which is what makes the effect continue across a held note.
 
-    THE DIVISOR IS EVALUATED FIRST. `MOV AX,[DI+35a] / XOR DX,DX / MOV CX,AX /
-    MOV BX,DX` builds the right operand in BX:CX before the left is loaded into DX:AX
-    -- the LongInt divide helper at 1d89:0a2e takes them that way round. }
+    [re] `LES DI,[BP+8]` is the CHANNEL and the note is at [BP+4]; `Can.Note` is
+    a TFullNote at offset zero, so its `Parameter` is +$5. THE DIVISOR IS
+    EVALUATED FIRST: `MOV AX,[DI+35a] / XOR DX,DX / MOV CX,AX / MOV BX,DX`
+    builds the right operand in BX:CX before the left is loaded into DX:AX --
+    the LongInt divide helper at 1d89:0a2e takes them that way round. }
   Can.Arp1 := Scaled div SemitoneScale[Can.Note.Parameter shr 4];   { 0052..007d }
   Can.Arp2 := Scaled div SemitoneScale[Can.Note.Parameter and $0F]  { 007e..00a8 }
 end;
@@ -448,9 +592,11 @@ end;
   and DX are scratch, and each routine leaves through @@Fin, which is the RET
   Pascal appends rather than an instruction of this file's own.
 
-  `@@Fin` IS THE EPILOGUE. Both `JMP @@Fin`s land on 142f:00cb, which is the `RET`
-  the compiler appends -- there is no instruction of our own at that label. Written
-  with a written `RET` instead, TP would emit a second one.
+  `@@Fin` IS THE EPILOGUE, and it is EMPTY on purpose. A tick routine leaves by
+  jumping to a label at the very end of its body, where the compiler's own `RET`
+  is waiting. Writing a `RET` there instead would emit two.
+
+  [re] Both `JMP @@Fin`s land on 142f:00cb.
   -------------------------------------------------------------------------- }
 { **ARPEGGIO IS A CHORD FAKED BY ONE VOICE.** [1.39b] "Rotate through three
   notes rapidly." A channel can play one pitch at a time, so it plays three in
@@ -694,19 +840,23 @@ end;
   the table only ever needs to hold a half-cycle. That is why the 32 entries run
   0..255..24 and never go negative.
 
-  `MOV BX,0350` IS A DGROUP OFFSET, NOT A CODE ADDRESS, and it has to be: `XLAT`
-  reads `DS:BX+AL`. 142f:0350 in the code segment is the middle of TickT_VSlide, so
-  the table is a typed constant living in DGROUP -- which is exactly where Turbo
-  Pascal puts a `const` declared inside a procedure, and exactly how the release
-  declares it.
+  [re] `MOV BX,0350` IS A DGROUP OFFSET, NOT A CODE ADDRESS, and it has to be:
+  `XLAT` reads `DS:BX+AL`. 142f:0350 in the code segment is the middle of
+  TickT_VSlide, so the table is a typed constant living in DGROUP -- which is
+  exactly where Turbo Pascal puts a `const` declared inside a procedure, and
+  exactly how the release declares it.
 
-  `AND AH,AH` is `20 E4` and `MOV AL,DL` is `88 D0` -- the inline assembler's
-  direction bits throughout, which is the standing tell for hand-written asm.
+  [re] `AND AH,AH` is `20 E4` and `MOV AL,DL` is `88 D0` -- the inline
+  assembler's direction bits throughout, the standing tell for hand-written asm.
   -------------------------------------------------------------------------- }
 procedure TickVibrato; assembler;
 const
-  { A quarter-scaled half-cycle sine, DS:$0350. The release's table and its
-    comment; transcribed rather than computed. }
+  { HALF A SINE, IN 32 STEPS, 0..255. Only half is stored: the position's top
+    bit decides whether the value is added or subtracted, so the second half of
+    the cycle is the first half negated and never needs its own entries.
+
+    [re] DS:$0350. The release's table and its comment; transcribed rather than
+    computed. }
   VibTabla : array[0..31] of Byte = (
       0,  24,  49,  74,  97, 120, 141, 161,
     180, 197, 212, 224, 235, 244, 250, 253,
@@ -760,13 +910,14 @@ end;
   the long form. It does NOT pad afterwards, which is where it differs from TASM's
   `JUMPS`: TP simply emits three bytes and moves on. Both jumps here are like that.
 
-  AND THAT PINS `TickVolSlide` AT 142f:03cd -- a routine the prologue scanner never
-  found, because it is frameless. Two independent jumps land on it and the release
-  says what both of them jump to, so the pairing is confirmed rather than inferred.
+  THE TRAILING `RET` IS THE COMPILER'S AND IS UNREACHABLE. An `assembler`
+  procedure always gets its epilogue, even after an unconditional `JMP` out of
+  the body; writing a `RET` in the source would emit a second.
 
-  THE TRAILING `RET` IS THE COMPILER'S AND IS UNREACHABLE. An `assembler` procedure
-  always gets its epilogue, even after an unconditional `JMP` out of the body --
-  0355 and 035c are those, and writing a `RET` in the source would emit a second.
+  [re] 0355 and 035c are those two. AND THE JUMPS PIN `TickVolSlide` AT
+  142f:03cd -- a routine the prologue scanner never found, because it is
+  frameless. Two independent jumps land on it and the release says what both of
+  them jump to, so the pairing is confirmed rather than inferred.
   -------------------------------------------------------------------------- }
 procedure TickT_VSlide; assembler;
 asm
@@ -794,11 +945,11 @@ end;
   and stops at +$25. So 1.31 has no sample-offset support and the three empties sit
   next to each other.
 
-  THEY KEEP ADDRESS NAMES ANYWAY, and this is the clearest case in the project for
-  why. An EMPTY body cannot confirm a pairing -- every empty routine matches every
-  other one -- so position is all there would be, and position is not confirmation.
-  What will settle it is the DISPATCH TABLE at 142f:063f, which maps each command
-  number to one of these addresses. Rename them then, from the table, not now.
+  [re] THEY KEPT ADDRESS NAMES UNTIL THE DISPATCH TABLE NAMED THEM. An EMPTY
+  body cannot confirm a pairing -- every empty routine matches every other one --
+  so position was all there would have been, and position is not confirmation.
+  The table at 142f:063f maps each command number to one of these addresses, and
+  that is where the names below came from.
   -------------------------------------------------------------------------- }
 procedure TickTremolo; assembler;
 asm
@@ -809,21 +960,34 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  147d:0369 -- SAMPLE OFFSET, NEW IN v1.51, and it lands exactly where the 1.31b note
-  above said it would: between `TickNPI1` and `TickSampleOffs`, with `TickVib_VSlide`'s
-  own unreachable trailing `RET` accounting for the third `C3` in the run.
+  SAMPLE OFFSET, command 9xx. Start the sample xx*256 bytes in rather than at
+  its beginning. One drum loop can then be played as a dozen separate hits, by
+  entering it at a dozen different points -- which is the whole reason a
+  four-channel format can carry a breakbeat.
 
-  THE DISPATCH TABLE NAMED IT, which is what that note said would have to happen.
-  `CommandStart` at 147d:088a is an `else if` chain on the command byte -- `CMP AL,n /
-  JNZ` twenty-one times -- and decoding its near calls maps command $0a to this
-  address. $0a is `mcSampleOffs`. The same pass named `StartRetrigNote` ($1a),
-  `StartOktArp` ($21 AND $22, both), `StartS3mRetrigNote` ($23) and `StartNPI1` ($09),
-  and confirmed that $06, $07 and $0b all share `StartVolSlide` -- six routines and
-  one three-way alias from one table, which is why the note said to wait for it.
+  THE PARAMETER IS COARSE BY DESIGN. One byte times 256 reaches the whole 64K a
+  sample can occupy, at the cost of landing only on 256-byte boundaries. At
+  8kHz that is a granularity of about a thirtieth of a second, which is close
+  enough for a drum hit and far cheaper than a second parameter byte.
 
-  `N.Parameter shl 8` IS THE FORMAT'S OWN ARITHMETIC: a MOD 9xx offset is xx * 256
-  bytes into the sample, so a byte parameter reaches a 16-bit offset. `XOR AH,AH`
-  before `SHL AX,8` is the byte widening to a Word first. }
+  IT ONLY LEAVES A REQUEST. The note it applies to has not been started yet, so
+  there is no sample pointer here to move; the mixer applies the offset when it
+  starts the note. A zero parameter means "keep whatever was set last time",
+  the same convention the slides use.
+
+  [re] 147d:0369, NEW IN v1.51, and it lands exactly where the 1.31b note said
+  it would: between `TickNPI1` and `TickSampleOffs`, with `TickVib_VSlide`'s own
+  unreachable trailing `RET` accounting for the third `C3` in the run.
+
+  [re] THE DISPATCH TABLE NAMED IT. `CommandStart` at 147d:088a is an `else if`
+  chain on the command byte -- `CMP AL,n / JNZ` twenty-one times -- and decoding
+  its near calls maps command $0a to this address. $0a is `mcSampleOffs`. The
+  same pass named `StartRetrigNote` ($1a), `StartOktArp` ($21 AND $22, both),
+  `StartS3mRetrigNote` ($23) and `StartNPI1` ($09), and confirmed that $06, $07
+  and $0b all share `StartVolSlide` -- six routines and one three-way alias from
+  one table.
+
+  [re] `XOR AH,AH` before `SHL AX,8` is the byte widening to a Word first. }
 procedure StartSampleOffs(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   if N.Parameter <> 0 then                         { 036c..0375              }
@@ -839,19 +1003,9 @@ end;
 
 
 { ==========================================================================
-  NOTHING BELOW IS A STUB ANY MORE. Kept as a section marker because the routines
-  below are the ones the interface publishes plus the DemoVT-only command, and they
-  are last in the segment. Note
-  that TickVolSlide, above, is one the prologue scanner never found at all -- it is
-  frameless, and it was located by reading the jumps that reach it. Expect more of
-  those among what is left, so do not treat the scanner's list as complete. They are named by ADDRESS on purpose:
-  the release's routine list continues `StartNPortamento, TickNPortamento,
-  StartVibrato, TickVibrato, ...` and the mapping has held for six routines
-  running, but the standing rule is that a pairing must be confirmed by reading
-  both bodies -- not inferred from position. Two of the thirteen ARE confirmed,
-  by the calls at 142f:0114 and 142f:0163, and those two carry real names.
-
-  The bodies are deliberately wrong. `units.py`'s prefix stops at 0184.
+  FROM HERE ON: the volume slides, the song-position commands, the whole E-series
+  of one-nibble sub-commands, and last the two dispatchers the interface
+  publishes.
   ========================================================================== }
 
 { --------------------------------------------------------------------------
@@ -1037,38 +1191,43 @@ begin
 end;
 
 
-{ 142f:04e1 -- command E0x per tick, and it does nothing. One byte, a bare `RET`,
-  which is an `assembler` procedure with no parameters and an empty body. The
-  release has it as `TickSetFilter` and it is empty there too -- but an empty body
-  confirms nothing, so this keeps its address like the three at 035d..035f. The
-  dispatch table at 063f will name it. }
+{ E0x has nothing to do between rows: the filter is switched at the row and
+  stays switched. Empty on purpose -- see the note below the E-series.
+
+  [re] 142f:04e1, one byte, a bare `RET`. The release has it as `TickSetFilter`
+  and it is empty there too; the dispatch table at 063f is what named it. }
 procedure TickSetFilter; assembler;
 asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:04e2 and 142f:052f -- commands E1x and E2x, FINE PORTAMENTO up and down.
-  CONFIRMED at both addresses by the near calls at 142f:0114 and 142f:0163.
+  FINE PORTAMENTO, commands E1x and E2x: move the pitch by x ONCE, at the row,
+  instead of by x on every tick. It is how a tracker nudges a note slightly out
+  of tune -- to thicken a chord, or to beat one channel against another --
+  without the audible slide a coarse portamento would give.
 
-  THEY ARE THE MIRROR OF StartTPortUp AND StartTPortDown, and the pair of pairs is
-  what makes the `TPortIsFine` flag make sense: each version sets the flag its own
-  way, and a zero parameter sends the note to the OTHER one by rewriting
-  `Note.Command`. Coarse with a zero parameter and the fine flag set goes fine;
-  fine with a zero parameter and the flag clear goes coarse. Between them the four
-  routines implement "repeat the last portamento, whichever kind it was".
+  THE WHOLE DIFFERENCE IS WHEN IT FIRES, NOT WHAT IT DOES. So the fine version
+  arms the channel exactly as the coarse one does, then CALLS THE COARSE TICK
+  ROUTINE ITSELF, on the spot, and the per-tick dispatcher never sees the
+  command again. One movement instead of fifty; the same arithmetic either way.
 
-  AND THE FINE VERSION APPLIES ITSELF IMMEDIATELY. The `asm` block at 0525 calls the
-  COARSE tick routine once, on the spot, which is what makes a fine portamento fine:
-  it moves the period on the row itself and then the per-tick dispatcher never sees
-  it, where a coarse one moves on every tick but the first. `MOV SI,WORD PTR Can`
-  again -- the offset half of a var reference, because TickTPortUp takes its channel
-  in SI.
+  THE FOUR ROUTINES TOGETHER MEAN "AGAIN, WHICHEVER KIND IT WAS". A zero
+  parameter means repeat the last portamento, and the flag remembers which kind
+  that was -- so each of the four checks the flag and, if the note belongs to
+  the other kind, REWRITES the command byte and hands it over. Coarse with a
+  zero parameter and the fine flag set goes fine; fine with a zero parameter
+  and the flag clear goes coarse.
 
-  `MOV byte ES:[DI+4],2` AT 0516 IS A THIRD CONFIRMATION OF THE COMMAND ENUM.
-  mcTPortUp is 2 and mcTPortDown is 3 counting from mcNone, and 0563 stores 3. With
-  the $12 and $13 in StartTPortUp/Down that is four values fixed by four stores.
+  [re] 142f:04e2 and 142f:052f, CONFIRMED at both addresses by the near calls at
+  142f:0114 and 142f:0163. `MOV SI,WORD PTR Can` is the offset half of a var
+  reference, because TickTPortUp takes its channel in SI.
 
-  NO SCALING, again: the release has `WORD(n.Parameter) SHL 2` in both and
+  [re] `MOV byte ES:[DI+4],2` AT 0516 IS A THIRD CONFIRMATION OF THE COMMAND
+  ENUM. mcTPortUp is 2 and mcTPortDown is 3 counting from mcNone, and 0563
+  stores 3. With the $12 and $13 in StartTPortUp/Down that is four values fixed
+  by four stores.
+
+  [re] NO SCALING, again: the release has `WORD(n.Parameter) SHL 2` in both and
   04f2..04fb has no shift.
   -------------------------------------------------------------------------- }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal; var N : TFullNote);
@@ -1107,20 +1266,19 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:057c..0583 -- EIGHT DO-NOTHING TICK ROUTINES, one byte each.
+  EIGHT DO-NOTHING TICK ROUTINES IN A ROW. All eight commands below do their
+  whole job at the row and have nothing left to do between rows -- see the note
+  after them for why an empty body is the right implementation and not a
+  missing one.
 
-  `C3 C3 C3 C3 C3 C3 C3 C3` -- eight bare near returns in a row, so eight
-  parameterless `assembler` procedures with empty bodies. The release has SEVEN
-  consecutive empties here (`TickFPortUpDown`, `TickGlissCtrl`, `TickVibCtrl`,
-  `TickFineTune`, `TickJumpLoop`, `TickTremCtrl`, `TickNPI2`) and 1.31 has eight, so
-  one of them has no counterpart in 1.39b at all -- or 1.39b merged two. Which is
-  not answerable from eight identical bodies.
-
-  ADDRESS NAMES, AND FOR THE SAME REASON AS BEFORE: an empty body cannot confirm a
-  pairing. That is now eleven one-byte routines in this segment waiting on the
-  DISPATCH TABLE at 142f:063f, which maps command numbers to addresses and is the
-  only thing that can name any of them. Doing that is the natural end of this
-  segment rather than a chore -- the table settles eleven names at once.
+  [re] 142f:057c..0583, one byte each: `C3 C3 C3 C3 C3 C3 C3 C3`, eight bare
+  near returns, so eight parameterless `assembler` procedures with empty bodies.
+  The release has SEVEN consecutive empties here (`TickFPortUpDown`,
+  `TickGlissCtrl`, `TickVibCtrl`, `TickFineTune`, `TickJumpLoop`,
+  `TickTremCtrl`, `TickNPI2`) and 1.31 has eight, so one has no counterpart in
+  1.39b -- or 1.39b merged two, which eight identical bodies cannot settle. The
+  names here come from the dispatch table at 142f:063f, which is the only thing
+  that could have supplied them.
   -------------------------------------------------------------------------- }
 procedure TickFPortUpDown; assembler;
 asm
@@ -1331,28 +1489,35 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  147d:068a -- THE OKTALIZER ARPEGGIO, NEW IN v1.51, and it takes the source position
-  1.31b's `StartRingEvent` used to hold. `CommandStart` maps BOTH command $21 and
-  command $22 -- `mcOktArp` and `mcOktArp2` -- to this one address.
+  THE OKTALIZER ARPEGGIO. Oktalizer was another tracker, and its arpeggio is
+  not quite ProTracker's: the two intervals are read from the parameter the
+  other way round, and the cycle is FOUR steps rather than three -- note, first
+  interval, second interval, first interval again. Supporting somebody else's
+  format means matching its quirks exactly, so this is a separate command
+  rather than a flag on the ordinary one.
 
-  IT IS StartArpeggio's ARITHMETIC WITH TWO CHANGES. The semitone table is a SECOND,
-  IDENTICAL copy at DS:$039a rather than the one at $035a -- thirty-two bytes of the
-  same sixteen words, which is what a `const` declared inside a second procedure
-  looks like, and is why it is declared here rather than shared.
+  THE PITCH ARITHMETIC IS THE ORDINARY ARPEGGIO'S, unchanged. Only the nibble
+  order and the tick cycle differ, and the cycle lives in the Tick half.
 
-  AND THE TWO STEPS ARE TAKEN THE OTHER WAY ROUND: the LOW nibble drives `Arp2` and
-  the high nibble drives `Arp1` through `xor $0F`, which on a 0..15 value is 15 - n.
+  [re] 147d:068a, NEW IN v1.51, taking the source position 1.31b's
+  `StartRingEvent` used to hold. `CommandStart` maps BOTH command $21 and
+  command $22 -- `mcOktArp` and `mcOktArp2` -- to this one address. The high
+  nibble reaches `Arp1` through `xor $0F`, which on a 0..15 value is 15 - n.
 
-  **`Period := Period shl 1` IS DEAD AND IT IS THE ORIGINAL'S.** 147d:070d shifts the
-  period left one and stores it back to [BP-4], and nothing reads [BP-4] again --
-  the second divide at 073a loads `Scaled` from [BP-8], which the shift did not
-  touch. It looks like an octave drop the author meant to fold into `Scaled` and did
-  not. Transcribed because it is four instructions of the release's, not because it
-  does anything. }
+  [re] **`Period := Period shl 1` IS DEAD AND IT IS THE ORIGINAL'S.** 147d:070d
+  shifts the period left one and stores it back to [BP-4], and nothing reads
+  [BP-4] again -- the second divide at 073a loads `Scaled` from [BP-8], which
+  the shift did not touch. It looks like an octave drop the author meant to fold
+  into `Scaled` and did not. Transcribed because it is four instructions of the
+  release's, not because it does anything.
+  -------------------------------------------------------------------------- }
 procedure StartOktArp(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { DS:$039a. Byte for byte the same table as `SemitoneScale` above, and separate
-    because the original has two copies. }
+  { The same sixteen values as `SemitoneScale`, declared again inside this
+    procedure. The original carries two copies and so does this.
+
+    [re] DS:$039a; thirty-two bytes, which is what a `const` declared inside a
+    second procedure looks like. }
   OktScale : array[0..15] of Word =
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
@@ -1417,29 +1582,45 @@ end;
 
 
 { --------------------------------------------------------------------------
-  147d:0785 -- SCREAM TRACKER'S Qxy, NEW IN v1.51 AND THE REASON THE COMMAND EXISTS.
-  `CommandStart` maps command $23, `mcS3mRetrigNote`, here. It decodes the volume
-  half of the effect, masks the parameter down to the tick count, and then calls
-  `StartRetrigNote` with the same three arguments -- 147d:0811's `E8 A5 FD` reaches
-  05b9 -- so the plain retrigger does the counting and this routine only decides what
-  happens to the volume when it fires.
+  SCREAM TRACKER'S RETRIGGER, command Qxy: play the note again every y ticks
+  AND change its volume each time. It is what makes a retriggered note swell or
+  fade instead of simply repeating -- a rolled snare that gets louder, a hit
+  that echoes away.
 
-  TWO TABLES AND A SELECTOR. `RetMult` is consulted first; where its entry is ZERO
-  the effect is an ADDITIVE slide and `RetAdd` supplies a signed step. That is
-  what `MOV AL,0 / JNZ +1 / INC AX` computes -- `Ord(RetMult[x] = 0)`, an
-  expression whose whole body is a set-on-condition the 8086 has no instruction for.
+  THE x NIBBLE PICKS ONE OF SIXTEEN VOLUME BEHAVIOURS, and they are not all the
+  same kind of arithmetic. Some SCALE the volume by a fraction; others ADD or
+  subtract a fixed step. So there are two tables -- a multiplier and an addend
+  -- and the multiplier is looked up first: where its entry is zero, that x is
+  not a multiply at all and the addend table applies instead. The decoded
+  answer goes into the channel as a value plus a flag, so the per-tick half
+  never repeats this decision.
 
-  THE MULTIPLIERS ARE IN SIXTEENTHS: $08 is a half, $18 is three halves, $20 is a
-  double. $0c at index 6 is three quarters where Scream Tracker's own document says
-  two thirds -- **the binary wins**, and that is the standing rule for every place
-  the format reference and this program disagree. }
+  THE COUNTING IS NOT DONE HERE. This routine masks the parameter down to the
+  tick count and hands off to the plain retrigger, which already knows how to
+  count ticks and raise the flag. Only the volume behaviour is new.
+
+  [re] 147d:0785, NEW IN v1.51. `CommandStart` maps command $23,
+  `mcS3mRetrigNote`, here; 147d:0811's `E8 A5 FD` reaches `StartRetrigNote` at
+  05b9. `MOV AL,0 / JNZ +1 / INC AX` computes `Ord(RetMult[x] = 0)`, an
+  expression whose whole body is a set-on-condition the 8086 has no instruction
+  for.
+
+  [re] THE MULTIPLIERS ARE IN SIXTEENTHS: $08 is a half, $18 is three halves,
+  $20 is a double. $0c at index 6 is three quarters where Scream Tracker's own
+  document says two thirds -- **the binary wins**, and that is the standing rule
+  for every place the format reference and this program disagree.
+  -------------------------------------------------------------------------- }
 procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { DS:$03ba and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all, and so is
-    `RetAdd` being SHORTINT: the transcription had it as Byte with $FF..$F0, which is
-    the same sixteen bytes and says nothing about the sign. Reading them as signed is
-    what makes the tick's `ADD AH,AL / JNC / MOV AH,0` obviously an underflow test
-    rather than a wrap. }
+  { The two behaviours, one table each, indexed by the x nibble. A zero in
+    `RetMult` means "this x is an addend, not a factor" -- which is why the
+    multiplier table is the one consulted first.
+
+    [re] DS:$03ba and DS:$03ca. BOTH TABLES ARE THE RELEASE'S, names and all,
+    and so is `RetAdd` being SHORTINT: the transcription had it as Byte with
+    $FF..$F0, the same sixteen bytes, which says nothing about the sign. Reading
+    them as signed is what makes the tick's `ADD AH,AL / JNC / MOV AH,0`
+    obviously an underflow test rather than a wrap. }
   RetMult : array[0..15] of Byte     = ( 0,  0,  0,  0,  0,   0, $0C, $08,
                                          0,  0,  0,  0,  0,   0, $18, $20);
   RetAdd  : array[0..15] of ShortInt = ( 0, -1, -2, -4, -8, -16,   0,   0,
@@ -1505,42 +1686,46 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
-  counterpart in the release at all.
+  THE RING EVENT: HOW A TUNE TALKS TO THE DEMO. This is the one command in the
+  unit that makes no sound at all.
 
-  It stores the parameter into `Can.RingSem` and 1 into `Can.RingPending`, and 12ba
-  does the rest: 12ba:0a58..0a8d copies both into `NoteRing[EventSlot, chan]` and
-  then clears `RingPending` again, and 12ba:0187 tallies the ring into the control
-  block the INT 2Fh interface publishes. So `RingPending` is "an event is waiting" and
-  `RingSem` is its payload -- **this is how a tune signals the demo**, which is the
-  one thing a demo player needs that a tracker does not. `VangeliSTracker/LIB` has
-  nothing like it, and it is the clearest single piece of evidence that DemoVT is a
-  purpose-built fork rather than a subset build.
+  A demo has to cut its visuals to the music, and the music is the only thing
+  in the program that knows where the beat is. So the composer writes a cue
+  into the pattern -- at the drop, at the key change, wherever the picture
+  should change -- and this routine records it. The player collects the cue on
+  its next pass and publishes it, and whatever is drawing the screen reads it
+  from there. The tune becomes the timeline for the whole production.
 
-  IT IS NOT `StartRetrigNote`, which is what its position suggests. The release's
-  StartRetrigNote has ONE conditional store (`IF n.Parameter <> 0 THEN
-  can.retrigval := n.Parameter`); this has two unconditional ones. And the release's
-  TickRetrigNote needs three fields where 1.31's record has two. The dispatch table
-  settles it independently: index 26, mcRetrigNote, points at a do-nothing tick.
+  IT BORROWS THE ONE COMMAND THAT DOES NOTHING. ProTracker's 8xx is documented
+  as having no effect, so repurposing it costs no musical ability whatsoever
+  and ANY tracker can author it -- a composer needs no special tool and no
+  special build to write cues. That is the whole synchronisation channel: one
+  spare command, two bytes of channel state.
 
-  AND THE COMMAND IT IMPLEMENTS IS `mcNPI1` -- PROTRACKER'S EFFECT 8, THE ONE THAT
-  DOES NOTHING. CommandStart's case arm at 142f:06dc calls this routine for command
-  9... no: for command 9 in our numbering, which is `mcNPI1`, whose release comment
-  reads "8 xx  Do Nothing (as far as I know)". The release has NO Start routine for
-  it at all -- it is absent from 1.39b's case -- and its tick is one of the empty
-  ones.
+  THE STORE IS UNCONDITIONAL, INCLUDING A ZERO PARAMETER. A cue of zero is
+  still a cue; it is a label the demo chooses the meaning of, not a quantity.
 
-  SO DEMOVT STOLE THE NO-OP EFFECT, which is the obvious choice and a genuinely neat
-  one: `8xx` is the one ProTracker command a composer can write with no audible
-  consequence, so it costs nothing to repurpose and any tracker can author it. That
-  is the whole music-to-demo synchronisation channel, and it is why this routine has
-  no counterpart anywhere in the release.
+  [re] 142f:0622, and it has no counterpart in the release at all.
+  12ba:0a58..0a8d copies both fields into `NoteRing[EventSlot, chan]` and then
+  clears `RingPending` again; 12ba:0187 tallies the ring into the control block
+  the INT 2Fh interface publishes. `VangeliSTracker/LIB` has nothing like it,
+  and it is the clearest single piece of evidence that DemoVT is a purpose-built
+  fork rather than a subset build.
 
-  ITS CASE ARM IS ALSO LAST IN THE CHAIN. The other sixteen arms run in the release's
-  own order; this one is appended after them, which is what an arm ADDED to an
-  existing `case` looks like. Named `StartRingEvent` for its role, matching the
-  `RingSem`/`RingPending` fields it writes -- the release's `mcNPI1` supplies the
-  command's name but would be a terrible name for a routine that does something.
+  [re] IT IS NOT `StartRetrigNote`, which is what its position suggests. The
+  release's StartRetrigNote has ONE conditional store (`IF n.Parameter <> 0 THEN
+  can.retrigval := n.Parameter`); this has two unconditional ones. And the
+  release's TickRetrigNote needs three fields where 1.31's record has two. The
+  dispatch table settles it independently: index 26, mcRetrigNote, points at a
+  do-nothing tick.
+
+  [re] THE COMMAND IS `mcNPI1`, whose release comment reads "8 xx  Do Nothing
+  (as far as I know)". CommandStart's case arm at 142f:06dc calls this routine
+  for it. The release has NO Start routine for the command at all -- it is
+  absent from 1.39b's case -- and its tick is one of the empty ones. ITS CASE
+  ARM IS ALSO LAST IN THE CHAIN: the other sixteen run in the release's own
+  order and this one is appended after them, which is what an arm ADDED to an
+  existing `case` looks like.
   -------------------------------------------------------------------------- }
 procedure StartRingEvent(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
@@ -1549,30 +1734,34 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  THE DISPATCH TABLE, DS:$0370 -- 36 words, one per command, holding the OFFSET of
-  that command's tick routine. This is the table that named seventeen routines.
+  THE TICK DISPATCH TABLE: one entry per command, holding the ADDRESS of that
+  command's per-tick routine. `CommandTick` range-checks the command number,
+  indexes this and calls through it -- which is why adding a command is two
+  routines and two table slots, and why a command with nothing to do per tick
+  still needs an entry.
 
-  IT IS THE ONLY THING THAT COULD HAVE NAMED THEM. Seventeen of this unit's routines
-  are one-byte `RET`s, and an empty body cannot confirm a pairing -- every empty
-  routine matches every other one, so source position was all there was and position
-  is not confirmation. The table's INDEX is the command number, so reading it against
-  the release's `TickCommOfs` at the same index gives each one its name from the
-  binary rather than from an assumption.
+  IT HOLDS OFFSETS, NOT PROCEDURE POINTERS. Everything in this unit is in one
+  segment, so a 16-bit offset is enough and the call is near. Two bytes per
+  command instead of four, and no segment fixup for the linker to resolve.
 
-  AND THE SIGNATURE IS STRONGER THAN SEVENTEEN SEPARATE MATCHES. Two entries are
-  DOUBLED in the release -- 18 and 19 both point at TickFPortUpDown, 27 and 28 both
-  at TickVolFineUpDn, because E1x/E2x and EAx/EBx share a tick -- and 1.31's table
-  doubles at exactly those four indices, on exactly those two addresses. Five
-  entries point at TickNone where a command has no tick at all (12..16, the ones
-  whose work is all done at row start), and those five land on the same indices too.
+  SEVERAL COMMANDS SHARE A TICK, and the sharing is the interesting part: the
+  fine portamentos both point at one routine, the fine volume slides at
+  another, and every command whose work is done entirely at the row points at
+  the do-nothing tick. Sharing is what keeps seventeen of this unit's routines
+  down to a single `RET` each.
 
-  WHAT 1.31 DOES NOT HAVE: indices 33 and 34, the two Oktalizer arpeggios, point at
-  TickNone where the release points at TickArpeggio and TickArpeggio2. The slots
-  exist and the feature does not. And there is no index 35 command at all -- the
-  release's `mcS3mRetrigNote` -- which is why `mcLast` is 35 here and 36 there.
+  [re] DS:$0370, 36 words. THIS IS THE TABLE THAT NAMED SEVENTEEN ROUTINES, and
+  it is the only thing that could have: seventeen are one-byte `RET`s, and an
+  empty body cannot confirm a pairing -- every empty routine matches every other
+  one, so source position was all there was, and position is not confirmation.
+  Reading it against the release's `TickCommOfs` at the same index gives each
+  one its name from the binary.
 
-  Index 35 is the `mcLast` slot itself and is unreachable: 063f's guard admits
-  indices 0..34. The release's table has the same dead final entry.
+  [re] AND THE SIGNATURE IS STRONGER THAN SEVENTEEN SEPARATE MATCHES. Two
+  entries are DOUBLED in the release -- 18 and 19 both TickFPortUpDown, 27 and
+  28 both TickVolFineUpDn -- and 1.31's table doubles at exactly those four
+  indices, on exactly those two addresses. Five entries point at TickNone at
+  indices 12..16, and those five land on the same indices too.
   -------------------------------------------------------------------------- }
 const
   TickCommOfs : array[mcNone..mcLast] of Word = (
@@ -1628,37 +1817,41 @@ const
 
     Ofs(TickS3mRetrigNote), { 35    reachable in 1.51; 1.31b's guard stopped at 34 }
 
-    { THE DEAD SLOT IS STILL THERE AND IT IS STILL DEAD. DS:$0422 holds $0689 --
-      TickNone -- and the guard admits 0..35, so index 36 can never be reached. The
-      1.31b note said "the release's table has the same dead final entry"; so does
-      1.51, one index further along. It exists because the array is declared
-      `mcNone..mcLast` and `mcLast` is a count rather than a command. }
+    { A slot that can never be reached: `mcLast` is a count rather than a
+      command, and the guard rejects it. It exists only because the array is
+      declared `mcNone..mcLast` and Pascal sizes it from the bounds.
+
+      [re] DS:$0422 holds $0689 -- TickNone -- and the guard admits 0..35. The
+      release's table has the same dead final entry, one index earlier. }
     Ofs(TickNone)           { 36    mcLast -- unreachable, as it was in 1.31b }
   );
 
 { --------------------------------------------------------------------------
-  142f:063f -- CommandTick. Five instructions: range-check the command, index the
-  table, and call through it. SI already points at the channel and BX holds the
-  command number DOUBLED, both set up by the caller at 12ba:0d75.
+  THE PER-TICK DISPATCHER, and the hottest routine in the unit: it runs once
+  per channel on every tick, which is thousands of times a second. Five
+  instructions.
 
-  `CMP BX,46h` IS `mcLast * 2` and it is where mcLast comes from. Turbo Pascal
-  emits the sign-extended byte form because 70 fits; `ADD BX,OFFSET TickCommOfs`
-  cannot, because a relocatable offset needs sixteen bits, so that one is the long
-  form. Two immediates, two encodings, and both are forced.
+  THE COMMAND ARRIVES ALREADY DOUBLED, in BX, and the channel in SI. Doubling
+  is the caller's job because the caller has the command byte in hand anyway,
+  and doing it there saves a shift here -- in a routine this hot, that is the
+  kind of saving worth arranging.
 
-  `RETF` AT 064a IS THE COMPILER'S EPILOGUE and is why this must be declared `far`:
-  the interface publishes it and 12ba calls it far.
+  THE RANGE CHECK IS THE ONLY SAFETY THERE IS. A command number out of range
+  would index past the table and call whatever offset happened to be there, so
+  an out-of-range command simply does nothing rather than being trusted.
 
-  ~~THE RELEASE HAS ONE MORE INSTRUCTION~~ -- AND IN v1.51 SO DO WE. The 1.31b note
-  read `MOV TCanal([SI]).doretrig,0` in the release, between the guard and the table
-  lookup, and recorded that 1.31 has no such field so it has no line. 147d:087f is
-  that instruction, `C6 44 26 00`, and +$26 is `DoRetrig` -- the field the retrigger
-  sets when it fires. Clearing it here means it is true for exactly one tick, which
-  is what `TickS3mRetrigNote` reads it as.
+  IT ALSO CLEARS `DoRetrig` ON THE WAY THROUGH, which is what makes that flag
+  mean "a retrigger fired on THIS tick": whoever raised it gets exactly one
+  tick to be seen before the next dispatch clears it again.
 
-  `CMP BX,48h` WHERE 1.31b HAS 46h, and the source line does not change: `mcLast`
-  grew by one when `mcS3mRetrigNote` joined the enumeration, so the same expression
-  emits a different immediate. Two bytes of difference that no edit here produced.
+  [re] 142f:063f. SI and BX are set up by the caller at 12ba:0d75. `CMP BX,48h`
+  is `mcLast * 2`, where 1.31b has 46h -- `mcLast` grew by one when
+  `mcS3mRetrigNote` joined the enumeration, so the same source expression emits
+  a different immediate. Turbo Pascal emits the sign-extended byte form because
+  the value fits; `ADD BX,OFFSET TickCommOfs` cannot, because a relocatable
+  offset needs sixteen bits. `RETF` at 064a is the compiler's epilogue and is
+  why this must be `far`. 147d:087f is `C6 44 26 00`, the DoRetrig clear, which
+  1.31b has no field for and so does not carry.
   -------------------------------------------------------------------------- }
 procedure CommandTick; assembler;
 asm
@@ -1671,38 +1864,49 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:064b -- CommandStart. The row-start half of the unit: fold the new note into
-  the channel, then dispatch to whichever Start routine the command wants. 565
-  bytes, the largest routine in the segment, and almost all of it is the `case`.
+  THE ROW-START HALF OF THE UNIT, and the largest routine in it. Called once
+  per channel whenever a new row is read: fold the note into the channel, tidy
+  up after whatever the last command left behind, then dispatch to the new
+  command's Start routine.
 
-  FAR, and the frame says so: `RETF 0C` at 087c, with the parameters at [BP+06]
-  upward rather than [BP+04] as every other routine in this unit has them. The
-  interface publishes this one and 12ba:0a38 calls it far.
+  MOST OF IT IS THE TIDYING, AND THAT IS THE INTERESTING PART. An effect that
+  was running when the row arrived may have left the channel displaced from
+  where the music says it should be, and only this routine knows both the old
+  command and the new one, so only this routine can put things back:
 
-  THE FIRST TEST IS THE ONE PIECE OF REAL LOGIC. `Can.Period := Can.Note.Period`
-  runs when the OLD command was an arpeggio, or when it was a vibrato and the NEW
-  one is not -- both of which are effects that leave `Period` displaced from the
-  note. Restoring it is how the channel recovers its true pitch when the effect
-  stops. Read the jump targets to see the grouping: 0656 goes forward to the
-  assignment, 0660 goes to the pair of `N.Command` tests, and 066a/0674/067e all
-  land past the assignment, which is `A or (B and C)` and not `(A or B) and C`.
+    * AN ARPEGGIO OR A VIBRATO LEAVES THE PITCH WHEREVER IT LANDED. If the new
+      row does not continue it, the period is restored from the note. A vibrato
+      followed by another vibrato is NOT restored -- the wobble carries on
+      through, which is what a composer writing 4xy on consecutive rows means.
+    * A RETRIGGER'S COUNTER IS RESET WHEN THE EFFECT BEGINS, not while it runs,
+      so that a retrigger held across several rows keeps its phase instead of
+      restarting on every one.
+    * A SAMPLE OFFSET IS CONSUMED. The flag is cleared here so that one 9xx
+      applies to one note and not to every note after it.
+    * A NOTE PORTAMENTO THAT HAS ARRIVED snaps its period to the destination,
+      because repeated adding of a step will overshoot and stop just past it.
 
-  WHAT THE RELEASE HAS HERE AND 1.31 DOES NOT: a retrigger-counter reset, a
-  `can.SOffs := FALSE`, and a block that copies `PeriodDest` into the period when a
-  note portamento ends. All three touch fields 1.31's TCanal does not have, and all
-  three are simply absent -- 068d runs straight into the `N.Period` test.
+  THE NEW NOTE'S PERIOD IS TAKEN LAST, AND NOT FOR A NOTE PORTAMENTO -- that
+  command's whole point is to slide from where the channel already is towards
+  the new note rather than jump to it. The exception is the reason the
+  assignment is guarded at all.
 
-  THE CASE ARMS ARE THE RELEASE'S ORDER, minus five commands and plus one. Gone:
-  `mcSampleOffs`, `mcRetrigNote`, `mcOktArp`, `mcOktArp2`, `mcS3mRetrigNote` -- the
-  two Oktalizer and one S3M commands this version predates, and two whose TCanal
-  fields do not exist. Added, and last in the chain: `mcNPI1`, which is
-  StartRingEvent. Eighteen command values are handled and the other seventeen fall
-  through the `case` doing nothing.
+  [re] 142f:064b, 565 bytes. FAR, and the frame says so: `RETF 0C` at 087c,
+  with the parameters at [BP+06] upward rather than [BP+04] as every other
+  routine in this unit has them; the interface publishes it and 12ba:0a38 calls
+  it far.
 
-  AND THE LAST STATEMENT IS NOT THE SAME AS THE FIRST. `Can.Period := N.Period`
-  under `(N.Period <> 0) and (N.Command <> mcNPortamento)` sets the working period
-  from the new note -- except for a note portamento, which must slide from where it
-  is rather than jump. That exception is the whole reason the statement is guarded.
+  [re] The first test's bracketing is read off the jump targets: 0656 goes
+  forward to the assignment, 0660 to the pair of `N.Command` tests, and
+  066a/0674/067e all land past the assignment -- `A or (B and C)`, not
+  `(A or B) and C`.
+
+  [re] THE CASE ARMS ARE THE RELEASE'S ORDER PLUS ONE: `mcNPI1`, which is
+  StartRingEvent, appended last. In 1.31b five of the arms present here were
+  absent -- `mcSampleOffs`, `mcRetrigNote`, `mcOktArp`, `mcOktArp2`,
+  `mcS3mRetrigNote` -- along with the retrigger reset, the `SOffs` clear and the
+  portamento-arrival block, all of which touch fields 1.31b's TCanal does not
+  have. There, 068d ran straight into the `N.Period` test.
   -------------------------------------------------------------------------- }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
