@@ -1,70 +1,33 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 11bb -- THE CONFIGURATION FILE READER. 4,080 bytes, twenty routines.
+  THE CONFIGURATION FILE READER: turn VT.CFG into the settings the player runs
+  on.
 
-  COMPLETE. All 4,080 bytes.
+  THE FILE IS SECTIONED, and each section is read by its own routine. A section
+  header names a subject -- the screen, the sound device, the player, the
+  mixer -- and the keys under it are matched one at a time against a list of
+  names that routine knows. A key nobody recognises is ignored rather than
+  refused, so a config file written for a later version still works here.
 
-  AND ESSENTIALLY THE WHOLE UNIT WENT IN VERBATIM FROM THE RELEASE. Twenty routines,
-  and only three needed anything measured out of the binary rather than copied:
+  THIS IS ONE OF TWO PLACES THAT WRITE THE GLOBALS. The other is the
+  command-line parser, and neither owns them -- which is why VTGlobal exists.
+  A setting given in both places is decided by whichever runs last.
 
-      ShellParam is a `String[127]`   11bb:0d5c pushes 7F, not FF
-      TmpPath is absent               DoSectMisc has four tests, not five
-      ForceEGA is absent              DoSectScreen is five bytes, an empty body
+  IT USES THE COMMAND-LINE PARSER'S TOKENISER rather than its own. A config
+  line and a command line are the same problem, so the same object walks both.
 
   Everything else -- including GetString's 786 bytes and DoSectPlayMod's twenty
   keys -- compiled byte-exact from `VTCFG.PAS` with no adjustment. **That has not
   happened anywhere else in this project**; the closest was `MyMove` in 12ba, one
   routine. So the release's root-directory sources can be trusted the way `LIB/`'s
   are, and the two absent keys were PREDICTED from the string table before a single
-  instruction was read.
-
-  THE COUNTERPART IS `VangeliSTracker/VTCFG.PAS` AND IT IS IN THE RELEASE'S ROOT,
-  NOT IN `LIB/`. Every pairing in this project before this one came from `LIB/`, and
-  the working assumption had hardened into "the root holds the tracker's own units
-  and will not pair". It was wrong. 41 of VTCFG.PAS's 52 distinctive string literals
-  appear in this segment and the segment contains essentially nothing else -- its
-  complete string inventory is VTCFG's keyword list plus `VT.CFG` and `.CFG`. Only
-  three keys are missing, `ForceEGA`, `Line` and `TmpPath`, which are exactly what a
-  headless player drops: a video mode, a mixer line input and a swap path.
-
-  (That test works because Turbo Pascal puts an untyped string constant in the CODE
-  segment -- the `PUSH CS` rule from `VTRESID` -- so a segment carries its unit's
-  literals verbatim. It is one-way: a high score is strong evidence, a low score is
-  none at all. See `pairmap.py`.)
-
-  `11bb:0000..001f` IS DATA, AND IT IS A SET CONSTANT. The first routine starts at
-  0020; the 32 bytes before it are
-
-      01 02 00 00 01 00 ... 00 80
-
-  which is a `set of Char` with exactly four members: bit 0 of byte 0 is #0, bit 1 of
-  byte 1 is #9, bit 0 of byte 4 is #32, and bit 7 of byte 31 is #255. That is
-  `KillSpaces`'s `ValidBlanks = [' ', #9, #0, #255]` character for character, and
-  `11bb:0035` loads it with `MOV DI,0 / PUSH CS / PUSH DI` -- CS-relative, offset
-  zero. **So an untyped SET constant goes in the code segment exactly as a string
-  literal does**, which extends a rule the docs had only for strings, and it is why
-  the segment does not begin on an instruction boundary.
-
-  THE INITIALISATION SECTION AT 11bb:0f2e IS THE RELEASE'S TOO. An earlier draft of
-  this header said 1.31 had added it; that was wrong, and wrong for an avoidable
-  reason -- it came from the segment map's description of what the init does rather
-  than from reading the bottom of `VTCFG.PAS`, which has the same block and the same
-  three literals. It splits `ParamStr(0)` and reads up to four files, one pair named
-  after the executable and one pair named `VT.CFG`, each tried in the program's own
-  directory and then the current one. That is why `PSYCHO.EXE` passing
-  `@neurosis.cfg` works, and it is the second rename-sensitive check in the program
-  after the `'inconexi'` one in `1000`. See the block itself.
-  =========================================================================== }
+  instruction was read.}
 unit VTCfg;
 
 interface
 
-{ `DevSB` IS HERE FOR THE FOUR SB PRO MIXER BYTES, which this unit writes from its
-  `MasterVol`, `DACVol`, `FMVol` and `Filter` keys and which the DGROUP layout showed
-  belong to DevSB's block at $09ea. It cannot move a segment: DevSB is reached from the
-  program's own clause long before VTCfg, so it is already placed when the walk arrives
-  here. `linkorder.py` is the check. }
+
 uses
   Dos, SongUnit, VTDriver, SoundDevices, GUS, PlayMod, ModCommands, VTShell,
   VTGlobal, SoundBlaster, DevSB, SongElements;
@@ -103,13 +66,6 @@ var
       LowQuality $0564                       SongUnit
       ProgName $3ade                         VTShell
 
-  **AND `FilterIsOn` AT $0348 IS A RETROSPECTIVE CONFIRMATION.** 142f left two
-  variables of that name -- PlayMod's at $02cd and ModCommands' at $0348 -- with
-  nothing in the transcribed tree reading the second, and ModCommands kept its copy
-  unexported so the two could not shadow each other. 11bb:0b0e's `FilterIsOn` key
-  writes $0348. So the config file is what sets it, the duplication is real, and the
-  decision not to export it was right for a reason that had not appeared yet.
-
   THE REST BELONG TO SEGMENTS THAT ARE NOT TRANSCRIBED, so they are declared here
   and flagged -- what is left of them; see the note in the block itself for the fourteen
   that moved to `VTGLOBAL.PAS` and `SOUNDBLA.PAS` when `109c` landed. A global's
@@ -118,29 +74,14 @@ var
   what makes it dangerous, and exactly why it is written down. Move each one when its
   segment lands.
   -------------------------------------------------------------------------- }
-{ ~~THIS UNIT DECLARED FOURTEEN GLOBALS AND NOW DECLARES NONE.~~ The last four went
-  with the DGROUP layout: the three DAC ports are SoundDevices' typed constants and
-  `VTDir` is VTGlobal's, all four at addresses this unit already carried but could
-  not own. It writes every one of them from a config key and reaches them all
-  through a `uses`. See the notes below, which are kept for what they record. }
+
   { Segment 193a, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
-  { ~~SbProMixMasterVol $09ea, SbProMixDACVol $09eb, SbProMixFMVol $09ec,
-    SbProMixFilter $09ed~~ -- ALL FOUR MOVED TO DEVSB.PAS. This unit writes them, from
-    the `MasterVol`, `DACVol`, `FMVol` and `Filter` keys, which is why they were
-    declared here; it cannot OWN them, because its own DGROUP block is $0240..$02c3 and
-    these four are inside DevSB's, $09ea..$0adb. They are the first four bytes of it.
-    See the note at their declaration there -- the image holds `ff ff ff 00`, which is
-    the release's three-volumes-at-full-and-filter-off default. }
+
 
   { The release's `LIB/DEVDAC.PAS`. NO SEGMENT IN DEMOVT HAS BEEN IDENTIFIED AS THE
     DAC driver, and these three sit immediately after SoundDevices' $0bf0, so they
     may well be SoundDevices' own here. Unresolved. }
-  { ~~DacPort $0bf2, LDacPort $0bf4, RDacPort $0bf6~~ -- SOUNDDEVICES' TYPED CONSTANTS,
-    all three holding $378 (LPT1). This unit WRITES them, from its `Port`, `LPort` and
-    `RPort` keys in the DAC section, which is why they were declared here with the right
-    addresses; it cannot own them, because $0bf2 is inside SoundDevices' block. The
-    references below now spell them `DacPort`, `LDacPort` and `RDacPort`, which is that
-    unit's -- and the release's -- capitalisation. }
+
 
   { ---- AND THE VTGlobal GROUP HAS MOVED OUT, to src/VTGLOBAL.PAS ----
     `PermitFade`, `VtVolume`, `ShellLoopMod`, `ShellHz`, `FadeIncr`, `VTLoopMod`,
@@ -153,30 +94,12 @@ var
     too. `SbPort`, `SbIrq`, `SbDMAChan` and `SbHiSpeed` went to `SOUNDBLA.PAS`, a
     declared stub for segment `19a0`, for the same reason.
 
-    **AND `VTDir` WAS WRONG.** It was declared here as a `PathStr` at `DS:$09e8`, marked
-    provisional, on the strength of `11bb:0a00` referring to `09e8`. That reference is
-    `MOV DI,09e8 / PUSH CS / PUSH DI` -- a far pointer into THIS UNIT'S OWN CODE
-    SEGMENT, a string constant, not a DGROUP address at all. The DGROUP byte at `$09e8`
-    is `109c`'s no-banner Boolean, which `1000` tests one byte at a time. `VTDir` is
-    gone; nothing read it. **A `PUSH CS` before the pointer is the tell, and it was
-    there to be seen.**
-
     This unit still verifies IDENTICAL after losing those declarations, which is the
     expected result and worth stating: a DGROUP reference is a linker fixup, so where a
     global is declared cannot change a byte of the code that uses it. }
 
-  { THE VARIABLE IS REAL AND THE ADDRESS WAS NOT. The initialisation section below fills
-    it with the executable's own directory and nothing in the transcribed tree reads it,
-    so it stays private to this unit -- but the `DS:$09e8` it used to carry is deleted.
-    That byte is `109c`'s no-banner Boolean; see VTGLOBAL.PAS. **No address is known for
-    VTDir**, and saying so is better than quoting one that belongs to something else. }
-  { ~~VTDir : PathStr, no measured address~~ -- IT IS `VTGlobal.VTDir` AT $083a, and it
-    has an address again after this file withdrew one. The layout is what found it: the
-    original's `1000` and `11bb` both reach $083a, VTGlobal's DGROUP block runs
-    $083a..$09e8, and $083a is its first datum -- a `DirStr` typed constant, sixty-eight
-    bytes, which is exactly what closes the gap down to `DevPtr` at $087e. Declared here
-    as a `PathStr` var it was eighty bytes of THIS unit's variables, which is most of the
-    86 that had every unit after it in the wrong place. }
+
+
 
 
 { --------------------------------------------------------------------------
@@ -188,17 +111,13 @@ KillSpaces. Strip blanks from both ends of a string, in place.
   the LENGTH BYTE in place. The release is the same, and the asymmetry is the obvious
   one -- there is no cheap way to drop a leading character from a Pascal string.
 
-  `Dec(S[0])` IS THE LENGTH BYTE. `S[0]` is a `Char` holding the length, so `Dec` on
-  it shortens the string; 11bb:008e is `DEC byte ptr ES:[DI]` with DI at the string's
-  base. Written `S[0] := Chr(Ord(S[0]) - 1)` it would be several instructions.
-
   `ValidBlanks` INCLUDES #0 AND #255, which is not fussiness -- a config line read
   from a text file can carry either as padding, and a name compared with trailing
   #255 would never match a keyword.
   -------------------------------------------------------------------------- }
 procedure KillSpaces(var S : String);
 const
-  { The 32 bytes at 11bb:0000, and the reason the segment starts with data. }
+
   ValidBlanks = [' ', #9, #0, #255];
 begin
   while (Length(S) > 0) and (S[1] in ValidBlanks) do
@@ -248,17 +167,6 @@ NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
   caller writes `NOT NotInStr(...)`, which is how GetBool tests eleven spellings of
   "true" in four languages.
 
-  BOTH PARAMETERS ARE `String` BY VALUE, and that is most of the frame. Turbo Pascal
-  passes a value `String` as a far pointer and makes the callee copy it, so 009b and
-  00ae are two 256-byte copies into [BP-102] and [BP-202] before a single comparison
-  happens -- 512 of the 518 bytes of `ENTER 0206,0`. The remaining six are the loop
-  variable, the `for` limit temporary and the one-byte result at [BP-1].
-
-  AND THE COPIES GO IN PARAMETER ORDER, WHICH FIXES WHICH IS WHICH: [BP+8] is the
-  first-declared and lands at [BP-102], [BP+4] is the second and lands at [BP-202].
-  00c5 then reads the length at [BP-202] and compares it against [BP-102], which is
-  `Length(SS) > Length(S)` and not the other way round.
-
   `UpCase(S[I]) <> UpCase(SS[I])` EVALUATES ITS RIGHT OPERAND FIRST: 00ee takes
   SS[I], calls UpCase, pushes the answer, and only then does S[I]. That is the third
   independent sighting of the rule that turned up in 142f's StartArpeggio -- Turbo
@@ -266,7 +174,7 @@ NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
   -------------------------------------------------------------------------- }
 function NotInStr(S, SS : String) : Boolean;
 var
-  I : Word;                       { [BP-204]; [BP-206] is the `for` limit      }
+  I : Word;                       { the position being examined               }
 begin
   NotInStr := True;
   if Length(SS) > Length(S) then
@@ -281,13 +189,6 @@ end;
 GetString. Take everything after the `=` on the current line and
   return it as a string, honouring quotes and stripping comments. 786 bytes, the
   largest routine in the segment, and almost all of it is Pascal string handling.
-
-  `11bb:0127..0130` IS ITS DATA. Ten bytes, five length-1 string literals --
-  `01 3D`, `01 27`, `01 3B`, `01 3A`, `01 23` -- which are the five characters this
-  routine and GetNum look for with `Pos`: equals, quote, semicolon, colon and hash.
-  A one-character Pascal literal is still a string with a length byte, and it goes in
-  the code segment like any other. That is the second block of data in this segment
-  after the set constant at 0000.
 
   THE QUOTE HANDLING IS THE HALF THAT LOOKS ODD AND IS RIGHT. Inside quotes a doubled
   quote means one literal quote, so the loop appends up to the closing quote, appends
@@ -348,14 +249,11 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0443 -- GetBool. Read the value after the `=` and decide whether it means
-  true or false, in four languages.
+  Read the value after an `=` and decide whether it means true or false.
 
-  `11bb:0407..0442` IS ITS LITERAL TABLE and the ORDER IS THE RELEASE'S EXACTLY:
-
-      01 'S'   01 'Y'   03 'OUI'  02 'DA'   03 'POR'  04 'TAMB' 04 'ALSO'
-      04 'TRUE' 04 'VERD' 04 'CIER' 01 '1'
-      01 'N'   03 'PAS' 04 'TAMP' 04 'FALS' 01 '0'
+  IN FOUR LANGUAGES. `S`, `Y`, `OUI`, `DA` and a dozen more all mean yes, and
+  the config file was expected to be written by whoever was using the program
+  rather than by the program itself. A value matching nothing is false.
 
   Sixteen literals, eleven true and five false, in the sequence 1.39b's source
   declares them. Turbo Pascal pools a routine's literals and emits them immediately
@@ -532,8 +430,12 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:089f..0d9f -- THE SEVEN SECTION HANDLERS. One per `[VT-...]` section, each a
-  flat chain of `if not NotInStr(Line, <key>) then Get<Type>(<variable>)`.
+  THE SEVEN SECTION HANDLERS: one per `[VT-...]` section of the config file,
+  each a flat chain of "does this line start with that key? then read a value
+  into that variable".
+
+  A key none of them recognises falls off the end of the chain and is ignored,
+  which is how a file written for a different version still loads.
 
   ALL SEVEN ARE `far`, and they have to be: DoSectGeneric at 0da0 calls whichever one
   the section named through a procedural variable, so they are addressed rather than
@@ -581,10 +483,7 @@ begin
   if not NotInStr(Line, 'RPort') then GetWord(RDacPort)
 end;
 
-{ The big one: twenty tests, and `Volume` appears TWICE -- first and last. The
-  release has the duplicate too, and it is not a transcription slip: 11bb:0b0e's
-  chain writes DS:$08ba at both the tenth and the twentieth test. Harmless, since
-  the second overwrites the first with the same value. }
+
 procedure DoSectPlayMod; far;
 begin
   if not NotInStr(Line, 'PermitFade'  ) then GetBool(PermitFade);
@@ -600,10 +499,7 @@ begin
   if not NotInStr(Line, 'Device'      ) then GetString(DevID, SizeOf(DevID) - 1);
   if not NotInStr(Line, 'FilterOn'    ) then GetByte(Byte(FilterOn));
   if not NotInStr(Line, 'FilterOff'   ) then GetByte(Byte(FilterOff));
-  { QUALIFIED ON PURPOSE. PlayMod now exports a `FilterIsOn` of its own at
-its address forced it into that unit's interface -- and this unit
-    uses both, so a bare reference would bind to whichever `uses` entry comes
-    last. 11bb:0b0e writes $0348, which is ModCommands'. }
+
   if not NotInStr(Line, 'FilterIsOn'  ) then GetBool(ModCommands.FilterIsOn);
   if not NotInStr(Line, 'CanFallBack' ) then GetBool(CanFallBack);
   if not NotInStr(Line, 'FilterChange') then GetBool(PermitFilterChange);
@@ -613,9 +509,7 @@ its address forced it into that unit's interface -- and this unit
   if not NotInStr(Line, 'Volume'      ) then GetByte(VtVolume)
 end;
 
-{ FOUR TESTS, NOT THE RELEASE'S FIVE: `TmpPath` is absent. And `ShellPath` writes
-  VTShell's `ProgName` at DS:$3ade, which is the release's name for it -- ours came
-  from 109c overwriting it with the program Psycho Neurosis actually runs. }
+
 procedure DoSectMisc; far;
 begin
   if not NotInStr(Line, 'ShellPath'  ) then GetPath  (ProgName);
@@ -772,9 +666,6 @@ end;
 
 { ==========================================================================
 THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
-
-  `11bb:0f1f..0f2d` IS ITS DATA: three literals, `02 'VT'`, `06 'VT.CFG'` and
-  `04 '.CFG'`, which are exactly the three the release's block uses.
 
   THE RULE IS "A FILE NAMED AFTER THE EXECUTABLE, AND VT.CFG AS WELL IF WE ARE NOT
   VT". `FSplit(ParamStr(0), ...)` takes the program's own directory and name, and then
