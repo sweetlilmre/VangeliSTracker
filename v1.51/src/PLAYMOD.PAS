@@ -935,19 +935,24 @@ implementation
 
 
 type
-  { For calling the driver record's +$26 through its Pointer field, the way
-    SOUNDDEV already does with `TInitDevProc`. That one is a procedure; this one
-    returns the rate the device settled on, which 12ba:0d44 stores. }
-  { ~~TChanData AND TChansData ARE DECLARED HERE~~ -- they are VTCtrl's now, because
-    the published row and this ring have to be one type for the copies below to be
-    ASSIGNMENTS rather than Move calls. See the declaration there. }
+  { ASK A DEVICE WHAT RATE IT CAN ACTUALLY DO. The player names a rate it would
+    like; the driver answers with the nearest one its hardware can produce, and
+    that answer is what the buffers are sized for. Every card gives a different
+    answer, which is why this is a call into the driver rather than a table.
 
-
+    [re] The driver record's +$26, reached through its Pointer field the way
+    SOUNDDEV does with `TInitDevProc`; 12ba:0d44 stores the result.
+    `TChanData` and `TChansData` were declared here once and are VTCtrl's now,
+    because the published row and the wide ring have to be one type for the
+    copies below to be ASSIGNMENTS rather than Move calls. }
   TGetFreqProc = function(Hz : Word) : Word;
 
-  { The release's own type, and 12ba:1032 confirms both arguments: the song by
-    reference and a Boolean, computed there as `TickInRow = 0` -- so the flag
-    means "this is the row's first tick". }
+  { WHAT RUNS ON EVERY TICK. A client can install its own; the player calls it
+    once per tick with the song and a flag saying whether this tick begins a new
+    row, which is the distinction almost every caller cares about.
+
+    [re] The release's own type, and 12ba:1032 confirms both arguments: the song
+    by reference and a Boolean computed there as `TickInRow = 0`. }
   TTickProc = procedure(var Song : TSong; Note : Boolean);
 
 { ...and the rest, private but in the same run -- see the note above. }
@@ -975,14 +980,17 @@ var
   WideRing        : array[0..RingRows - 1] of TChansData;
   WideHit         : array[0..RingRows - 1, 1..WideChans] of Byte;
 
-  { One byte each per row, and they are TWO arrays and not a record of two: 12ce:0263
-    and 026e index them separately, 26 apart. They ride the ring with the row and are
-    published to CB+$1AD and CB+$1AE.
+  { WHERE IN THE SONG EACH PUBLISHED ROW CAME FROM -- the row number and the
+    order position, one byte each. They ride the ring alongside the row so that
+    a reader picking up a row a quarter of a second later still knows which
+    moment of the music it belongs to.
 
-    WHAT THEY HOLD CAME FROM THE WRITER, NOT THE READER. PublishWideRow only moves
+    [re] TWO arrays and not a record of two: 12ce:0263 and 026e index them
+    separately, 26 apart, and they are published to CB+$1AD and CB+$1AE. WHAT
+    THEY HOLD CAME FROM THE WRITER, NOT THE READER: PublishWideRow only moves
     them, so nothing there says which is which; 12ce:090b does, storing
-    `NoteProcessed^.NotePlaying` into the first and `SeqPlaying` into the second. The
-    transcription had the pair swapped until that was read. }
+    `NoteProcessed^.NotePlaying` into the first and `SeqPlaying` into the
+    second. The transcription had the pair swapped until that was read. }
   WideNoteRing     : array[0..RingRows - 1] of Byte;
   WideSeqRing    : array[0..RingRows - 1] of Byte;
   EventRing       : array[0..RingRows - 1] of TGusEventRow;  { DS:$1646 }
@@ -1102,17 +1110,31 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0007 -- UnCanal. Mix one channel into its own buffer.
+  MIX ONE CHANNEL'S WORTH OF SAMPLES. Called once per channel per tick, and
+  between them these calls are where nearly all the program's time goes.
 
-  `Rest` doubles as the argument and the result: the kernel is told how many
-  samples are still owed and reports how many are STILL owed after it ran, so
-  "did anything happen" and "how much is left" are one value. It is a typed
-  constant at DS:$02ea in the release and the disassembly agrees -- `a3 ea 02`.
+  IT IS A LOOP AROUND THE KERNEL, NOT A CALL TO IT, and the loop is what
+  handles boundaries. The kernel is only ever asked for a run it can complete
+  without deciding anything: as far as the loop end, or as far as the sample
+  end, or as much as is still owed -- whichever comes first. When it stops
+  short, this routine works out why, adjusts the position, and asks again.
+  Every branch lives here so that the inner loop can have none.
 
-  THE KERNEL IS NEVER ASKED TO CROSS A LOOP POINT. Each call is bounded by the
-  distance to the next boundary and the loop re-enters after subtracting one
-  loop length, which is what lets the kernel be a straight-line run with no wrap
-  test in it at all.
+  A SAMPLE THAT LOOPS AND ONE THAT DOES NOT ARE DIFFERENT SHAPES. A looping
+  sample runs until the tick is satisfied, winding the position back by one
+  loop length each time it reaches the end. A one-shot runs at most once and
+  then it is finished.
+
+  AND SILENCE STILL COSTS A CALL. If the channel could not fill the tick -- it
+  ended, or it was never active -- the remainder is passed through the kernel
+  with a volume of zero, so the position advances and the output is left
+  untouched. That is cheaper than a special case, and it keeps every channel's
+  position honest whether it is sounding or not.
+
+  [re] 12ba:0007. `Rest` doubles as the argument and the result -- how many
+  samples are owed going in, how many still owed coming out, so "did anything
+  happen" and "how much is left" are one value. It is a typed constant at
+  DS:$02ea in the release and the disassembly agrees, `a3 ea 02`.
   -------------------------------------------------------------------------- }
 procedure UnCanal(var Raw : TModRawChan; var Buf : Pointer);
 begin
@@ -1149,26 +1171,36 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0187 -- step the event ring on by one row and tally what is in it.
+  RELEASE ONE ROW OF CUES AND STEP THE RING ON. This is the far end of the
+  music-to-demo channel: a cue written by an 8xx command a fraction of a second
+  ago has now reached the listener, so it is counted into the published control
+  block where anything outside the program can see it.
 
-  A NEAR procedure taking nothing, with one Pointer local at [BP-4].
+  IT COUNTS RATHER THAN DELIVERS. Each cue increments one of 256 counters, and
+  a client reads the counter and sees how many times that cue has fired. A
+  counter cannot be missed the way a flag can -- a demo running at 25 frames a
+  second and music running at 50 ticks would drop every other event if this
+  were a single flag.
 
-  THE SHAPE IS A `FOR`, AND THE READING PASS HAD IT AS A NESTED `IF`.
-  docs/04-units.md records this as `if Counter > $18 then begin ... if $02d1
-  <> 0 then ... else Inc($02ee) end`, which is what `MOV [02ee],0 / JMP past /
-  INC [02ee]` looks like if the loop is not recognised -- Borland's FOR opens
-  exactly that way, with the increment sitting ABOVE the body and jumped over
-  on entry. The `JNZ` at `01e8` closes it back onto the `INC`, and the `CMP
-  [02ee],7` before it is the limit. So `$02ee` is a loop variable over the
-  eight entries of a row, not a second counter, and the rename flag is tested
-  UNCONDITIONALLY rather than inside the wrap.
+  THE ROW IS CLEARED AS IT IS RELEASED, which is what makes the ring
+  self-maintaining: a slot is empty by the time the producer comes round to it
+  again, so nothing has to track which slots are stale.
 
-  The `CLD` at `018b` is the compiler's, not ours: Turbo Pascal emits it in the
+  [re] 12ba:0187, a NEAR procedure taking nothing, with one Pointer local at
+  [BP-4]. The counters live in `VTCtrl.CtrlBlock`, the 768-byte structure
+  published over INT 2Fh.
+
+  [re] THE SHAPE IS A `FOR`, AND THE READING PASS HAD IT AS A NESTED `IF` --
+  recorded as `if Counter > $18 then begin ... if $02d1 <> 0 then ... else
+  Inc($02ee) end`, which is what `MOV [02ee],0 / JMP past / INC [02ee]` looks
+  like if the loop is not recognised. Borland's FOR opens exactly that way, with
+  the increment ABOVE the body and jumped over on entry; the `JNZ` at `01e8`
+  closes it back onto the `INC` and the `CMP [02ee],7` before it is the limit.
+  So `$02ee` is a loop variable over the row's eight entries, not a second
+  counter, and the rename flag is tested UNCONDITIONALLY rather than inside the
+  wrap. The `CLD` at `018b` is the compiler's: Turbo Pascal emits it in the
   prologue of any routine whose body uses a string instruction, and the
   `FillChar` at the end is one.
-
-  The counters it bumps live in `VTCtrl.CtrlBlock`, the 768-byte structure
-  published over INT 2Fh, so a client can read per-channel activity out of it.
   -------------------------------------------------------------------------- }
 procedure AdvanceEventRow;
 begin
@@ -1189,38 +1221,35 @@ begin
 
   for EventChan := 0 to 7 do                        { 01a8..01b2, 01e3..01e9 }
   begin
-    { 01b3..01ca -- a WITH, and the frame slot is its doing.
-      OLD NOTE, kept because the reasoning is the useful part: `@Ring[..]`
-      gets the INDEX computation exactly right, byte for byte, through 01c0:
-      `MOV AX,EventChan / SHL AX,1 / MOV DI,EventSlot / SHL DI,4 / ADD DI,AX`.
-      What differs is the four instructions after it:
+    { [re] 01b3..01ca -- a WITH, and the frame slot is its doing. Turbo Pascal
+      implements `with <indexed record>` by computing the record's address ONCE
+      into a hidden four-byte frame slot, stored offset-then-DS, and every field
+      reference inside the block reloads it with `LES DI,[BP-4]` -- which is
+      what 01cb and 01d5 do. So the `ENTER 4,0` at 0187 is the with-slot and
+      this routine declares NO local at all.
+
+      [re] `@Ring[..]` gets the INDEX computation exactly right, byte for byte,
+      through 01c0: `MOV AX,EventChan / SHL AX,1 / MOV DI,EventSlot / SHL DI,4 /
+      ADD DI,AX`. What differed was the four instructions after it:
 
         original   ADD DI,OFFSET Ring / MOV [BP-4],DI / MOV [BP-2],DS
         ours       LEA AX,[DI+Ring] / MOV DX,DS / MOV [BP-4],AX / MOV [BP-2],DX
 
       Turbo Pascal wants a pointer VALUE in AX:DX to assign; the original never
       forms one, it just stores the offset it already has in DI beside DS.
-      `Ptr(Seg(NoteRing), ...+ Ofs(NoteRing))` was tried and is
-      WORSE -- it changes the index arithmetic too and the prefix drops from
-      01c1 to 01b3. Whatever the original wrote, it is a form that leaves the
-      offset in DI.
-
-      IT IS A `with`. Turbo Pascal implements `with <indexed record>` by
-      computing the record's address ONCE into a hidden four-byte frame slot,
-      stored exactly like that -- offset from the register it was accumulated
-      in, then DS -- and every field reference inside the block reloads it with
-      `LES DI,[BP-4]`, which is what 01cb and 01d5 do. So the `ENTER 4,0` at
-      0187 is the with-slot and this routine declares NO local at all. }
+      `Ptr(Seg(NoteRing), ... + Ofs(NoteRing))` was tried and is WORSE -- it
+      changes the index arithmetic too and the prefix drops from 01c1 to 01b3. }
     { **THIS IS WHERE THE MUSIC SIGNALS THE DEMO**, and it is three lines.
 
-      A composer writes effect `8xx` on a note. ModCommands.StartRingEvent
-      stores xx into the channel and flags it; SeqTick copies both into this
-      ring; and here, one tick later, the semaphore that xx names is
-      incremented. The demo polls that semaphore and sees the beat arrive.
+      A composer writes effect `8xx` on a note. The effect engine stores xx
+      into the channel and flags it; the sequencer copies both into this ring;
+      and here, one tick later -- when the sound has actually reached the
+      listener -- the semaphore that xx names is incremented. The demo polls
+      that semaphore and sees the beat arrive.
 
-      So the whole synchronisation mechanism of the program -- the reason it
-      exists rather than being an ordinary player -- passes through this
-      `Inc`. Everything else is buffers and mixing. }
+      So the whole synchronisation mechanism of the program, the reason it
+      exists rather than being an ordinary player, passes through this `Inc`.
+      Everything else is buffers and mixing. }
     with NoteRing[EventSlot, EventChan] do              { 01b3..01ca             }
       if Pending <> 0 then                          { 01cb..01d4             }
         Inc(CtrlBlock.Semaphores[Sem])              { 01d5..01e2             }
@@ -1295,23 +1324,26 @@ end;
 
 
 { --------------------------------------------------------------------------
-  12ba:0202 -- fill one slot of the GUS event ring.
+  QUEUE A COMPLETE VOICE COMMAND. Everything the GUS needs to start a note --
+  volume, pitch, pan and the three addresses that define the sample and its
+  loop -- written into one slot, to be handed to the card when this row's sound
+  is due.
 
-  Near, `RET $14`, and the seven arguments are `TriggerVoice`'s own list minus
-  its `Voice`, which is used here to index the row rather than being stored.
-  No test of any kind: this is the raw setter, and `12ba:0275` is the one that
-  checks whether the slot is free and merges if it is not.
+  IT TESTS NOTHING. This is the raw setter, used when a note is genuinely
+  starting; `PostEvent` below is the one that merges into a slot that may
+  already be occupied.
 
-  Another `with` -- `ENTER 4,0`, the address stored as offset-then-DS at
-  [BP-4], and `LES DI,[BP-4]` reloaded before every field. Six stores, six
-  reloads, which is what makes the shape unmistakable once seen.
+  THE PARAMETERS ARE DELIBERATELY NOT NAMED AFTER THE FIELDS. Inside a `with`,
+  an unqualified name binds to the record's field first, so `Vol := Vol` would
+  quietly assign a field to itself.
 
-  Parameter names avoid the field names deliberately: inside a `with`, an
-  unqualified name binds to the record field first, so `Vol := Vol` would
-  quietly assign the field to itself.
+  [re] 12ba:0202, near, `RET 16h` in v1.51 against 1.31b's `RET 14h` -- the two
+  bytes are AFreq going from Word to LongInt, the same change the record made.
+  The seven arguments are `TriggerVoice`'s own list minus its `Voice`, which
+  indexes the row here rather than being stored. Another `with`: `ENTER 4,0`,
+  the address stored offset-then-DS at [BP-4], and `LES DI,[BP-4]` reloaded
+  before every field -- six stores, six reloads.
   -------------------------------------------------------------------------- }
-{ `RET 16h` IN v1.51 AGAINST 1.31b's `RET 14h`, and the two bytes are AFreq going
-  from Word to LongInt -- the same change the record made. }
 procedure SetEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte;
                    AStart, ALoop, AEnd : LongInt);
 begin
@@ -1327,31 +1359,34 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0275 -- post a voice event, merging into whatever is already there.
+  CHANGE A VOICE THAT IS ALREADY SOUNDING -- or start one, if the slot is
+  empty. A tick can adjust the pitch of a note that began several rows ago, and
+  it must not disturb the sample addresses that note is playing from.
 
-  Near, `RET 8`, the same `with` on the same slot as 12ba:0202 -- but only the
-  first four of the event's fields, so a merge never touches the three sample
-  addresses.
+  AN EMPTY SLOT IS FILLED; AN OCCUPIED ONE IS MERGED. And a slot is empty when
+  its frequency is zero -- no separate valid flag, because the flush wipes each
+  row as it releases it, so a slot is always clean by the time the ring comes
+  round again.
 
-  A SLOT IS FREE WHEN ITS `Freq` IS ZERO. There is no separate valid flag and
-  none is needed: 12ba:02ea wipes each slot as it flushes it, so a slot is
-  always clean by the time the ring comes round again.
+  ALL-ONES MEANS "LEAVE THIS ONE ALONE". A caller changing only the pitch
+  passes $FF for the volume and the merge skips it. That is how a vibrato
+  updates a voice without knowing or caring what its volume currently is.
 
-  AND $FF / $FFFF MEAN "LEAVE THIS ONE ALONE". On the merge path each field is
-  written only if the argument is not its all-ones value, which is how a caller
-  changes the pitch of a voice without disturbing its volume, or the reverse.
-  `Pan` IS NOT GUARDED AT ALL on the merge path -- it is written every time,
-  outside both tests. docs/04-units.md has it inside the `Freq` test
-  (`if B <> $FFFF then begin E^[1] := B; E^[3] := C end`) and the byte comparison
-  says otherwise: the `JZ` at 02d0 jumps ten bytes, which is the `Freq` store
-  alone, not the twenty the pair would need. So a caller CANNOT leave the pan
-  alone by passing $FFFF for the frequency.
-  -------------------------------------------------------------------------- }
-{ AFreq IS A LONGINT HERE TOO, and the sentinel test is what shows it most plainly:
+  THE PAN IS THE EXCEPTION: it is written unconditionally on the merge path,
+  with no sentinel test at all, so a caller cannot decline to set it.
+
+  [re] 12ba:0275, near, `RET 8`, the same `with` on the same slot as 12ba:0202
+  but only the first four fields. The pan's lack of a guard was read the other
+  way at first -- recorded as `if B <> $FFFF then begin E^[1] := B; E^[3] := C
+  end` -- and the byte comparison says otherwise: the `JZ` at 02d0 jumps ten
+  bytes, the `Freq` store alone, not the twenty the pair would need.
+
+  [re] AFreq IS A LONGINT HERE TOO, and the sentinel test shows it most plainly:
   12ce:03ae is `CMP [BP+8],-1 / JNZ / CMP [BP+6],-1 / JZ`, Turbo Pascal's 32-bit
-  compare done high word first. 1.31b had one `CMP ...,$FFFF`. Written as `-1` and
-  not `$FFFFFFFF` because that is what gives the sign-extended byte immediate the
-  original has -- the full constant would need four bytes of operand. }
+  compare done high word first. 1.31b had one `CMP ...,$FFFF`. Written as `-1`
+  and not `$FFFFFFFF` because that is what gives the sign-extended byte
+  immediate the original has.
+  -------------------------------------------------------------------------- }
 procedure PostEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte);
 begin
   with EventRing[RingSlot, Voice] do             { 0279..0293                }
@@ -1372,18 +1407,24 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:02ea -- advance the event ring by one row, apply it, wipe it.
+  HAND ONE ROW OF QUEUED COMMANDS TO THE CARD. Called from the GUS driver's
+  interrupt when a buffer completes, which is what makes the queue release in
+  step with what is actually being heard.
 
-  Near, no arguments. Advance, apply, then wipe -- so a row is always clean by
-  the time the ring comes round to it again, which is exactly why 12ba:0275's
-  "is this slot free" test can be a bare `Freq = 0` with no valid flag.
+  ADVANCE, APPLY, WIPE -- in that order, and the wipe is what lets an empty
+  slot be recognised by a zero frequency alone.
 
-  THE TWO GUS ENTRY POINTS ARE CHOSEN BY `EndA > 0`, on the 32-bit value: the
-  `CMP [DI+$0e],0 / JG / JL / CMP [DI+$0c],0 / JBE` at 0330 is Turbo Pascal's
-  LongInt comparison, high word first. A voice with loop information gets the
-  full `TriggerVoice`; one without gets `ChangeVoiceParams`, which sets pitch,
-  volume and pan on a voice that is already running. `Freq` is a Word in the ring
-  and a LongInt in both calls, widened here with `XOR DX,DX`.
+  A SLOT IS EITHER A NEW NOTE OR AN ADJUSTMENT, and the loop addresses are what
+  tell them apart: a command carrying a sample end starts a voice from
+  scratch, one without it only changes the pitch, volume and pan of a voice
+  already running. Two different driver calls, chosen per slot.
+
+  [re] 12ba:02ea, near, no arguments. THE TWO GUS ENTRY POINTS ARE CHOSEN BY
+  `EndA > 0` on the 32-bit value: the `CMP [DI+$0e],0 / JG / JL / CMP
+  [DI+$0c],0 / JBE` at 0330 is Turbo Pascal's LongInt comparison, high word
+  first. With loop information it is the full `TriggerVoice`; without, it is
+  `ChangeVoiceParams`. In 1.31b `Freq` is a Word in the ring and a LongInt in
+  both calls, widened here with `XOR DX,DX`.
   -------------------------------------------------------------------------- }
 procedure FlushEventRow;
 begin
@@ -1408,65 +1449,63 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:03cc -- a sample descriptor into GUS voice control. NOT TRANSCRIBED.
+  START A SAMPLE ON A CHANNEL. Everything between "the score says play
+  instrument 7" and a channel that is actually walking through instrument 7's
+  bytes at the right rate.
 
-  664 bytes, the largest routine in the segment so far, and docs/04-units.md
-  covers only its first three statements. What IS established:
+  MOST OF IT IS THE 64K PROBLEM. A sample may be longer than a real-mode
+  segment can address, so it arrives as two blocks, and this routine works out
+  which block holds the start, which holds the loop point, which holds the loop
+  end, and sets the flags that tell the mixer. Those four questions are why the
+  raw channel has three sets of segment/offset/limit and why four of its seven
+  flags exist at all.
 
-  THE SIGNATURE, read off the call site at 12ba:09e3 rather than the callee,
-  per the standing rule. It pushes `MOV AL,[02f8] / PUSH AX` (a Byte), then
-  `IMUL DI,[02f8],$22 / ADD DI,$1384 / PUSH DS / PUSH DI` (the address of a
+  THE 9xx SAMPLE OFFSET ARRIVES HERE. The effect engine cannot move a sample
+  pointer -- the note it applies to has not started yet -- so it leaves the
+  offset behind and this routine adds it to the sample's start address as the
+  channel is set up. One feature, two units, and this is the seam.
+
+  AND FOR A GRAVIS IT QUEUES INSTEAD OF SETTING UP. The card walks its own
+  memory, so what it needs is a command in the ring rather than a pointer in a
+  record. Same decision, two entirely different outputs.
+
+  [re] 12ba:03cc, 664 bytes, `RET 0Ch` in v1.51 against 1.31b's `RET 0Ah` -- the
+  two extra bytes are `Offs`, and everything the routine already did moved up
+  two: Desc from [BP+4] to [BP+6], Raw from [BP+8] to [BP+0a]. [BP+4] is read
+  twice, at 12ce:06cd and 073c, as `MOV AX,[BP+4] / XOR DX,DX / ADD
+  AX,ES:[DI+12] / ADC DX,ES:[DI+14]` -- a Word widened and added to the
+  sample's start address.
+
+  [re] THE SIGNATURE WAS READ OFF THE CALL SITE at 12ba:09e3 rather than the
+  callee, per the standing rule. It pushes `MOV AL,[02f8] / PUSH AX` (a Byte),
+  then `IMUL DI,[02f8],$22 / ADD DI,$1384 / PUSH DS / PUSH DI` (the address of a
   34-byte record), then a four-byte value read out of `[0300]^` at `+6`/`+8`.
-  With `RET $0a` and near linkage that gives
+  That CONFIRMS DS:$1384 as the `RawChannels` array -- `IMUL ..,$22` is the
+  record's 34-byte stride.
 
-      procedure ?(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec);
+  [re] THE NAME IS THE RELEASE'S. LIB/PLAYMOD.PAS line 532 is `SetNewSample(i:
+  BYTE; VAR Raw: TModRawChan; Spl: PInstrumentRec; Offs: WORD)`, and its two
+  call sites pass `0` and `can^.SOffsVal` -- the same field 147d:0369 sets from
+  command $0a. It was called `SetGusVoiceCtl` here for a while and was never
+  GUS-specific: 1.39b has no GUS support in this unit at all and still has this
+  routine.
 
-  and it CONFIRMS DS:$1384 as the `RawChannels` array -- `IMUL ..,$22` is the
-  34-byte stride of the record already declared above.
-
-  THE OPEN QUESTION, and it is worth being precise about rather than guessing:
-  `[BP+8]` -- the `var Raw` parameter -- is used TWO different ways.
+  [re] THE BODY IS PART COMPILED AND PART HAND-WRITTEN, and `var Raw` is
+  reached two different ways because of it:
 
       03da  MOV DI,[BP+8]        then MOV [DI+$0d],AX      DS-relative
       044c  LES DI,[BP+8]        then MOV ES:[DI+$17],AX   far, ES reloaded
 
-  Both are correct at runtime, because `RawChannels` is in DGROUP and the
-  segment the caller pushed IS DS. But Turbo Pascal emits the far form for a
-  `var` parameter, and it emits it at 044c -- so whatever produces the
-  DS-relative form at 03da is a different source construct reaching the same
-  record, not the same one compiled twice. Resolving that is the next step, and
-  it decides the shape of the first statement.
-
-  RESOLVED: THE BODY IS HAND-WRITTEN ASSEMBLER. The tell is `21 C0` at 03f7 --
-  `AND AX,AX` in the `r/m,reg` direction, which is what Turbo Pascal's INLINE
-  ASSEMBLER emits and what its CODE GENERATOR does not; the compiler tests a
-  value with `OR`, as `08 C0` at 12ba:0018 and `0B 46 06` at 03d2 both show. So
-  `MOV DI,Raw` inside an `asm` block is the DS-relative form -- in TP's asm a
-  `var` parameter names the POINTER, and loading its low word gives the offset,
-  which is correct here because RawChannels is in DGROUP. The far accesses lower
-  down are the compiled Pascal between the asm blocks.
-
-  Same shape as `1a17`'s GetPlayPos: a compiled routine with hand-written asm
-  inside it, and the encodings are what separate the two halves.
+  Both are correct at run time, because `RawChannels` is in DGROUP and the
+  segment the caller pushed IS DS -- but Turbo Pascal's code generator emits
+  only the far form for a `var` parameter. The tell that settles it is `21 C0`
+  at 03f7: `AND AX,AX` in the `r/m,reg` direction, which the INLINE ASSEMBLER
+  emits and the code generator does not (it tests with `OR`, as `08 C0` at
+  12ba:0018 and `0B 46 06` at 03d2 both show). In TP's asm a `var` parameter
+  names the POINTER, so loading its low word gives the offset. Same shape as
+  `1a17`'s GetPlayPos: a compiled routine with hand-written asm inside it, and
+  the encodings are what separate the two halves.
   -------------------------------------------------------------------------- }
-
-{ **A FOURTH PARAMETER, AND IT IS THE 9xx SAMPLE OFFSET ARRIVING IN THE PLAYER.**
-  `RET 0Ch` in v1.51 against 1.31b's `RET 0Ah`, and everything the routine already
-  did moved up two: Desc from [BP+4] to [BP+6], Raw from [BP+8] to [BP+0a]. The two
-  spare bytes are at [BP+4], read twice -- 12ce:06cd and 073c -- as
-  `MOV AX,[BP+4] / XOR DX,DX / ADD AX,ES:[DI+12] / ADC DX,ES:[DI+14]`, so a Word
-  widened and added to the sample's start address. That is an offset into the sample
-  and nothing else.
-
-  1.39b NAMES IT, AND THE ROUTINE. LIB/PLAYMOD.PAS line 532 is
-  `SetNewSample(i: BYTE; VAR Raw: TModRawChan; Spl: PInstrumentRec; Offs: WORD)`,
-  and its two call sites inside ProcessNewNote pass `0` and `can^.SOffsVal` -- the
-  same field 147d:0369 sets from command $0a. The whole 9xx path, from the effect to
-  the voice, is one feature crossing two units, and both halves were found
-  independently before either name was read.
-
-  ~~SetGusVoiceCtl~~ takes the release's name. It was never GUS-specific: 1.39b has
-  no GUS support in this unit at all and still has this routine. }
 { [1.39b] "Start a new sample on one of the channels."
 
   The release's own one-line description of this routine, in translation. Its
@@ -1475,9 +1514,9 @@ end;
 procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec;
                        Offs : Word);
 begin
-  { 03cf..03d9 -- compiled: `OR AX,[BP+6]` is the code generator's direction,
-    and the `JNZ +3 / JMP` pair is what a large if-body gives when the skip is
-    out of short range. }
+  { [re] 03cf..03d9 -- compiled: `OR AX,[BP+6]` is the code generator's
+    direction, and the `JNZ +3 / JMP` pair is what a large if-body gives when
+    the skip is out of short range. }
   if Desc <> nil then
   begin
     { 03da..0413 -- HAND-WRITTEN, transcribed verbatim per the standing rule.
@@ -1686,34 +1725,39 @@ begin
     MOV     [DI], AL                 { 05a6  -> Raw.Flags                     }
   end;
 
-  { 05a8..065f -- compiled, and back to the event ring. `DS:$0bce` is
-    `DevGUS.Started`, so nothing is posted unless the GUS driver is running --
-    which is the clearest statement yet that this whole routine is the GUS path.
+  { THE GRAVIS PATH. Nothing above this touched the card; everything above set
+    up the raw channel the software mixer walks. A Gravis needs none of that --
+    it needs to be told where the sample lives IN ITS OWN MEMORY and where its
+    loop is, so the same decision comes out as a queued command instead.
 
-    Both arms call 12ba:0202, and both pass $FF and $FFFF for the volume and the
-    frequency: the sentinels that mean "leave those alone", so the event carries
-    only a pan position and the three DRAM addresses. A looping sample gets
-    LoopA and EndA measured from the loop; a one-shot gets LoopA = -1 and EndA at
-    the end of the sample. }
-  { THREE CHANGES IN BOTH ARMS, and the third is the one that matters.
+    THE EVENT CARRIES ONLY THE ADDRESSES AND A PAN. Volume and pitch are passed
+    as the "leave this alone" sentinels, because starting a sample says nothing
+    about how loud or how high it should be -- those arrive separately, from
+    whatever the note and its effects work out.
 
-    `$FFFF` BECOMES `-1` because AFreq is a LongInt now: 12ce:0728 and 072a are
-    `PUSH -1 / PUSH -1`, two words where 1.31b pushed one.
+    A 9xx MOVES THE START AND NOTHING ELSE. The offset is added to the start
+    address; the loop points are still measured from the unshifted sample,
+    which is right -- entering a sample part-way in must not move where it
+    repeats.
 
-    `Offs` IS ADDED TO THE START ADDRESS and to that alone -- 073c is
-    `MOV AX,[BP+4] / XOR DX,DX / ADD AX,ES:[DI+12] / ADC DX,ES:[DI+14]`, and the loop
-    and end addresses are still measured from the unshifted sample. Which is right: a
-    9xx starts playback part-way in without moving where the loop is.
+    THE PAN COMES FROM THE SONG rather than from a table in the player, so a
+    module that specifies its own channel positions gets them.
 
-    **AND THE PAN COMES FROM THE SONG, WHICH IS THE 1.31b NOTE COMING TRUE.** The note
-    at `Pannings` said "The release keeps pan in the SONG (`PanPositions`, initialised
-    from its `DefPan`) and 1.31 keeps it in the player -- which is why `InitValues` in
-    14b9 has no trace of the release's last statement, a thing this project had
-    already found from the other end." 12ce:0731 is `LES DI,[02ca] / ADD DI,AX /
-    MOV AL,ES:[DI+28]`, and $02ca is `PlayingSong` after this block's +$6 shift, and
-    +$28 plus a base-1 index is `TSong.ChannelPan` -- the field SONGUNIT measured from
-    the S3M loader's own `ES:[DI+28]`. Two units, two independent measurements, one
-    field. 1.51 is where DemoVT catches up with the release. }
+    [re] 05a8..065f, compiled. `DS:$0bce` is `DevGUS.Started`, so nothing is
+    posted unless the GUS driver is running. Both arms call 12ba:0202; a
+    looping sample gets LoopA and EndA measured from the loop, a one-shot gets
+    LoopA = -1 and EndA at the end of the sample.
+
+    [re] `$FFFF` BECOMES `-1` because AFreq is a LongInt now: 12ce:0728 and 072a
+    are `PUSH -1 / PUSH -1`, two words where 1.31b pushed one. 073c is
+    `MOV AX,[BP+4] / XOR DX,DX / ADD AX,ES:[DI+12] / ADC DX,ES:[DI+14]`.
+
+    [re] AND THE PAN IS THE 1.31b NOTE COMING TRUE. The note at `Pannings` said
+    the release keeps pan in the SONG and 1.31 keeps it in the player.
+    12ce:0731 is `LES DI,[02ca] / ADD DI,AX / MOV AL,ES:[DI+28]`; $02ca is
+    `PlayingSong` after this block's +$6 shift, and +$28 plus a base-1 index is
+    `TSong.ChannelPan` -- the field SONGUNIT measured from the S3M loader's own
+    `ES:[DI+28]`. Two units, two independent measurements, one field. }
   if UsingGUS then                             { 0699..06a3             }
     if (Raw.Flags and rcfDoesLoop) <> 0 then         { 06a4..06af             }
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
