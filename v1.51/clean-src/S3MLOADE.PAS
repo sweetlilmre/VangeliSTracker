@@ -168,7 +168,7 @@ type
 
 var
 
-  { DS:$491a. Set to 1 by the recogniser and raised by ReadPatterns as it
+  { Set to 1 by the recogniser and raised by ReadPatterns as it
     meets channels; the recogniser then narrows Song.NumChannels to it, so a
     module that declares sixteen channels and uses four reports four. }
   { **DS:$491a, AND IT IS DECLARED FIRST.** 1664:02ab reads it at $491a and 1664:0014
@@ -178,7 +178,7 @@ var
     nothing else to say why. }
   ChansUsed : Word;
 
-  { DS:$491c. `SeekPara` adds a paragraph count to it, so it is the module's
+  { `SeekPara` adds a paragraph count to it, so it is the module's
     own origin -- the stream position the recogniser saw before it seeked past
     the header. A plain `var`: it is in the uninitialised half. }
   ModBase : LongInt;
@@ -786,7 +786,7 @@ end;
 procedure LoadS3MFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const
-  { DS:$0468, four raw bytes with no length prefix. }
+  { four raw bytes with no length prefix. }
   S3MIdString : array[1..4] of Char = 'SCRM';
 
   { **TWO MORE FOUR-BYTE CONSTANTS, AND NOTHING REFERENCES EITHER.** DGROUP holds

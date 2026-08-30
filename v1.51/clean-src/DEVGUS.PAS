@@ -89,7 +89,7 @@ const
   Busy     : Byte    = 0;   { in v1.51  the handler's guard          }
 
   { FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
-    DS:$0020, and nothing in the segment touches what lies between. Declared as
+ and nothing in the segment touches what lies between. Declared as
     filler for the same reason Fill0016 above is: it keeps the SIZE honest and
     says plainly that the name is missing. }
   { **THE FIRST OF THE FIVE IS AN ALIGNMENT PAD, AND 1.31b SAYS SO.** Its own
@@ -127,7 +127,7 @@ const
     the two now run at different times. }
   PollBusy : Byte    = 0;
 
-  { DS:$0060. `03 'G' 'U' 'S'` and a zero -- INITIALISED DATA, so a typed
+  { `03 'G' 'U' 'S'` and a zero -- INITIALISED DATA, so a typed
     constant rather than a var assigned at run time. The eight pointers below
     +$16 are filled in by the initialisation section at the foot of this unit.
 

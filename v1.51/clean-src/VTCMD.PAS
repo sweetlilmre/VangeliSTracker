@@ -611,7 +611,7 @@ begin
 end;
 
 
-{ 109c:0645, 068c and 06dd -- the three song-position switches: which pattern to start
+{ 068c and 06dd -- the three song-position switches: which pattern to start
   at, how long to play, and where to restart. `ss`, `sl` and `sr`. }
 procedure CmdInit1stPattern(s : String);
 var

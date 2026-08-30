@@ -4,7 +4,7 @@
   Segment 1065 -- the "Silence" driver. 496 bytes, eight routines.
 
   A SOUND DRIVER THAT MAKES NO SOUND. Its name is in the driver record at
-  DS:$001e, seven characters: 'Silence'.
+ seven characters: 'Silence'.
 
   What it provides is a CLOCK, and nothing else. A serial port's
   transmit-holding-empty interrupt fires at a rate you choose by setting the
@@ -98,7 +98,7 @@ const
   Frac    : Byte    = 0;      { the 5-in-12 accumulator }
   OldVec  : Pointer = nil;    { the displaced INT 0Ch vector }
 
-  { DS:$001e. A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
+  { A TYPED CONSTANT, not a var, so that 'Silence' is INITIALISED
     DATA rather than something the unit assigns at run time -- exactly what
     DEVGUS does with 'GUS'. The old shape had a `begin Driver.DevID :=
     'Silence' end.` block, and that block is code the original has not got. }
@@ -142,7 +142,7 @@ var
   { ~~Frac and OldVec~~ are TYPED CONSTANTS in the interface now -- see the note there.
     $0018 and $001a really are their addresses; what was wrong was reading those six
     bytes as the tail of the program's `SelfName`. }
-  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { DS:$0e2e .. $0e34 }
+  SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { .. $0e34 }
   { **STALE, AND UNANCHORED.** This unit links at position 4 and VTCmd at 2, so
     this variable must sit above VTCmd's $0ef6. It does not. The claim is
     consistent with nothing else in the file -- it is the only variable here with

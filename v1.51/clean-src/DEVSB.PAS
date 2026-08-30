@@ -85,9 +85,9 @@ interface
   follows on at $09ee. }
 const
   SbProMixMasterVol : Byte    = 255;  { the VT.CFG `MasterVol` key   }
-  SbProMixDACVol    : Byte    = 255;  { DS:$0a93  ... `DACVol`                 }
-  SbProMixFMVol     : Byte    = 255;  { DS:$0a94  ... `FMVol`                  }
-  SbProMixFilter    : Boolean = False;{ DS:$0a95  ... `Filter`                 }
+  SbProMixDACVol    : Byte    = 255;  { ... `DACVol`                 }
+  SbProMixFMVol     : Byte    = 255;  { ... `FMVol`                  }
+  SbProMixFilter    : Boolean = False;{ ... `Filter`                 }
 
 implementation
 

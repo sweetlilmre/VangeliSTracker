@@ -602,7 +602,7 @@ begin
             Instr^.Change(@Instrument)
           end;
 
-      { 15d0:0745.  `CMP BYTE PTR [060c],00` -- and DS:$060c is SongElements'
+      { `CMP BYTE PTR [060c],00` -- and DS:$060c is SongElements'
         `LowQuality`, which sits at DS:$0564 in v1.31b and moved with the rest
         of the initialised half by +$a8. Not MODLOADE's `DeltaSamples`, which
         is a different byte in a different unit's block. }
@@ -627,7 +627,7 @@ end;
 procedure LoadSTMFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const
-  { DS:$0460, eight raw bytes with no length prefix -- the routine compares
+  { eight raw bytes with no length prefix -- the routine compares
     exactly eight, so it is a fixed-width character run and not a String. It is
     this unit's first typed constant, and DGROUP puts the unit's block at
     $0460 immediately after SongUnit's, which ends at $045f. }

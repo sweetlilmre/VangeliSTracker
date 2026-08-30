@@ -659,7 +659,7 @@ command 4, VIBRATO. Set the width and the depth from the two
   -------------------------------------------------------------------------- }
 procedure StartVibrato(var Song : TSong; var Can : TCanal; var N : TFullNote);
 var
-  F : Word;                       { [BP-2], and the whole of `ENTER 2,0`      }
+  F : Word;                       { and the whole of `ENTER 2,0`      }
 begin
   F := N.Parameter and $0F;
   if F <> 0 then
@@ -1351,7 +1351,7 @@ THE OKTALIZER ARPEGGIO, NEW IN v1.51, and it takes the source position
   does anything. }
 procedure StartOktArp(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
-  { DS:$039a. Byte for byte the same table as `SemitoneScale` above, and separate
+  { Byte for byte the same table as `SemitoneScale` above, and separate
     because the original has two copies. }
   OktScale : array[0..15] of Word =
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,

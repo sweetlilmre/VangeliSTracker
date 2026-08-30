@@ -178,7 +178,7 @@ const
     the byte stays set after the module ends. }
   PlayerStarted : Boolean = False;  { read at 1000:02ca }
 
-  { 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
+  { FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
     difference is where the bytes live: a TYPED constant is initialised DGROUP data
     and an UNTYPED one is a literal that Turbo Pascal lays down in the CODE segment.
@@ -209,7 +209,7 @@ const
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196 + #217;
 
-  { 1000:0405, three String[44] on a stride of 45. }
+  { three String[44] on a stride of 45. }
   UsageTop = ' ' + #218 + #196#196#196#196#196#196#196#196#196#196#196#196#196 +
                    #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
                    #196#196#196#196#196#196#196#196#196#196#196#196#196 + #191;
@@ -268,7 +268,7 @@ var
     absolute OneModPtr` laid over it, which is how 1993 Pascal gives a procedural
     variable an initial value. `1000:05e2` installs this program's `PlayModule` into it
     and `DoSongColl` calls it for every entry it collected -- and clears it again at
-    109c:079f, which this project had already read as "the caller's hook cannot outlive
+ which this project had already read as "the caller's hook cannot outlive
     the collection". The two ends of the same mechanism, finally joined up.
 
     `AltMode` IS PLAYMOD'S, at $02d1, between `DontExecute` and `Playing` in its
@@ -356,7 +356,7 @@ var
     statements that used them read `if VT1stPattern <> 0 then Song.SongStart := ...` --
     the program copying the play range the command line asked for into the song it is
     about to play, which is what `VT1stPattern` and `VTSongLen` are for. }
-  { DS:$0cd2, ONE LongInt rather than two Words: ShrinkSystemHeap takes a
+  { ONE LongInt rather than two Words: ShrinkSystemHeap takes a
     LongInt and 1000:03c4 pushes both halves of this pair into it. The asm at
     0390 stores AX and DX into $0cd2 and $0cd4, which is the same object seen
     from the other end. }
@@ -400,7 +400,7 @@ var
     `InterpretNoSwitch` calls `DoSongColl(FileDir)` on the same field. Two callers, one
     field, and the reading had this one as a standalone PathStr. }
 
-{ DS:$22c6, THE CONTROL BLOCK, is NOT declared here. It lives in VTCtrl,
+{ THE CONTROL BLOCK, is NOT declared here. It lives in VTCtrl,
   the unit for segment 14b7, which is the code that clears it. There must be
   exactly one of it: INT 2Fh publishes its address to every client, so a
   second copy would mean the demo talked to a block nothing was updating.
@@ -710,7 +710,7 @@ STOP EVERYTHING, NEW IN v1.51, and it is what the main body calls
   FOUR ADDRESSES IDENTIFIED IT AND THE LINKER MAP IS WHAT NAMED THEM: $0d1c is `Song`,
   $0c4c is `DMABufferSize`, the near call at 02d1 reaches 1000:020a which this file's
   own address map has as `UnhookTimer`, and the far call at 02c1 above reaches
-  1000:024c, `Dispatch`. Reading the map beat reading the instructions, and it was
+ `Dispatch`. Reading the map beat reading the instructions, and it was
   available all along -- it only became so once the link order was right.
 
   `Song.Done` IS A DESTRUCTOR AND THE EXTRA PUSH SAYS SO. 1000:02fe is
@@ -965,7 +965,7 @@ begin
     argument to take. See CONTINUATION.md, "a String function's result pointer
     is reused as the following assignment's source" -- the same rule, one call
     further on. }
-  Cmd.ParseLine(GetDOSCmdLine);          { 1000:05f4, 05fa 116e:04b2, 0606 +$08 }
+  Cmd.ParseLine(GetDOSCmdLine);          { 05fa 116e:04b2, 0606 +$08 }
 
   { **AN EMPTY COLLECTION IS NOT AN ERROR, AND v1.51 SAYS SO FIRST.** 1000:0679 is
     `CMP word [1046],0 / JZ` ahead of the DoSongColl call -- $1046 is VTCmd's

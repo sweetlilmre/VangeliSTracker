@@ -126,7 +126,7 @@ type
     RegEntryPoint : Pointer; { CB+$129  the AX-in-register entry             }
 
     { CB+$12D..$1AC, NEW IN v1.51 -- 128 bytes, published whole by a single Move at
-      12ce:022b. Four bytes per channel across thirty-two channels, and the four
+ Four bytes per channel across thirty-two channels, and the four
       are `TChanData` -- period, instrument, volume -- which the bindings name and
       whose shape had already been measured to match. }
     ChansData : TChansData;  { CB+$12D                                      }

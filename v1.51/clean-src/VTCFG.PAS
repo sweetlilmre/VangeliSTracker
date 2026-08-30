@@ -648,7 +648,7 @@ DoSectGeneric. Read lines until the next `[` and hand each one to the
   -------------------------------------------------------------------------- }
 procedure DoSectGeneric(Offs : Word); far;
 var
-  DoSect : Pointer;               { [BP-4], and the whole of `ENTER 0004,0`    }
+  DoSect : Pointer;               { and the whole of `ENTER 0004,0`    }
 begin
   DoSect := Ptr(Seg(DoSectGeneric), Offs);
   while not Eof(ConfFile) do

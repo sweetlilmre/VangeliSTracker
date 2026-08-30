@@ -351,7 +351,7 @@ procedure SetGusRegister8(Reg, Val : Byte); assembler;
 asm
         MOV     DX,GUSPort
         ADD     DX,$103
-        MOV     AL,Reg      { [BP+6], the FIRST parameter }
+        MOV     AL,Reg      { the FIRST parameter }
         OUT     DX,AL
         ADD     DX,2
         MOV     AL,Val
@@ -456,11 +456,11 @@ begin
   PUSH DS          { LODSB will take DS away              }
   MOV  CX, Count
   LES  DI, DramAt  { the DRAM address, low word in DI     }
-  MOV  BX, ES      { 1723:00bc  ... high half in BL                  }
+  MOV  BX, ES      { ... high half in BL                  }
   MOV  BH, BYTE PTR Signed
   CMP  BH, 1        { carry when the caller said 0         }
   SBB  BH, BH       { $FF when signed, else $00            }
-  SHL  BH, 7        { 1723:00c6  ... becomes the $80 XOR mask         }
+  SHL  BH, 7        { ... becomes the $80 XOR mask         }
   MOV  DX, GUSPort
   LDS  SI, Src
   ADD  DX, 0103h    { the register select port             }
@@ -499,7 +499,7 @@ the two GF1 timers.
   interrupt.
 
   BOTH CONTROL REGISTERS ARE SHADOWED in the data segment, at DS:$0592 and
-  DS:$0593, because neither is readable. Every change is made to the shadow
+ because neither is readable. Every change is made to the shadow
   and the shadow is written out whole -- the only way to set one bit without
   knowing the others.
   -------------------------------------------------------------------------- }
@@ -1194,7 +1194,7 @@ begin
       ChangeSample(i);
       Vol := LastVolumes[i];
       LastVolumes[i] := 0;
-      ChangeVol(i, Vol, $1F);
+      ChangeVol(i, Vol, $1F);  { .. 07da }
     end;
 
   { --- pass two: collect the ready voices, then start them together -- }
@@ -1365,13 +1365,13 @@ begin
     end
   end
   else
-    ChangeVol(Channel, Vol, $1F);
+    ChangeVol(Channel, Vol, $1F);  { .. 09c2 }
 
   if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then
   begin
     LastFreqs[Channel] := Freq;
     SetGusRegister16(grFreqControl, ((Freq shl 9) + LongInt(GUSDivisor shr 1))
-                    div LongInt(GUSDivisor shr 1));
+                    div LongInt(GUSDivisor shr 1));  { .. 0a31 }
   end;
 
   if LastPans[Channel] <> Panning then

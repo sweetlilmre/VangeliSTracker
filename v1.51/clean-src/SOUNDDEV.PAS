@@ -1154,7 +1154,7 @@ GetPlayPos. Far; the only entry point in this segment that
   the directive is an error. It IS far -- 1000:0288 calls it across segments. }
 function GetPlayPos : Pointer;
 var
-  { [BP-6]. The Pointer result takes [BP-4]..[BP-1], at the top of the frame,
+  { The Pointer result takes [BP-4]..[BP-1], at the top of the frame,
     which is what makes ENTER 6,0 six and not four. }
   Left : Word;
 begin

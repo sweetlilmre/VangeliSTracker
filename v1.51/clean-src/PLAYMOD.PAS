@@ -151,7 +151,7 @@ type
   { **THE TWO FIELDS ARE A SEMAPHORE NUMBER AND A PENDING FLAG**, and they were
     `Chan`/`Note` until DEMOVT.DOC named what they feed. Command 8's parameter
     selects one of 256 semaphores; this carries it from the pattern row to
-    12ba:0187, which increments `CtrlBlock.Semaphores[Sem]`. Nothing here is a
+ which increments `CtrlBlock.Semaphores[Sem]`. Nothing here is a
     channel -- `Chan` indexing a 256-entry array should have been the tell. }
   TRingEntry = record
     Sem     : Byte;             { +$00  which semaphore command 8 asked for  }
@@ -346,7 +346,7 @@ const
   FilterOff        : TFilterMethod = fmNone;   { the FilterOff key    }
 
   { **NOT** ModCommands' `FilterIsOn`, which is a different variable at
-    DS:$0348. 1.31 has two of them; so, it turns out, does the release, which declares
+ 1.31 has two of them; so, it turns out, does the release, which declares
     one in each of the same two interfaces -- this file used to say the release had
     only one, and that was wrong. Both are exported here because the ADDRESS requires
     it: $02d3 sits between two interface globals, and a unit's implementation
@@ -444,7 +444,7 @@ const
   NextIdx          : Word          = 0;
   ChanIdx          : Word          = 0;
 
-  { DS:$02fa, six bytes. The initialiser names the FIRST variant's fields, which is
+  { six bytes. The initialiser names the FIRST variant's fields, which is
     the only form Turbo Pascal accepts for a variant record's typed constant --
     Instrument, Period, Volume, Command, Parameter is 1 + 2 + 1 + 1 + 1, and $02fa + 6
     is $0300, which is CurCanal. }
@@ -694,13 +694,13 @@ implementation
   are kept because several of them record measurements that are not repeated there;
   what they no longer do is sit next to the declaration they describe, and the
   address each one opens with is how to find it. ======================= }
-  { DS:$13a4. The release keeps this in its implementation section too, which
+  { The release keeps this in its implementation section too, which
     is where the disassembly puts it -- nothing outside 12ba reads it. }
 
 
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  { DS:$02d1, THE RENAME FLAG, and it is declared in two units. VTMAIN owns it
+  { THE RENAME FLAG, and it is declared in two units. VTMAIN owns it
     as `AltMode` -- set when the executable is called INCONEXI.EXE -- and
     nothing in THAT segment reads it; this is the only reader. A global's
     address is a linker fixup, so the byte comparison cannot see the
@@ -754,7 +754,7 @@ implementation
 
     The two indices and the pointer follow the release's naming where the role
     matches; they are provisional. }
-  { DS:$13a6, AND $1384 IS THE BASE-1 BASE RATHER THAN THE ARRAY. Every access
+  { AND $1384 IS THE BASE-1 BASE RATHER THAN THE ARRAY. Every access
     is `IMUL DI,i,$22 / ADD DI,$1384`, which for i=1 lands on $13a6 -- one 34-byte
     element above $1384, exactly as the base-1 rule says. 12ba:12ba settles it
     outright: `FillChar(RawChannels, SIZEOF(RawChannels), 0)` passes $13a6 and
@@ -1182,7 +1182,7 @@ fill one slot of the GUS event ring.
   checks whether the slot is free and merges if it is not.
 
   Another `with` -- `ENTER 4,0`, the address stored as offset-then-DS at
-  [BP-4], and `LES DI,[BP-4]` reloaded before every field. Six stores, six
+ and `LES DI,[BP-4]` reloaded before every field. Six stores, six
   reloads, which is what makes the shape unmistakable once seen.
 
   Parameter names avoid the field names deliberately: inside a `with`, an
@@ -2006,7 +2006,7 @@ begin
 
     { UNQUALIFIED here, where 0a4d was explicit -- and the bytes are what say
       so: this one is `LES DI,[BP-4]`, the with-slot, where 0a4d reloads from
-      DS:$02dc. The author wrote one of these two the long way and not the other,
+ The author wrote one of these two the long way and not the other,
       in the same routine, ten instructions apart. }
     NMuestras := Tempo * MuestrasPerTick;
 
@@ -2891,7 +2891,7 @@ procedure ChangeSamplingRate(Hz : Word);
 label
   Otra;
 var
-  MyHz : Word;                    { [BP-2], and the whole of `ENTER 2,0`       }
+  MyHz : Word;                    { and the whole of `ENTER 2,0`       }
 begin
 Otra:
   DesiredHz := Hz;
@@ -2967,7 +2967,7 @@ end;
   -------------------------------------------------------------------------- }
 procedure PlayStop;
 var
-  i : Word;                       { [BP-2], and the whole of `ENTER 2,0`       }
+  i : Word;                       { and the whole of `ENTER 2,0`       }
 begin
   { **NEW IN v1.51, AND IT IS A DEBUGGING LINE THE RELEASE LEFT IN.** 12ce:174c
     writes a four-character string at CS:$1743 -- `04 'S' 't' 'o' 'p'`, a Pascal
