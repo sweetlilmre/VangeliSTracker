@@ -20,32 +20,8 @@
   voice commands rather than issuing them as it finds them, and it is the
   single decision that shapes the whole GUS path.
 
-  PASCAL OR ASSEMBLER? THE PORT NUMBER DECIDES. `Port[X]` compiles to
-  `MOV DX,[X] / OUT DX,AL` only when X is a bare variable or a constant. With
-  a computed index -- `GUSPort + $103` -- Turbo Pascal evaluates an address
-  expression through AX and the bytes differ, so the register interface at
-  1723:0000..0079 is hand assembler and the routines that poke a fixed port
-  are Pascal. Writing `Port[GUSPort + $00]` counts as computed; the `+ 0`
-  costs three bytes and reorders the instructions.
-
   This file claimed the opposite for a long time -- that Port[] always
   matched -- and it was wrong in both directions. See docs/06-transcription.md.
-
-  ADDRESS MAP
-    SetGusVoice        1723:0000 *   GetGusRegister8    1723:0013 *
-    SetGusRegister8    1723:0030 *   GetGusRegister16   1723:004a *
-    SetGusRegister16   1723:0065 *   GusDelay           1723:007d *
-    DumpToUltrasound   1723:0089     GUSInitTimer1      1723:0100
-    GUSInitTimer2      1723:0140     GUSStopTimer1      1723:0180
-    ServiceTimer1      1723:01b5 *   ServiceTimer2      1723:01db *
-    GUSIrqHandler      1723:0201 *   InitGusIRQ         1723:025a
-    DoneGusIRQ         1723:029f     SetMixControl      1723:02d3 *
-    StartUltrasound    1723:0357     ProbeUltrasound    1723:045a *
-    DetectUltrasound   1723:04f1     SwapGusAddress     1723:0539 *
-    ChangeVol          1723:0565 *   ChangeSample       1723:0662 *
-    RestartChannels    1723:077a     TriggerVoice       1723:08e6
-    ChangeVoiceParams  1723:0980     SetGusChannels     1723:0a6a
-                                             (* near, private to the unit)
 
   THE NAMES ARE THE RELEASE'S, NOT GUESSES. Every routine and global here is
   named after its counterpart in VangeliSTracker 1.39b's `LIB/GUS.PAS`, which
@@ -70,7 +46,7 @@ unit GUS;
 interface
 
 const
-  MaxVoice = 31;  { the tables in 1723:0357 are 32 entries }
+  MaxVoice = 31;  { the card has 32 voices, numbered from 0 }
 
 { **THE GF1's REGISTER NUMBERS, UNDER THE RELEASE'S OWN NAMES.** Every one of the
   53 register accesses in this unit was written as a bare hex number, because a
@@ -123,8 +99,7 @@ const
   the module's -- `MaxVoice` is 31 below for the same reason -- and it is 12ba's
   `MaxChannels` that is 8. Two different numbers that a reader will want to conflate. }
 const
-  { $FFFF means "not configured, go and look". 109c:047c writes
-    the config file's value here, which is what ties VT.CFG to the card. }
+
   GUSPort         : Word    = $FFFF;
 
   GUSIrq          : Word    = 11;
@@ -133,12 +108,7 @@ const
   GUSTimer1RutPtr : Pointer = nil;
   GUSTimer2RutPtr : Pointer = nil;
 
-{ `VAR Src` UNTYPED, AND `165a` IS WHAT SETTLED IT. Inside this routine a Pointer
-  parameter and an untyped var parameter are the same four bytes and `LDS SI,Src`
-  loads the same address either way, so nothing here could tell them apart. The CALL
-  SITE can: `165a:02b0` is `LES DI,ES:[DI+16] / PUSH ES / PUSH DI`, which is how a
-  var parameter is passed, where a Pointer argument would be two word pushes. Two
-  bytes shorter, and it is the release's declaration too. }
+
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word); far;
 procedure GUSInitTimer1(Count : Byte); far;
@@ -192,13 +162,7 @@ const
      $0260, $0270, $0280, $0290, $02A0, $02B0);
 
 var
-  { The per-voice tables StartUltrasound clears and TriggerVoice fills in.
-    Their sizes come straight from the FillChar calls at 1723:0357: $80 bytes
-    for the LongInt ones and $20 for the Byte ones, so 32 voices throughout.
 
-    VoicesChanged is the release's name and the release's is a BOOLEAN. It is
-    kept as a Byte here because the code tests it as `<> 0` and stores 1, and
-    rewriting those as `then`/`True` is a codegen change, not a rename. }
   { **THE SEVEN ADDRESSES BELOW ARE STALE, AND NOTHING HERE CAN CORRECT THEM.**
     They are consistent with each other -- $371a, +128, +128, +128, +32, +128,
     +32 lands on every one of them -- and consistent is all they are.
@@ -231,27 +195,7 @@ var
   LastPans       : array[0..MaxVoice] of Byte;     { filled with $7F }
   VoicesChanged  : array[0..MaxVoice] of Byte;     { filled with $00 }
 
-  { ~~CmdList : array[0..255] of Byte~~ -- GONE FROM HERE. It is 64 bytes, it is a TYPED
-  CONSTANT, and it is LOCAL to `RestartChannels`; all three were open questions and the
-  DGROUP layout closed all three at once. The note that used to sit here said exactly
-  that this was "a guess that will have to be revisited" once the layout was known, and
-  named the release's shape -- `buf : ARRAY[1..64] OF BYTE`, a local typed constant --
-  as the likely answer. It was.
 
-  WHAT SETTLED IT: `1723:08c8` is `MOV SI,06C2h`, and $06c2 is the first byte after this
-  unit's `VolumeTable`, which ends at $06c1. The next thing in DGROUP is HEAPS' first
-  virtual method table at $0702 -- so the array is bounded at 64 bytes, which is two per
-  voice for 32 voices exactly. It is in the INITIALISED region, so it is a typed
-  constant and not a `var`; and a local typed constant of RestartChannels is what puts
-  it after VolumeTable, because DGROUP follows declaration order and VolumeTable is
-  declared earlier in the file.
-
-  AND THE `+1` WAS WRONG. The asm read `MOV SI, OFFSET CmdList+1`, which only reaches
-  $06c2 if the array starts at $06c1 -- inside VolumeTable's last byte. With
-  `array[1..64]` the array itself starts at $06c2 and the `+1` comes off. Neither form
-  could be measured before: `OFFSET` of a DGROUP symbol is a linker fixup, so the .TPU
-  holds zeros either way and `units.py` excused it. See the declaration in
-  RestartChannels. }
 
 { --------------------------------------------------------------------------
 the GF1 register interface.
@@ -299,19 +243,6 @@ the GF1 register interface.
 
   ----------------------------------------------------------------------------
   THESE FIVE ARE ASSEMBLER, AND THE REASON IS WORTH RECORDING.
-
-  They were Pascal here until units.py could not even find the unit's first
-  instruction. Turbo Pascal's `Port[]` pseudo-array compiles to a bare
-  `MOV DX,imm / OUT DX,AL` ONLY when the index is a constant. With a computed
-  index it evaluates the address as an ordinary expression, through AX:
-
-      Port[GUSPort + $102] := N        the original
-      -----------------------------     ------------
-      MOV AX,[GUSPort]                 MOV DX,[GUSPort]
-      ADD AX,0102                       ADD DX,0102
-      MOV DX,AX
-      MOV AL,[BP+4]                     MOV AL,[BP+4]
-      OUT DX,AL                         OUT DX,AL
 
   Same length, different registers -- so this was invisible to every check
   that looked at code size. The original keeps the port in DX throughout and
@@ -440,13 +371,7 @@ copy a sample into the card's own DRAM.
  is compiler output, including a runtime helper at
  for the 32-bit shift -- and only the transfer loop is hand
   written. Declared `assembler`, the whole prologue vanishes and the unit
-  diverges at the first byte after the frame.
-
-  THE DRAM ADDRESS IS LOADED WITH LES. `LES DI,DramAt` puts the low word of
-  the LongInt in DI and the high word in ES, which is why 1723:00bc reads
-  the page byte back out of ES rather than from the frame. It looks like a
-  pointer load and it is not one; the source pointer is the separate
-  LDS SI,Src further down. }
+  diverges at the first byte after the frame.}
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
@@ -496,13 +421,7 @@ the two GF1 timers.
 
   Compiler output. Registers $46 and $47 hold the counts, $45 is the timer
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
-  interrupt.
-
-  BOTH CONTROL REGISTERS ARE SHADOWED in the data segment, at DS:$0592 and
- because neither is readable. Every change is made to the shadow
-  and the shadow is written out whole -- the only way to set one bit without
-  knowing the others.
-  -------------------------------------------------------------------------- }
+  interrupt.}
 { **THE TWO TIMERS DO DIFFERENT JOBS AND THE ROUTINES ARE OTHERWISE IDENTICAL.**
   Timer 1 is the one TriggerVoice arms: it fires once, shortly after a note is
   set up, and RestartChannels starts the voices on it. Timer 2 drives whatever
@@ -560,11 +479,7 @@ end;
 
   The callback is only called if the far pointer is non-nil, and the test is
   on BOTH halves -- a segment of zero with a non-zero offset would still be
-  called. That is deliberate enough to preserve.
-
- is the one that matters to the rest of the program: 1084:008a puts
-  the GUS driver's own handler there, so timer 2 is what drives the music.
-  -------------------------------------------------------------------------- }
+  called. That is deliberate enough to preserve.}
 procedure ServiceTimer1;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $FB);
@@ -675,9 +590,6 @@ end;
 { --------------------------------------------------------------------------
 take the interrupt line, and give it back.
 
-  Compiler output. Both are guarded by DS:$0599 so a second InitGusIRQ does
-  nothing and a second DoneGusIRQ does nothing.
-
   THE STATE IS RESTORED PROPERLY, which is rarer than it should be. InitGusIRQ
   records whether the line was ALREADY enabled; DoneGusIRQ only disables it
   again if it was not. A driver that blindly masked on the way out would
@@ -777,39 +689,28 @@ begin
 
   SetMixControl;
 
-  { HAND ASSEMBLER, and the ORDER is why. The identical Pascal statement
-    compiles to MOV AL / MOV DX / OUT at 1723:02f4, but here the original has
-    MOV DX / MOV AL / OUT -- same three instructions, same seven bytes,
-    opposite order. Turbo Pascal will not emit the second form for a port
-    assignment, and BASM emits exactly what it is told. }
+
   asm
     MOV  DX, GUSPort
-    MOV  AL, 0Bh      { 1723:03c8  [1.39b] "Turn off output, to avoid   }
+    MOV  AL, 0Bh      { [1.39b] "Turn off output, to avoid   }
                       {             clicks." -- the reason for the whole }
                       {             port write, and not in the bytes     }
     OUT  DX, AL
   end;
-  SetGusRegister8(grReset, 0);    { 1723:03cf  [1.39b] "Reset the GUS card." }
+  SetGusRegister8(grReset, 0);    { [1.39b] "Reset the GUS card." }
   GusDelay;
-  SetGusRegister8(grReset, 1);    { 1723:03d9  [1.39b] "DAC turned off."     }
+  SetGusRegister8(grReset, 1);    { [1.39b] "DAC turned off."     }
   SetGusRegister8(grActiveVoices, $DF);  { 32 voices     }
   SetGusRegister16(grDRAMLowIO, 0);
   SetGusRegister8(grDRAMHighIO, 0);
 
-  { silence every voice before anything else can start one.
-
-    A FOR LOOP, AND IT STARTS AT ZERO. 1723:03f6 is `JMP` past the increment,
-    which is Borland's FOR head; written as `repeat Inc(V) ... until` the
-    increment happens BEFORE the first body and voice 0 is never silenced. }
+  { silence every voice before anything else can start one.}
   for V := 0 to MaxVoice do
   begin
     SetGusVoice(V);
     SetGusRegister8(grVoiceControl, 3);  { stopped      }
     SetGusRegister8(grVolumeControl, 3);  { volume idle  }
-    { ALL FOUR ARE INSIDE THE `if`. The JBE at 1723:0418 jumps to 1723:043c,
-      which is the loop test -- so it skips the ramp settings too, not just
-      the two volume writes. Written with the last two outside, a voice whose
-      current volume is already low never gets its ramp rate set. }
+
     if GetGusRegister16(grCurrentVol) > $1800 then
     begin
       SetGusRegister8(grRampStart, $18);
@@ -824,7 +725,7 @@ begin
     output, to avoid clicks" and 0Ch at the bottom is "[1.39b] Turn on output".
     The card is silenced before the reset and unsilenced after it, so the
     transition itself is never audible. }
-  SetGusRegister8(grReset, 7);  { 1723:0446  [1.39b] "DAC turned on."  }
+  SetGusRegister8(grReset, 7);  { [1.39b] "DAC turned on."  }
   asm                       { hand assembler, same as the $0B poke above:      }
     MOV  DX, GUSPort        { port first, then the value            }
     MOV  AL, 0Ch
@@ -852,12 +753,7 @@ is there really a card at GUSPort? Near, private.
   something else entirely.
   -------------------------------------------------------------------------- }
 function ProbeUltrasound : Boolean;
-{ NO `Ok` LOCAL -- assign to the function result directly. The original writes
-  its Boolean to [BP-1], an ODD offset that Turbo Pascal will not give a
-  declared variable (it word-aligns them to [BP-2]). That byte is the function
-  RESULT, which Borland allocates as a hidden local at the top of the frame; a
-  separate flag variable gets one of its own and everything below shifts.
-  Not the $A switch -- compiling this unit $A- changes nothing. }
+
 label
   Fin;
 var
@@ -899,21 +795,7 @@ find a card.
   Compiler output. If GUSPort was configured, probe that and nothing else;
   otherwise walk the twelve jumper positions and take the first that answers.
   The candidate order is the table's, not numerical -- $0220 and $0240 are
-  tried before $0200, presumably because they were the common settings.
-
-  MIND THE SENSE OF THE RESULT -- IT IS INVERTED FROM WHAT IT LOOKS LIKE.
-  This returns 1 when a card ANSWERED and 0 when none did, and 1084:0061
-  passes that straight into driver slot +$1a. But the slot is an ERROR CODE:
- selects a driver only when the probe returns ZERO.
-
-  So the value that means "I found a GUS" is the value that means "do not
-  use this driver". That is not a bug -- there is no path in this program
-  where a GUS probe result reaches 109c:0021, because the config file names
-  the driver and the GUS registers first regardless. But it is a trap for
-  anyone reading this routine on its own, and it caught this reconstruction
-  once already: three separate producers were read, all agreed, and all were
-  read backwards. See VTDriver for the consumer that settles it.
-  -------------------------------------------------------------------------- }
+  tried before $0200, presumably because they were the common settings.}
 { The 1.39b release has this as DetectUltrasound. It sets the result TRUE
   first and leaves by `Exit` the moment a port answers; only falling out of
   the search clears it. A `Found` local and a `repeat` were both wrong -- the
@@ -971,22 +853,7 @@ set a voice's pan. Near, private.
   card is slow.
   -------------------------------------------------------------------------- }
 const
-  { DS:$066a in v1.51 -- 128 words, read out of the image, as 1.31b's were.
 
-    **RETUNED AGAIN BETWEEN 1.31b AND 1.51**, and only entry 0 survives -- $1800, the
-    same value that is the only agreement with the 1.39b release. Every other word
-    differs from BOTH earlier tables.
-
-    THE NOTE THAT STOOD HERE WAS RIGHT AND STILL LET THIS THROUGH. It said "the
-    release settled the SHAPE of the routine below and is worth nothing for its data",
-    which is correct, and it is exactly why carrying 1.31b's numbers forward was never
-    safe either: a table nothing computes has no witness but the image it came from.
-    **Data transcribed from one version is a measurement of that version only** -- the
-    routine that reads it is identical in all three, so no comparison of code could
-    ever have said the numbers were stale. 253 of the 256 bytes were wrong and the
-    unit verified byte-for-byte throughout.
-
-    A logarithmic volume ramp: entry 0 is silence and the rest climb to $FE30. }
   VolumeTable : array[0..127] of Word = (
     $1800, $9DF0, $A5F0, $ACF0, $B1F0, $B570, $B8F0, $BC70,
     $BFF0, $C1B0, $C370, $C530, $C6F0, $C8B0, $CA70, $CC30,
@@ -1008,12 +875,6 @@ const
 
 { --------------------------------------------------------------------------
 set a voice's volume, ramping to it rather than jumping.
-
-  THIS WAS TRANSCRIBED AS `SetPan` AND IT IS NOTHING OF THE KIND. The old
-  version was seven lines against the original's 253 bytes, took its
-  parameters in the wrong order, and wrote the wrong register. The release
-  has it as ChangeVol(Channel, Vol, Ramp) and the frame agrees exactly:
-  RET 6, with Channel at [BP+8], Vol at [BP+6] and Ramp at [BP+4].
 
  is LastVolumes, not the mode table -- also misnamed here until now.
 
@@ -1108,22 +969,11 @@ THE DEFERRED SWEEP. Installed as the timer 1 callback by
 
   Two passes over the active flags, and the split matters.
 
-  THE FIRST PASS programs each flagged voice -- addresses, pan, ramp -- and
-  clears its flag. THE SECOND PASS collects the voices that are now ready
-  into a command list at DS:$06c1, two bytes per entry, and only then walks
-  that list writing voice-select and control-register pairs back to back.
-
   Separating them is what makes the card see one burst. Programming a voice
   is a dozen register writes with the voice stopped; starting it is two. Doing
   all the slow work first and all the starts together means voices that were
   meant to begin on the same tick actually do, instead of drifting apart by
-  however long the register writes took.
-
-  THE POSITION READ-BACK at 1723:08a2 reads a voice's current address twice
-  and only accepts it when two consecutive reads agree -- the same distrust
-  of a live counter as 1b24's Count8, solved by retry rather than by
-  judging the difference.
-  -------------------------------------------------------------------------- }
+  however long the register writes took.}
 procedure RestartChannels;
 const
   { $06c2..$0701 -- TWO BYTES PER VOICE, thirty-two voices, and the release declares
@@ -1138,55 +988,16 @@ const
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0);
 var
-  { DECLARATION ORDER SETS THE FRAME, and this one is settled byte by byte
-    against 1723:077a..08c2. `ENTER 8,0` reserves eight bytes and the original
-    touches five of them:
 
-      [BP-1]  i        the FOR variable -- AND the kicked voice, see below
-      [BP-2]  k        the kicked voice's control byte
-      [BP-3]  Vol
-      [BP-4]  padding: Turbo Pascal rounds the running size up to even
-              before allocating a Word, so three bytes become four
-      [BP-6]  j        the Word, occupying [BP-6] and [BP-5]
-      [BP-7]  the compiler's own temporary for the FOR limit
-      [BP-8]  padding to the eight ENTER reserves
-
-    THREE BYTES, NOT FOUR. This declared a separate `KickVoice` and the frame
-    says there is no such variable: 1723:0856 writes the kicked voice into
-    [BP-1], which is i's slot. Turbo Pascal does not reuse a dead local's slot,
-    so the same slot means the same variable -- the original reuses the loop
-    counter, which it has finished with by then, rather than declaring another
-    byte. A fourth byte pushes k to [BP-7] and the FOR temporary to [BP-8],
-    which is what eleven of this unit's divergences were.
-
-    THE RELEASE AGREES, INDEPENDENTLY. 1.39b's RestartChannels declares
-    `i, k, Vol : BYTE; j : WORD` -- three bytes then a word -- and then writes
-    `i := buf[j-1]; k := buf[j]`, reusing the loop variable for the kicked
-    voice just as the shared slot says. It also declares `Scr` (ABSOLUTE, so no
-    frame space) and `First : BOOLEAN`, and 1.31 has NEITHER: a Boolean here
-    would take [BP-7] and push the FOR temporary to [BP-8], and the original
-    reads its limit from [BP-7]. A later addition, so it is left out. }
   i, k, Vol : Byte;
   j         : Word;
-  { NEW IN v1.51, AND THIS FILE PREDICTED IT. The note above records that 1.39b
-    declares `First : BOOLEAN` here, that a Boolean would take [BP-7] and push
-    the FOR temporary to [BP-8], and that v1.31b has neither -- "a later
-    addition, so it is left out". v1.51 IS that later addition: 1911:0837 is
-    `MOV BYTE PTR [BP-07],01` right after the second pass, and without a local
-    there the third pass's limit temporary takes -$07 and every reference in
-    the routine is one byte out.
 
-    Nothing in the segment READS it, so the name is the release's rather than
-    anything measured here. }
   First     : Boolean;
 begin
   GUSStopTimer1;
 
   { --- pass one: program everything that is flagged ------------------ }
-  { A REAL `for`, not a repeat emulating one. The release has
-    `FOR i := 0 TO GUSChannels-1 DO IF VoicesChanged[i] THEN ...` and Turbo
-    Pascal evaluates the limit into a temporary, which is what 1723:0787
-    stores -- no `Last` variable is involved. }
+
   for i := 0 to GUSChannels - 1 do
     if VoicesChanged[i] <> 0 then
     begin
@@ -1251,22 +1062,7 @@ start a voice with a loop. THE ENTRY 12ba's ring flushes to.
   written table.
 
   ChangeVoiceParams is called first, for the frequency and pan, and this adds
-  the addresses on top.
-
-  SEVEN PARAMETERS, AND THIS ORDER. The list was transcribed backwards, as
-  `(EndA, LoopA, StartA, Mode, Freq, Pan, Voice)`, which happens to total the
-  same 22 bytes and so still emitted a correct `RETF $16` -- every frame
-  reference inside was wrong instead. The frame settles it: Voice at [BP+1a],
-  Vol at [BP+18], Freq at [BP+14], Pan at [BP+12], then the three addresses
-  at [BP+0e], [BP+0a] and [BP+06]. That is the release's
-  `TriggerVoice(Channel, Vol, Freq, Panning, VoiceStart, LoopStart, VoiceEnd)`
-  exactly.
-
-  AND THE VOLUME IS RECORDED, NOT THE PAN. 1723:095c reads [BP+18], which is
-  Vol -- the pan has already gone to the card through ChangeVoiceParams. The
-  backwards list made this look like `LastVolumes[Voice] := Pan` because [BP+08]
-  was where Pan sat.
-  -------------------------------------------------------------------------- }
+  the addresses on top.}
 { **TriggerVoice DOES NOT START THE VOICE**, and that is the whole design of
   GUS playback here. It writes the frequency and pan, records what the voice
   SHOULD be doing in five parallel arrays, sets a flag, and arms a timer. The
@@ -1331,26 +1127,9 @@ set a live voice's frequency and pan, without restarting it.
 
   THE FREQUENCY IS RATE-RELATIVE. The value written is
 
-      (Freq * (GUSDivisor div 2)) div (GUSDivisor div 2 + Freq')
-
-  worked out in 32 bits from DS:$0588, so the same module plays at the same
-  pitch whatever mixing rate the card was set to. The previous value is kept
-  in a table and the write skipped when it has not moved.
-  -------------------------------------------------------------------------- }
+      (Freq * (GUSDivisor div 2)) div (GUSDivisor div 2 + Freq')}
 { --------------------------------------------------------------------------
-set a running voice's volume, pitch and pan.
-
-  FOUR PARAMETERS, NOT THREE. This was transcribed as
-  `StartVoice(Freq, Pan, Voice)` with the volume and the pan sharing one
-  argument. The frame says otherwise -- RETF $0A with Channel at [BP+0e],
-  Vol at [BP+0c], Freq at [BP+08] and Panning at [BP+06] -- and the release
-  has it as ChangeVoiceParams(Channel, Vol, Freq, Panning).
-
-  THE FIRST TEST IS NOT AN EXIT. 1723:0996 branches on VoicesChanged and both
-  arms do work: a voice already queued for restart just has its volume
-  recorded, because RestartChannels will apply it; a voice that is not queued
-  gets the ramp applied immediately.
-  -------------------------------------------------------------------------- }
+set a running voice's volume, pitch and pan.}
 procedure ChangeVoiceParams(Channel, Vol : Byte; Freq : LongInt;
                             Panning : Byte);
 begin

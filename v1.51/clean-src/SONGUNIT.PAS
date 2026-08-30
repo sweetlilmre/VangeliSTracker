@@ -849,7 +849,7 @@ begin
   asm sti end
 end;
 
-{ 072f..0896.  RETF 4, no frame -- PUSH BP / MOV BP,SP, so no locals at all.
+{ RETF 4, no frame -- PUSH BP / MOV BP,SP, so no locals at all.
 
   THIS IS THE ROUTINE THAT NAMED THE RECORD. It initialises every field, in the
   release's order, so its stores ARE the declaration read off the binary -- which
@@ -859,7 +859,7 @@ end;
 
   THE THREE COLLECTION LIMITS ARE THE RELEASE'S EXACTLY: (32,32), (64,64) and
   (256,256), pushed as immediates at 07b0, 0844 and 085a. Unlike `NumBuffers` in
-  12ba -- where the release's 3 was 1.39b's and 1.31's was 1 -- these three
+where the release's 3 was 1.39b's and 1.31's was 1 -- these three
   counts did carry over, so this is a case where the release's DATA happened to
   be right. It was still checked rather than copied. }
 procedure TSong.InitValues;

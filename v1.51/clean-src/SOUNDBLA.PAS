@@ -477,7 +477,7 @@ begin
   SbRegDetect := SbRegDetected
 end;
 
-{ 0259..029b.  RETF.  The release's body with BOTH of its commented-out blocks
+{ RETF.  The release's body with BOTH of its commented-out blocks
   absent: 1.39b has a seven-line DSP handshake commented out at the top and a
   four-line hi-speed block commented out in the middle, and neither leaves a
   trace here.

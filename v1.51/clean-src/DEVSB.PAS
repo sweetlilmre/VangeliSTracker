@@ -446,7 +446,7 @@ begin
 end;
 
 { ---------------------------------------------------------------------------
-  048a..0650 -- FOUR DEVICE RECORDS FILLED AND REGISTERED.
+FOUR DEVICE RECORDS FILLED AND REGISTERED.
 
   Every field is a far address written as two words, and reading them off is
   what produced the routine map at the top of this file.

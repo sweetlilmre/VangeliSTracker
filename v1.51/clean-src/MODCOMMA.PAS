@@ -31,7 +31,7 @@
     `can.TPortaIncr := WORD(n.Parameter) SHL 2`; `StartNPortamento` reads and writes
     `PeriodIncr` unscaled where the release has a `SHR 2` on the way out and a
     `SHL 2` on the way in. Two routines, four places, no shift in any of them --
-    142f:00d9 is `MOV AL,[DI+5] / XOR AH,AH / MOV [DI+1f],AX` and there is nothing
+ is `MOV AL,[DI+5] / XOR AH,AH / MOV [DI+1f],AX` and there is nothing
     between the load and the store. So the same pattern data slides four times
     faster in 1.31, which is a behavioural difference and worth knowing before
     anyone compares the two players by ear.
@@ -410,7 +410,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:00a3 -- arpeggio, per tick. Frameless, and that is the release's shape
+arpeggio, per tick. Frameless, and that is the release's shape
   exactly: `PROCEDURE TickArpeggio; ASSEMBLER;` names no parameter, so Turbo
   Pascal gives it no prologue at all and the channel arrives in SI.
 
@@ -522,7 +522,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:016a -- tone portamento, per tick. Four instructions each, and BOTH
+tone portamento, per tick. Four instructions each, and BOTH
   CLAMPS ARE ABSENT. The release carries three of them commented out in the source
   -- a floor at zero, a ceiling at $39 going up and one at $6B0 coming down -- and
   1.31 has none of the code either, so the period is free to run past the ends of
@@ -546,7 +546,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0184 -- command 3, NOTE PORTAMENTO. Slide towards a target period rather
+command 3, NOTE PORTAMENTO. Slide towards a target period rather
   than by a fixed amount, so the note carries the destination and the parameter
   carries the speed, and either may be omitted to mean "as before".
 
@@ -967,7 +967,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:043e -- command D, END OF PATTERN. Advance to the next order position and
+command D, END OF PATTERN. Advance to the next order position and
   start at the row the parameter names -- except that it does not, and the release
   has the same defect.
 
@@ -1107,7 +1107,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:057c..0583 -- EIGHT DO-NOTHING TICK ROUTINES, one byte each.
+EIGHT DO-NOTHING TICK ROUTINES, one byte each.
 
   `C3 C3 C3 C3 C3 C3 C3 C3` -- eight bare near returns in a row, so eight
   parameterless `assembler` procedures with empty bodies. The release has SEVEN
@@ -1283,7 +1283,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:061d..0621 -- FIVE MORE DO-NOTHING TICKS, one byte each, and this time the
+FIVE MORE DO-NOTHING TICKS, one byte each, and this time the
   COUNT matches the release exactly: `TickNoteCut`, `TickNoteDelay`,
   `TickPattDelay`, `TickFunkIt` and `TickNone`, all five empty in 1.39b too.
 
@@ -1505,7 +1505,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
+A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
   counterpart in the release at all.
 
   It stores the parameter into `Can.RingSem` and 1 into `Can.RingPending`, and 12ba

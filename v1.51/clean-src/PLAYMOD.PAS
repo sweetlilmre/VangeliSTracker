@@ -10,9 +10,9 @@
   NAMES ARE THE 1.39b RELEASE'S. `LIB/PLAYMOD.PAS` is the later version of this
   unit and the pairing is confirmed rather than assumed:
 
-    12ba:0007  UnCanal          the release's routine, statement for statement
-    12ba:0664  MyMove           a hand-written Move, ASSEMBLER in both
-    12ba:1600  DumpInstrument   the resampling kernel, EXTERNAL from PLAYMOD.ASM
+ UnCanal          the release's routine, statement for statement
+ MyMove           a hand-written Move, ASSEMBLER in both
+ DumpInstrument   the resampling kernel, EXTERNAL from PLAYMOD.ASM
 
   and `TModRawChan`'s FIELD LAYOUT lands on every offset the reading pass had
   already recorded from the disassembly -- `+$0b` the non-looping limit, `+$19`
@@ -123,7 +123,7 @@ type
   -------------------------------------------------------------------------- }
 const
   { **SIXTEEN IN v1.51, EIGHT IN 1.31b, AND `TPlayingNote`'s SIZE IS THE PROOF.**
-    12ce:07e9 is `IMUL DI,[02fc],77h` where 1.31b has `IMUL DI,..,3Fh`, and 0807
+ is `IMUL DI,[02fc],77h` where 1.31b has `IMUL DI,..,3Fh`, and 0807
     pushes `6A 77` where 1.31b pushes `6A 3F` -- so the record is 119 bytes against
     63. 1.39b's field list makes that arithmetic decisive: four fixed bytes, then
     `Volume : TVolumes` which is one byte a channel, then `Note` which is a 6-byte
@@ -735,7 +735,7 @@ implementation
     four bytes -- treated as no loop at all -- and 0 when it loops, which is why
     every test of it reads `= 0`. }
 
-  { DS:$0bce -- THE SECOND DUPLICATED GLOBAL IN THIS UNIT, and the same shape as
+  { THE SECOND DUPLICATED GLOBAL IN THIS UNIT, and the same shape as
     AltMode above. DevGUS declares it as `Started` in its IMPLEMENTATION section,
     so it is private there and invisible here, yet 12ba:05a8 plainly reads it: the
     routine below posts nothing unless the GUS driver has started. One of the two
@@ -927,7 +927,7 @@ var
 
 
 { --------------------------------------------------------------------------
-  12ba:1600 -- the resampling kernel, and the whole reason this unit links an
+the resampling kernel, and the whole reason this unit links an
   object module. `PUSH BP / MOV BP,SP` is not what starts it; the prologue
   scanner found `ENTER $000`, which is the hand-written frame of an assembler
   routine, and 1.39b builds its equivalent from `LIB/PLAYMOD.ASM` under a $L.
@@ -1359,7 +1359,7 @@ begin
     out of short range. }
   if Desc <> nil then
   begin
-    { 03da..0413 -- HAND-WRITTEN, transcribed verbatim per the standing rule.
+    { HAND-WRITTEN, transcribed verbatim per the standing rule.
       Equivalent Pascal, REFERENCE ONLY -- the compiler does not produce these
       bytes from it, which is how the block was identified:
 
@@ -1409,7 +1409,7 @@ begin
   @@Ctl:
     end;
 
-    { 0414..042b -- compiled: Turbo Pascal's LongInt comparison, high word
+    { compiled: Turbo Pascal's LongInt comparison, high word
       first, `CMP ES:[DI+2],0 / JG / JGE / CMP ES:[DI],$FFF0 / JA`. $FFF0 is
       [1.39b] "Comes here if it is a long sample (more than 65520 bytes)", and
       on the other arm "Comes here if it is a short sample (less than 65520
@@ -1419,7 +1419,7 @@ begin
       64K part. }
     if Desc^.Len > MaxSample then
     begin
-      { 042c..0452 -- HAND-WRITTEN again, and the DS-relative store at 0437 is
+      { HAND-WRITTEN again, and the DS-relative store at 0437 is
         what says so. Equivalent Pascal, REFERENCE ONLY:
 
             NewFlags := NewFlags or rcfLongSample;
@@ -1619,7 +1619,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0664 -- MyMove. A hand-written Move, and the 1.39b release has it
+MyMove. A hand-written Move, and the 1.39b release has it
   INSTRUCTION FOR INSTRUCTION: `LIB/PLAYMOD.PAS` line 701 declares
   `PROCEDURE MyMove(VAR Src, Dest; Bytes: WORD); ASSEMBLER` with exactly this
   body, down to the label names. The closest pairing found in this segment, and
@@ -1668,7 +1668,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0693 -- advance to the next pattern, and honour a seek request.
+advance to the next pattern, and honour a seek request.
   IN PROGRESS: transcribed as far as 070d.
 
   THE SEEK INTERFACE. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
@@ -1730,7 +1730,7 @@ begin
       in a different unit, from the other side.
 
       THE COMPARISON IS 32-BIT AND MIXED-SIGN, which is what the two widenings say:
-      12ce:08a6 is `XOR DX,DX` on the call's result -- a Word, unsigned -- and 08b3 is
+ is `XOR DX,DX` on the call's result -- a Word, unsigned -- and 08b3 is
       `CWD` on `Patterns.Count`, which TCollection declares as an Integer. Turbo
       Pascal promotes both to LongInt so the signed and unsigned halves can meet. }
     repeat
@@ -1791,7 +1791,7 @@ begin
     WideNoteRing[WideSlot] := NotePlaying;
     WideSeqRing[WideSlot]  := SeqPlaying;
 
-    { 0773..078d -- `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
+    { `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
       14b9, which is src/SONGUNIT.PAS. THAT UNIT WAS A STUB WHEN THIS WAS
       WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its segment --
       but the note stands for a different reason than it did: the call site
@@ -2014,7 +2014,7 @@ begin
     if NoteHz = 0 then
       NoteHz := 1;
 
-    { 0ae4..0b07 -- A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1ba1:0a2e` is the
+    { A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1ba1:0a2e` is the
       32-bit divide and `1ba1:0aa8` is the 32-bit SHIFT LEFT -- `AND CX,1Fh / SHL AX,1 /
       RCL DX,1 / LOOP` -- with `MOV CX,4` in front of it, so the second operation
       multiplies by sixteen where this read `div 4`. `1ba1:0a9c`, twelve bytes earlier, is
@@ -2099,7 +2099,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0c4e -- the sequencer tick, and the tempo engine. IN PROGRESS.
+the sequencer tick, and the tempo engine. IN PROGRESS.
 
   THE HANDSHAKE. `ModFlag` non-zero means the module buffer still holds samples
   nobody has taken, so the tick cannot advance: MixTick is called, and if the flag
@@ -2783,7 +2783,7 @@ begin
 
   FillChar(Buffers, SizeOf(Buffers), 0);
 
-  { 123d..1298 -- claim the mixing buffers, but only when the GUS is not driving.
+  { claim the mixing buffers, but only when the GUS is not driving.
     The GUS plays out of its own on-card memory and never asks for one.
 
     THE FILL VALUE IS 0 AND THE RELEASE'S IS $7F. Both are silence for their own
@@ -2832,7 +2832,7 @@ begin
     STI
   end;
 
-  { 12d2..132a -- hand the device a buffer source and start it.
+  { hand the device a buffer source and start it.
 
     THE ASKER IS SWAPPED TWICE ON PURPOSE. `IdleGiver` returns nil, so while the
     device is starting up it is told there is nothing to play; `BufferGiver` at
@@ -2865,7 +2865,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:132f -- ask the device for a rate it can really manage, and if what comes
+ask the device for a rate it can really manage, and if what comes
   back is unusable, ask again for a different one.
 
   THE `goto` IS THE ORIGINAL'S AND SO IS THE LABEL'S POSITION. 1357 and 1364 both
@@ -2953,7 +2953,7 @@ Otra:
 end;
 
 { --------------------------------------------------------------------------
-  12ba:13d7 -- stop playing and give the mixing buffers back.
+stop playing and give the mixing buffers back.
 
   PlayStart's mirror image, and shorter than the release's by one statement and
   one local. 1.39b saves `UsingGUS` into a Boolean, calls `EndSampling`, and then
@@ -2994,7 +2994,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:141e -- THE UNIT'S INITIALISATION SECTION, not a procedure.
+THE UNIT'S INITIALISATION SECTION, not a procedure.
 
   `PUSH BP / MOV BP,SP` rather than `ENTER`, no parameters, `RETF` with no count,
   and Turbo Pascal emits a unit's `BEGIN ... END.` block as the last Pascal code

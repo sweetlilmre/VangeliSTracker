@@ -335,7 +335,7 @@ var
     1007         1  the near epilogue RET, where the original has a 00 pad
     104d         1  SharedPoll's far epilogue RETF, which the original has not
                     got at all
-    10c1..10c2   2  the epilogue again, where the original ends RETF 4
+ 2  the epilogue again, where the original ends RETF 4
 
   All three are the boundary of a Pascal procedure inside what the original
   built as ONE frameless run from 0746 to 10c3, and the reason it has no such
@@ -369,9 +369,9 @@ var
 
   CLOSED, and each one had been recorded here as unfixable:
 
-    024c..025e  19  the value-String copy. It was the compiler, and TP6 makes
+ 19  the value-String copy. It was the compiler, and TP6 makes
                     the runtime call the original makes.
-    070f..0716   8  GetPlayPos's register allocation -- not the compiler at all.
+ 8  GetPlayPos's register allocation -- not the compiler at all.
                     `SUB BX,AX` is `29 C3`, which TP's inline assembler emits
                     and its code generator does not, so those four instructions
                     are hand-written. Transcribed verbatim, they match.
