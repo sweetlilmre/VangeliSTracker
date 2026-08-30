@@ -1,32 +1,51 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 19a0 -- THE SOUND BLASTER HARDWARE LAYER. **COMPLETE: 1,898 of 1,898
-  bytes** (1,905 in the segment map; the last 7 are padding). Twenty-three
-  routines, 475 pending fixups, no real difference anywhere.
+  THE SOUND BLASTER HARDWARE LAYER: every port write and every DSP command,
+  and nothing about when to make them.
 
-  It pairs with the release's
-  `LIB/SOUNDBLA.PAS`. It stands to `193a` exactly as `1723` (GUS) stands to
-  `1084` (DevGus): a hardware unit called by a device unit, and that structural
-  pairing was recorded in CONTINUATION.md long before either was read.
+  TALKING TO A SOUND BLASTER IS A CONVERSATION, not a register poke. The card
+  has a DSP -- a small processor with its own command set -- reached through
+  four ports, and every exchange has the same shape: wait until it says it is
+  ready, write a byte, wait again. A command that takes arguments is several of
+  those in a row. That handshake is why so much of this unit is loops.
 
-  IT USED TO BE A DECLARED STUB holding four variables, because `11bb` and
+  EVERYTHING HERE IS BOUNDED AND GIVES UP QUIETLY. Each wait counts down and
+  proceeds anyway on exhaustion, because this code runs inside an interrupt on
+  a machine where a card that never answers must not hang the music. A late
+  sample is better than a locked machine.
+
+  IT ALSO HAS TO FIND THE CARD. The base port, the IRQ and the DMA channel are
+  not discoverable in any general way on an ISA machine, so detection is a
+  matter of writing to a likely port and seeing whether anything replies --
+  which is what the reset and copyright-string routines are for.
+
+  WHAT IT DOES NOT DO is decide when to play anything. That is the device unit
+  next door, which stands to this exactly as DevGus stands to the GUS layer.
+
+  [re] Segment 19a0. **COMPLETE: 1,898 of 1,898 bytes** (1,905 in the segment
+  map; the last 7 are padding). Twenty-three routines, 475 pending fixups, no
+  real difference anywhere. It pairs with the release's `LIB/SOUNDBLA.PAS`, and
+  that structural pairing was recorded in CONTINUATION.md long before either
+  was read.
+
+  [re] IT USED TO BE A DECLARED STUB holding four variables, because `11bb` and
   `109c` both write the port settings and there was nowhere shared to put them.
   Those four are still here, at the same addresses, and they now sit in the
   release's own declaration order beside the rest.
 
-  TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `survey.py` finds no
+  [re] TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `survey.py` finds no
   literal anywhere in the segment, which already says the release's
   `SbGetCopyrightString` and its `USES Debugging` calls are absent -- and the
   first block confirms it: 1.31's `SbWriteByte` is the release's body with the
   two `WriteSNum`/`WriteChar` debug calls removed.
 
-  THE PORT BLOCK AND THE STATE BLOCK ARE BOTH PINNED BY SPACING -- see the
+  [re] THE PORT BLOCK AND THE STATE BLOCK ARE BOTH PINNED BY SPACING -- see the
   notes at their declarations. Neither could be measured from the bytes; both
   are fixed by laying the release's declaration order between addresses the
   instructions do name, and both arrive on their endpoints exactly.
 
-  ALL TWENTY-THREE WENT IN, AND THE LAST FOURTEEN IN A SINGLE BUILD. The
+  [re] ALL TWENTY-THREE WENT IN, AND THE LAST FOURTEEN IN A SINGLE BUILD. The
   release's bodies transferred with no adjustment at all -- not one routine
   needed a second pass -- which is what a hardware unit looks like when the two
   versions share it unchanged. `blockcmp.py` measures per block.
@@ -157,7 +176,7 @@ const
   SbProForce   : Boolean = False;  { DS:$0bc7 }
   Sb16Force    : Boolean = False;  { DS:$0bc8  pad at $0b21 }
 
-{ Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
+{ [re] Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
   `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 19a0:026f is what fixes the
   overlay: it compares $0b22 against $0200 as a Word, where the two halves are
   written separately as bytes. }
@@ -209,7 +228,7 @@ const
   Sb16Bit            : Boolean = False; { DS:$0c35 }
   TimeConst          : Byte    = 0;     { DS:$0c36 }
 
-  { The four 193a's DMA interrupt handler touches, and its stores are what
+  { [re] The four 193a's DMA interrupt handler touches, and its stores are what
     place them: 193a:0045 clears $0b92, 0048 reads $0b90, 004f writes $0b91.
     With TimeConst at $0b8e the release's order lands them exactly. }
   DMAStart           : Boolean = False; { DS:$0c37 }
@@ -328,7 +347,9 @@ begin
                                                      card answered }
 end;
 
-{ 005b..0076.  RETF 2.  Hand-written, and transcribed VERBATIM per the standing
+{ Write one byte to the DSP, waiting for it to say it is ready.
+
+  [re] 005b..0076.  RETF 2.  Hand-written, and transcribed VERBATIM per the standing
   rule. It names its parameter, so it gets a frame -- `PUSH BP / MOV BP,SP` at
   005b -- which is why `t` is reachable as [BP+06].
 
@@ -349,7 +370,9 @@ asm
                 MOV     [SbWorksOk],BL          { 006f }
 end;
 
-{ 0077..009a.  RETF 4.  The release's body with its TWO DEBUG CALLS REMOVED --
+{ Send a DSP command and its argument: two writes through the routine above.
+
+  [re] 0077..009a.  RETF 4.  The release's body with its TWO DEBUG CALLS REMOVED --
   1.39b brackets the port write with `WriteSNum` and `WriteChar` from its
   `Debugging` unit, and 1.31 has neither, which is why survey.py finds no
   printable string in the whole segment. Both `CALL SbWriteLoop`s are FAR
@@ -395,7 +418,7 @@ end;
 
 { 00bb..00cd.  RETF 2.
 
-  THE `JNZ` AT 00c7 HAS A DISPLACEMENT OF ZERO -- `75 00` -- so it falls
+  [re] THE `JNZ` AT 00c7 HAS A DISPLACEMENT OF ZERO -- `75 00` -- so it falls
   through to the very next instruction and does nothing at all. That is not a
   transcription artefact: the release has a five-line block COMMENTED OUT
   between the `JNZ @@ya` and the `@@ya:` label (a second SbReadLoop retry after
@@ -551,7 +574,11 @@ begin
                       else SbVersionStr := SbVersionStr + '0' + s
 end;
 
-{ 038f..0421.  RETF.  Reads the card's copyright string a byte at a time. It
+{ Read the card's copyright string, which is how its model is identified: an
+  original, a Pro and a 16 answer differently, and there is no other way to
+  ask. The string comes back one byte per DSP read until a NUL.
+
+  [re] 038f..0421.  RETF.  Reads the card's copyright string a byte at a time. It
   needs no literal of its own, which is why survey.py finds none: the string
   it builds is DGROUP data, not code. }
 procedure SbGetCopyrightString;

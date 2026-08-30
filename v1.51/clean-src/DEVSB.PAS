@@ -114,7 +114,7 @@ function  DMASBSterName : TDevID; far;  begin end;
 function  DMASBMixName : TDevID; far;   begin end;
 function  DMASBMix2Name : TDevID; far;  begin end;
 
-{ 0014..002a.  NEAR -- it ends in `RET`, not `RETF`, so it is an
+{ NEAR -- it ends in `RET`, not `RETF`, so it is an
   implementation-only helper and nothing outside the segment reaches it.
 
   It copies three port numbers out of this card's hardware unit into the
@@ -134,12 +134,12 @@ begin
   SoundDevices.DSPLifePort  := SoundBlaster.DSPLifePort
 end;
 
-{ 002b..002f.  Empty, and the release's is too. }
+{ Empty, and the release's is too. }
 procedure DevPoll; far;
 begin
 end;
 
-{ 0030..007d.  THE DMA INTERRUPT HANDLER, transcribed VERBATIM per the standing
+{ THE DMA INTERRUPT HANDLER, transcribed VERBATIM per the standing
   rule. It is `assembler` and names no parameter, so it gets no frame -- there
   is no `PUSH BP` at 0030, which is what distinguishes it from every other
   routine here.
@@ -234,7 +234,7 @@ begin
   DMASBGetRealFreq := NHz1
 end;
 
-{ 013c..0205.  RETF 2.  The stereo device's rate calculator -- half the clock,
+{ RETF 2.  The stereo device's rate calculator -- half the clock,
   because a stereo DMA block carries two samples per tick. Divisions at 0189,
   01b4, 01cf. }
 function DMASBProGetRealFreq(Hz : Word) : Word; far;
@@ -289,7 +289,7 @@ begin
   Dec(TimeConst)
 end;
 
-{ 02c2..02e6.  RETF.  Device 1's Autodetect. }
+{ RETF.  Device 1's Autodetect. }
 function SbMonoDetect : Boolean; far;
 begin
   SbRegInit;
@@ -303,7 +303,7 @@ begin
   SbMonoDetect := SbRegDetect
 end;
 
-{ 02e7..0320.  RETF.  Devices 2, 3 and 4 all point their Autodetect here. }
+{ RETF.  Devices 2, 3 and 4 all point their Autodetect here. }
 function SbStereoDetect : Boolean; far;
 begin
   SbRegInit;
@@ -313,7 +313,7 @@ begin
   SbStereoDetect := SbProDetect or Sb16Detect
 end;
 
-{ 0321..03c4.  NEAR.  The shared opener; the four FAR entry points below set
+{ NEAR.  The shared opener; the four FAR entry points below set
   Stereo/DevBits/MixMethod and fall into it.
 
   `OldDMAIrq = NIL` is the "not hooked yet" test -- the vector is saved and the
@@ -373,7 +373,7 @@ begin
   DMAStop    := False
 end;
 
-{ 03c5..03e0.  RETF 2.  Device 1's InitRut. }
+{ RETF 2.  Device 1's InitRut. }
 procedure DMASBMonoInit(Hz : Word); far;
 begin
   Stereo    := False;
@@ -382,7 +382,7 @@ begin
   DMASBInit(Hz)
 end;
 
-{ 03e1..03fc.  RETF 2.  Device 2's. }
+{ RETF 2.  Device 2's. }
 procedure DMASBSterInit(Hz : Word); far;
 begin
   Stereo    := True;
@@ -391,7 +391,7 @@ begin
   DMASBInit(Hz)
 end;
 
-{ 03fd..0418.  RETF 2.  Device 3's. }
+{ RETF 2.  Device 3's. }
 procedure DMASBMixInit(Hz : Word); far;
 begin
   Stereo    := True;
@@ -400,7 +400,7 @@ begin
   DMASBInit(Hz)
 end;
 
-{ 0419..0434.  RETF 2.  Device 4's. }
+{ RETF 2.  Device 4's. }
 procedure DMASBMix2Init(Hz : Word); far;
 begin
   Stereo    := True;
@@ -409,13 +409,13 @@ begin
   DMASBInit(Hz)
 end;
 
-{ 0435..0441.  RETF 2.  All four devices share it. }
+{ RETF 2.  All four devices share it. }
 procedure DMASBChgHz(Hz : Word); far;
 begin
   DMASBCalcTimerData(Hz)
 end;
 
-{ 0442..0489.  RETF.  All four devices share it. The wait loop spins with
+{ RETF.  All four devices share it. The wait loop spins with
   interrupts enabled until the handler reports the DMA stopped, then restores
   the vector. `PUSHF/STI ... POPF` brackets it so the caller's interrupt flag
   is preserved -- 1.31 drops the release's `KbdKeyPressed` escape, which is a

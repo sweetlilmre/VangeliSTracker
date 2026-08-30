@@ -1991,7 +1991,7 @@ begin
       NoteRing[EventSlot, ChanIdx - 1].Sem :=
         CurCanal^.RingSem;
       CurCanal^.RingPending := 0
-    end;                                             { 0a97..0aa1  for end   }
+    end;                                             { for end   }
 
     { how many samples this row is worth.
 
@@ -2557,7 +2557,7 @@ begin
       CanalPtr^.Period := $1F
     else if CanalPtr^.Period > $1FFF then
       CanalPtr^.Period := $1FFF
-  end;                                               { 0fe1..0feb  for end   }
+  end;                                               { for end   }
 
   NullProcedure(0, 0, 0);
 
@@ -2745,7 +2745,7 @@ begin
   NoteBuff[0].Tempo       := 6;
   NoteBuff[0].NotePlaying := 0;
   NoteBuff[0].SeqPlaying  := 0;
-  NoteBuff[0].Volume := UserVols;                  { 119e..11ae  see 075e    }
+  NoteBuff[0].Volume := UserVols;                  { see 075e    }
   NoteBuff[0].NMuestras   := 0;
 
   NoteHd        := 0;

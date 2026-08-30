@@ -679,7 +679,7 @@ begin
   DevBits        := 8;
   BytesPerSample := 1;
 
-  FillChar(DMABuffer^, DMABufferSize, $80);   { 00f7..0103  see above       }
+  FillChar(DMABuffer^, DMABufferSize, $80);   { see above       }
 
   if ActiveDevice <> nil then                 { 0108  AX OR DX              }
   begin
@@ -709,7 +709,7 @@ begin
   begin
     FillChar(DMABuffer^, DMABufferSize, $80);
     asm CLI end;
-    TProc(ActiveDevice^.EndRut);              { 0163..0167  CALLF [DI+$32]  }
+    TProc(ActiveDevice^.EndRut);              { CALLF [DI+$32]  }
     RestoreTimer;
     asm STI end;
     DeviceInitialized := False
@@ -816,7 +816,7 @@ var
 begin
   p := DeviceList;
   while (p <> nil) and NotInStr(p^.DevID, ID) do
-    p := p^.Next;                             { 028c..02a0  Next at +$36    }
+    p := p^.Next;                             { Next at +$36    }
   LocateDevice := p
 end;
 
@@ -872,7 +872,7 @@ var
   NHz1 : Word;
   NHz2 : Word;
 begin
-  if Hz = 0 then Hz := 1;                     { 02ff..0305  never divide by 0}
+  if Hz = 0 then Hz := 1;                     { never divide by 0}
   i := 1193180 div Hz;
 
   NHz1 := 1193180 div  i;
@@ -901,7 +901,7 @@ end;
   ========================================================================== }
 procedure CalcTimerData(Hz : Word);
 begin
-  Hz := GetRealFreq(Hz);                      { 0382..0389  PUSH CS / CALL  }
+  Hz := GetRealFreq(Hz);                      { PUSH CS / CALL  }
 
   if Hz = 0 then TimerVal := $FFFF
             else TimerVal := 1193180 div Hz;
@@ -961,7 +961,7 @@ begin
       ActualBuffer^.InUse := True
   end;
 
-  if ActualBuffer = nil then                  { 0430..0437  the queue is dry}
+  if ActualBuffer = nil then                  { the queue is dry}
   begin
     if (Size <> 1) and (not ActiveDevice^.DMA) then
       Inc(PleaseFallback);
@@ -970,7 +970,7 @@ begin
     begin
       PeriodicCount := 1;
       LastHz        := PeriodicHz;
-      TInitDevProc(ActiveDevice^.ChgHzProc)(LastHz)   { 046d..0475  +$22    }
+      TInitDevProc(ActiveDevice^.ChgHzProc)(LastHz)   { +$22    }
     end
   end
   else
@@ -1057,8 +1057,8 @@ begin
   { `@`, because PeriodicProc is a plain Pointer here rather than the release's
     procedural type -- SharedPoll calls it with CALL DWORD PTR, so typing it
     would buy nothing. AskBufferProc IS typed, so that one needs no `@`. }
-  PeriodicProc  := @NullProcedure;            { 0540..0549  -> 1a17:0000    }
-  AskBufferProc := NullBufferProc;            { 054d..0556  -> 1a17:0001    }
+  PeriodicProc  := @NullProcedure;            { -> 1a17:0000    }
+  AskBufferProc := NullBufferProc;            { -> 1a17:0001    }
 
   { The buffer starts at the heap top, wherever that is. }
   DMABuffer := HeapPtr;

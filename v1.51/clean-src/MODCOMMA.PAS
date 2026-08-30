@@ -501,7 +501,7 @@ begin
   end
   else if Can.TPortIsFine then
   begin
-    Can.Note.Command := mcFinePortaUp;             { 00fd..0104  stores $12  }
+    Can.Note.Command := mcFinePortaUp;             { stores $12  }
     StartFinePortaUp(Song, Can, N)
   end
 end;
@@ -515,7 +515,7 @@ begin
   end
   else if Can.TPortIsFine then
   begin
-    Can.Note.Command := mcFinePortaDn;             { 014c..0153  stores $13  }
+    Can.Note.Command := mcFinePortaDn;             { stores $13  }
     StartFinePortaDown(Song, Can, N)
   end
 end;
@@ -578,7 +578,7 @@ begin
 
   if N.Parameter = 0 then
   begin
-    if Can.PeriodIncr > 0 then                     { 01c3..01cc  signed JLE  }
+    if Can.PeriodIncr > 0 then                     { signed JLE  }
       N.Parameter := Can.PeriodIncr
     else
       N.Parameter := -Can.PeriodIncr
@@ -883,9 +883,9 @@ begin
   begin
     Can.VSldIsFine := False;
     if N.Parameter > $F then
-      Can.VolumeIncr := N.Parameter shr 4          { 037f..0391  slide up    }
+      Can.VolumeIncr := N.Parameter shr 4          { slide up    }
     else
-      Can.VolumeIncr := -ShortInt(N.Parameter and $F)   { 0394..03a6  down   }
+      Can.VolumeIncr := -ShortInt(N.Parameter and $F)   { down   }
   end
   else
   begin
@@ -1069,7 +1069,7 @@ end;
   the $12 and $13 in StartTPortUp/Down that is four values fixed by four stores.
 
   NO SCALING, again: the release has `WORD(n.Parameter) SHL 2` in both and
-  04f2..04fb has no shift.
+ has no shift.
   -------------------------------------------------------------------------- }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
@@ -1079,7 +1079,7 @@ begin
     Can.TPortIsFine := True
   end
   else if not Can.TPortIsFine then
-    Can.Note.Command := mcTPortUp;                 { 0513..051a  stores 2    }
+    Can.Note.Command := mcTPortUp;                 { stores 2    }
 
   if Can.TPortIsFine then
     asm
@@ -1096,7 +1096,7 @@ begin
     Can.TPortIsFine := True
   end
   else if not Can.TPortIsFine then
-    Can.Note.Command := mcTPortDown;               { 0560..0567  stores 3    }
+    Can.Note.Command := mcTPortDown;               { stores 3    }
 
   if Can.TPortIsFine then
     asm

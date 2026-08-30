@@ -565,14 +565,14 @@ var
   Pos : LongInt;
   i   : Word;
 begin
-  Song.FileFormat := mffSTM;                       { 0768..076f  +$7d := $0b }
+  Song.FileFormat := mffSTM;                       { +$7d := $0b }
 
-  { 0770..0799.  Past the header, the instrument table and the order table:
+  { Past the header, the instrument table and the order table:
     $410 + $80 = $490. GetPos is VMT +$10 and Seek is VMT +$1c. }
   Pos := St.GetPos;
   St.Seek(Pos + $490);
 
-  { 079a..07d3.  AN EARLY-EXIT GUARD, NOT AN if/else, AND THE JUMP SENSE IS
+  { AN EARLY-EXIT GUARD, NOT AN if/else, AND THE JUMP SENSE IS
     WHAT SAYS SO. 07c2 calls the string compare and 07c7 is `JE 07d4` -- a jump
     INTO the body on equality, with the failure path falling through. Turbo
     Pascal compiles `if cond then A else B` as jump-if-FALSE over A, so a jump
@@ -595,7 +595,7 @@ begin
 
     Song.Name := FullHeap.HNewStr(StrASCIIZ(Stm.Name, 20));
 
-    { 0814..0824.  $40 is clamped BEFORE the shift so the byte cannot
+    { $40 is clamped BEFORE the shift so the byte cannot
       overflow when it is multiplied by four. }
     if Stm.Volume = $40 then
       Stm.Volume := $3F;
@@ -606,7 +606,7 @@ begin
     Song.Volume       := Stm.Volume shl 2;
     Song.NumChannels  := 4;
 
-    { 0860..0899.  The order table ends at the first entry of 99 or more, so
+    { The order table ends at the first entry of 99 or more, so
       the length is the LAST index below it rather than the first at or
       above -- which is why this is a scan and not a `while`. }
     Song.SequenceLength := 0;

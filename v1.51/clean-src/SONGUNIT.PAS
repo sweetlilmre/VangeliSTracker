@@ -771,7 +771,7 @@ const
   prefix -- see docs/CONTINUATION.md, "THE PREFIX IS NOT THE MEASURE MID-ROUTINE".
   --------------------------------------------------------------------------- }
 
-{ 0000..002a.  RETF 6 -- Self plus the hidden VMT word.
+{ RETF 6 -- Self plus the hidden VMT word.
   0000  PUSH BP / MOV BP,SP
   0003  XOR DI,DI / CALLF 1ba1:04f5      the constructor prologue helper
   000a  JZ 0022                          allocation/failure path
@@ -787,7 +787,7 @@ begin
   InitValues
 end;
 
-{ 002b..004e.  RETF 6.
+{ RETF 6.
   002e  <Self> / PUSH CS / CALL 0687     Free
   0037  XOR AX,AX / PUSH AX / <Self>     VMT word 0
   003f  CALLF 1891:0031                  TObject.Done
@@ -845,7 +845,7 @@ begin
     end
 end;
 
-{ 0100..02c1.  RETF 8, ENTER 01ae,0.  The release's body verbatim.
+{ RETF 8, ENTER 01ae,0.  The release's body verbatim.
 
   THE FRAME IS THE RELEASE'S DECLARATION ORDER, laid out downward from the value
   parameter's copy, and every offset checks:
@@ -919,7 +919,7 @@ begin
   St.Done
 end;
 
-{ 02c2..02f4.  RETF **4**, not 8: Turbo Pascal does not pop the hidden
+{ RETF **4**, not 8: Turbo Pascal does not pop the hidden
   string-result pointer, the caller does, so `[BP+0a]` is the result and only
   Self is cleaned up. 116e's GetToken : STRING is RETF 4 for the same reason.
   02c8  MOV AX,ES:[DI+0a] / OR AX,ES:[DI+0c]    Name <> NIL, tested as one LongInt
@@ -933,7 +933,7 @@ begin
     GetInsidePath := ''
 end;
 
-{ 02f5..0351.  RETF 8, ENTER 0100,0 -- the 256-byte copy of the value String.
+{ RETF 8, ENTER 0100,0 -- the 256-byte copy of the value String.
   02f9  the parameter copy, PUSH 00FF / CALLF 1ba1:0add
   030f  Name <> NIL again
   0319  ADD DI,0a / <the heap object at DS:39ae> / CALLF [DI+34]   HDisposeStr
@@ -950,7 +950,7 @@ begin
     InsidePath := FullHeap.HNewStr(S)
 end;
 
-{ 0352..0403.  RETF 6, ENTER 000c,0 -- result, Instrument, j, and the FOR limit.
+{ RETF 6, ENTER 000c,0 -- result, Instrument, j, and the FOR limit.
   The release's body verbatim. Three things in it are worth reading off:
 
   0359  MOV AX,ES:[DI+2f] / CWD / ... / XOR DX,DX / CMP DX,BX / JG / JL / CMP AX,CX
@@ -991,7 +991,7 @@ Break:
     GetInstrument := PInstrument(Instruments.At(i))
 end;
 
-{ 0404..04b5.  RETF 6.  The same body against Tracks at +$4d.
+{ RETF 6.  The same body against Tracks at +$4d.
   0442  PUSH 000e   SizeOf(TTrack) -- VMT + Name + Note + Comm
   0456  MOV AX,056e / ... / CALLF 165a:081d     TTrack.Init, VMT offset $056e }
 function TSong.GetTrack(i : Word) : Pointer;
@@ -1021,7 +1021,7 @@ Break:
     GetTrack := Tracks.At(i)
 end;
 
-{ 04b6..0574.  RETF 6.  The same body again, against Patterns at +$41 -- and its
+{ RETF 6.  The same body again, against Patterns at +$41 -- and its
   constructor takes an argument where the other two do not: the release writes
   `Pattern^.Init(NumChannels)`, and 1.31's channel count is `Chans` at +$28. }
 function TSong.GetPattern(i : Word) : PPattern;
@@ -1051,7 +1051,7 @@ Break:
     GetPattern := PPattern(Patterns.At(i))
 end;
 
-{ 0575..059e.  RETF 6, ENTER 4,0 -- the four bytes are the pointer result slot.
+{ RETF 6, ENTER 4,0 -- the four bytes are the pointer result slot.
   0579  PUSH [BP+0a] / <Self> / PUSH CS / CALL 059f     GetPatternSequence
   0585  PUSH AX      / <Self> / PUSH CS / CALL 04b6     GetPattern
   058f  store to [BP-4]/[BP-2], reload
@@ -1061,7 +1061,7 @@ begin
   GetPatternSeq := GetPattern(GetPatternSequence(i))
 end;
 
-{ 059f..05d2.  RETF 6, ENTER 2,0.
+{ RETF 6, ENTER 2,0.
   05a6  MOV AX,ES:[DI+39] / OR AX,ES:[DI+3b]    PatternSequence <> NIL
   05b0  MOV AX,[BP+0a] / LES DI,ES:[DI+39] / ADD DI,AX / MOV AL,ES:[DI-1]
   THE `-1` IS THE ARRAY'S BASE: TPatternSequence is `array[1..MaxSequence]`.
@@ -1075,7 +1075,7 @@ begin
     GetPatternSequence := 0
 end;
 
-{ 05d3..0606.  RETF 6, ENTER 2,0 -- the same shape against +$3d.
+{ RETF 6, ENTER 2,0 -- the same shape against +$3d.
   This is the accessor docs/CONTINUATION.md carried as "what it holds is not
   determined by its accessor"; 12ba settled it from the consumer's side as a
   per-order-position speed override, and the release names it PatternTempos. }
@@ -1087,7 +1087,7 @@ begin
     GetPatternTempo := 0
 end;
 
-{ 0607..0686.  RETF 14 -- Seq, Row, Chan (6) + var Note (4) + Self (4), so
+{ RETF 14 -- Seq, Row, Chan (6) + var Note (4) + Self (4), so
   Self is [BP+06], Note [BP+0a], Chan [BP+0e], Row [BP+10] and Seq [BP+12].
   ENTER 000c,0 is the release's FOUR locals -- Patt, Track, n and NOffs -- and
   `NOffs` is declared because the frame is twelve bytes and the other three
@@ -1136,7 +1136,7 @@ begin
   FillChar(Note, SizeOf(Note), 0)
 end;
 
-{ 0687..072e.  RETF 4, ENTER 0002,0 -- the release's `i : WORD`, which nothing
+{ RETF 4, ENTER 0002,0 -- the release's `i : WORD`, which nothing
   reads; declaring it is what makes the frame two bytes rather than none.
 
   EIGHT CALLS, AND THEIR OPERANDS ARE WHAT NAME THE POINTER FIELDS. Every one
@@ -1266,7 +1266,7 @@ begin
   ChannelPan := DefaultChannelPan
 end;
 
-{ 0897..08ac.  RETF 4.  The release's `Free; InitValues;` and the last routine
+{ RETF 4.  The release's `Free; InitValues;` and the last routine
   in both. Written for real because it depends on nothing: two calls. }
 procedure TSong.Empty;
 begin

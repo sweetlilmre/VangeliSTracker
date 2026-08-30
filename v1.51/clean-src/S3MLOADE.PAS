@@ -823,7 +823,7 @@ var
 begin
   Song.FileFormat := mffS3M;                       { 0a90  +$7d := 9 }
 
-  { 0a95..0ab5.  The module's own origin, kept for SeekPara. }
+  { The module's own origin, kept for SeekPara. }
   ModBase := St.GetPos;
   St.Seek(ModBase + $60);
 
@@ -852,7 +852,7 @@ begin
 
   ChansUsed := 1;
 
-  { 0b06..0b2d.  THE CONSUMER OF TSong.ChannelPan. Bit 3 of a channel's
+  { THE CONSUMER OF TSong.ChannelPan. Bit 3 of a channel's
     setting is its side; $FF means the channel is not present at all and its
     pan is left as InitValues put it. }
   for i := 1 to 32 do
@@ -880,7 +880,7 @@ begin
   St.Read(InsPara, S3M.InsNum * 2);
   St.Read(PatPara, S3M.PatNum * 2);
 
-  { 0c66..0c8a.  Trailing empty orders are dropped, but never the last one. }
+  { Trailing empty orders are dropped, but never the last one. }
   while (Song.SequenceLength > 1) and
         (Song.PatternSequence^[Song.SequenceLength] = 0) do
     Dec(Song.SequenceLength);

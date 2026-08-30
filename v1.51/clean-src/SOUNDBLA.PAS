@@ -1,35 +1,27 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 19a0 -- THE SOUND BLASTER HARDWARE LAYER. **COMPLETE: 1,898 of 1,898
-  bytes** (1,905 in the segment map; the last 7 are padding). Twenty-three
-  routines, 475 pending fixups, no real difference anywhere.
+  THE SOUND BLASTER HARDWARE LAYER: every port write and every DSP command,
+  and nothing about when to make them.
 
-  It pairs with the release's
-  `LIB/SOUNDBLA.PAS`. It stands to `193a` exactly as `1723` (GUS) stands to
-  `1084` (DevGus): a hardware unit called by a device unit, and that structural
-  pairing was recorded in CONTINUATION.md long before either was read.
+  TALKING TO A SOUND BLASTER IS A CONVERSATION, not a register poke. The card
+  has a DSP -- a small processor with its own command set -- reached through
+  four ports, and every exchange has the same shape: wait until it says it is
+  ready, write a byte, wait again. A command that takes arguments is several of
+  those in a row. That handshake is why so much of this unit is loops.
 
-  IT USED TO BE A DECLARED STUB holding four variables, because `11bb` and
-  `109c` both write the port settings and there was nowhere shared to put them.
-  Those four are still here, at the same addresses, and they now sit in the
-  release's own declaration order beside the rest.
+  EVERYTHING HERE IS BOUNDED AND GIVES UP QUIETLY. Each wait counts down and
+  proceeds anyway on exhaustion, because this code runs inside an interrupt on
+  a machine where a card that never answers must not hang the music. A late
+  sample is better than a locked machine.
 
-  TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `survey.py` finds no
-  literal anywhere in the segment, which already says the release's
-  `SbGetCopyrightString` and its `USES Debugging` calls are absent -- and the
-  first block confirms it: 1.31's `SbWriteByte` is the release's body with the
-  two `WriteSNum`/`WriteChar` debug calls removed.
+  IT ALSO HAS TO FIND THE CARD. The base port, the IRQ and the DMA channel are
+  not discoverable in any general way on an ISA machine, so detection is a
+  matter of writing to a likely port and seeing whether anything replies --
+  which is what the reset and copyright-string routines are for.
 
-  THE PORT BLOCK AND THE STATE BLOCK ARE BOTH PINNED BY SPACING -- see the
-  notes at their declarations. Neither could be measured from the bytes; both
-  are fixed by laying the release's declaration order between addresses the
-  instructions do name, and both arrive on their endpoints exactly.
-
-  ALL TWENTY-THREE WENT IN, AND THE LAST FOURTEEN IN A SINGLE BUILD. The
-  release's bodies transferred with no adjustment at all -- not one routine
-  needed a second pass -- which is what a hardware unit looks like when the two
-  versions share it unchanged. `blockcmp.py` measures per block.
+  WHAT IT DOES NOT DO is decide when to play anything. That is the device unit
+  next door, which stands to this exactly as DevGus stands to the GUS layer.
 
   FIVE OF THE RELEASE'S NINETEEN ARE ABSENT, and the RETF counts are what say
   so: MixerSetVolume (RETF 6) and MixerGetVolume (RETF 10) appear nowhere, and
@@ -157,10 +149,7 @@ const
   SbProForce   : Boolean = False;
   Sb16Force    : Boolean = False;  { pad at $0b21 }
 
-{ Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
-  `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 19a0:026f is what fixes the
-  overlay: it compares $0b22 against $0200 as a Word, where the two halves are
-  written separately as bytes. }
+
 const
   SbVersionMin : Byte       = 0;
   SbVersionMaj : Byte       = 0;
@@ -209,9 +198,7 @@ const
   Sb16Bit            : Boolean = False;
   TimeConst          : Byte    = 0;
 
-  { The four 193a's DMA interrupt handler touches, and its stores are what
-    place them: 193a:0045 clears $0b92, 0048 reads $0b90, 004f writes $0b91.
-    With TimeConst at $0b8e the release's order lands them exactly. }
+
   DMAStart           : Boolean = False;
   DMAStop            : Boolean = False;
   DMAStopped         : Boolean = False;
@@ -270,9 +257,9 @@ procedure Sb16StartSample(Len : Word; Cont : Boolean);        { 06de RETF 4 }
 
 implementation
 
-{ 0000..005a.  ENTER 0004 -- ct, stat and the Boolean result. The release's
+{ ENTER 0004 -- ct, stat and the Boolean result. The release's
   body verbatim, including the empty `FOR ct := 1 TO 100 DO;` delay loop at
-  000b..0018 and the two reads into the SAME variable at 0035/003d, which is
+ and the two reads into the SAME variable at 0035/003d, which is
   the release's `stat := PORT[DSPRStatPort]; stat := PORT[DSPReadPort];` --
   the first read is discarded and only the second matters. }
 { **THE SOUNDBLASTER RESET, WHICH IS ALSO HOW THE CARD IS DETECTED.** There is
@@ -308,29 +295,27 @@ const
 var
   ct, stat : Byte;
 begin
-  Port[DSPResetPort] := 1;                         { 0004..000a  assert reset }
-  for ct := 1 to 100 do;                           { 000b..0019  hold it -- see
+  Port[DSPResetPort] := 1;                         { assert reset }
+  for ct := 1 to 100 do;                           { hold it -- see
                                                      the note above }
-  Port[DSPResetPort] := 0;                         { 001a..0020  release }
+  Port[DSPResetPort] := 0;                         { release }
 
   stat := 0;
   ct   := 0;
   while (stat <> ready) and (ct < 100) do
     begin
-      stat := Port[DSPRStatPort];                  { 0035..003c  required, and
+      stat := Port[DSPRStatPort];                  { required, and
                                                      the value is discarded }
-      stat := Port[DSPReadPort];                   { 003d..0044  this is the one
+      stat := Port[DSPReadPort];                   { this is the one
                                                      that matters }
       Inc(ct)
     end;
 
-  SbReset := stat = ready                          { 004a..0055  True means a
+  SbReset := stat = ready                          { True means a
                                                      card answered }
 end;
 
-{ 005b..0076.  RETF 2.  Hand-written, and transcribed VERBATIM per the standing
-  rule. It names its parameter, so it gets a frame -- `PUSH BP / MOV BP,SP` at
-which is why `t` is reachable as [BP+06].
+{ Write one byte to the DSP, waiting for it to say it is ready.
 
   Equivalent Pascal, REFERENCE ONLY, never to be substituted for the asm:
     BX := t;  DX := DSPWritePort;
@@ -349,11 +334,7 @@ asm
                 MOV     [SbWorksOk],BL
 end;
 
-{ 0077..009a.  RETF 4.  The release's body with its TWO DEBUG CALLS REMOVED --
-  1.39b brackets the port write with `WriteSNum` and `WriteChar` from its
-  `Debugging` unit, and 1.31 has neither, which is why survey.py finds no
-  printable string in the whole segment. Both `CALL SbWriteLoop`s are FAR
-  (`9A`) because SbWriteLoop is an interface routine.
+{ Send a DSP command and its argument: two writes through the routine above.
 
   Note DX survives the second SbWriteLoop and carries DSPWritePort into the
   `OUT` at 0096 -- the value SbWriteLoop left in it. That is the routines
@@ -376,7 +357,7 @@ asm
                 OUT     DX,AL
 end;
 
-{ 009b..00ba.  RETF 2.  SbWriteLoop's mirror -- the same loop against the READ
+{ RETF 2.  SbWriteLoop's mirror -- the same loop against the READ
   status port, with the sense of the carry test inverted (JNC where the writer
   has JC), and it leaves DSPReadPort in DX for its caller. }
 procedure SbReadLoop(t : Word); assembler;
@@ -393,15 +374,7 @@ asm
                 MOV     DX,[DSPReadPort]
 end;
 
-{ 00bb..00cd.  RETF 2.
-
-  THE `JNZ` AT 00c7 HAS A DISPLACEMENT OF ZERO -- `75 00` -- so it falls
-  through to the very next instruction and does nothing at all. That is not a
-  transcription artefact: the release has a five-line block COMMENTED OUT
-  between the `JNZ @@ya` and the `@@ya:` label (a second SbReadLoop retry after
-  poking DSPLifePort), and 1.31 has the same dead branch with the same comment.
-  **A conditional jump with a zero displacement is a deleted block**, which is
-  the same reading as 109c:0021's `75 00` recorded in CONTINUATION.md. }
+{ RETF 2.}
 function SbReadByte(t : Word) : Byte; assembler;
 asm
                 MOV     AX,t
@@ -411,7 +384,7 @@ asm
 @@ya:           IN      AL,DX
 end;
 
-{ 00ce..00e4.  RETF 4.  Two ports, two writes, no frame arithmetic. }
+{ RETF 4.  Two ports, two writes, no frame arithmetic. }
 procedure SbWriteMixerReg(Reg, Val : Byte); assembler;
 asm
                 MOV     DX,[MixAddrPort]
@@ -423,7 +396,7 @@ asm
                 OUT     DX,AL
 end;
 
-{ 00e5..00f8.  RETF 2.  The same, reading. }
+{ RETF 2.  The same, reading. }
 function SbReadMixerReg(Reg : Byte) : Byte; assembler;
 asm
                 MOV     DX,[MixAddrPort]
@@ -434,7 +407,7 @@ asm
                 IN      AL,DX
 end;
 
-{ 00f9..0258.  ENTER 0006 -- Port, Lst and the Boolean result.
+{ ENTER 0006 -- Port, Lst and the Boolean result.
 
   THE PROBE LOOP, and the routine that pinned this unit's whole DGROUP head --
   see the note at the port declarations. `SbPort < $8000` at 010d is the
@@ -527,7 +500,7 @@ begin
   SbRegInited := True
 end;
 
-{ 029c..038e.  RETF, ENTER 0108 -- i, t, the String[2] and a 256-byte temporary
+{ RETF, ENTER 0108 -- i, t, the String[2] and a 256-byte temporary
   for STR's result. The four bytes at 0298..029b are this routine's literal:
   the '.' and the '0' the version string is built from. }
 procedure SbGetDSPVersion;
@@ -551,9 +524,9 @@ begin
                       else SbVersionStr := SbVersionStr + '0' + s
 end;
 
-{ 038f..0421.  RETF.  Reads the card's copyright string a byte at a time. It
-  needs no literal of its own, which is why survey.py finds none: the string
-  it builds is DGROUP data, not code. }
+{ Read the card's copyright string, which is how its model is identified: an
+  original, a Pro and a 16 answer differently, and there is no other way to
+  ask. The string comes back one byte per DSP read until a NUL.}
 procedure SbGetCopyrightString;
 var
   t : Word;
@@ -571,7 +544,7 @@ begin
   Dec(SbCopyright[0])
 end;
 
-{ 0422..048e.  RETF 2.  Note `SbDefTimeout*4` on the data byte -- the time
+{ RETF 2.  Note `SbDefTimeout*4` on the data byte -- the time
   constant takes four times as long to accept as the command does. }
 procedure SbSetTimeConst(tc : Byte);
 begin
@@ -592,14 +565,14 @@ begin
       SbWriteByte(SbDefTimeout, $45)
 end;
 
-{ 048f..04a4.  RETF.  `TimeConst = 0` means "already applied". }
+{ RETF.  `TimeConst = 0` means "already applied". }
 procedure SbUpdateTimeConst;
 begin
   if TimeConst = 0 then Exit;
   SbSetTimeConst(TimeConst)
 end;
 
-{ 04a5..04d2.  RETF 4.  `Cont` is declared and never read -- the low-speed path
+{ RETF 4.  `Cont` is declared and never read -- the low-speed path
   cannot continue a block, so it restarts every time. }
 procedure SbStartSampleLS(Len : Word; Cont : Boolean);
 begin
@@ -610,7 +583,7 @@ begin
   SbWriteByte(SbDefTimeout, Hi(Len))
 end;
 
-{ 04d3..052a.  RETF 4. }
+{ RETF 4. }
 procedure SbStartSampleHS(Len : Word; Cont : Boolean);
 begin
   if HSBlockSpecified <> Len then Cont := False;
@@ -626,7 +599,7 @@ begin
     SbWriteByte(SbDefTimeout, sdcStartHSpeedDMA)
 end;
 
-{ 052b..058a.  RETF 4.  Called from 193a -- one of its nine entry points into
+{ RETF 4.  Called from 193a -- one of its nine entry points into
   this unit. `DEC(Len)` because a DMA count is always size minus one. }
 procedure SbPlaySample(Len : Word; Cont : Boolean);
 begin
@@ -643,7 +616,7 @@ begin
     SbStartSampleLS(Len, Cont)
 end;
 
-{ 058b..05e4.  RETF.  Writes 243 into the master-volume register and reads it
+{ RETF.  Writes 243 into the master-volume register and reads it
   back; a mixer that echoes it is present. The saved value is restored, so the
   probe is non-destructive. }
 function MixerDetect : Boolean;
@@ -666,7 +639,7 @@ begin
   MixerDetect := MixerDetected
 end;
 
-{ 05e5..062e.  RETF.  A Pro is a card with a mixer and a DSP older than 4.00;
+{ RETF.  A Pro is a card with a mixer and a DSP older than 4.00;
   a 4.00 or later with a mixer is a 16. The two detectors are the same test
   with the comparison reversed. }
 function SbProDetect : Boolean;
@@ -680,14 +653,14 @@ begin
   SbProDetect   := SbProDetected
 end;
 
-{ 062f..0642.  RETF.  Called from 193a. }
+{ RETF.  Called from 193a. }
 procedure SbProInit;
 begin
   if not SbProDetect then Exit;
   SbProInited := True
 end;
 
-{ 0643..067b.  RETF 2.  Called from 193a. `SbProDone` and `SbProSetFilter`
+{ RETF 2.  Called from 193a. `SbProDone` and `SbProSetFilter`
   bracket this routine in the release and neither is here -- 0642 is
   SbProInit's RETF and 067c is Sb16Detect's first byte, so there is no room. }
 procedure SbProSetStereo(Stereo : Boolean);
@@ -701,7 +674,7 @@ begin
                                  (Byte(Stereo) * mxoStereoOn))
 end;
 
-{ 067c..06c5.  RETF.  Called from 193a. }
+{ RETF.  Called from 193a. }
 function Sb16Detect : Boolean;
 begin
   Sb16Detect := Sb16Detected;
@@ -713,7 +686,7 @@ begin
   Sb16Detect   := Sb16Detected
 end;
 
-{ 06c6..06dd.  RETF.  Called from 193a. The only caller of
+{ RETF.  Called from 193a. The only caller of
   SbGetCopyrightString anywhere -- which is why that routine survives at all. }
 procedure Sb16Init;
 begin
@@ -724,7 +697,7 @@ begin
   Sb16Inited := True
 end;
 
-{ 06de..0769.  RETF 4.  The last routine in the segment; 076a..0770 is padding.
+{ RETF 4.  The last routine in the segment; 076a..0770 is padding.
   `Sb16Done` is absent, as `SbProDone` is. }
 procedure Sb16StartSample(Len : Word; Cont : Boolean);
 begin
