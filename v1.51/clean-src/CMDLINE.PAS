@@ -72,7 +72,7 @@ type
       procedure ParseLine(S : String);                                virtual;
       procedure ParseFile(FName : PathStr);                           virtual;
 
-      {the extra virtual, VMT +$10; see the header. }
+      { the extra virtual, VMT +$10; see the header. }
       procedure SkipRest;                                             virtual;
 
       function  GetToken : TCmdLine;                                  virtual;
@@ -193,7 +193,7 @@ begin
 end;
 
 
-{SkipRest. Fourteen bytes: `Idx := 255` and nothing else. That makes
+{ SkipRest. Fourteen bytes: `Idx := 255` and nothing else. That makes
   GetToken's `for I := Idx to Length(Line)` run zero times for ever after, so the rest of
   the line is skipped without touching `Aborting` -- which `ParseLine` tests and would use
   to leave the loop and every enclosing `@file` with it. **Two ways to stop, and this is
@@ -276,7 +276,7 @@ begin
 end;
 
 
-{TokenParam. The switch's parameter, taking the NEXT token if the switch
+{ TokenParam. The switch's parameter, taking the NEXT token if the switch
   did not carry one. So `-port 220` and `-port:220` are the same thing, and CmpSwitch
   above has already stripped whichever separator was used. }
 function TCmdLineInterpreter.TokenParam(var Token : TCmdLine) : TCmdLine;
@@ -288,7 +288,7 @@ begin
 end;
 
 
-{Abort. The harder of the two stops: `ParseLine` tests this at the top of
+{ Abort. The harder of the two stops: `ParseLine` tests this at the top of
   every iteration and leaves, and `ParseFile` tests it before every line, so setting it
   unwinds the whole nested `@file` chain rather than just the current line. }
 procedure TCmdLineInterpreter.Abort;

@@ -333,7 +333,7 @@ begin
 end;
 
 
-{ShrinkSystemHeap. As above, and then hand the memory back to DOS by
+{ ShrinkSystemHeap. As above, and then hand the memory back to DOS by
   lowering the program's own memory top. Twenty-nine bytes for two statements, and
   the second is what makes this different from ChangeSystemHeap: `SetMemTop` is
   irreversible in a way that moving HeapEnd is not. }

@@ -409,7 +409,7 @@ type
   BEFORE this constant, at the point the TYPE is declared. Declared up beside
   `MaxSequence`, ahead of the type, ModOffset came out first and the two swapped.
   Costs no code either way; `dgroup.py` is the only thing that can see it. }
-{`ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
+{ `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
   address is inside this unit's block, which runs $03c0..$03cb unbroken up to
   ModLoader's, and a `var` puts it in the other DGROUP region entirely so none of its
@@ -541,7 +541,7 @@ const
     in modules of the day that the author expected it and played the file anyway.
     Nothing in any image could have said that. }
 
-  msNotLoaded              = 0;  {the initial state       }
+  msNotLoaded              = 0;  { the initial state       }
   msOK                     = 1;
   { **[1.39b] "End of file premature (lot's of modules have this)."** Which is
     why it is a NON-FATAL state in the release's own grouping -- it lists 1 and 2
@@ -549,14 +549,14 @@ const
     that ends early is common enough that the author expected it and played the
     file anyway. That is a fact about the corpus of modules in the wild, and
     nothing in this image could have said it. }
-  msFileTooShort           = 2;  {premature end of file   }
+  msFileTooShort           = 2;  { premature end of file   }
   msFileOpenError          = 3;  { not seen stored yet                  }
   msOutOfMemory            = 4;
     { [1.39b] "There is not enough memory left. :-( Shouldn't happen." }
   msFileDamaged            = 5;
   { [1.39b] "JMPlayer or ScreamTracker, for example." -- its own examples of a
     format the program recognises and cannot play. }
-  msFileFormatNotSupported = 6;  {recognised, not played  }
+  msFileFormatNotSupported = 6;  { recognised, not played  }
 
   { +$5d. TSongFileFormat. Only the values some routine stores are named, and
     InitValues adds the fourth: 14b9:088e clears the field, and the release's
@@ -567,7 +567,7 @@ const
     independently from stores in 154d and 164b. The other values were left out
     while nothing stored them; 154d needs three of them. }
   mffUnknown     = 0;
-  mffMod31M_K_   = 1;   {'M.K.', four channels }
+  mffMod31M_K_   = 1;   { 'M.K.', four channels }
   mffMod31FLT4   = 2;   { 'FLT4' }
   mffMod15       = 3;   { [1.39b] SoundTracker 15-instrument module }
   mffJMPlayer    = 4;
@@ -593,7 +593,7 @@ const
   mffS3M         = 9;
   mffSTM         = 11;
 
-{the release's `LowQuality`, and its OWNER is the release's too:
+{ the release's `LowQuality`, and its OWNER is the release's too:
   `LIB/SONGELEM.PAS` is this unit's counterpart and declares it. 11bb:0b0e's
   `LowQuality` key writes it, which is the only use in the transcribed tree. }
 { This unit declares NO variables at all -- see the note below. }
@@ -730,10 +730,10 @@ var
     DGROUP comparison means something. }
   SongLoaders : array[1..NumLoaders] of TSongLoader =
     (
-      LoadJMFileFormat,     {the 'JMPLAY' recogniser  }
-      LoadS3MFileFormat,    {the .S3M loader          }
-      LoadSTMFileFormat,    {the .STM loader          }
-      LoadModFileFormat     {the ProTracker loader    }
+      LoadJMFileFormat,     { the 'JMPLAY' recogniser  }
+      LoadS3MFileFormat,    { the .S3M loader          }
+      LoadSTMFileFormat,    { the .STM loader          }
+      LoadModFileFormat     { the ProTracker loader    }
     );
 {$ENDIF}
 
@@ -850,14 +850,14 @@ end;
   THE FRAME IS THE RELEASE'S DECLARATION ORDER, laid out downward from the value
   parameter's copy, and every offset checks:
 
-    [BP-0050]  FName   the value PathStr copy -- 80 bytes, and 010a's PUSH 004f
+ FName   the value PathStr copy -- 80 bytes, and 010a's PUSH 004f
                        is String[79], which is PathStr exactly
-    [BP-0058]  St      8 bytes, TDosStream
-    [BP-009c]  Dir     68 bytes, DirStr = String[67] -- the same arithmetic that
+ St      8 bytes, TDosStream
+ Dir     68 bytes, DirStr = String[67] -- the same arithmetic that
                        settled DirStr in 116e
-    [BP-00aa]  IPath   13 bytes, String[12]
-    [BP-00ac]  OSongStart      [BP-00ae]  OSongLen
-    [BP-01ae]  a 256-byte compiler string TEMPORARY -- not a local. Inventing a
+ IPath   13 bytes, String[12]
+ OSongStart      [BP-00ae]  OSongLen
+ a 256-byte compiler string TEMPORARY -- not a local. Inventing a
                variable to explain it is the mistake 1b54 and 164b both made.
 
   AND A STRING FUNCTION'S RESULT POINTER IS REUSED AS THE ASSIGNMENT'S SOURCE.
@@ -1251,7 +1251,7 @@ begin
   ThereIsMore := 0;
   FileFormat  := mffUnknown;
 
-  {NEW IN v1.51, and the LAST statement of InitValues.
+  { NEW IN v1.51, and the LAST statement of InitValues.
 
  MOV DI,0440 / PUSH DS / PUSH DI      the source constant
  LES DI,[BP+06] / ADD DI,0029         Self.ChannelPan

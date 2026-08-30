@@ -42,7 +42,7 @@ uses
   Dos;
 
 var
-  {a String[79]. 1ba1:0aed truncates to $4f on the way in, which
+  { a String[79]. 1ba1:0aed truncates to $4f on the way in, which
     is what fixes the declared width. }
   { THE ORDER HERE IS `ConFile`, THEN `ProgName`, THEN `SavedExit`, and it is measured:
     $39de + 256 is $3ade and $3ade + 80 is $3b2e, which are the three addresses the code

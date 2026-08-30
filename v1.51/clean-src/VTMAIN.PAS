@@ -163,7 +163,7 @@ const
     more. An address is not a name; a writer and a reader together are. }
   SongOpen  : Boolean = False;  { set at 1000:03c8, read at 1000:02f7 }
 
-  {A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
+  { A SECOND FLAG, AND $0003 IS THE ONLY PAD. The version string starts at
     $0006 and Guard is at $0002, so those four bytes are accounted for exactly: a byte
     at $0003, then two flags. 1000:02ca reads this one with `CMP byte [0005],0 / JZ`,
     guarding a block that reloads three words from another unit's data. Declared
@@ -218,12 +218,12 @@ const
                    #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
                    #196#196#196#196#196#196#196#196#196#196#196#196#196 + #217;
 
-  {compared against the program's OWN file name. Renaming the
+  { compared against the program's OWN file name. Renaming the
     executable to INCONEXI.EXE sets DS:$02d1, which nothing in this segment
     reads; whatever it selects lives in a unit not yet read. }
   AltName  = 'inconexi';
 
-  {**AND IT IS IN ENGLISH IN v1.51.** 1.31b carries the Spanish
+  { **AND IT IS IN ENGLISH IN v1.51.** 1.31b carries the Spanish
     `No encuentro ninguna canci' + #162 + 'n.` -- twenty-nine characters and a CP437
     o-acute; the original's is `12 "Can't find a song."`, eighteen. The length byte is
     what identifies it: $1d against $12, and the text follows immediately.
@@ -234,7 +234,7 @@ const
     Only an aligned byte diff of the segment shows a literal changing. }
   NoSong   = 'Can''t find a song.';
 
-  {the name Install publishes over INT 2Fh. A TYPED constant, so it
+  { the name Install publishes over INT 2Fh. A TYPED constant, so it
     lives in DGROUP rather than in the code segment, and TWO measurements say so:
  is `MOV DI,0004 / PUSH DS / PUSH DI`, and PUSH DS against PUSH CS is
     this project's standing test for where a constant lives -- an untyped one is a
@@ -368,13 +368,13 @@ var
     and above $0c70. The names they now carry are `SoundDevices.TickSnapshot`,
     `DevGus.LastTick` and `SoundDevices.DriverTicks`; the dispatcher below writes all
     three by those names. }
-  {256 bytes, and its address comes from its NEIGHBOURS rather than from
+  { 256 bytes, and its address comes from its NEIGHBOURS rather than from
     any instruction: nothing in the program references it, so no operand names it. What
     fixes it is that `SavedCD` ends at $0cd5 and `Dir` begins at $0dda, and 256 + 4 is
     the gap. It used to be quoted at DS:$1208, which is PlayMod's `UserVols`. }
   Str1208   : String;
 
-  {FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
+  { FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
     `Dir` at $0dda. Nothing references them. Filler, so the SIZE is right and the
     missing name is stated rather than invented. }
   { **FOUR BYTES, AND 1.31b HAS THE SAME FOUR.** There they are `Fill0DD6`, with
@@ -462,7 +462,7 @@ begin
   if Guard = 0 then
   begin
     Inc(Guard);
-    {LES DI,[0b96]; CALL DWORD PTR ES:[DI+$2a] }
+    { LES DI,[0b96]; CALL DWORD PTR ES:[DI+$2a] }
     asm
       LES  DI, ActiveDevice
       CALL DWORD PTR ES:[DI+2Ah]         { the driver's poll method          }
@@ -521,7 +521,7 @@ FUNCTION 0, the one every Psycho Neurosis part calls
   -------------------------------------------------------------------------- }
 procedure HookTimer;
 begin
-  {the stub's operand is the "are we hooked" flag. }
+  { the stub's operand is the "are we hooked" flag. }
   asm
     LES  DI, ChainPtr
     MOV  AX, ES:[DI+1]
@@ -622,7 +622,7 @@ begin
           CALL DWORD PTR ES:[DI+2Ah]
         end;
     3 : begin
-          {part 001 is the only caller. It marks where the
+          { part 001 is the only caller. It marks where the
             player has got to in its output buffer and resets the counters;
             it does not stop anything. GetPlayPos returns a far pointer into
             that buffer. }
@@ -773,7 +773,7 @@ begin
   end;
   SetVTFreq;
   MaxOutputFreq := DesiredHz;                      { $02ce := $0bae }
-  {a FillChar, NOT the Str this file used to read here.
+  { a FillChar, NOT the Str this file used to read here.
     survey.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
     established 1ba1:0fd5 as FillChar. The pushes are dest, count, VALUE:
  for eight bytes of whatever $08ba holds. }
@@ -916,7 +916,7 @@ begin
 
   FSplit(ParamStr(0), Dir, Name, Ext);
 
-  {renaming the executable to INCONEXI.EXE turns something on.
+  { renaming the executable to INCONEXI.EXE turns something on.
     Nothing in this segment reads DS:$02d1. }
   if Name = AltName then AltMode := True;
 

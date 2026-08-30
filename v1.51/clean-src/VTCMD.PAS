@@ -235,7 +235,7 @@ begin
 end;
 
 
-{fourteen bytes: `PUSH [0bae] / CALLF 12ba:132f`, and `DS:$0bae` is
+{ fourteen bytes: `PUSH [0bae] / CALLF 12ba:132f`, and `DS:$0bae` is
   `DesiredHz` exactly where SOUNDDEV.PAS already documents it. }
 procedure SetVTFreq;
 begin
@@ -453,7 +453,7 @@ SIXTEEN NEAR PROCEDURES, one per switch action.
   convention; each one repeats it rather than sharing a helper.
   =========================================================================== }
 
-{ENTER $100, so no locals at all, and it is the only one. }
+{ ENTER $100, so no locals at all, and it is the only one. }
 procedure CmdInitDevice(s : String);
 begin
   if s = '' then Exit;
@@ -493,7 +493,7 @@ begin
   begin
     SbPort  := i;
     GUSPort := i;
-    {NEW IN v1.51. `/port:` now reaches the silence device's
+    { NEW IN v1.51. `/port:` now reaches the silence device's
       serial port as well as the two sound cards': a third
       `MOV AX,[BP-0102] / MOV [0200],AX` on the end of the same block. }
     ComPort := i;
@@ -512,7 +512,7 @@ begin
   begin
     SbIrq  := i;
     GUSIrq := i;
-    {the same third store, for the IRQ. }
+    { the same third store, for the IRQ. }
     ComIrq := i;
   end;
 end;
@@ -532,7 +532,7 @@ begin
 end;
 
 
-{`ENTER $106`, the only one, and `l : LONGINT` is why: a module offset can
+{ `ENTER $106`, the only one, and `l : LONGINT` is why: a module offset can
   exceed 64K because it is a byte position inside an archive or a bundled file. }
 procedure CmdModOffset(s : String);
 var
@@ -547,7 +547,7 @@ begin
 end;
 
 
-{THREE INSTRUCTIONS, and the release has nothing like it:
+{ THREE INSTRUCTIONS, and the release has nothing like it:
 
       55 89 e5           PUSH BP / MOV BP,SP
       c6 06 e8 09 01     MOV byte [09e8],1
@@ -561,7 +561,7 @@ begin
 end;
 
 
-{and the clamp is to 255 because `VtVolume` is a BYTE, so an unchecked
+{ and the clamp is to 255 because `VtVolume` is a BYTE, so an unchecked
   `Val` result would wrap. }
 procedure CmdInitVolume(s : String);
 var
@@ -637,7 +637,7 @@ begin
 end;
 
 
-{the `nx` switch, and the same three instructions as CmdNoBanner but
+{ the `nx` switch, and the same three instructions as CmdNoBanner but
   writing `[0bc6]`. **Nothing in any segment reads that byte**, so there is no behaviour
   to name the routine after; a switch that was wired up and left unfinished. Named for
   the switch, like every other handler in this file -- which is the honest answer when
@@ -755,7 +755,7 @@ end;
   descendant before its parent -- and it is the release's, and the original agrees.
   =========================================================================== }
 
-{`ENTER $080`, which is `TCmdLine` = `String[127]` = 128 bytes, and that
+{ `ENTER $080`, which is `TCmdLine` = `String[127]` = 128 bytes, and that
   frame size is what tells this method's parameter apart from the `String` of
   CmdInitShell below.
 

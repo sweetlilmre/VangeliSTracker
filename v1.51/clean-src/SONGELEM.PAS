@@ -447,7 +447,7 @@ uses
 const
   GUSAddr : LongInt = 0;
 
-{and the whole body is one inherited call. The thirty bytes are almost all
+{ and the whole body is one inherited call. The thirty bytes are almost all
   the constructor's compiler-generated prologue: `1ba1:04f5` at `0005` sets the VMT up and
   arranges for a failed constructor to return False, which is also why the return is
   `RETF 6` and not `RETF 4`. }
@@ -457,7 +457,7 @@ begin
 end;
 
 
-{and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
+{ and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
   directly. That asymmetry is the release's and it is measurable: `survey.py` finds the
   three `[DI+34]` sites in SetName, TTrack.Done and TPattern.Done, and none in this
   routine. }
@@ -763,7 +763,7 @@ begin
 end;
 
 
-{SetName, and `ENTER $100` is the 256-byte copy a value `String` parameter
+{ SetName, and `ENTER $100` is the 256-byte copy a value `String` parameter
   costs. It holds both string sites: `HDisposeStr` at `07f4` and `HNewStr` at `080b`.
 
   NOTE THE ASYMMETRY: the old name is always disposed, the new one only stored if it is
@@ -799,7 +799,7 @@ begin
 end;
 
 
-{and the two block lengths are recomputed from `NumNotes` rather than
+{ and the two block lengths are recomputed from `NumNotes` rather than
   remembered, which is the price of the window-onto-a-short-block scheme. `+ 2` is the
   `NoteOffset` and `NumNotes` bytes ahead of each array. }
 procedure TTrack.FreeContents;
@@ -915,7 +915,7 @@ end;
   TPattern.
   =========================================================================== }
 
-{the only constructor here that takes a parameter, hence `RETF 8` where the
+{ the only constructor here that takes a parameter, hence `RETF 8` where the
   other two are `RETF 6`. `Chans*2 + 4` is the four header bytes plus one word per
   channel; the declared `array[1..MaxChannels]` is never the size allocated.
 
@@ -942,7 +942,7 @@ begin
 end;
 
 
-{and the block's own `NChans` is what sizes the free, so the pattern
+{ and the block's own `NChans` is what sizes the free, so the pattern
   remembers its width rather than the caller having to. }
 procedure TPattern.FreeContents;
 begin

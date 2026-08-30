@@ -59,7 +59,7 @@ function  SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer; far;
 
 { ---- the 8237s ---------------------------------------------------------- }
 
-{the one callers should use. Size is in BYTES and is passed
+{ the one callers should use. Size is in BYTES and is passed
   as given; the minus-one the hardware wants is applied here. }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
 
@@ -69,7 +69,7 @@ procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
   only emits when the parameter is byte-sized. Declared Word, the caller gains
   a `XOR AH,AH` the original does not have. Nothing changes inside this unit --
   a byte argument still occupies a word on the stack, so `BYTE PTR Channel` at
-  [BP+06] and the RETF 2 are unaffected. }
+ and the RETF 2 are unaffected. }
 function  GetDMACount(Channel : Byte) : Word; far;
 { A Byte, NOT a Word, and 193a is what settles it: 193a:045b is
   `MOV AL,[0b18] / PUSH AX` -- a byte load -- where a Word parameter gives the
@@ -79,7 +79,7 @@ function  GetDMACount(Channel : Byte) : Word; far;
   caller in another segment. }
 procedure DMAReset(Channel : Byte); far;
 
-{DMASet with the address already split into page and offset. }
+{ DMASet with the address already split into page and offset. }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); far;
 
 implementation
@@ -217,8 +217,8 @@ var
     pointer comes first, as it does in the 1.39b release
     (`p : POINTER; j : WORD` in LIB/HARDWARE.PAS), and with the two the
     other way round both locals land four bytes low. }
-  p : Pointer;           { [BP-8]  }
-  j : Word;              { [BP-$a] }
+  p : Pointer;
+  j : Word;
 begin
   if IRQ < 8 then
     j := IRQ + 8                                { INT $08..$0F }
@@ -414,12 +414,12 @@ asm
   MOV  DL, AH
   ADD  DX, DX
   INC  DX                { count port = chan*2 + 1               }
-  IN   AL, DX            {- first read                        }
+  IN   AL, DX            { - first read                        }
   MOV  BL, AL
   IN   AL, DX
   MOV  BH, AL
   MOV  CX, BX            { keep it                               }
-  IN   AL, DX            {- second read                       }
+  IN   AL, DX            { - second read                       }
   MOV  BL, AL
   IN   AL, DX
   MOV  BH, AL
@@ -534,11 +534,11 @@ the Pascal-callable faces.
   -------------------------------------------------------------------------- }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
-  MOV  AH, BYTE PTR Channel   { [BP+0Eh]                         }
-  MOV  CH, BYTE PTR Mode      { [BP+0Ch]                         }
-  MOV  CL, BYTE PTR Page      { [BP+0Ah]                         }
-  MOV  BX, Offs               { [BP+08h]                         }
-  MOV  SI, Size              { [BP+06h]                         }
+  MOV  AH, BYTE PTR Channel
+  MOV  CH, BYTE PTR Mode
+  MOV  CL, BYTE PTR Page
+  MOV  BX, Offs
+  MOV  SI, Size
   CALL DMASetAsm
 end;
 
@@ -584,8 +584,8 @@ take a Pointer and a byte count, do the rest.
   -------------------------------------------------------------------------- }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word);
 var
-  Segm : Word;           { [BP-2] }
-  Offs : Word;           { [BP-4] }
+  Segm : Word;
+  Offs : Word;
 begin
   { `Seg(Buf^)`, NOT a record cast. The original loads the pointer and takes
     the register -- `LES DI,[BP+8] / MOV AX,ES` -- which is what Seg and Ofs

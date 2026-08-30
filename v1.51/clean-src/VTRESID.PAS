@@ -38,7 +38,7 @@ const
   Already = #13#10'    ' + #173#173 + 'Ojo, que est' + #160 + ' el ';
   Resident = ' residente!!';
 
-  {ten characters, stood in for the name of a resident that
+  { ten characters, stood in for the name of a resident that
     answered the handshake but returned a null ES:DI. Written with #168 for
     the inverted question mark so this file stays seven-bit; the binary holds
     it as CP437 $A8.
@@ -56,9 +56,9 @@ var
     public -- which is why the linker map cannot settle its address and the
     relative check is all it gets. Two variables, one name, and the map lists the
     other one. }
-  CtrlBlock : Pointer;   {what a client reads at ES:[DI-4]     }
-  SelfName  : String;    {what INT 2Fh answers with in ES:DI   }
-  SavedExit : Pointer;   {the ExitProc we displaced            }
+  CtrlBlock : Pointer;   { what a client reads at ES:[DI-4]     }
+  SelfName  : String;    { what INT 2Fh answers with in ES:DI   }
+  SavedExit : Pointer;   { the ExitProc we displaced            }
 
 { --------------------------------------------------------------------------
 the chain to the previous INT 2Fh handler.
@@ -176,10 +176,10 @@ go resident.
   `SelfName := Name` with nothing in between. }
 procedure Install(Name : String; Block : Pointer);
 var
-  Found : Boolean;       { [BP-$101] }
-  Other : Pointer;       { [BP-$106] }
+  Found : Boolean;
+  Other : Pointer;
 begin
-  {the same INT 2Fh call src/DEMOVT.PAS's MusicDetect makes. }
+  { the same INT 2Fh call src/DEMOVT.PAS's MusicDetect makes. }
   asm
     MOV  AX, ReqAX
     MOV  BX, ReqBX
@@ -201,7 +201,7 @@ begin
     MOV  WORD PTR Other, DI
   end;
 
-  {a resident that answered 0:0 has no name to show. }
+  { a resident that answered 0:0 has no name to show. }
   if Other = nil then
     Other := @NoName;
 
@@ -239,7 +239,7 @@ begin
   SelfName  := Name;
   Stub      := @OldInt2F;
 
-  {take INT 2Fh, and leave the displaced vector inside the
+  { take INT 2Fh, and leave the displaced vector inside the
     JMP FAR so the chain works without a variable to hold it. }
   asm
     MOV  SI, 0             { MOV SI,0000 -- NOT `XOR SI,SI`       }

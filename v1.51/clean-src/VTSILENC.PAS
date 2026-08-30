@@ -231,7 +231,7 @@ asm
   POP  CX
   POP  BX
   POP  ES
-  {A SECOND EOI FOR THE SLAVE PIC, NEW IN v1.51 AND A
+  { A SECOND EOI FOR THE SLAVE PIC, NEW IN v1.51 AND A
     CONSEQUENCE OF THE IRQ BECOMING CONFIGURABLE. v1.31b is hard-wired to IRQ 4
     and sends one EOI to the master; with `/irq:` able to name 8..15 the slave
     controller has to be acknowledged first, or the second interrupt never
@@ -306,7 +306,7 @@ begin
 
   if OldVec <> nil then Exit;                     { already running }
 
-  {`IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
+  { `IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
     v1.31b tests `Port[$21] and $10` with the mask bit for IRQ 4 written in;
     once the IRQ is configurable that constant cannot be formed inline, so the
     work moves to Hardware's own routine, which already knew how to pick the

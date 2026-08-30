@@ -37,7 +37,7 @@ const
   Semis    = 12;                  { stops the note scan at $0B }
   Notes    = Octaves * Semis;     { 84 -- the linear form NoteOf's low byte holds }
   Periods  = 2048;                { stops at $7FF }
-  RowBytes = 24;                  {IMUL by $18 }
+  RowBytes = 24;                  { IMUL by $18 }
 
 type
   TPeriodRow = array[0..Semis - 1] of Word;
@@ -70,7 +70,7 @@ const
 var
   NoteOf    : array[0..Periods - 1] of Word;         { 4,096 bytes }
 
-  {340 BYTES THAT HAD TO BE HERE, and the release names them. This unit's
+  { 340 BYTES THAT HAD TO BE HERE, and the release names them. This unit's
     variable block ends where GUS's begins at $371a, and $25c6 + 4096 is $35c6, so there
     are exactly $154 bytes after `NoteOf` -- which is 340, which is 85 times 4, which is
     `array[0..84] of String[3]`. `LIB/SONGUTIL.PAS` -- the release counterpart
@@ -148,18 +148,18 @@ label
 var
   { FOUR BYTES THAT NOTHING TOUCHES. The original's frame is ENTER $0a,0 --
     ten bytes -- but only six are referenced, and its three counters sit at
-    [BP-6], [BP-8] and [BP-$a]. Turbo Pascal allocates the first declared
+ and [BP-$a]. Turbo Pascal allocates the first declared
     local nearest BP, so something four bytes wide is declared ahead of them
     and never used.
 
     Declared here to reproduce the frame. Its type cannot be recovered -- a
     LongInt, a Pointer and two Words are indistinguishable when nothing reads
     them -- so LongInt is a guess and only its SIZE is evidence. }
-  Unused : LongInt;               { [BP-4]  never referenced            }
+  Unused : LongInt;               { never referenced            }
 
-  P    : Word;                    { [BP-6]  the period being answered   }
-  Oct  : Word;                    { [BP-8]                              }
-  Note : Word;                    { [BP-$a]                             }
+  P    : Word;                    { the period being answered   }
+  Oct  : Word;
+  Note : Word;
 begin
   { THREE `FOR` LOOPS AND TWO `GOTO`s. Each loop head is the giveaway:
     `MOV <var>,0 / JMP over / INC <var> / <body>` is Borland's FOR, and a
@@ -188,7 +188,7 @@ begin
     Note := 0;
     Oct  := 0;                                    { falls through }
 
-    {both forms in one word. The low byte is the linear note
+    { both forms in one word. The low byte is the linear note
       number a sample rate is worked out from; the high byte is the nibble
       pair a pattern display wants. }
   Store:

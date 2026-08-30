@@ -271,7 +271,7 @@ begin
               power of two, so the decrement is visible rather than absorbed. }
             with FullTrack[i - 1], Patt[i][j] do
               begin
-                {SIX BYTES CLEARED PER NOTE, and the whole-array
+                { SIX BYTES CLEARED PER NOTE, and the whole-array
                   FillChar before the channel loop does NOT make it redundant
                   in the emitted code. The draft had only the outer one and was
                   thirty bytes short here. Every field below is written on some
@@ -527,7 +527,7 @@ begin
             Move(Instr^.Instr^, Instrument, SizeOf(Instrument));
             Instr^.FreeContents;
 
-            {TWO STATEMENTS, AND `Avail` IS ITS OWN
+            { TWO STATEMENTS, AND `Avail` IS ITS OWN
               ACCUMULATOR. The original calls GetPos and stores the result
               straight into the local, then calls GetSize and subtracts the
               local from it in place:
@@ -712,7 +712,7 @@ begin
     for i := 1 to Song.SequenceLength do
       Inc(Song.PatternSequence^[i]);
 
-    {A CHAIN OF GUARDS, NOT NESTED ifs, AND THE LAST ONE PROVES
+    { A CHAIN OF GUARDS, NOT NESTED ifs, AND THE LAST ONE PROVES
       IT. 0931 is `CMP ES:[DI+79],02 / JLE 093a / JMP 093a` -- both arms jump
       to the same address, which is what an `Exit` guard compiles to when it is
       the routine's LAST statement: the "skip" target and the exit target are

@@ -134,13 +134,13 @@ const
   it now reaches them through this unit, which is also the direction the link order
   allows (DevSB finishes long before VTCfg). }
 const
-  {the saved vector, NIL while the handler is not hooked. Both DMASBInit
+  { the saved vector, NIL while the handler is not hooked. Both DMASBInit
     and DMASBEnd test it, which is what makes it the "am I hooked?" flag rather than
     merely a saved pointer. Its address used to be quoted as $0bd8, which is inside
     SoundDevices' block and cannot have been this unit's. }
   OldDMAIrq         : Pointer = nil;
 
-  {the release's name. Nothing in the transcribed tree reads or writes it,
+  { the release's name. Nothing in the transcribed tree reads or writes it,
     so it is here for its two bytes and its name; the ten-byte arithmetic is what says
     it exists. }
   DMAPlacedInBuf    : Word    = 0;
@@ -325,7 +325,7 @@ begin
       SoundHz   := 1000000 div (256 - Word(TimeConst))
     end;
 
-  {NEW IN v1.51, AND IT IS THE LAST STATEMENT. `DEC BYTE PTR
+  { NEW IN v1.51, AND IT IS THE LAST STATEMENT. `DEC BYTE PTR
     [0c36]` sits after the whole if/else, so it applies to both arms: the time
     constant the Sound Blaster is actually given is one below the one the
     sample rate was computed from. The four other references to this variable
@@ -340,7 +340,7 @@ begin
   SbRegInit;
   SbProInit;
   Sb16Init;
-  {`MOV byte [0bbd],00`, and $0bbd is SoundDevices.Stereo. The
+  { `MOV byte [0bbd],00`, and $0bbd is SoundDevices.Stereo. The
     DETECTORS set the mixing mode, which the release's do not: a five-byte
     store sits between the three inits and the result in both of them, 0 here
     and 1 in the stereo one. }
@@ -481,7 +481,7 @@ begin
       asm PUSHF; STI end;
       asm POPF end;
 
-      {CALLF 1b24:02f0, which HARDWARE.PAS already names DMAReset.
+      { CALLF 1b24:02f0, which HARDWARE.PAS already names DMAReset.
         The release has this line COMMENTED OUT; 1.31 calls it. }
       DMAReset(SbDMAChan);
 

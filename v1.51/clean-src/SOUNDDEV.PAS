@@ -216,7 +216,7 @@ const
   SoundHz           : Word         = 16000;
   DesiredHz         : Word         = 16000;
 
-  {the release calls it `SystemClockCount`; ours says what it does,
+  { the release calls it `SystemClockCount`; ours says what it does,
     accumulating SystemClockIncr until it carries, which is when the displaced BIOS
     handler gets called. }
   ClockAccum        : Word         = 0;
@@ -234,12 +234,12 @@ const
   DMAStopped        : Boolean      = False;
   DMAIrqWatch       : Byte         = 0;      { pad at $0bc3         }
 
-  {A WORD, and 255 rather than the release's 0. 12ba:13ae is
+  { A WORD, and 255 rather than the release's 0. 12ba:13ae is
     `81 3E C4 0B FF 00`, a six-byte WORD compare against $00FF, where a Byte gives the
     five-byte form -- so both the width and the value are read rather than taken. }
   DMAChannel        : Word         = 255;
 
-  {WAS DECLARED IN VTGLOBAL. 109c:06d3 sets it from the `nx` switch and a
+  { WAS DECLARED IN VTGLOBAL. 109c:06d3 sets it from the `nx` switch and a
     scan of every segment finds NO READER anywhere in the program. Its address is what
     puts it here: $0bc4 and $0bc7 are both this unit's.
 
@@ -264,7 +264,7 @@ const
   TicksPerSecond    : Word         = 50;     { 50 = Europe           }
 
   UsingGUS          : Boolean      = False;  { pad; was GusStarted   }
-  {A SECOND TICK COUNTER, and 1.31's own: the release has nothing between
+  { A SECOND TICK COUNTER, and 1.31's own: the release has nothing between
     TicksPerSecond and the filter coefficients. DevGus's timer handler advances it and
  clears it, so it was declared in BOTH of those units -- DevGus called it
     `Ticks` and VTMAIN called it `WordAtBD0`. It is neither unit's: this block is
@@ -334,7 +334,7 @@ const
   OutSlot1          : Word         = 0;      { -> 1a17:104d         }
   OutSlot2          : Word         = 0;      { -> 1a17:1063         }
   OutSlot3          : Word         = 0;      { -> 1a17:107c         }
-  {this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
+  { this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
     installs, mono or stereo", declared as a lone `var` well away from the other four.
     It is the fifth entry of the same table: the release's DeviceFillRut. A NEAR
     pointer, as the other four are, because the kernels are in this segment. }
@@ -453,7 +453,7 @@ var
   DMABufferEnd      : Word;          { Ofs(DMABuffer^) + the size }
   DMABufferYet      : Boolean;       { and a pad at $4311        }
 
-  {the far routine the poll actually calls once it is on its
+  { the far routine the poll actually calls once it is on its
     own stack and has taken the guard. Installed by the core at startup. }
   PeriodicProc      : Pointer;
 
@@ -595,7 +595,7 @@ begin
   asm
     PUSHF
     CLI
-    LES  BX, Proc                { 0062  [BP+8] -- the FIRST parameter     }
+    LES  BX, Proc                { the FIRST parameter     }
     MOV  WORD PTR PeriodicProc, BX
     MOV  WORD PTR PeriodicProc+2, ES
     POPF                         { 006d  the caller's flags, not STI       }
@@ -868,9 +868,9 @@ GetRealFreq
   ========================================================================== }
 function GetRealFreq(Hz : Word) : Word;
 var
-  i    : Word;                                { [BP-4]                      }
-  NHz1 : Word;                                { [BP-6]                      }
-  NHz2 : Word;                                { [BP-8]                      }
+  i    : Word;
+  NHz1 : Word;
+  NHz2 : Word;
 begin
   if Hz = 0 then Hz := 1;                     { 02ff..0305  never divide by 0}
   i := 1193180 div Hz;
@@ -942,7 +942,7 @@ end;
   ========================================================================== }
 function DoGetBuffer : Word;
 const
-  Semaphore : Byte = 0;                       {see above       }
+  Semaphore : Byte = 0;                       { see above       }
   Size      : Word = 1;
 begin
   DoGetBuffer := 0;
@@ -1048,11 +1048,11 @@ type
     Size : Pointer;
   end;
 var
-  l        : LongInt;                         { [BP-04]                     }
-  PtrFree  : Pointer;                         { [BP-08]                     }
-  OldHPtr  : Pointer;                         { [BP-0c]                     }
-  p        : PFreeBlock;                      { [BP-10]                     }
-  OffsFree : Word;                            { [BP-12]                     }
+  l        : LongInt;
+  PtrFree  : Pointer;
+  OldHPtr  : Pointer;
+  p        : PFreeBlock;
+  OffsFree : Word;
 begin
   { `@`, because PeriodicProc is a plain Pointer here rather than the release's
     procedural type -- SharedPoll calls it with CALL DWORD PTR, so typing it
@@ -1158,7 +1158,7 @@ var
     which is what makes ENTER 6,0 six and not four. }
   Left : Word;
 begin
-  {HAND-WRITTEN, and 0703..070b of it is DEAD. See above.
+  { HAND-WRITTEN, and 0703..070b of it is DEAD. See above.
 
     Equivalent Pascal for the live half, REFERENCE ONLY -- the compiler does
     not produce these bytes from it, which is how the asm was identified:

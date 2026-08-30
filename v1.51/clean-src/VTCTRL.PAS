@@ -47,7 +47,7 @@ unit VTCtrl;
 interface
 
 const
-  CtrlBlockSize = $300;      {what Reset clears }
+  CtrlBlockSize = $300;      { what Reset clears }
 
 type
   { **DECLARED HERE AND NOT IN PLAYMOD, BECAUSE THE COPY HAS TO BE AN ASSIGNMENT.**

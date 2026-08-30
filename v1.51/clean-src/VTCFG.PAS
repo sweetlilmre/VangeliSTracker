@@ -74,7 +74,7 @@ uses
     VTNOTES' `NoteOf` back on $25c6. Already reached through SongUnit, so it cannot
     move a segment. }
 
-{read and interpret a file as a configuration file. }
+{ read and interpret a file as a configuration file. }
 procedure ReadConfiguration(FName : PathStr); far;
 
 implementation
@@ -624,7 +624,7 @@ begin
   if not NotInStr(Line, 'ModPath'    ) then GetPath  (ModPath)
 end;
 
-{FIVE BYTES, and an empty body. The release reads `ForceEGA` here; a
+{ FIVE BYTES, and an empty body. The release reads `ForceEGA` here; a
   player with no screen has nothing to configure. It exists at all because
   DoSectGeneric's table needs an address for the section. }
 procedure DoSectScreen; far;

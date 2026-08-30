@@ -69,7 +69,7 @@ const
   VtVolume          : Byte          = 127;           { 7f            }
   ShellLoopMod      : Boolean       = True;          { 01            }
 
-  {`e0 2e`, 12000. The release computes its default as
+  { `e0 2e`, 12000. The release computes its default as
     `DefaultHz * 3 DIV 4`, so 1.31's DefaultHz is 16000. Read, not derived. }
   ShellHz           : Word          = 12000;
 
@@ -82,7 +82,7 @@ const
   VTRepStart        : Word          = 0;
   VTSongLen         : Word          = 0;
 
-  {A `String[127]`, AND THE WIDTH IS MEASURED TWICE OVER. `11bb:0d5c`
+  { A `String[127]`, AND THE WIDTH IS MEASURED TWICE OVER. `11bb:0d5c`
     pushes `6A 7F`, an immediate 127, as `SizeOf(ShellParam) - 1`; a full `String`
     would push 255 and take a byte more to do it. And $08c8 + 128 lands exactly on
     StringsFName. }

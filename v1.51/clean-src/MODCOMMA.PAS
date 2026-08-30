@@ -283,10 +283,10 @@ const
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
 
-{start whatever effect the note carries. STILL A STUB. }
+{ start whatever effect the note carries. STILL A STUB. }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote); far;
 
-{the per-tick effect dispatcher. STILL A STUB.
+{ the per-tick effect dispatcher. STILL A STUB.
 
   IT TAKES ITS ARGUMENTS IN REGISTERS: SI points at the channel and BX holds the
   command number DOUBLED, which is a jump-table index. The release documents the
@@ -336,7 +336,7 @@ procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
 procedure StartFinePortaDown(var Song : TSong; var Can : TCanal;
                              var N : TFullNote); forward;
 
-{CONFIRMED by the two near jumps at 142f:0352 and 142f:0359, which
+{ CONFIRMED by the two near jumps at 142f:0352 and 142f:0359, which
   the release writes as `JMP TickVolSlide` from both TickT_VSlide and
   TickVib_VSlide. The prologue scanner never found it: it is frameless. Forward
   because those two jump to it from 120 bytes above, which is also why both jumps
@@ -378,8 +378,8 @@ var
     `147d:0015` stores AX to [BP-4] and DX to [BP-2] after an `XOR DX,DX`, which is a
     32-bit store of a zero-extended word, and `147d:001b` tests the value with
     `MOV AX,[BP-4] / OR AX,[BP-2]`. Nothing else in the routine is 16-bit. }
-  Period : LongInt;               { [BP-4]                                   }
-  Scaled : LongInt;               { [BP-8]                                   }
+  Period : LongInt;
+  Scaled : LongInt;
 begin
   Can.ArpCt := 0;
 
@@ -1037,7 +1037,7 @@ begin
 end;
 
 
-{command E0x per tick, and it does nothing. One byte, a bare `RET`,
+{ command E0x per tick, and it does nothing. One byte, a bare `RET`,
   which is an `assembler` procedure with no parameters and an empty body. The
   release has it as `TickSetFilter` and it is empty there too -- but an empty body
   confirms nothing, so this keeps its address like the three at 035d..035f. The
@@ -1357,8 +1357,8 @@ const
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
 var
-  Period : LongInt;               { [BP-4]                                   }
-  Scaled : LongInt;               { [BP-8]                                   }
+  Period : LongInt;
+  Scaled : LongInt;
 begin
   Can.ArpCt := 0;
 
@@ -1706,7 +1706,7 @@ CommandStart. The row-start half of the unit: fold the new note into
   -------------------------------------------------------------------------- }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
-  {an effect that displaced the period has ended; put it back. }
+  { an effect that displaced the period has ended; put it back. }
   if (Can.Note.Command = mcArpeggio) or
      (((Can.Note.Command = mcVibrato) or
        (Can.Note.Command = mcVib_VSlide)) and
@@ -1795,7 +1795,7 @@ begin
     mcNPI1:          StartRingEvent(Song, Can, N);
   end;
 
-  {and take the new note's pitch, unless a note portamento is meant
+  { and take the new note's pitch, unless a note portamento is meant
     to slide to it from wherever the channel already is. }
   if (N.Period <> 0) and (N.Command <> mcNPortamento) then
     Can.Period := N.Period

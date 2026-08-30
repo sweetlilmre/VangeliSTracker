@@ -407,7 +407,7 @@ asm
                 MOV     AX,t
                 PUSH    AX
                 CALL    SbReadLoop
-                JNZ     @@ya                    {displacement zero }
+                JNZ     @@ya                    { displacement zero }
 @@ya:           IN      AL,DX
 end;
 

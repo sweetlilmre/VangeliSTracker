@@ -235,7 +235,7 @@ THE POLL, slot +$2a.
   -------------------------------------------------------------------------- }
 procedure Poll; far;
 begin
-  {THE WORK THAT LEFT THE INTERRUPT. In v1.31b this routine
+  { THE WORK THAT LEFT THE INTERRUPT. In v1.31b this routine
     was one increment and the handler did the stack switch and the indirect
     call; v1.51 moves both here. WHATSNEW.DOC: "under GUS the CallMusic() is no
     longer a dumb do-nothing -- now the partiture is not interpreted during
@@ -310,7 +310,7 @@ slot +$16, the device name. It returns an EMPTY STRING.
       LES DI,[BP+6] / MOV BYTE PTR ES:[DI],0 / LEAVE / RETF
 
   The giveaway is the plain `RETF` with no immediate while a parameter at
-  [BP+6] is being read: the routine does not pop what it was passed. That is
+ is being read: the routine does not pop what it was passed. That is
   exactly how Turbo Pascal returns a String from a far function -- the CALLER
   allocates the result buffer, pushes a pointer to it, and pops it again --
   and writing 0 to the first byte sets the length to zero.

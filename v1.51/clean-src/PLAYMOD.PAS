@@ -345,7 +345,7 @@ const
   FilterOn         : TFilterMethod = fmNone;   { the FilterOn key     }
   FilterOff        : TFilterMethod = fmNone;   { the FilterOff key    }
 
-  {**NOT** ModCommands' `FilterIsOn`, which is a different variable at
+  { **NOT** ModCommands' `FilterIsOn`, which is a different variable at
     DS:$0348. 1.31 has two of them; so, it turns out, does the release, which declares
     one in each of the same two interfaces -- this file used to say the release had
     only one, and that was wrong. Both are exported here because the ADDRESS requires
@@ -372,7 +372,7 @@ const
   NoteProcessed    : PPlayingNote  = nil;
   MaxSplPerTick    : Word          = 880;      { 03 70, the release's }
 
-  {EIGHT PAN POSITIONS, one per channel, and this unit already had them
+  { EIGHT PAN POSITIONS, one per channel, and this unit already had them
     under this name. What it did not have was their VALUES or their BOUNDS.
 
     **THE BOUNDS WERE THE BASE-1 TRAP, and this file already records the rule under a
@@ -550,7 +550,7 @@ the release's `CanFallBack`, "TRUE if fall-back is allowed", and a
   and an untyped constant would have folded to an immediate. It is the client's
   standing permission; `MyCanFallBack` at $121e is the working copy PlayStart
   clears while it is setting up and restores on the way out. }
-{the release's `LoopMod`, "TRUE if music CAN be played forever", and
+{ the release's `LoopMod`, "TRUE if music CAN be played forever", and
   the client's half of the pair whose working copy is `MyLoopMod` at $0334. Typed,
   and its address proves the release's declaration order again: `LoopMod` then
   `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes.
@@ -590,7 +590,7 @@ the release's `CanFallBack`, "TRUE if fall-back is allowed", and a
   at $0bce, both of which are the core's. Left as a declaration here it would SHADOW the
   real one for every reference in this unit, which is a bug no byte comparison can see. }
 
-  {EXPORTED, because `1000:0311` fills it: the program does
+  { EXPORTED, because `1000:0311` fills it: the program does
     `FillChar(UserVols, 8, VtVolume)` to set every channel to its master volume before
     a module starts. The release keeps it in its interface too, in the same VAR group as
     ActualHz and Permisos. It was private here, which the program could not reach. }
@@ -639,13 +639,13 @@ var
   NoteCalcVal     : LongInt;
   UserVols        : TVolumes;             { base-1 base $1207 }
 
-{negotiate the rate, size the buffers, program the DMA. Declared
+{ negotiate the rate, size the buffers, program the DMA. Declared
   here because 12ba:0d4e calls it and it lives 1,500 bytes further down the
   segment; the release exports it too, as `PROCEDURE ChangeSamplingRate(Hz:
   WORD)`. Its body is a PLACEHOLDER until the transcription reaches 132f. }
 procedure ChangeSamplingRate(Hz : Word); far;
 
-{the release exports this too. }
+{ the release exports this too. }
 { ~~NEW IN v1.51: AdvanceEventRow IS EXPORTED~~ **WITHDRAWN. IT IS
   `FlushEventRow`, AND THE EVIDENCE WAS RIGHT WHILE THE NAME WAS WRONG.**
 
@@ -667,13 +667,13 @@ procedure FlushEventRow; far;
 
 procedure ProcessTickEntry; far;
 
-{stop playing and give the buffers back. Declared here because
+{ stop playing and give the buffers back. Declared here because
  calls it from inside PlayStart's out-of-memory path, 1,300 bytes
   above it; the release exports it too, as `PROCEDURE PlayStop`. Its body is a
   PLACEHOLDER until the transcription reaches 13d7. }
 procedure PlayStop; far;
 
-{start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
+{ start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
  is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
   was read nothing outside this unit was known to reach it, so it was declared
   in the implementation only. The release exports it too, as
@@ -725,7 +725,7 @@ implementation
     The 1.31b note said the shared cursor "is why neither producer needs a cursor of
     its own". That was true of 1.31b and is the thing 1.51 changed. }
 
-  {`Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
+  { `Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
     so: 12ba:03cc starts it at 2 and then adds $01, $04, $10 and $20, which are
     exactly rcfActiveChannel, rcfLongSample, rcfDoesLoop, rcfLongLoopLen and
     rcfLongLoopEnd. It was read as "a GUS voice control byte" until the last two
@@ -794,7 +794,7 @@ implementation
     exactly what it gates. Base-1 again for the array. }
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  {AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
+  { AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
  writes that one from the E0x command and nothing reads it; this one is
     read by the initialisation section at 12ba:1430 to choose between FilterOn and
     FilterOff. Two variables where the release has one. ModCommands keeps its copy in
@@ -802,11 +802,11 @@ implementation
     if both were exported, every reference in this unit would silently bind to this
     one and no byte comparison could see it. }
 
-  {the release's `MaxOutputFreq`, whose comment is "Maximum frequency
+  { the release's `MaxOutputFreq`, whose comment is "Maximum frequency
     of the output sound. Less means less memory for buffers." Divided by the tick
     rate at 12ba:1174 it gives exactly MaxSplPerTick, which is that sentence. }
 
-  {THE FOURTH DUPLICATED GLOBAL. VTMAIN owns it as `Snapshot` and
+  { THE FOURTH DUPLICATED GLOBAL. VTMAIN owns it as `Snapshot` and
     12ba compares it against `VTSilenc.Ticks` at DS:$0bc8, which IS exported and
     is used from here directly. So one of the pair resolves cleanly and the other
     does not, in the same comparison. Risk 1 again. }
@@ -817,10 +817,10 @@ implementation
     -- and 12ba:0cf7 resets it to zero when the pattern advances. A row number
     would be compared against a pattern length and would not reset. }
 
-  {the release's `MyCanFallBack`, "actual permission to fall back",
+  { the release's `MyCanFallBack`, "actual permission to fall back",
     and the use fits exactly: with permission withheld, SoundDevices' request to
     fall back to a lower rate is simply cleared. }
-  {ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ba:0d14 it
+  { ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ba:0d14 it
     holds a candidate sample rate while the driver is negotiated; from 12ba:0da1
     it is the control variable of a loop over the channels. The name is neutral
     because neither role owns it. }
@@ -895,14 +895,14 @@ var
     declares it privately in its implementation section, where a comment already
     records that the release moved it to SoundDevices and that ownership is the
     open question rather than the name. 12ba reads it here. Risk 1 again. }
-  {ONE GLOBAL, TWO JOBS. At 06bc it is the note buffer's next slot;
+  { ONE GLOBAL, TWO JOBS. At 06bc it is the note buffer's next slot;
     from 0802 it is the control variable of a `for` loop over the channels. The
     first use is finished before the second starts, so the reuse is harmless --
     but it is why the name is neutral rather than either role's. }
 
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  {THE RELEASE'S `MyLoopMod`, no longer provisional. Its assignment
+  { THE RELEASE'S `MyLoopMod`, no longer provisional. Its assignment
     at 1121..113d is the release's `(TRUE AND (MyRepStart <> 0)) OR ForceLoopMod`
     character for character, including the commented-out LoopMod operand that is why a
     literal 1 is tested there, and 0717 reads it as the release's line 821 does.
@@ -922,7 +922,7 @@ var
     Provisional names: nothing outside 12ba has been seen to set them. }
 { NOTE ON A DECLARATION THAT NOW LIVES IN THE ORDERED CONST BLOCK AT THE TOP
   OF THIS FILE -- it does NOT describe the declaration below it. }
-  {the release's `ForceLoopMod`, "TRUE if music must be played
+  { the release's `ForceLoopMod`, "TRUE if music must be played
     forever", and 12ba:112e uses it exactly that way: it forces LoopMod on. }
 
 
@@ -1051,7 +1051,7 @@ step the event ring on by one row and tally what is in it.
   -------------------------------------------------------------------------- }
 procedure AdvanceEventRow;
 begin
-  {a hand-written CLD, and it has to be hand-written: Turbo Pascal
+  { a hand-written CLD, and it has to be hand-written: Turbo Pascal
     emits no such prologue byte here, and the FillChar below is a runtime CALL
     rather than an inlined string instruction, so nothing in the body asks the
     compiler for one. Somebody wanted the direction flag known-good on a path
@@ -1068,7 +1068,7 @@ begin
 
   for EventChan := 0 to 7 do
   begin
-    {a WITH, and the frame slot is its doing.
+    { a WITH, and the frame slot is its doing.
       OLD NOTE, kept because the reasoning is the useful part: `@Ring[..]`
       gets the INDEX computation exactly right, byte for byte, through 01c0:
       `MOV AX,EventChan / SHL AX,1 / MOV DI,EventSlot / SHL DI,4 / ADD DI,AX`.
@@ -1140,7 +1140,7 @@ THE WIDE ROW, NEW IN v1.51, and it is the 8-channel ring above it
   which is why the body is reached by a jump forward rather than by falling in. }
 procedure PublishWideRow;
 begin
-  {the same hand-written CLD as AdvanceEventRow's, and for the same
+  { the same hand-written CLD as AdvanceEventRow's, and for the same
     reason: two `Move`s and a `FillChar` on a path the timer can reach. }
   asm
     CLD
@@ -1354,7 +1354,7 @@ a sample descriptor into GUS voice control. NOT TRANSCRIBED.
 procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec;
                        Offs : Word);
 begin
-  {compiled: `OR AX,[BP+6]` is the code generator's direction,
+  { compiled: `OR AX,[BP+6]` is the code generator's direction,
     and the `JNZ +3 / JMP` pair is what a large if-body gives when the skip is
     out of short range. }
   if Desc <> nil then
@@ -1445,7 +1445,7 @@ begin
         MOV     ES:[DI+$17], AX        { 044f  -> Raw.SplLimit2              }
       end;
 
-    {compiled, and the shape names the field: `LES DI,ES:[DI+$16]`
+    { compiled, and the shape names the field: `LES DI,ES:[DI+$16]`
       loads a FAR POINTER out of the descriptor and then `MOV AX,DI` / `MOV AX,ES`
       take its halves, which is `Ofs(P^)` and `Seg(P^)` -- an Ofs of a
       dereference, not of the field. }
@@ -1458,25 +1458,25 @@ begin
       in, so each of the three quantities gets a test and a subtraction. }
     if NoLoop = 0 then
     begin
-      {two LongInt comparisons with short-circuit `or`. The loop
+      { two LongInt comparisons with short-circuit `or`. The loop
         needs no splitting if it lies wholly inside one 64K part: either it
         starts beyond the boundary, or it starts and ends below it. `$FFF0` is
         the same 65,520 as above. }
       if (Desc^.Reps > MaxSample) or
          (Desc^.Reps + Desc^.Repl <= MaxSample) then
-        {the low word only, which is what makes the LongInt
+        { the low word only, which is what makes the LongInt
           field assignable to a Word without a cast. }
         Raw.LoopLen := Desc^.Repl
       else
       begin
-        {the loop STRADDLES the 64K boundary, so its length is
+        { the loop STRADDLES the 64K boundary, so its length is
           measured from the start of the second part and the flag says so.
           `ADD byte,$10` rather than `OR`, which is what `Inc` gives. }
         Raw.LoopLen := Desc^.Repl - MaxSample;
         Inc(NewFlags, rcfLongLoopLen)
       end;
 
-      {and the same question again for the loop's END. The sum is
+      { and the same question again for the loop's END. The sum is
         recomputed in the test and in both branches, three times over, which is
         Turbo Pascal re-evaluating rather than anything in the source. }
       if Desc^.Reps + Desc^.Repl <= MaxSample then
@@ -1489,7 +1489,7 @@ begin
       end
     end
   else
-    {HAND-WRITTEN, the short-sample path. `AND AL,AL` at 0559 is
+    { HAND-WRITTEN, the short-sample path. `AND AL,AL` at 0559 is
       `20 C0`, the inline assembler's direction; the compiler's own test is
       `08 C0`, which is what 05ba has twelve bytes later. Everything here is
       16-bit because a sample under 64K needs no splitting at all.
@@ -1517,7 +1517,7 @@ begin
   @@NoLoop:
     end;
 
-  {HAND-WRITTEN, and common to both paths. It turns the LENGTHS
+  { HAND-WRITTEN, and common to both paths. It turns the LENGTHS
     gathered above into absolute offsets by adding each part's own base, points
     the play position at the start of the sample, and finally stores the flags.
 
@@ -1565,7 +1565,7 @@ begin
     MOV     [DI], AL                 { 05a6  -> Raw.Flags                     }
   end;
 
-  {compiled, and back to the event ring. `DS:$0bce` is
+  { compiled, and back to the event ring. `DS:$0bce` is
     `DevGUS.Started`, so nothing is posted unless the GUS driver is running --
     which is the clearest statement yet that this whole routine is the GUS path.
 
@@ -1802,7 +1802,7 @@ begin
       history block explains -- `TSong` became an object in February 1993. }
     Pattern := Song.GetPatternSeq(SeqPlaying);
 
-    {advance one row, or fall off the end of the pattern and
+    { advance one row, or fall off the end of the pattern and
       advance the order position instead. `Pattern^.Patt^` is a byte reached
       through a far pointer at the pattern's +$06; a position past the last one
       sets the row to $FFFF, which is the marker 06fe tests on the next call. }
@@ -1821,7 +1821,7 @@ begin
         NextNote := 1;
     end;
 
-    {an EMPTY order position. `GetPatternSequence` returning zero
+    { an EMPTY order position. `GetPatternSequence` returning zero
       means there is no pattern here, so the module's own defaults come back, every
       channel is wiped and given a silent note, and the sequencer walks forward
       until it finds a position that does have one -- or runs off the end.
@@ -1846,7 +1846,7 @@ begin
           Period          := 800
         end;
 
-      {walk forward. A position past the last sets the row to
+      { walk forward. A position past the last sets the row to
         $FFFF, which both ends this loop and marks the module as finished for the
         next call. }
       repeat
@@ -1861,7 +1861,7 @@ begin
       NextSeq := SeqPlaying
     end;
 
-    {the SPEED for this row, if anything overrides it. Two sources,
+    { the SPEED for this row, if anything overrides it. Two sources,
       and the row number picks between them: on row 1 a per-position byte out of
       14b9's second table, otherwise the pattern's own. Zero means "no override"
       in both cases, so the speed set at 07dd stands.
@@ -1878,7 +1878,7 @@ begin
           CurSpeed := Pattern^.Patt^.Tempo
       end;
 
-    {once per channel: fetch this row's note out of the song and
+    { once per channel: fetch this row's note out of the song and
       keep a copy in the row being handed on.
 
       `Song.NumChannels` is not a constant, so Turbo Pascal evaluates the limit into a
@@ -1906,7 +1906,7 @@ begin
 
       NewSample := False;
 
-      {DOES THIS ROW RETRIGGER THE CHANNEL? Two groups joined by
+      { DOES THIS ROW RETRIGGER THE CHANNEL? Two groups joined by
         `or`, each short-circuited, and the jump targets read straight off:
 
           a new instrument number that differs from the one playing, OR
@@ -1921,7 +1921,7 @@ begin
           (NewNote.Command <> mcNPortamento) and
           (NewNote.Command <> mcT_VSlide)) then
       begin
-        {a new instrument: remember it and fetch its sample data. }
+        { a new instrument: remember it and fetch its sample data. }
         if NewNote.Instrument <> 0 then
         begin
           CurCanal^.Note.Instrument := NewNote.Instrument;
@@ -1933,7 +1933,7 @@ begin
             Song.GetInstrument(NewNote.Instrument)^.Instr
         end;
 
-        {and hand the sample to the GUS voice. This is the call
+        { and hand the sample to the GUS voice. This is the call
           site that gave SetNewSample its signature back when 03cc was
           transcribed: the channel number as a Byte, the raw channel by
           reference, the descriptor by value. }
@@ -1942,7 +1942,7 @@ begin
         NewSample := True
       end;
 
-      {a new instrument also resets the channel's volume to that
+      { a new instrument also resets the channel's volume to that
         instrument's own default, which lives at the descriptor's +$0c. The nil
         test is `MOV AX,[DI+6] / OR AX,[DI+8]`, both halves of the pointer, which
         is how Turbo Pascal compares a Pointer against nil. }
@@ -1950,14 +1950,14 @@ begin
          (CurCanal^.Instrument <> nil) then
         CurCanal^.Volume := CurCanal^.Instrument^.Vol;
 
-      {the note's own volume overrides it, stored one lower than
+      { the note's own volume overrides it, stored one lower than
         written, and clamped to 64 whichever way it arrived. }
       if NewNote.Volume <> 0 then
         CurCanal^.Volume := NewNote.Volume - 1;
       if CurCanal^.Volume > 64 then
         CurCanal^.Volume := 64;
 
-      {hand the note to the effects unit. `CommandStart` is the
+      { hand the note to the effects unit. `CommandStart` is the
         release's name and the argument order is its own; see MODCOMMA.PAS. }
       CommandStart(Song, CurCanal^, NewNote);
 
@@ -1976,14 +1976,14 @@ begin
                      CurCanal^.Instrument,
                      CurCanal^.SOffsVal);
 
-      {and NOT `Tempo := CurSpeed`, which is what the enclosing
+      { and NOT `Tempo := CurSpeed`, which is what the enclosing
         `with` would give. The original reloads the pointer from DS:$02dc, so the
         source names it: inside a `with P^ do`, writing `P^.Field` explicitly
         makes Turbo Pascal reload P instead of using the with-slot. Two different
         instruction sequences for the same assignment. }
       NoteProcessed^.Tempo := CurSpeed;
 
-      {publish the channel's event into the note ring, where
+      { publish the channel's event into the note ring, where
  will increment the semaphore it names. The ring is indexed by
         the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
@@ -1993,7 +1993,7 @@ begin
       CurCanal^.RingPending := 0
     end;                                             { 0a97..0aa1  for end   }
 
-    {how many samples this row is worth.
+    { how many samples this row is worth.
 
       `ActualHz div TicksPerSecond` is samples per tick, capped by MaxSplPerTick;
       multiplied by the row's tick count it gives `NMuestras`, which the release
@@ -2034,7 +2034,7 @@ begin
       are `XOR AX,AX / MOV DX,364C` either way. }
     NoteCalcVal := ($364C0000 div NoteHz) shl 4;
 
-    {publish the row. The tail index catches up with the head and
+    { publish the row. The tail index catches up with the head and
       the sounding pointer with the processed one, so whatever reads `NoteSound`
       now sees the row this call built. Then the same do-nothing call the routine
       opened with, this time with zeros. }
@@ -2061,7 +2061,7 @@ begin
   if ModFlag then
     Exit;
 
-  {mix every channel, unless the device does its own DMA mixing.
+  { mix every channel, unless the device does its own DMA mixing.
     Each channel writes into its own slice of the module's buffer, interleaved by
     the channel count, and is then filtered in place with the state carried in
     SplBuf. `FilterChunkWord`'s `Offs` is that interleave stride, which is why the
@@ -2077,7 +2077,7 @@ begin
                                          SplBuf[MixChan])
     end;
 
-  {and mark the entry played, with the sample count it produced.
+  { and mark the entry played, with the sample count it produced.
     Both paths reach here: the DMA one jumps straight to it from 0b63. }
   ModRec^.InUse    := True;
   ModRec^.NSamples := MuestrasPerTick;
@@ -2085,7 +2085,7 @@ begin
   ModRec^.DataType := 1;
   ModRec^.Channels := Song.NumChannels;
 
-  {AND THE SECOND DISABLED ROTATION IN THIS UNIT. `Inc(ModIdx)`
+  { AND THE SECOND DISABLED ROTATION IN THIS UNIT. `Inc(ModIdx)`
     followed by a clamp to 1 means the index is 1 from the first call onward, so
     only one entry of the module table is ever used -- exactly like the `and 0` at
  pinning the note buffer to slot zero. Two independent pieces of
@@ -2164,7 +2164,7 @@ begin
 
   Inc(TickCount);
 
-  {a 32-bit counter INSIDE the published control block, at
+  { a 32-bit counter INSIDE the published control block, at
     CtrlBlock + $125, immediately after the dispatch pointer. Together with the
     per-channel counters 12ba:0187 bumps, that is live state any INT 2Fh client
     can read. Psycho Neurosis never does. }
@@ -2176,7 +2176,7 @@ begin
     original puts it. }
   TickChans := Song.NumChannels;
 
-  {THE TEMPO ENGINE, and it divides nothing per row. `TempoAccum`
+  { THE TEMPO ENGINE, and it divides nothing per row. `TempoAccum`
     is a running fractional accumulator, `CurTempo` the amount added each tick and
     `TempoDiv` the divisor: the tick counter advances by the whole part and the
     remainder is carried. That is how a tracker gets a non-integer ticks-per-row
@@ -2230,7 +2230,7 @@ begin
     They were debugging colour-bar markers -- 1.39b's equivalent is a commented-out
     `SetBorder` -- and the release took them out. }
 
-  {run every channel's effect for this tick, unless this is the
+  { run every channel's effect for this tick, unless this is the
     row's first tick and the song has nothing at Fill16[$24].
 
     THE LOOP IS HAND-WRITTEN. `LOOP` and `MUL BL` are not Turbo Pascal's output,
@@ -2269,7 +2269,7 @@ begin
       end
   end;
 
-  {the fall-back request. `PleaseFallback` is SoundDevices' way of
+  { the fall-back request. `PleaseFallback` is SoundDevices' way of
     saying it could not get a buffer at the current rate; permission to act on it
     is MyCanFallBack's, and without it the request is just dropped.
 
@@ -2287,7 +2287,7 @@ begin
     PleaseFallback := 0;
     TmpVal := ActualHz;
 
-    {NEGOTIATE A RATE THE DEVICE WILL ACCEPT. Ask what it can
+    { NEGOTIATE A RATE THE DEVICE WILL ACCEPT. Ask what it can
       really manage; while that differs from what we want, drop the request by
       100 Hz and ask again.
 
@@ -2304,7 +2304,7 @@ begin
       TmpVal := TGetFreqProc(ActiveDevice^.GetRealFreqProc)(DesiredHz)
     end;
 
-    {and act on it. `PUSH CS / CALL near` is how Turbo Pascal
+    { and act on it. `PUSH CS / CALL near` is how Turbo Pascal
       calls a FAR routine that lives in the same segment, which is what
       ChangeSamplingRate is. }
     ChangeSamplingRate(DesiredHz)
@@ -2313,7 +2313,7 @@ begin
 
 
 
-  {turn each channel's own volume into the mixing volume the
+  { turn each channel's own volume into the mixing volume the
     resampler will use. The divisor is the channel count rounded UP to an even
     number, so the summed output cannot clip; the `shr 4` is the fixed-point
     scale on UserVols. }
@@ -2322,15 +2322,15 @@ begin
     CanalPtr := @Canales[TmpVal];
     RawPtr   := @RawChannels[TmpVal];
     if not UsingGUS then
-      {the software path: divide the sum down so it cannot clip. }
+      { the software path: divide the sum down so it cannot clip. }
       RawPtr^.Volume := CanalPtr^.Volume * UserVols[TmpVal] shr 4
                         div ((Song.NumChannels + 1) and $FFFE)
     else
-      {the GUS path needs no headroom, because the card mixes: the
+      { the GUS path needs no headroom, because the card mixes: the
         scale is `shr 6` with a rounding `+1` before the final halving. }
       RawPtr^.Volume := (CanalPtr^.Volume * UserVols[TmpVal] shr 6 + 1) shr 1;
 
-    {AND THESE TWO ARE COMMON TO BOTH PATHS. The software branch's
+    { AND THESE TWO ARE COMMON TO BOTH PATHS. The software branch's
       `JMP` at 0e22 lands on 0e4a, not past it, which is what says so; written
       inside the GUS branch they would be jumped over. }
     { **$7F IN v1.51, $80 IN 1.31b** -- 12ce:10bd stores 7F. One less than the power
@@ -2341,7 +2341,7 @@ begin
     if RawPtr^.Volume >= $80 then
       RawPtr^.Volume := $7F;
 
-    {the master volume, and HAND-WRITTEN. Two tells: the pointer
+    { the master volume, and HAND-WRITTEN. Two tells: the pointer
       goes into SI, where Turbo Pascal's code generator always uses DI, and the
       multiply is the 8-bit `MUL BL` with the product's high byte stored straight
       back -- Pascal promotes `Byte * Byte` to a word and would emit `MUL DX`
@@ -2358,7 +2358,7 @@ begin
       MOV     ES:[SI+$1d], AH            { 0e6c  the high byte = shr 8        }
     end;
 
-    {a period of zero would divide by zero downstream. }
+    { a period of zero would divide by zero downstream. }
     if CanalPtr^.Period = 0 then
       CanalPtr^.Period := 1;
 
@@ -2375,7 +2375,7 @@ begin
     if CanalPtr^.Period > $1FFF then
       CanalPtr^.Period := $1FFF;
 
-    {turn the channel's period into the one the hardware wants,
+    { turn the channel's period into the one the hardware wants,
       scaled by the instrument's own ratio when there is an instrument.
 
       THE ARITHMETIC IS HAND-WRITTEN: the pointer goes into SI throughout, and
@@ -2400,7 +2400,7 @@ begin
       end
     else
     begin
-      {no instrument, so there is nothing to play: the period is
+      { no instrument, so there is nothing to play: the period is
         used unchanged and the channel is silenced outright. The `JMP` at 0eb3
         clears all of this, which is how the branch's real extent was found. }
       CanalPtr^.RealPeriod := CanalPtr^.Period;
@@ -2424,7 +2424,7 @@ begin
     else if CanalPtr^.RealPeriod > $1FFF then
       CanalPtr^.RealPeriod := $1FFF;
 
-    {the resampling STEP for this channel: NoteCalcVal over the
+    { the resampling STEP for this channel: NoteCalcVal over the
       real period, rounded, then spread across the two words of a 16.16-ish
       fixed point -- `shl 4` into StepFrac and `shr 12` into StepInt.
 
@@ -2465,7 +2465,7 @@ begin
 
       IT IS A `with` AND THE FRAME PROVES IT. SeqTick is `ENTER 6` in v1.51 against
       1.31b's `ENTER 2`; two of the four extra bytes are the hidden pointer at
-      [BP-6]/[BP-4] that 12ce:11c4 builds and every field store reloads with
+ that 12ce:11c4 builds and every field store reloads with
       `LES DI,[BP-6]`. That is Turbo Pascal's `with` on an indexed record and nothing
       else looks like it.
 
@@ -2496,7 +2496,7 @@ begin
     RawPtr^.StepFrac := Word(StepVal) shl 4;
     RawPtr^.StepInt  := Word(StepVal) shr 12;
 
-    {which filter is in force. }
+    { which filter is in force. }
     if FilterIsOn then
       FilterVal := FilterOn
     else
@@ -2521,7 +2521,7 @@ begin
         SetNewSample(TmpVal, RawPtr^,
                      CanalPtr^.Instrument, 0);
 
-    {and whether this channel is allowed to sound at all.
+    { and whether this channel is allowed to sound at all.
 
       WRITTEN AS A NEGATIVE. The test emits `JNZ` to the branch that SETS the
       bit, which is what `if not Permisos[..] then <clear> else <set>` gives; the
@@ -2532,7 +2532,7 @@ begin
     else
       RawPtr^.Flags := RawPtr^.Flags or rcfActiveChannel;
 
-    {on the GUS, tell the card. A permitted channel gets its
+    { on the GUS, tell the card. A permitted channel gets its
       volume and a frequency derived from the real period; a muted one gets volume
       zero and $FFFF for the frequency, which is 12ba:0275's "leave that field
       alone" sentinel. Same constant family as NoteCalcVal's $364C0000. }
@@ -2547,7 +2547,7 @@ begin
         PostEvent(TmpVal - 1, 0, -1,
                   PlayingSong^.ChannelPan[TmpVal]);
 
-    {and hold the period inside ProTracker's range, 57 to 1712. }
+    { and hold the period inside ProTracker's range, 57 to 1712. }
     { **$1F AND $1FFF IN v1.51, WHERE 1.31b HAS PROTRACKER'S 57 AND 1712.** The
       widened bounds are the same pair the RealPeriod clamp uses and are there for the
       same reason: an arpeggio that divides and an S3M loader that supplies arbitrary
@@ -2561,7 +2561,7 @@ begin
 
   NullProcedure(0, 0, 0);
 
-  {and on a non-GUS device, mix this tick's samples now that every
+  { and on a non-GUS device, mix this tick's samples now that every
     channel's step and volume are set. This is the second call to MixTick in the
     routine: the first, at 0c77, runs BEFORE the row is processed and only when the
     buffer still holds samples. }
@@ -2659,7 +2659,7 @@ start playing a module. IN PROGRESS.
 procedure PlayStart(var Song : TSong);
   { THE FRAME SETTLES BOTH OF THESE. `ENTER 8,0` at 10a1, and only three things
     can be in those eight bytes: the loop variable at [BP-2], a second Word at
-    [BP-4] that nothing in the routine ever touches, and the four-byte `with`
+ that nothing in the routine ever touches, and the four-byte `with`
     slot at [BP-8]/[BP-6] that 11f7..11fa fills. Declaring `i` alone would put
     the with-slot at [BP-6]/[BP-4] and give `ENTER 6,0`, so the unused Word is
     real -- and the release declares exactly `i, j : WORD` here, with `j` unused
@@ -2701,13 +2701,13 @@ begin
     Exit
   end;
 
-  {an unset END comes from the song too, but only if the song's own
+  { an unset END comes from the song too, but only if the song's own
     figure is set AND fits inside the length. Three tests, short-circuited. }
   if (RangeEnd = 0) and (Song.SequenceRepStart <= MySongLen) and
      (Song.SequenceRepStart <> 0) then
     RangeEnd := Song.SequenceRepStart;
 
-  {whether the module may loop.
+  { whether the module may loop.
 
     THE `True and` IS IN THE ORIGINAL. 1121 loads an IMMEDIATE 1 and tests it, so
     the first operand is the literal, not a variable -- a typed constant would be
@@ -2721,7 +2721,7 @@ begin
     both tests -- seven bytes against fourteen, which is how it was caught. }
   MyLoopMod := (True and (RangeEnd <> 0)) or ForceLoopMod;
 
-  {and reset the playing state. `TickInRow := $FE` is a sentinel:
+  { and reset the playing state. `TickInRow := $FE` is a sentinel:
     two short of zero, so the first two ticks pass before a row is due. }
   TickInRow  := $FE;
   CurSpeed   := Song.InitialTempo;
@@ -2736,7 +2736,7 @@ begin
   if RangeEnd < NextSeq then
     RangeEnd := NextSeq;
 
-  {prime the first row and the queue that hands it on. The stores
+  { prime the first row and the queue that hands it on. The stores
     land on $1220, $1221, $1222, $1223 and then an 8-byte Move to $1224, which is
     NoteBuff[0]'s EoMod, Tempo, NotePlaying, SeqPlaying and Volume -- the layout
     fixed at 12ba:094b, confirming itself from a different routine. `$125c` is its
@@ -2753,7 +2753,7 @@ begin
   NoteSound     := @NoteBuff[0];
   NoteProcessed := @NoteBuff[0];
 
-  {clear the channels, then give each one a starting note.
+  { clear the channels, then give each one a starting note.
 
     THE `with` IS THE ORIGINAL'S, not a convenience. 11f7..11fa is
     `MOV [BP-8],DI / MOV [BP-6],DS` -- the register the offset was accumulated in,
@@ -2776,7 +2776,7 @@ begin
       Period          := 800
     end;
 
-  {and size a buffer. `SHL AX,3 / SHL AX,1` is `* MaxChannels * 2`
+  { and size a buffer. `SHL AX,3 / SHL AX,1` is `* MaxChannels * 2`
     with MaxChannels folded to 8; the compiler reaches for shifts because both
     factors are powers of two, and the PAIR of them is what fixes the 8. }
   SizeOfABuffer := MaxSplPerTick * MaxChannels * 2;
@@ -2793,7 +2793,7 @@ begin
   if not UsingGUS then
     for i := 1 to NumBuffers do
     begin
-      {a VIRTUAL call on the heap object at DS:$39ae, through
+      { a VIRTUAL call on the heap object at DS:$39ae, through
         `[DI+8]`, which is virtual method number two. See HEAPS.PAS, which is a
         stub for segment 17cf and exists to put HGetMem in that slot.
 
@@ -2818,12 +2818,12 @@ begin
   BuffIdx  := 1;
   BuffGive := 1;
 
-  {and clear both per-channel tables. The EventRing clear is
+  { and clear both per-channel tables. The EventRing clear is
     1.31's own; the release only clears RawChannels here. }
   FillChar(EventRing, SizeOf(EventRing), 0);
   FillChar(RawChannels, SizeOf(RawChannels), 0);
 
-  {program the hardware for the rate that was asked for, and only
+  { program the hardware for the rate that was asked for, and only
     then let the timer back in. Everything above this point runs under the `CLI`
     from 10a5. }
   ChangeSamplingRate(DesiredHz);
@@ -2897,7 +2897,7 @@ Otra:
   DesiredHz := Hz;
   MyHz := TGetFreqProc(ActiveDevice^.GetRealFreqProc)(Hz);
 
-  {more samples per second than a tick can hold. The product is
+  { more samples per second than a tick can hold. The product is
     computed into AX and compared against MyHz, which is why it reads as the
     right-hand side here. }
   if MyHz > MaxSplPerTick * TicksPerSecond then
@@ -2916,14 +2916,14 @@ Otra:
   begin
     ActualHz := MyHz;
 
-    {`MOV SI,AX / SHL AX,1 / ADD AX,SI / SHR AX,1` is
+    { `MOV SI,AX / SHL AX,1 / ADD AX,SI / SHR AX,1` is
       `TicksPerSecond * 3 div 2` and nothing else: AX becomes T, 2T, 3T, then 3T
       div 2. The release's line carries two commented-out alternative divisors
       beside it, an 8 and a DIV 3, so the ratio was tuned by hand; 1.31's shifts
       fix it at three halves. }
     SetPeriodicProc(ProcessTickEntry, TicksPerSecond * 3 div 2);
 
-    {and size the DMA buffer from the rate. Stereo gets the whole
+    { and size the DMA buffer from the rate. Stereo gets the whole
       figure and mono half of it, then the result is rounded DOWN to a multiple of
       four by `AND AX,FFFC` -- four bytes being one stereo 16-bit frame, which is
       the smallest unit the 8237 may stop on. }
@@ -2934,7 +2934,7 @@ Otra:
 
     DMABufferSize := DMABufferSize and $FFFC;
 
-    {reprogram the controller, unless there is no channel to
+    { reprogram the controller, unless there is no channel to
       program. `$FF` IS THE "NO DMA" SENTINEL, and it is compared as a WORD
       (`81 3E C4 0B FF 00`, six bytes) rather than a byte, which is what settles
       DMAChannel's width -- see the note beside its declaration in SOUNDDEV.
@@ -2945,7 +2945,7 @@ Otra:
     if DMAChannel <> $FF then
       DMASet(DMAChannel, $58, DMABuffer, DMABufferSize);
 
-    {and resynchronise the tick gate, because the rate the mixer
+    { and resynchronise the tick gate, because the rate the mixer
       is paced against has just moved. `Ticks` is VTSilenc's and exported;
       TickSnapshot is the copy SeqTick compares it with at 0c52. }
     TickSnapshot := Ticks

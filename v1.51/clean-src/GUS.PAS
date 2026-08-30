@@ -178,13 +178,13 @@ const
   OldIrqState   : Boolean = False;{ enabled before InitGusIRQ?      }
   GusIRQInited  : Boolean = False;
 
-  {the GF1 encodes its interrupt in three bits rather than
+  { the GF1 encodes its interrupt in three bits rather than
     taking the number, so the number has to be translated. Zero means the
     card cannot be wired to that line at all. }
   IrqCode : array[0..15] of Byte =
     (0, 0, 1, 3, 0, 2, 0, 4, 0, 0, 0, 5, 6, 0, 0, 7);
 
-  {the twelve addresses a GUS can be jumpered to.
+  { the twelve addresses a GUS can be jumpered to.
     DetectUltrasound walks these in order when GUSPort has not been
     configured, so the first one that answers wins, not the lowest. }
   GUSPorts : array[1..12] of Word =
@@ -354,7 +354,7 @@ asm
         MOV     AL,Reg      { [BP+6], the FIRST parameter }
         OUT     DX,AL
         ADD     DX,2
-        MOV     AL,Val      { [BP+4] }
+        MOV     AL,Val
         OUT     DX,AL
 end;
 
@@ -376,10 +376,10 @@ procedure SetGusRegister16(Reg : Byte; Val : Word); assembler;
 asm
         MOV     DX,GUSPort
         ADD     DX,$103
-        MOV     AL,Reg      { [BP+6] }
+        MOV     AL,Reg
         OUT     DX,AL
         INC     DX
-        MOV     AX,Val      { [BP+4] }
+        MOV     AX,Val
         OUT     DX,AX
 end;
 
@@ -454,15 +454,15 @@ begin
   SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);
   asm
   PUSH DS          { LODSB will take DS away              }
-  MOV  CX, Count   { [BP+0Ch]                             }
+  MOV  CX, Count
   LES  DI, DramAt  { the DRAM address, low word in DI     }
   MOV  BX, ES      { 1723:00bc  ... high half in BL                  }
-  MOV  BH, BYTE PTR Signed { [BP+06h]                           }
+  MOV  BH, BYTE PTR Signed
   CMP  BH, 1        { carry when the caller said 0         }
   SBB  BH, BH       { $FF when signed, else $00            }
   SHL  BH, 7        { 1723:00c6  ... becomes the $80 XOR mask         }
   MOV  DX, GUSPort
-  LDS  SI, Src      { [BP+0Eh]                             }
+  LDS  SI, Src
   ADD  DX, 0103h    { the register select port             }
 @@Byte:
   MOV  AL, 43h  { DRAM address, low word               }
@@ -637,7 +637,7 @@ asm
   MOV  AL, AH
   XOR  AH, AH
   PUSH AX
-  CALL DisableIRQ  {keep ourselves out      }
+  CALL DisableIRQ  { keep ourselves out      }
 @@Again:
   CLI
   MOV  DX, GUSPort
@@ -796,7 +796,7 @@ begin
   SetGusRegister16(grDRAMLowIO, 0);
   SetGusRegister8(grDRAMHighIO, 0);
 
-  {silence every voice before anything else can start one.
+  { silence every voice before anything else can start one.
 
     A FOR LOOP, AND IT STARTS AT ZERO. 1723:03f6 is `JMP` past the increment,
     which is Borland's FOR head; written as `repeat Inc(V) ... until` the
@@ -1024,7 +1024,7 @@ set a voice's volume, ramping to it rather than jumping.
   -------------------------------------------------------------------------- }
 procedure ChangeVol(Channel, Vol, Ramp : Byte);
 var
-  Oldv : Byte;  { [BP-1] }
+  Oldv : Byte;
 begin
   if (Vol > 127) and (Vol <> $FF) then
     Vol := 127;

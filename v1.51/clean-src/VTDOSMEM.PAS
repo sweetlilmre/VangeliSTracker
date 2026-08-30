@@ -65,11 +65,11 @@ interface
   these five routines yet.
   -------------------------------------------------------------------------- }
 
-{what everything else should call. }
+{ what everything else should call. }
 function  UMBAllocate(var P : Pointer; Size : LongInt) : LongInt; far;
 procedure UMBFree(var P : Pointer); far;
 
-{the same without the UMB dance. }
+{ the same without the UMB dance. }
 function  DOSAllocate(var P : Pointer; Size : LongInt) : LongInt; far;
 procedure DOSFree(var P : Pointer); far;
 
@@ -105,7 +105,7 @@ ask DOS for Size bytes, settle for less rather than fail.
   -------------------------------------------------------------------------- }
 function DOSAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
-  Paras : Word;          { [BP-6] }
+  Paras : Word;
 begin
   Paras := Word(Size shr 4);
   asm
@@ -197,7 +197,7 @@ end;
   -------------------------------------------------------------------------- }
 function UMBAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
-  Old : Byte;            { [BP-5] }
+  Old : Byte;
 begin
   Old := UMBLink(1);
   UMBAllocate := DOSAllocate(P, Size);
@@ -206,7 +206,7 @@ end;
 
 procedure UMBFree(var P : Pointer);
 var
-  Old : Byte;            { [BP-1] }
+  Old : Byte;
 begin
   Old := UMBLink(1);
   DOSFree(P);
