@@ -1761,7 +1761,7 @@ begin
   if UsingGUS then                             { 0699..06a3             }
     if (Raw.Flags and rcfDoesLoop) <> 0 then         { 06a4..06af             }
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
-               { **`Data` IS A POINTER IN SongElements AND THIS IS A GUS DRAM ADDRESS**, so
+               { [re] **`Data` IS A POINTER IN SongElements AND THIS IS A GUS DRAM ADDRESS**, so
         every use of it here is cast. The SongUnit copy declared the field a
         LongInt outright, which made the arithmetic read naturally and was the one
         thing that copy got MORE right than the release -- 12ba:05e0 adds a loop
@@ -1833,17 +1833,23 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0693 -- advance to the next pattern, and honour a seek request.
-  IN PROGRESS: transcribed as far as 070d.
+  MOVE TO THE NEXT PATTERN, and honour a seek if one is waiting.
 
-  THE SEEK INTERFACE. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
-  `+$204` and `+$205` -- inside the 768-byte structure published over INT 2Fh,
-  and `VTCtrl` names them `JumpNewPos`, `JumpPosSeq` and `JumpPosNote`, which are
-  the client bindings' own names for them. So a resident client can ask the player
-  to jump: set the position and row, raise the flag, and the next time the
-  sequencer crosses a pattern boundary it honours the request and clears the flag.
+  A SEEK IS A REQUEST, NOT A JUMP, and it is taken here rather than wherever it
+  was made. Something outside the program -- a demo, a tool -- writes a
+  position and a row into the published control block and raises a flag; the
+  sequencer notices at the next pattern boundary, moves there, and lowers the
+  flag. Honouring it only at a boundary is what keeps it safe: the seek can be
+  written at any moment, from an interrupt if need be, and it will still land
+  between rows rather than in the middle of one.
 
-  IT IS NOT THE ONLY FIELD A CLIENT WRITES, which is what stood here. The
+  THE END OF THE SONG IS ALSO DECIDED HERE -- whether to stop, or to go back to
+  the loop point and keep playing.
+
+  [re] 12ba:0693. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
+  `+$204` and `+$205` -- inside the 768-byte structure published over INT 2Fh --
+  and `VTCtrl` names them `JumpNewPos`, `JumpPosSeq` and `JumpPosNote`, the
+  client bindings' own names. They are not the only fields a client writes: the
   bindings mark a whole region as the client's -- these three, `SoundVolume` and
   `Abort` -- and the demo documentation adds that a client may write the
   semaphores too, "usually cleaning them". Psycho Neurosis never uses any of it.
@@ -1923,7 +1929,7 @@ begin
 
     NotePlaying := NextNote;                          { 074a..0753            }
     SeqPlaying  := NextSeq;                          { 0754..075d            }
-    { AN ARRAY ASSIGNMENT, NOT A `Move`, AND THE RTL ROUTINE IS WHAT SAYS SO. There are
+    { [re] AN ARRAY ASSIGNMENT, NOT A `Move`, AND THE RTL ROUTINE IS WHAT SAYS SO. There are
       TWO copy helpers in Turbo Pascal's SYSTEM with identical signatures, and they are
       eleven bytes apart in behaviour: `1ba1:0fb2` is `Move`, which compares the pointers
       and copies BACKWARDS when the regions overlap, and `1ba1:09f7` is the same loop with
@@ -2046,7 +2052,7 @@ begin
     { 08ed..0965 -- once per channel: fetch this row's note out of the song and
       keep a copy in the row being handed on.
 
-      `Song.NumChannels` is not a constant, so Turbo Pascal evaluates the limit into a
+      [re] `Song.NumChannels` is not a constant, so Turbo Pascal evaluates the limit into a
       temporary at [BP-6] before the loop -- the same four bytes the `with` above
       used, reused now that the `with` is finished. That is a compiler temporary
       sharing a slot, not a variable being reused.
@@ -2061,10 +2067,15 @@ begin
                    NewNote);                          { 091f..0945            }
       MyMove(NewNote, Note[ChanIdx], SizeOf(TFullNote));  { 0946..0965         }
 
-      { NEW IN v1.51 -- A CHANGE OF INSTRUMENT MARKS THE CHANNEL IN THE WIDE RING,
-        and it is a narrower test than the retrigger below: only the instrument
-        number, not the period. 12ce:0b2a compares the channel's current instrument
-        against the new note's and sets the flag when they differ. }
+      { MARK THE CHANNEL AS CHANGED, so that whatever draws the display knows
+        which channels did something on this row. A CHANGE OF INSTRUMENT counts
+        and a change of pitch does not -- a channel sliding through a
+        portamento is not "hit", but one that switches to a different sample
+        is.
+
+        [re] NEW IN v1.51. 12ce:0b2a compares the channel's current instrument
+        against the new note's and sets the flag when they differ; a narrower
+        test than the retrigger below, which also looks at the period. }
       if (NewNote.Instrument <> 0) and
          (CurCanal^.Note.Instrument <> NewNote.Instrument) then  { 0b1c..0b2f    }
         WideHit[WideSlot, ChanIdx] := 1;               { 0b30..0b40             }
@@ -2133,24 +2144,27 @@ begin
         `NewSample` is what stops it firing on a row that did not start a sample at
         all -- the offset would then apply to a note already part-way through.
 
-        BOTH HALVES OF THIS FEATURE WERE MEASURED BEFORE EITHER WAS NAMED. 147d:0369
-        set the two fields, 12ce:04bb grew the parameter that carries the value, and
-        only 1.39b's own call site joined them up. }
+        [re] BOTH HALVES OF THIS FEATURE WERE MEASURED BEFORE EITHER WAS NAMED.
+        147d:0369 set the two fields, 12ce:04bb grew the parameter that carries
+        the value, and only 1.39b's own call site joined them up. }
       if NewSample and CurCanal^.SOffs then          { 0c2d..0c3e            }
         SetNewSample(ChanIdx, RawChannels[ChanIdx],
                      CurCanal^.Instrument,
                      CurCanal^.SOffsVal);            { 0c3f..0c60            }
 
-      { 0a4d..0a57 -- and NOT `Tempo := CurSpeed`, which is what the enclosing
-        `with` would give. The original reloads the pointer from DS:$02dc, so the
-        source names it: inside a `with P^ do`, writing `P^.Field` explicitly
-        makes Turbo Pascal reload P instead of using the with-slot. Two different
-        instruction sequences for the same assignment. }
+      { [re] 0a4d..0a57 -- and NOT `Tempo := CurSpeed`, which is what the
+        enclosing `with` would give. The original reloads the pointer from
+        DS:$02dc, so the source names it: inside a `with P^ do`, writing
+        `P^.Field` explicitly makes Turbo Pascal reload P instead of using the
+        with-slot. Two different instruction sequences for the same
+        assignment. }
       NoteProcessed^.Tempo := CurSpeed;                   { 0a4d..0a57            }
 
-      { 0a58..0a72 -- publish the channel's event into the note ring, where
-        12ba:0187 will increment the semaphore it names. The ring is indexed by
-        the CONSUMER's slot, DS:$02ec, not the event ring's. }
+      { Publish this channel's cue into the ring, to be released a buffer later
+        when the sound it belongs to is actually heard.
+
+        [re] 0a58..0a72; 12ba:0187 increments the semaphore it names. The ring
+        is indexed by the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
         CurCanal^.RingPending;                       { 0a58..0a72            }
       NoteRing[EventSlot, ChanIdx - 1].Sem :=
@@ -2169,7 +2183,7 @@ begin
     if MuestrasPerTick > MaxSplPerTick then           { 0aae..0ab6            }
       MuestrasPerTick := MaxSplPerTick;               { 0ab7..0abc            }
 
-    { UNQUALIFIED here, where 0a4d was explicit -- and the bytes are what say
+    { [re] UNQUALIFIED here, where 0a4d was explicit -- and the bytes are what say
       so: this one is `LES DI,[BP-4]`, the with-slot, where 0a4d reloads from
       DS:$02dc. The author wrote one of these two the long way and not the other,
       in the same routine, ten instructions apart. }
@@ -2179,7 +2193,7 @@ begin
     if NoteHz = 0 then                                { 0ad7..0add            }
       NoteHz := 1;                                    { 0ade..0ae3            }
 
-    { 0ae4..0b07 -- A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1ba1:0a2e` is the
+    { [re] 0ae4..0b07 -- A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1ba1:0a2e` is the
       32-bit divide and `1ba1:0aa8` is the 32-bit SHIFT LEFT -- `AND CX,1Fh / SHL AX,1 /
       RCL DX,1 / LOOP` -- with `MOV CX,4` in front of it, so the second operation
       multiplies by sixteen where this read `div 4`. `1ba1:0a9c`, twelve bytes earlier, is
@@ -2264,22 +2278,35 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0c4e -- the sequencer tick, and the tempo engine. IN PROGRESS.
+  ONE TICK OF THE MUSIC. This is the routine the whole unit is built around:
+  advance the clock, cross into a new row if it is time, run every channel's
+  effects, and hand the result to the hardware.
 
-  THE HANDSHAKE. `ModFlag` non-zero means the module buffer still holds samples
-  nobody has taken, so the tick cannot advance: MixTick is called, and if the flag
-  is STILL set afterwards this routine gives up for now. That is why 12ba:0b57
-  reads the way it does, and it is the same protocol seen from the other side.
+  IT CAN DECLINE TO RUN, AND THAT IS HOW THE TICK STAYS IN STEP. Two things
+  can hold it back. If the mix buffer still holds samples nobody has taken, the
+  tick would be producing sound faster than the card can consume it -- so it
+  mixes once more and, if the buffer is still full, gives up until next time.
+  And if the published ring has caught up with its own consumer there is
+  nowhere to put a new row, so again the tick simply does not happen. Both are
+  the same idea: the sequencer waits for the mixer, never the other way round.
 
-  On a DMA device the tick is also gated on the timer: `VTSilenc.Ticks` is what
-  the interrupt increments and DS:$0bca is this side's snapshot of it, so equal
-  counters mean nothing new has happened yet.
-  **THIS IS THE RELEASE'S `ProcessTick`**, and the identification is measured
-  rather than guessed from the name. Its typed-constant block -- `incr`,
-  `OTempoCt`, `Can`, `Raw`, `NoteHzFreq`, `i`, `j`, `t`, `step`, `FBCount`,
-  `NumChannels` -- is this routine's block, in that order and those widths, and
-  the constants live in this routine and nowhere else. The names diverged; the
-  storage did not.
+  THE TEMPO IS A FRACTIONAL DIVIDER, not a countdown. The tick rate the format
+  asks for rarely divides the timer's rate exactly, so an accumulator carries
+  the remainder from one tick to the next and the loop runs one extra time
+  whenever it overflows. That is how a tempo that is not a whole number of
+  timer ticks still keeps time over a bar.
+
+  [re] 12ba:0c4e. THE HANDSHAKE: `ModFlag` non-zero means the module buffer
+  still holds samples, and 12ba:0b57 is the same protocol seen from the other
+  side. On a DMA device the tick is also gated on the timer -- `VTSilenc.Ticks`
+  is what the interrupt increments and DS:$0bca is this side's snapshot, so
+  equal counters mean nothing new has happened.
+
+  [re] THIS IS THE RELEASE'S `ProcessTick`, measured rather than guessed from
+  the name. Its typed-constant block -- `incr`, `OTempoCt`, `Can`, `Raw`,
+  `NoteHzFreq`, `i`, `j`, `t`, `step`, `FBCount`, `NumChannels` -- is this
+  routine's block, in that order and those widths, and the constants live in
+  this routine and nowhere else. The names diverged; the storage did not.
 
   [1.39b] "Process one tick of the music. Normally 50 ticks per second are used,
           but that can be changed."
@@ -2290,7 +2317,7 @@ begin
     shared ring cursor and no way to run out of room; 1.51 splits the cursors and puts
     the producer's advance at the top of the tick, guarded by the full test.
 
-    `(RingSlot + 1) mod RingRows` IS SIX INSTRUCTIONS BECAUSE 25 IS NOT A POWER OF
+    [re] `(RingSlot + 1) mod RingRows` IS SIX INSTRUCTIONS BECAUSE 25 IS NOT A POWER OF
     TWO. 12ce:0e78 is `MOV AX,[02e8] / INC AX / XOR DX,DX / MOV CX,19 / DIV CX /
     XCHG AX,DX` -- Turbo Pascal's Word `mod`, with the remainder swapped out of DX.
     Then `CMP AX,[02ea] / JNZ +3 / JMP exit`: if the next row is the one the consumer
@@ -2319,7 +2346,7 @@ begin
       Exit                                           { 0c86                  }
   end;
 
-  { ~~if UsingGUS then FlushEventRow~~ -- **GONE IN v1.51, AND DEVGUS IS WHY.** The
+  { [re] ~~if UsingGUS then FlushEventRow~~ -- **GONE IN v1.51, AND DEVGUS IS WHY.** The
     consumer now runs from the timer interrupt: 106e:0019 is `CALLF FlushEventRow`,
     so draining the ring is no longer the sequencer's job. What replaces the call
     here is the wide ring's own advance, which IS the sequencer's. 12ce:0ed4 and 0ed7
@@ -2329,7 +2356,7 @@ begin
 
   Inc(TickCount);                                    { 0eda..0edd            }
 
-  { 0c9a..0ca3 -- a 32-bit counter INSIDE the published control block, at
+  { [re] 0c9a..0ca3 -- a 32-bit counter INSIDE the published control block, at
     CtrlBlock + $125, immediately after the dispatch pointer. Together with the
     per-channel counters 12ba:0187 bumps, that is live state any INT 2Fh client
     can read. Psycho Neurosis never does. }
@@ -2363,7 +2390,7 @@ begin
     walks forward one tick at a time, so every boundary in the span gets its row
     change and its effect pass.
 
-    `i := TickInRow - PrevTick` IS WHAT MAKES THAT POSSIBLE and it has to be computed
+    [re] `i := TickInRow - PrevTick` IS WHAT MAKES THAT POSSIBLE and it has to be computed
     BEFORE the wind-back -- 12ce:0f26 subtracts, 0f32 restores. Two statements that
     look redundant together and are not: the first captures the span the accumulator
     produced, the second undoes the advance so the loop can redo it in steps.
@@ -2388,7 +2415,7 @@ begin
       TickInRow := 0                                 { 0f6c..0f70            }
     end;
 
-  { ~~TWO `NullProcedure` CALLS STOOD HERE~~ AND v1.51 HAS NEITHER. 1.31b brackets
+  { [re] ~~TWO `NullProcedure` CALLS STOOD HERE~~ AND v1.51 HAS NEITHER. 1.31b brackets
     the effect loop with `NullProcedure($FFFF, 0, 0)` before it and
     `NullProcedure($FFFF, $FFFF, 0)` after; 12ce:0ffc runs from the tempo loop's last
     instruction straight into `LES DI,[BP+4]`, with no `PUSH -1` anywhere between.
@@ -2499,7 +2526,7 @@ begin
     { 0e4a..0e6f -- AND THESE TWO ARE COMMON TO BOTH PATHS. The software branch's
       `JMP` at 0e22 lands on 0e4a, not past it, which is what says so; written
       inside the GUS branch they would be jumped over. }
-    { **$7F IN v1.51, $80 IN 1.31b** -- 12ce:10bd stores 7F. One less than the power
+    { [re] **$7F IN v1.51, $80 IN 1.31b** -- 12ce:10bd stores 7F. One less than the power
       of two, which is what a clamp to "the largest value that fits" looks like when
       the consumer treats the top bit as a sign. }
     { **THE TEST IS $80 AND THE STORE IS $7F**, which is not a slip: the clamp admits
@@ -2528,7 +2555,7 @@ begin
     if CanalPtr^.Period = 0 then                     { 10d5..10de            }
       CanalPtr^.Period := 1;
 
-    { **AND A CEILING TO GO WITH THE FLOOR, NEW IN v1.51.** 12ce:10e9 clamps `Period`
+    { [re] **AND A CEILING TO GO WITH THE FLOOR, NEW IN v1.51.** 12ce:10e9 clamps `Period`
       at $1FFF, the same bound the RealPeriod clamp further down uses. 1.31b guards
       only against zero here; 1.51 guards both ends, for the same reason the other
       clamp exists -- the rewritten arpeggio and the S3M loader can both produce
@@ -2574,17 +2601,19 @@ begin
       RawPtr^.Flags := RawPtr^.Flags and not rcfActiveChannel   { 1148..1153 }
     end;
 
-    { **NEW IN v1.51: THE PERIOD IS CLAMPED, AND THE ARPEGGIO IS WHY IT HAS TO BE.**
-      1.31b divides `NoteCalcVal` by whatever `RealPeriod` holds; 1.51 first bounds it
-      to $1F..$1FFF. Nothing in 1.31b could produce a period outside the note table's
-      own range, because every period came FROM the table -- but 147d:0000's rewritten
-      arpeggio computes periods by dividing a 14-bit fixed point by a semitone ratio,
-      and 1.51 loads S3M, whose periods are arbitrary. A `RealPeriod` of zero would
-      make the `DIV BX` below fault outright.
+    { CLAMP THE PERIOD BEFORE DIVIDING BY IT, and the arpeggio is why this has
+      to exist. When every period came out of a fixed note table, no period
+      could ever be out of range. Now they are computed -- the arpeggio divides
+      a fixed point by a semitone ratio, and S3M modules carry arbitrary
+      pitches -- so a period can be anything at all, including zero. Dividing
+      by that would fault outright, and the note is inaudible long before the
+      bounds are reached anyway.
 
-      THE TWO BOUNDS ARE AN if/else-if AND NOT TWO if's: 12ce:115d is `JNC` past the
-      low clamp to the HIGH test, and 1169 jumps over the high test entirely once the
-      low one has fired. Two separate `if`s would test both every time. }
+      [re] NEW IN v1.51; 1.31b divides `NoteCalcVal` by whatever `RealPeriod`
+      holds. THE TWO BOUNDS ARE AN if/else-if AND NOT TWO if's: 12ce:115d is
+      `JNC` past the low clamp to the HIGH test, and 1169 jumps over the high
+      test entirely once the low one has fired. Two separate `if`s would test
+      both every time. }
     if CanalPtr^.RealPeriod < $1F then               { 1154..115e            }
       CanalPtr^.RealPeriod := $1F                    { 115f..1168            }
     else if CanalPtr^.RealPeriod > $1FFF then        { 116b..1176            }
@@ -2629,7 +2658,7 @@ begin
       This is the producer PublishWideRow later moves whole, and it is what finally
       names the four bytes: a Word period, an instrument number, and a volume.
 
-      IT IS A `with` AND THE FRAME PROVES IT. SeqTick is `ENTER 6` in v1.51 against
+      [re] IT IS A `with` AND THE FRAME PROVES IT. SeqTick is `ENTER 6` in v1.51 against
       1.31b's `ENTER 2`; two of the four extra bytes are the hidden pointer at
       [BP-6]/[BP-4] that 12ce:11c4 builds and every field store reloads with
       `LES DI,[BP-6]`. That is Turbo Pascal's `with` on an indexed record and nothing
@@ -2638,7 +2667,7 @@ begin
       THE VOLUME IS SCALED BY UserVols, so what a client reads is what it would HEAR
       rather than what the tune asked for. `MUL DX` with DX loaded first puts
       UserVols on the right of the multiply. }
-    { `TmpVal` AND NOT `ChanIdx` -- 12ce:11b1 loads [0330], which is this loop's own
+    { [re] `TmpVal` AND NOT `ChanIdx` -- 12ce:11b1 loads [0330], which is this loop's own
       control variable, not ProcessNewNote's. Two Word globals a few bytes apart doing
       the same job in different routines. }
     with WideRing[WideSlot, TmpVal] do           { 11b1..11c9                     }
@@ -2647,7 +2676,7 @@ begin
       Instrument := CanalPtr^.Note.Instrument;   { 11d8..11e5                     }
       Volume     := CanalPtr^.Volume * UserVols[TmpVal] shr 7;   { 11e6..1207     }
 
-      { AND CLAMPED, STILL INSIDE THE `with` -- 12ce:1208 reloads [BP-6] rather than
+      { [re] AND CLAMPED, STILL INSIDE THE `with` -- 12ce:1208 reloads [BP-6] rather than
         the channel pointer, so the test is on the entry just written and not on the
         channel it came from. Two 6-bit volumes multiplied give thirteen bits and the
         shift takes back only seven, so the product can exceed $3F whenever both are
@@ -2668,22 +2697,24 @@ begin
     else
       FilterVal := FilterOff;                        { 1245..124a            }
 
-    { **NEW IN v1.51 -- THIS IS WHERE THE RETRIGGER ACTUALLY RETRIGGERS.** MODCOMMA
-      only ever sets a flag: 147d:05d8 counts ticks and raises `DoRetrig`, and
-      147d:087a clears it again on the next dispatch, so it is true for exactly one
-      tick. Nothing in that segment restarts a sample -- it cannot, because the sample
-      machinery lives here. 12ce:124f is the reader, and `SetNewSample(.., 0)` is the
-      restart.
+    { **THIS IS WHERE THE RETRIGGER ACTUALLY RETRIGGERS.** The effect engine
+      only ever raises a flag -- it counts the ticks and says "now", but it
+      cannot restart a sample, because the sample machinery is here and not
+      there. This is the other half: the flag is read and the channel is
+      started again from the beginning.
 
-      THE NIL TEST IS ON A POINTER AND SAYS SO: `MOV AX,ES:[DI+6] / OR AX,ES:[DI+8]`,
-      both halves. A channel with no instrument has nothing to retrigger.
+      FROM THE BEGINNING, EVEN AFTER A 9xx. A retrigger and a sample offset on
+      the same row do not compose; the retrigger wins and the sample restarts
+      at zero.
 
-      OFFSET ZERO, NOT `SOffsVal`. A retrigger restarts the sample from its beginning
-      even when the row also carried a 9xx -- the two commands do not compose, and
-      the literal `PUSH 0` at 127a is what says so rather than anything in the docs. }
+      [re] NEW IN v1.51. 147d:05d8 counts ticks and raises `DoRetrig`, and
+      147d:087a clears it on the next dispatch, so it is true for exactly one
+      tick; 12ce:124f is the reader. THE NIL TEST IS ON A POINTER AND SAYS SO:
+      `MOV AX,ES:[DI+6] / OR AX,ES:[DI+8]`, both halves. The literal `PUSH 0` at
+      127a is what says the offset is zero rather than `SOffsVal`. }
     if CanalPtr^.DoRetrig then                       { 124b..1255            }
       if CanalPtr^.Instrument <> nil then            { 1256..1263            }
-        { `TmpVal` again -- 12ce:1265 loads [0330], the volume loop's own counter. }
+        { [re] `TmpVal` again -- 12ce:1265 loads [0330], the volume loop's own counter. }
         SetNewSample(TmpVal, RawPtr^,
                      CanalPtr^.Instrument, 0);       { 1264..127e            }
 
@@ -2698,10 +2729,13 @@ begin
     else
       RawPtr^.Flags := RawPtr^.Flags or rcfActiveChannel;      { 0f47..0f56   }
 
-    { 0f57..0fb3 -- on the GUS, tell the card. A permitted channel gets its
-      volume and a frequency derived from the real period; a muted one gets volume
-      zero and $FFFF for the frequency, which is 12ba:0275's "leave that field
-      alone" sentinel. Same constant family as NoteCalcVal's $364C0000. }
+    { ON A GRAVIS, TELL THE CARD instead of mixing. A channel that is allowed
+      to sound gets its volume and a pitch worked out from the period; a muted
+      one gets volume zero and the "leave the pitch alone" sentinel, so muting
+      does not disturb where the note is.
+
+      [re] 0f57..0fb3; $FFFF is 12ba:0275's sentinel. Same constant family as
+      NoteCalcVal's $364C0000. }
     if UsingGUS then                               { 0f57..0f5d            }
       if Permisos[TmpVal] then                       { 0f5e..0f68            }
         PostEvent(TmpVal - 1, RawPtr^.Volume,
@@ -2761,23 +2795,32 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:1049 and 12ba:105d -- the two buffer callbacks the sound device asks
-  through. Both are FAR functions of no arguments returning a PSampleBuffer,
-  which is `SoundDevices.TAskBufferProc`, and both are the release's: it declares
-  `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION BufferGiver :
-  PSampleBuffer; FAR` in its implementation section, exactly here.
+  WHAT THE CARD ASKS WHEN IT WANTS MORE SOUND. The driver does not call the
+  player; the player gives the driver a function to call, and the driver calls
+  it from its own interrupt when a buffer runs out. That inversion is what lets
+  one player drive cards whose interrupts arrive at completely different times.
 
-  `IdleGiver` NEVER GIVES ANYTHING. It sets the result to nil and returns -- the
-  callback a driver gets while there is nothing to play.
+  THERE ARE TWO OF THEM BECAUSE THERE ARE TWO STATES. While a module is
+  playing, `BufferGiver` hands over the next filled buffer. While nothing is
+  playing, `IdleGiver` is installed instead and answers "nothing" -- so
+  stopping playback is a matter of swapping one function for another, with no
+  flag for the interrupt to test.
 
-  `BufferGiver` hands over the head buffer if it holds samples, then advances the
-  head. `InUse` reads as "filled and owned by the device": the mixer at 12ba:0bfa
-  SETS it when it finishes filling and refuses to refill while it is set, and this
-  is the routine that passes it on.
+  A BUFFER IS EITHER THE MIXER'S OR THE CARD'S, NEVER BOTH. The flag that says
+  which is set by the mixer when it finishes filling and cleared when the card
+  is done, and it is the only handshake between them -- no locks, and none
+  needed, because each side only ever moves the flag one way.
 
-  AND THE HEAD IS CLAMPED TO 1, so at most two of the three buffers are ever
-  handed out and in practice only one. That is the third rotation in this unit
-  disabled by its own next instruction -- see 06c0 and 0c30.
+  [re] 12ba:1049 and 12ba:105d, FAR functions of no arguments returning a
+  PSampleBuffer, which is `SoundDevices.TAskBufferProc`. Both are the release's:
+  it declares `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION
+  BufferGiver : PSampleBuffer; FAR` in its implementation section, exactly here.
+  `InUse` reads as "filled and owned by the device": the mixer at 12ba:0bfa SETS
+  it when it finishes filling and refuses to refill while it is set.
+
+  [re] AND THE HEAD IS CLAMPED TO 1, so at most two of the three buffers are
+  ever handed out and in practice only one. That is the third rotation in this
+  unit disabled by its own next instruction -- see 06c0 and 0c30.
   -------------------------------------------------------------------------- }
 function IdleGiver : PSampleBuffer; far;
 begin
@@ -2788,11 +2831,11 @@ function BufferGiver : PSampleBuffer; far;
 begin
   BufferGiver := nil;                                { 1061..1068            }
 
-  { AN EARLY `Exit`, NOT A WRAPPED `if`. The test emits `JNZ +2 / JMP` with the
-    jump landing on the epilogue at 1099 -- the un-folded pair this project's own
-    notes list as the tell. Written as `if InUse then begin ... end` the compiler
-    folds it into a single `JZ`, because the body is only 34 bytes and well within
-    short range. }
+  { [re] AN EARLY `Exit`, NOT A WRAPPED `if`. The test emits `JNZ +2 / JMP` with
+    the jump landing on the epilogue at 1099 -- the un-folded pair this project's
+    own notes list as the tell. Written as `if InUse then begin ... end` the
+    compiler folds it into a single `JZ`, because the body is only 34 bytes and
+    well within short range. }
   if not Buffers[BuffGive].InUse then                { 1069..1076            }
     Exit;
 
@@ -2803,27 +2846,33 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:10a1 -- start playing a module. IN PROGRESS.
+  START PLAYING. Settle the range to play, reset every channel, negotiate a
+  rate with the card, claim and size the buffers, and hand the first one over.
 
-  `CLI`-guarded from its first instruction to each of its exits, because it
-  rewrites the state the timer handler reads. The release exports the equivalent as
-  `PROCEDURE PlayStart(VAR Song: TSong)` and 1.31 TAKES THE SAME ONE ARGUMENT --
-  an earlier reading here gave it a second Word, which the exit disproves: 132c is
-  `RETF 4`, four bytes of parameters, which is the `var` reference alone, and 10a5
-  reads `Song` at [BP+6] rather than [BP+8]. That invented argument was the four
-  real differences in this routine's first block and the one-byte shift under all
-  of them.
+  INTERRUPTS ARE OFF FOR THE WHOLE ROUTINE, because it rewrites the state the
+  timer handler reads. A tick arriving half way through would see a song that
+  is partly the old one and partly the new. That is also why every exit --
+  including each failure -- has to turn them back on: there is no other path
+  out.
 
-  The three requested range values are copied into the working ones, each with a
-  fallback: an unset length comes from the song, an unset start means position 1.
-  A start beyond the end gives up -- with `STI` first, which is why the guard has
-  to be released on every path.
+  EVERY RANGE VALUE HAS A FALLBACK, so a caller may specify all of it, some of
+  it or none. An unset length means the whole song; an unset start means the
+  beginning. A start beyond the end is the one case that cannot be rescued, and
+  it gives up.
+
+  [re] 12ba:10a1, `CLI`-guarded from its first instruction to each of its exits.
+  The release exports the equivalent as `PROCEDURE PlayStart(VAR Song: TSong)`
+  and 1.31 TAKES THE SAME ONE ARGUMENT -- an earlier reading gave it a second
+  Word, which the exit disproves: 132c is `RETF 4`, four bytes of parameters,
+  which is the `var` reference alone, and 10a5 reads `Song` at [BP+6] rather
+  than [BP+8]. That invented argument was the four real differences in this
+  routine's first block and the one-byte shift under all of them.
   -------------------------------------------------------------------------- }
-{ The `far` is gone from this header: TP6 rejects it on the implementation
+{ [re] The `far` is gone from this header: TP6 rejects it on the implementation
   header of a routine the interface already declares (Error 36), and PlayStart
   is now declared there. The calling model comes from the interface. }
 procedure PlayStart(var Song : TSong);
-  { THE FRAME SETTLES BOTH OF THESE. `ENTER 8,0` at 10a1, and only three things
+  { [re] THE FRAME SETTLES BOTH OF THESE. `ENTER 8,0` at 10a1, and only three things
     can be in those eight bytes: the loop variable at [BP-2], a second Word at
     [BP-4] that nothing in the routine ever touches, and the four-byte `with`
     slot at [BP-8]/[BP-6] that 11f7..11fa fills. Declaring `i` alone would put
@@ -2902,7 +2951,7 @@ begin
   if RangeEnd < NextSeq then                       { 117b..1183              }
     RangeEnd := NextSeq;                           { 1184..1189              }
 
-  { 118a..11d5 -- prime the first row and the queue that hands it on. The stores
+  { [re] 118a..11d5 -- prime the first row and the queue that hands it on. The stores
     land on $1220, $1221, $1222, $1223 and then an 8-byte Move to $1224, which is
     NoteBuff[0]'s EoMod, Tempo, NotePlaying, SeqPlaying and Volume -- the layout
     fixed at 12ba:094b, confirming itself from a different routine. `$125c` is its
@@ -2921,7 +2970,7 @@ begin
 
   { 11d6..1223 -- clear the channels, then give each one a starting note.
 
-    THE `with` IS THE ORIGINAL'S, not a convenience. 11f7..11fa is
+    [re] THE `with` IS THE ORIGINAL'S, not a convenience. 11f7..11fa is
     `MOV [BP-8],DI / MOV [BP-6],DS` -- the register the offset was accumulated in,
     then DS -- and every field store below reloads it with `LES DI,[BP-8]`. A
     pointer local instead would need a pointer VALUE and give
@@ -2959,7 +3008,7 @@ begin
   if not UsingGUS then                           { 123d..1243              }
     for i := 1 to NumBuffers do                    { 1244..124d, 1299..129e  }
     begin
-      { 124e..1265 -- a VIRTUAL call on the heap object at DS:$39ae, through
+      { [re] 124e..1265 -- a VIRTUAL call on the heap object at DS:$39ae, through
         `[DI+8]`, which is virtual method number two. See HEAPS.PAS, which is a
         stub for segment 17cf and exists to put HGetMem in that slot.
 
@@ -3135,17 +3184,16 @@ procedure PlayStop;
 var
   i : Word;                       { [BP-2], and the whole of `ENTER 2,0`       }
 begin
-  { **NEW IN v1.51, AND IT IS A DEBUGGING LINE THE RELEASE LEFT IN.** 12ce:174c
-    writes a four-character string at CS:$1743 -- `04 'S' 't' 'o' 'p'`, a Pascal
-    short string sitting in the code segment -- and then calls SYSTEM's WriteLn.
+  { A DEBUGGING LINE THE AUTHOR LEFT IN. A released player prints "Stop" on
+    the console every time a module ends. Transcribed because it is there.
 
-    NO FILE VARIABLE, WHICH IS WHY IT IS `Output`. The Text pushed is DS:$6890, and
-    that is NOT VTShell's `ConFile`: ProgName measures at $5e38 in 1.51 against
-    $3ade in 1.31b, a shift of $235a, which would put ConFile at $5d38. $6890 is
-    further on and is what a bare `WriteLn` uses.
-
-    So a released player prints "Stop" every time a module ends. Transcribed because
-    it is there. }
+    [re] NEW IN v1.51. 12ce:174c writes a four-character string at CS:$1743 --
+    `04 'S' 't' 'o' 'p'`, a Pascal short string in the code segment -- then
+    calls SYSTEM's WriteLn. NO FILE VARIABLE, WHICH IS WHY IT IS `Output`: the
+    Text pushed is DS:$6890, and that is NOT VTShell's `ConFile`, since ProgName
+    measures at $5e38 in 1.51 against $3ade in 1.31b, a shift of $235a, which
+    would put ConFile at $5d38. $6890 is further on and is what a bare `WriteLn`
+    uses. }
   WriteLn('Stop');                                 { 174c..1761              }
 
   Playing := False;                                { 1762..1766              }
