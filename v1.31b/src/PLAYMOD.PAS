@@ -5,7 +5,7 @@
   program itself. IN PROGRESS: transcribed from the top of the segment down,
   which is the only order that works, because Turbo Pascal lays procedures out
   in source order and a missing routine displaces everything below it.
-  `verify.py` reports it as PARTIAL and measures what is here.
+  `units.py` reports it as PARTIAL and measures what is here.
 
   NAMES ARE THE 1.39b RELEASE'S. `LIB/PLAYMOD.PAS` is the later version of this
   unit and the pairing is confirmed rather than assumed:
@@ -70,7 +70,7 @@ interface
   at its declaration there. The original's segment addresses put `1065`/VTSilenc at
   the very END of the unit order and `12ba`/PlayMod in the middle, and TP6's order is
   reverse DFS post-order over the `uses` graph, so a dependency in this direction is
-  impossible. `demovt/linkorder.py` checks every edge in the tree against it. }
+  impossible. `linkorder.py` checks every edge in the tree against it. }
 uses
   SongUnit, SoundDevices, VTCtrl, GUS, ModCommands, Filters,
   Heaps, Hardware;
@@ -255,7 +255,7 @@ const
   out per unit in LINK order and, within a unit, in DECLARATION order**, with a unit's
   TYPED CONSTANTS in one region and its plain vars in another. So the order of these
   lines IS the layout, and a var here is not a slower constant -- it is a variable in a
-  different part of DGROUP entirely. `demovt/dgroup.py` measures it.
+  different part of DGROUP entirely. `dgroup.py` measures it.
 
   EVERY VALUE IS READ OUT OF THE ORIGINAL'S IMAGE, never taken from the release, and
   one of them differs: `MaxOutputFreq` is 44000 here and 45000 in 1.39b. `MaxSplPerTick`
@@ -315,7 +315,7 @@ const
     The image settles it: $02e0 holds `03 70`, MaxSplPerTick, so $02e1 is that Word's
     high byte and cannot be the array's first element. Declared `array[1..8]` at $02e2
     the displacement is identical -- `[$02e2 - 1 + Chan]` is `[$02e1 + Chan]` -- which
-    is why nine bytes where there are eight was invisible to `verify.py`. Exactly the
+    is why nine bytes where there are eight was invisible to `units.py`. Exactly the
     mistake recorded for `RawChannels`: "$1384 IS THE BASE-1 BASE, not the address".
 
     $40 and $b0 are a third of the way in from each side, in the pattern
@@ -410,7 +410,7 @@ const
 
   Moving a declaration from the implementation section to the interface cannot change
   a byte of either unit: every reference to a global is a linker fixup either way, and
-  `verify.py` is the check. What it does change is who may write them, and the answer
+  `units.py` is the check. What it does change is who may write them, and the answer
   turns out to be "a text file".
 
   ~~`FilterIsOn` IS NOT IN THIS LIST, deliberately.~~ **IT IS NOW EXPORTED, and the
@@ -438,7 +438,7 @@ const
   The addresses were all correct and the ORDER was not, which is a distinction nothing
   could measure until the program linked: a `var` is space the linker never writes, so
   `dgroup.py` cannot see it, and inside a `.TPU` every reference to one is an unresolved
-  fixup that `verify.py` excuses. `demovt/linkcmp.py` compares the LINKED code, where
+  fixup that `units.py` excuses. `linkcmp.py` compares the LINKED code, where
   each of those fixups is a real address, and it reported this block scattered over
   fourteen different deltas -- +3530, +3976, -428, -700 and the rest -- which is what a
   correctly-sized block in the wrong internal order looks like.
@@ -1376,7 +1376,9 @@ begin
     Volume := UserVols;                              { 075e..0772            }
 
     { 0773..078d -- `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
-      14b9. THAT UNIT IS A STUB -- see demovt/src/VTSONG.PAS -- but the call site
+      14b9, which is src/SONGUNIT.PAS. THAT UNIT WAS A STUB WHEN THIS WAS
+      WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its segment --
+      but the note stands for a different reason than it did: the call site
       is real: the arguments, their order and the far linkage are read off these
       bytes, and the target is a pending fixup exactly as the linker would leave
       it. The position is pushed FIRST, so it is the first declared parameter and
@@ -1405,7 +1407,7 @@ begin
       until it finds a position that does have one -- or runs off the end.
 
       This block was blocked until 14b9 could be declared: the call's result drives
-      the branch, which a byte placeholder cannot do. See demovt/src/VTSONG.PAS. }
+      the branch, which a byte placeholder cannot do. See src/SONGUNIT.PAS. }
     if Song.GetPatternSequence(SeqPlaying) = 0 then   { 07c2..07dc            }
     begin
       CurSpeed := Song.InitialTempo;                       { 07dd..07e6            }

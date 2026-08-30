@@ -328,7 +328,7 @@ begin
     but Turbo Pascal 7 evaluates the RIGHT operand of a `+` first and stashes
     the left one in CX. Written the natural way round, `(Port[+1] shl 8) +
     Port[]`, it compiles to the two reads in the wrong order. Written like
-    this it is byte-identical. Same value either way; see demovt/verify.py. }
+    this it is byte-identical. Same value either way; see units.py. }
   SavedDiv := Port[ComPort]
               + (Port[ComPort + 1] shl 8);
 

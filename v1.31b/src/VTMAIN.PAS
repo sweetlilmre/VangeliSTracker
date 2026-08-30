@@ -87,7 +87,7 @@ program DemoVT;
   THAN CHOSEN. TP6 emits segments in reverse DFS post-order over the `uses` graph, so
   the original's segment ADDRESSES read backwards are its finish order -- and that is
   the one thing about the original link that can simply be measured. The first eleven
-  entries below are the unique sequence that reproduces it; `demovt/linkorder.py`
+  entries below are the unique sequence that reproduces it; `linkorder.py`
   simulates the rule and diffs the result, and it agrees on all thirty positions.
 
   Two of them are worth pointing at, because they are not what a reader would guess:
@@ -114,7 +114,7 @@ uses
 { `Guard` IS A TYPED CONSTANT, NOT A VAR, and that is the only thing that can put it
   at $0002. DGROUP is laid out as ALL the units' typed constants in link order and then
   all their variables, so anything in the initialised image -- which is what the EXE
-  actually stores, and what `demovt/dgroup.py` reads -- has to be a constant. The
+  actually stores, and what `dgroup.py` reads -- has to be a constant. The
   original's image opens with four zero bytes and SelfName at $0004; declared a `var`
   this byte went to the variable region instead and left ours opening with two.
 
@@ -142,7 +142,7 @@ const
     THREE THINGS SAY SO INDEPENDENTLY, and the array form contradicts all three:
       * 1000:0000 is the strings, so ShowBanner does not begin at offset 0;
       * the initialised DGROUP at DS:$0000 is thirty bytes -- four zeros and one
-        String[25] -- with no room for 248 bytes of banner (`demovt/dgroup.py`);
+        String[25] -- with no room for 248 bytes of banner (`dgroup.py`);
       * ShowBanner's prologue is `55 89 E5`, PUSH BP / MOV BP,SP with no ENTER, so
         the routine has NO LOCAL, and the `for I` the loop form needs is not there.
     The four WriteLns are UNROLLED for the same reason: 1000:0111, 0127, 013d and
@@ -193,7 +193,7 @@ const
     byte from $0018 to $001d is zero whichever way the six are divided, so the image is
     the same and the SIZES were still wrong. A byte comparison of initialised data cannot
     see a boundary inside a run of zeros; only an instruction that names an address can,
-    and `demovt/linkcmp.py` is what reads those. }
+    and `linkcmp.py` is what reads those. }
   SelfName : String[19] = 'DemoVT v1.31 (beta)';
 
 var
@@ -227,7 +227,7 @@ var
   DGROUP is laid out per unit in link order exactly as the constant half is, and this
   program is first, so its block opens the region. It is not in the EXE -- a `var` is
   space the linker never writes -- but every instruction that touches one carries the
-  resolved address, so `demovt/linkcmp.py` reads the layout back out of the CODE.
+  resolved address, so `linkcmp.py` reads the layout back out of the CODE.
 
   The order below is the original's, taken from those operands:
 
@@ -286,7 +286,7 @@ var
     global and a global of its own look identical in a `MOV`.
 
     None of this could be seen before the layout: a DGROUP reference is a linker fixup,
-    so `verify.py` excused every one and the program compiled either way. }
+    so `units.py` excused every one and the program compiled either way. }
   { ~~VarC76 $0c76 and VarC78 $0c78~~ -- NOT VARIABLES. `Song` is at $0c74 and is 94
     bytes, so both of these are INSIDE it: $0c74 + 2 is `SongStart` and + 4 is `SongLen`,
     which SONGUNIT.PAS already declares as the record's first two fields. The two
@@ -626,7 +626,7 @@ begin
   SetVTFreq;                                       { 1000:0306 }
   MaxOutputFreq := DesiredHz;                      { 1000:030b  $02ce := $0bae }
   { 1000:0311..0320 -- a FillChar, NOT the Str this file used to read here.
-    census.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
+    survey.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
     established 1ba1:0fd5 as FillChar. The pushes are dest, count, VALUE:
     DS:$1208 for eight bytes of whatever $08ba holds. }
   FillChar(UserVols, 8, VtVolume);                  { 1000:0311..0320 }

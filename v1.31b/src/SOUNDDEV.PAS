@@ -39,7 +39,7 @@
 {$G+}   { 80286 code -- required for PUSHA/POPA/ENTER/LEAVE and the shift
           forms this unit uses. The 386 instructions in the gain ladder and
           the mixer are emitted as an explicit DB 66h prefix in front of a
-          16-bit mnemonic; see demovt/emit_gain.py. }
+          16-bit mnemonic; see emit_gain.py. }
 
 unit SoundDevices;
 
@@ -144,7 +144,7 @@ procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
 
   All of it was plain `var`s, so none of it existed in the linked image: a typed
   constant is initialised data the linker writes into the EXE and a `var` is reserved
-  space it never touches. That is 120 of the 124 bytes `demovt/dgroup.py` reported
+  space it never touches. That is 120 of the 124 bytes `dgroup.py` reported
   missing between SoundBlaster's block and Hardware's.
 
   THE VALUES ARE READ OUT OF THE ORIGINAL'S IMAGE AND THE RELEASE SUPPLIED THE ORDER,
@@ -282,7 +282,7 @@ const
     independent channel volumes to hold at startup.
 
     **BUT THE ASSEMBLER MODULE READS THE SAME SIXTEEN BYTES AS `Volumes`.**
-    `asmcheck.py` finds seven `OFFSET <symbol> + n` fixups in SOUNDDEV.OBJ that all
+    `objcheck.py` finds seven `OFFSET <symbol> + n` fixups in SOUNDDEV.OBJ that all
     imply a DGROUP symbol at $0bd2, and this unit has documented them since as "eight
     per-channel volumes, 0..15" that SetGains turns into eight patched CALL targets.
     Their spacing alternates 0x11, 0x19, which fits FOUR PAIRS -- and a pair is exactly
@@ -1142,7 +1142,7 @@ begin
 end;
 
 { ---- 1a17:0746..1a17:10c3 -- THE ASSEMBLER MODULE ----------------------
-  `demovt/src/SOUNDDEV.ASM`, assembled by TASM and linked with $L. It holds the
+  `src/SOUNDDEV.ASM`, assembled by TASM and linked with $L. It holds the
   gain ladder and its patcher, the mixing chain, SharedPoll and the output
   selectors: one frameless run with three entry points and two different
   returns, which is a shape no Pascal procedure has.
@@ -1161,8 +1161,8 @@ end;
   or SelectOutput by name -- they are declared so that the module has something
   to be PUBLIC for, and so that the unit reads as what it links.
 
-  The generated half is still generated: `python demovt/emit_gain.py >
-  demovt/src/VTGAIN.INC`, now emitting TASM syntax, INCLUDEd by SOUNDDEV.ASM.
+  The generated half is still generated: `python emit_gain.py >
+  src/VTGAIN.INC`, now emitting TASM syntax, INCLUDEd by SOUNDDEV.ASM.
   The generator still asserts the closed form of all 48 gains and checks the
   patcher's length, so it fails rather than emitting something plausible. }
 {$L SOUNDDEV.OBJ}

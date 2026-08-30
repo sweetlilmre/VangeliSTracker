@@ -14,11 +14,11 @@
       CmdInitShell calls SkipRest          which is what NAMED 116e's extra virtual
       CmdInitFreq has ONE Val              the release's duplicate line is not here
 
-  THE COUNTERPART IS `VTCMD.PAS`, measured at 42.1% by `demovt/relmatch.py`. It is
+  THE COUNTERPART IS `VTCMD.PAS`, measured at 42.1% by `relmatch.py`. It is
   `116e`'s DESCENDANT -- two descendants, in fact -- and it is the unit that finally
   explained `116e`'s missing two routines.
 
-  **`census.py` MAPPED ALL TWENTY-TWO ROUTINES AND ALL TWENTY-ONE SWITCH BRANCHES, and
+  **`survey.py` MAPPED ALL TWENTY-TWO ROUTINES AND ALL TWENTY-ONE SWITCH BRANCHES, and
   the switch table did most of the work.** `109c:0844..088f` is a solid run of
   length-prefixed Pascal strings and it is the whole switch vocabulary:
 
@@ -28,7 +28,7 @@
       088a 'd'     088c 'f'     088e 'v'
 
   **TWENTY-ONE NAMES, ENDING EXACTLY WHERE `InterpretSwitch` BEGINS at 0890, and
-  `census.py` counts exactly twenty-one `CALLF [DI+18]`** -- one CmpSwitch per name, in
+  `survey.py` counts exactly twenty-one `CALLF [DI+18]`** -- one CmpSwitch per name, in
   this order. The release's list is the same but for three changes:
 
       'frst' is ABSENT          and so is CmdInit1stSong, the only thing it called
@@ -77,7 +77,7 @@ interface
   TP6 lays segments out in reverse DFS post-order over the `uses` graph -- so DevGus
   finishes AFTER VTCmd and cannot be something VTCmd uses. Checked against the source
   before removing it: not one identifier from DevGus is named anywhere in this file,
-  so the clause entry was never doing anything. `demovt/linkorder.py` is the check. }
+  so the clause entry was never doing anything. `linkorder.py` is the check. }
 uses
   Dos, Objects,
   VTDriver, SoundDevices,
@@ -162,7 +162,7 @@ var
     Declaring this one a TStringCollection recovers all 48 bytes and the block then
     matches. **A VMT is measurable data, and it names a type that no call site could.**
 
-    So `demovt/dgroup.py` has now found something no byte comparison and no call-site
+    So `dgroup.py` has now found something no byte comparison and no call-site
     reading could: an object's TYPE, from the size word of its virtual method table. }
   SongColl : TStringCollection; { DS:$1040  VMT $07fe -- 1000:05c4 }
 
@@ -179,7 +179,7 @@ implementation
   moved out of VTGlobal and into SongUnit -- $03c0 is four bytes below SongUnit's own
   `SongLoaders` at $03c4. Adding it cannot move a segment, because everything in this
   clause is already reached through `PlayMod` before the walk gets here; the order was
-  re-checked with `demovt/linkorder.py` either way. }
+  re-checked with `linkorder.py` either way. }
 { VTSilenc BEFORE FileUtil, AND THE LINK ORDER IS THE ONLY REASON. The two are
   unrelated and either order compiles; the original's segments run FILEUTIL then
   VTSILENC then CMDLINE, and reverse post-order means FileUtil has to finish LAST of
@@ -192,7 +192,7 @@ uses
 { ===========================================================================
   109c:0000 and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
   both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
-  count that `census.py` finds at `0037` and `0045`, the only two in the segment.
+  count that `survey.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
 
 { --------------------------------------------------------------------------
@@ -251,7 +251,7 @@ end;
   two `PathStr` value parameters at four bytes each plus a four-byte procedural
   parameter. `ENTER $284` is the frame.
 
-  **`DoOne` IS CALLED THROUGH `[BP+04]`**, and `census.py` finds exactly one such site,
+  **`DoOne` IS CALLED THROUGH `[BP+04]`**, and `survey.py` finds exactly one such site,
   at `03c0`. A procedural parameter is a frame slot, not a VMT slot, which is why it
   shows up in the same scan as the virtual calls and why it is the only `[BP+nn]` there.
 
@@ -292,7 +292,7 @@ const
 
     A TYPED CONSTANT ARRAY LIVES IN DGROUP, NOT THE CODE SEGMENT, which is why 3,296 bytes
     of `109c` contain no extension text at all and why this had to be read from the data
-    image. `verify.py` compares code only, so **nothing here is checked by the byte
+    image. `units.py` compares code only, so **nothing here is checked by the byte
     comparison** -- only `NumExts` is, through that one immediate. }
   NumExts = 7;
   Exts : array[0..NumExts] of ExtStr =

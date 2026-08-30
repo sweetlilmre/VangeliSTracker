@@ -31,7 +31,7 @@
   (That test works because Turbo Pascal puts an untyped string constant in the CODE
   segment -- the `PUSH CS` rule from `VTRESID` -- so a segment carries its unit's
   literals verbatim. It is one-way: a high score is strong evidence, a low score is
-  none at all. See `demovt/pairmap.py`.)
+  none at all. See `pairmap.py`.)
 
   `11bb:0000..001f` IS DATA, AND IT IS A SET CONSTANT. The first routine starts at
   0020; the 32 bytes before it are
@@ -64,7 +64,7 @@ interface
   `MasterVol`, `DACVol`, `FMVol` and `Filter` keys and which the DGROUP layout showed
   belong to DevSB's block at $09ea. It cannot move a segment: DevSB is reached from the
   program's own clause long before VTCfg, so it is already placed when the walk arrives
-  here. `demovt/linkorder.py` is the check. }
+  here. `linkorder.py` is the check. }
 uses
   Dos, SongUnit, VTDriver, SoundDevices, GUS, PlayMod, ModCommands, VTShell,
   VTGlobal, SoundBlaster, DevSB, SongElements;
@@ -142,7 +142,7 @@ var
     references below now spell them `DacPort`, `LDacPort` and `RDacPort`, which is that
     unit's -- and the release's -- capitalisation. }
 
-  { ---- AND THE VTGlobal GROUP HAS MOVED OUT, to demovt/src/VTGLOBAL.PAS ----
+  { ---- AND THE VTGlobal GROUP HAS MOVED OUT, to src/VTGLOBAL.PAS ----
     `PermitFade`, `VtVolume`, `ShellLoopMod`, `ShellHz`, `FadeIncr`, `VTLoopMod`,
     `ShellParam`, `DevID`, `StringsFName` and `ModPath` were declared here, privately,
     because this was the only unit that touched them.

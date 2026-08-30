@@ -43,7 +43,7 @@
 ;   measure their deltas from 0746 -- 0d7c is +0636 -- and with the JMP in
 ;   place `OFFSET SetGains` was the JMP, so every one of them pointed three
 ;   bytes short. They are linker fixups, so they sit in the .TPU as zeros and
-;   verify.py files them as pending: four wrong pointers, invisible. This is
+;   units.py files them as pending: four wrong pointers, invisible. This is
 ;   risk 1 in miniature.
 ;   ==========================================================================
 

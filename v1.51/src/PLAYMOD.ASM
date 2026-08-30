@@ -107,14 +107,14 @@
 ;          this run was never Pascal.
 ;
 ; THE SEGMENT ENDS AT 1745 AND 1746..174F IS PADDING -- ten zero bytes, which
-; are the linker's and not this module's. `blocks.py` therefore tops out at
+; are the linker's and not this module's. `blockcmp.py` therefore tops out at
 ; 5,958 of 5,968 bytes rather than the whole segment. Segment size is not code
 ; size; the docs have that as a standing warning and this is a clean instance.
 ;
-; MEASURE THIS FILE WITH demovt/omf.py, NOT verify.py's ZERO RULE. Every
+; MEASURE THIS FILE WITH objcheck.py, NOT units.py's ZERO RULE. Every
 ; `OFFSET DumpLoop` and every `CS:[DumpLoop+n]` displacement is a relocation,
 ; and TASM leaves an ADDEND in the bytes where a .TPU would leave zeros -- which
-; is exactly the case verify.py's heuristic gets wrong and cost SOUNDDEV.ASM its
+; is exactly the case units.py's heuristic gets wrong and cost SOUNDDEV.ASM its
 ; first honest measurement.
 ; ==========================================================================
 

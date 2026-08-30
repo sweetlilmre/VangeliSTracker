@@ -377,7 +377,7 @@ end;
       ...   the rest of the THeap methods, then TUmbHeap, then THeapColl, then the
             two unit-level initialisers
 
-  The bodies below are deliberately wrong. `verify.py` reports the prefix, which is
+  The bodies below are deliberately wrong. `units.py` reports the prefix, which is
   the right measure while the unit is built in address order.
   ========================================================================== }
 

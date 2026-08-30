@@ -44,7 +44,7 @@
                 P286
 
 ; ---- DGROUP variables, all declared in SOUNDDEV.PAS -----------------------
-; Every one of these is a linker fixup, so verify.py cannot check them; they
+; Every one of these is a linker fixup, so units.py cannot check them; they
 ; are checked by reading, and by risk 1 whenever the link happens.
                 .DATA
                 EXTRN   ActualBuffer    : DWORD
@@ -94,7 +94,7 @@ StackSize       EQU     1000
                 EXTRN   GetDMACount     : NEAR
 
 ; ---- 0746..1007 : the gain ladder, the patcher and the mixing chain ------
-; GENERATED. python demovt/emit_gain.py > demovt/src/VTGAIN.INC
+; GENERATED. python emit_gain.py > src/VTGAIN.INC
                 INCLUDE VTGAIN.INC
 
 ; ==========================================================================

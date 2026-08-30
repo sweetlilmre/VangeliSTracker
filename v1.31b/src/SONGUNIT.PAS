@@ -206,7 +206,7 @@ type
     `object(TObject)` with `Items`, `Count`, `Limit`, `Delta`: **12 bytes, and
     8 + 4 = 12 three times over.** The filler was Limit and Delta.
 
-    The code says the same thing independently. census.py finds `1891:03a7`
+    The code says the same thing independently. survey.py finds `1891:03a7`
     called EXACTLY THREE TIMES, all inside InitValues -- the release's
     `Instruments.Init(32,32)`, `Patterns.Init(64,64)` and `Tracks.Init(256,256)`
     -- and `1891:0405`/`047a` three times each, one pair inside each of
@@ -228,7 +228,7 @@ type
     now: 165a is byte-exact and its declarations are the real ones, but pointing
     this unit at them means adding `uses SongElements` here and moving SongUnit
     down build.py's ORDER, which is a change that can move a byte in three
-    byte-exact units. Do it as its own pass, with verify.py either side. }
+    byte-exact units. Do it as its own pass, with units.py either side. }
   { ONE-BASED, and 14b9:05bc is what proves it: GetPatternSequence computes
     `LES DI,[DI+39] / ADD DI,AX / MOV AL,ES:[DI-1]`, and that -1 is the base.
     256 is the release's `MaxSequence`, declared identically in SONGELEM.PAS. }
@@ -409,7 +409,7 @@ type
       The order is the release's implementation order with five routines removed,
       and 21 - 5 = 16 is the segment's far-return count exactly. The five absent
       are `Save` and `SaveFName` (a player does not write modules),
-      `GetErrorString` (census.py finds NO printable string in 2,224 bytes but
+      `GetErrorString` (survey.py finds NO printable string in 2,224 bytes but
       `.MOD`, and that routine is nothing but message literals), and
       `GetInsidePath`/`SetInsidePath`.
 
@@ -456,7 +456,7 @@ type
   and a far pointer to `TSong.Done` at 14b9:002b -- and the original lays that VMT down
   BEFORE this constant, at the point the TYPE is declared. Declared up beside
   `MaxSequence`, ahead of the type, ModOffset came out first and the two swapped.
-  Costs no code either way; `demovt/dgroup.py` is the only thing that can see it. }
+  Costs no code either way; `dgroup.py` is the only thing that can see it. }
 { DS:$03c0 -- `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
   address is inside this unit's block, which runs $03c0..$03cb unbroken up to
@@ -725,7 +725,7 @@ var
   displaces everything below it. Routines still to do are PLACEHOLDERS holding
   their position -- they are the wrong length, so every near-call displacement
   and every routine after the first placeholder is wrong too. That is expected:
-  `verify.py`'s prefix stops at the first such displacement and says nothing
+  `units.py`'s prefix stops at the first such displacement and says nothing
   about the bytes beyond it. Measure a half-written unit per block, not by the
   prefix -- see docs/CONTINUATION.md, "THE PREFIX IS NOT THE MEASURE MID-ROUTINE".
   --------------------------------------------------------------------------- }
@@ -1162,7 +1162,7 @@ end;
   and there is no trace of it here: 088e writes +$5d and the next instruction is
   LEAVE. 1.31 keeps pan in 12ba -- `12ba:0275` writes it per channel -- so the
   song does not carry a pan table. That also means no 32-byte typed constant in
-  this unit, which is consistent with census.py finding no data here.
+  this unit, which is consistent with survey.py finding no data here.
 
   THE THREE COLLECTION LIMITS ARE THE RELEASE'S EXACTLY: (32,32), (64,64) and
   (256,256), pushed as immediates at 07b0, 0844 and 085a. Unlike `NumBuffers` in

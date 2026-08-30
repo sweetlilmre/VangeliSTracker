@@ -79,7 +79,7 @@ var
     printed name of each note, "e.g. 'A#2'". `NoteOf` is `NoteIdx`; this is the other one.
 
     NOTHING IN THE TRANSCRIBED TREE READS IT, and it holds no data -- it is a `var`, so
-    the image is silent about it and `census.py` finding no printable string in the
+    the image is silent about it and `survey.py` finding no printable string in the
     segment is consistent. It is here for its 340 bytes and its name, and the arithmetic
     is what says it exists. }
   NoteStr   : array[0..84] of String[3];             { DS:$5920  340 bytes  }

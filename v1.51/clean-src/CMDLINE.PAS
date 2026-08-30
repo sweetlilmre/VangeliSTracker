@@ -7,7 +7,7 @@
   overrides at the bottom are routines the ORIGINAL'S LINKER DROPPED, which is why they
   sit last. Read the note there before moving them.
 
-  THE COUNTERPART IS `LIB/CMDLINE.PAS`, measured at 59.5% by `demovt/relmatch.py` with
+  THE COUNTERPART IS `LIB/CMDLINE.PAS`, measured at 59.5% by `relmatch.py` with
   nothing else above 7%. Its own header describes it as "a workframe for a command line
   options interpreter -- you just have to make a descendant object overriding the
   InterpretNoSwitch and InterpretSwitch methods", and that is exactly the shape of the

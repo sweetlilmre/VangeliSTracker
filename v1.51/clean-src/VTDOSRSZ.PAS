@@ -84,7 +84,7 @@ unlike 1544, whose filter kernels use `SAR AX,2` and do not. The
   linker discards what a unit does not use.
 
   THE FILENAME AND UNIT NAME ARE STILL THE INVENTED ONES, deliberately. Renaming a unit
-  touches build.py's ORDER, verify.py's UNITS, every `uses` clause and this header, and
+  touches build.py's ORDER, units.py's UNITS, every `uses` clause and this header, and
   the identification is strong rather than certain -- 29 bytes are consistent with
   Borland's source without proving they came from it.
 

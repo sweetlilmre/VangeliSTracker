@@ -225,7 +225,7 @@ var
   $06c2 if the array starts at $06c1 -- inside VolumeTable's last byte. With
   `array[1..64]` the array itself starts at $06c2 and the `+1` comes off. Neither form
   could be measured before: `OFFSET` of a DGROUP symbol is a linker fixup, so the .TPU
-  holds zeros either way and `verify.py` excused it. See the declaration in
+  holds zeros either way and `units.py` excused it. See the declaration in
   RestartChannels. }
 
 { --------------------------------------------------------------------------
@@ -244,7 +244,7 @@ var
   -------------------------------------------------------------------------- }
 { THESE FIVE ARE ASSEMBLER, AND THE REASON IS WORTH RECORDING.
 
-  They were Pascal here until verify.py could not even find the unit's first
+  They were Pascal here until units.py could not even find the unit's first
   instruction. Turbo Pascal's `Port[]` pseudo-array compiles to a bare
   `MOV DX,imm / OUT DX,AL` ONLY when the index is a constant. With a computed
   index it evaluates the address as an ordinary expression, through AX:

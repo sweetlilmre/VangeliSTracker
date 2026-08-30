@@ -19,11 +19,11 @@
   **THE LAST ONE CORRECTED A UNIT THAT WAS ALREADY BYTE-EXACT.** See the note at the
   DumpToUltrasound call.
 
-  THE COUNTERPART IS `LIB/SONGELEM.PAS`, measured at 65.1% by `demovt/relmatch.py` --
+  THE COUNTERPART IS `LIB/SONGELEM.PAS`, measured at 65.1% by `relmatch.py` --
   the highest-scoring untranscribed segment in the tree when this was started.
 
   **THE WHOLE STRUCTURE WAS READ WITHOUT DISASSEMBLING A SINGLE INSTRUCTION.**
-  `demovt/census.py 165a` reports fifteen far returns, no printable strings, ten far-call
+  `survey.py 165a` reports fifteen far returns, no printable strings, ten far-call
   targets and twenty-two virtual call sites, and between them they identify every routine,
   name the five the release has and 1.31 does not, and confirm the field sizes.
 
@@ -431,7 +431,7 @@ type
 implementation
 
 { THE RELEASE ALSO USES `Debugging` AND `HexConversions`, and 1.31 uses neither -- see
-  Change's note. `census.py` finds far calls to three segments only: `1ba1` (System),
+  Change's note. `survey.py` finds far calls to three segments only: `1ba1` (System),
   `1891` (Objects) and `1723` (GUS). }
 uses
   Heaps, GUS;
@@ -458,7 +458,7 @@ end;
 
 
 {and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
-  directly. That asymmetry is the release's and it is measurable: `census.py` finds the
+  directly. That asymmetry is the release's and it is measurable: `survey.py` finds the
   three `[DI+34]` sites in SetName, TTrack.Done and TPattern.Done, and none in this
   routine. }
 destructor TInstrument.Done;
@@ -516,7 +516,7 @@ Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
   because 65,520 bytes is the largest single transfer, and after each piece the
   conventional-memory copy is freed -- so on a Gravis the sample lives only in the card's
   RAM. `Instr^.Data` is then not a pointer but a GUS RAM offset, which is what
-  FreeContents' `IF NOT UsingGUS` guard exists for. `census.py` puts `DumpToUltrasound` at
+  FreeContents' `IF NOT UsingGUS` guard exists for. `survey.py` puts `DumpToUltrasound` at
   `023b` and `02ca`, exactly twice.
 
   **THIS SEGMENT IS WHAT FIXED `DumpToUltrasound`'s FIRST PARAMETER.** `GUS.PAS` had it
@@ -529,7 +529,7 @@ Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
   `VTDOSRSZ` taught: a parameter list can be wrong for a unit's whole life while the
   unit itself measures perfect, and only a caller in another segment reveals it.**
 
-  ONE COUNT DOES NOT AGREE AND IS NOT YET EXPLAINED. `census.py` finds FIVE `[DI+0c]`
+  ONE COUNT DOES NOT AGREE AND IS NOT YET EXPLAINED. `survey.py` finds FIVE `[DI+0c]`
   sites inside this routine -- `0257`, `02e6`, `0333`, `0357`, `0373` -- where the
   release's body has two, both in the GUS branch. The first two line up with the
   DumpToUltrasound calls at `023b` and `02ca`; the last three sit after the GUS block and
@@ -671,7 +671,7 @@ Desample. Halve a sample's rate in place, then give the freed half back.
   left. `SizeFree` is then the gap in bytes, computed segment-part and offset-part
   separately because a LongInt subtraction of two far pointers is not what is wanted.
 
-  **FIVE LONGINT DIVISIONS, AND `census.py` COUNTS FIVE.** `Len DIV 2 - 1`,
+  **FIVE LONGINT DIVISIONS, AND `survey.py` COUNTS FIVE.** `Len DIV 2 - 1`,
   `Len DIV 2 + 7`, `Len DIV 2`, `Reps DIV 2`, `Repl DIV 2` -- all five calls to
   `1ba1:0a2e` fall inside this routine and nowhere else in the segment. Term for term.
   --------------------------------------------------------------------------- }
@@ -728,7 +728,7 @@ Resample. The opposite trade: spend memory to make a very short looped
   Pascal's heap rounds an allocation up to eight bytes and because `Repl` is small in every
   instrument that gets here -- but it is a real overrun and it is not being quietly fixed.
 
-  **FIVE LONGINT MULTIPLICATIONS, AND `census.py` COUNTS FIVE.** `Repl*3`, `Repl*2`,
+  **FIVE LONGINT MULTIPLICATIONS, AND `survey.py` COUNTS FIVE.** `Repl*3`, `Repl*2`,
   `Repl*3`, `Repl*4`, `Repl*4` -- all five calls to `1ba1:0a13` are in this routine and
   nowhere else. The same term-for-term agreement Desample's divisions give, and between
   them the two routines are pinned before a byte is compared.

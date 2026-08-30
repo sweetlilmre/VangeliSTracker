@@ -31,7 +31,7 @@
   table. It named eleven of the sixteen routines outright:
 
       0000  Name (device 1)     0005 000a 000f  the other three
-      0014  SetVars             NEAR -- ends in RET, which is why census.py's
+      0014  SetVars             NEAR -- ends in RET, which is why survey.py's
                                 far-return sweep does not see it
       002b  DevPoll             empty
       0030  DMAIrq              the interrupt handler; ends 007d
@@ -52,7 +52,7 @@
   ONE `IRET` IN THE WHOLE SEGMENT, at 007d, so there is exactly one interrupt
   handler and it is 78 bytes. That single byte-pattern search settled a layout
   question the far-return census could not: a handler ends in IRET and a near
-  routine in RET, and census.py counts neither.
+  routine in RET, and survey.py counts neither.
 
   FOUR DEVICES, NOT THE RELEASE'S SIX. The records are at DS:$09f4, $0a2e,
   $0a68 and $0aa2 -- **58 bytes apart, which is SizeOf(TSoundDevice) exactly**,
@@ -257,7 +257,7 @@ asm
                 IRET
 end;
 
-{ 007f..013b.  RETF 2.  Three LongInt divisions, which census.py counts at
+{ 007f..013b.  RETF 2.  Three LongInt divisions, which survey.py counts at
   00bf, 00ea and 0105 -- one per `DIV` in the release's body. }
 function DMASBGetRealFreq(Hz : Word) : Word; far;
 var

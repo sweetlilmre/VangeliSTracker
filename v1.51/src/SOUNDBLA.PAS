@@ -15,7 +15,7 @@
   Those four are still here, at the same addresses, and they now sit in the
   release's own declaration order beside the rest.
 
-  TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `census.py` finds no
+  TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `survey.py` finds no
   literal anywhere in the segment, which already says the release's
   `SbGetCopyrightString` and its `USES Debugging` calls are absent -- and the
   first block confirms it: 1.31's `SbWriteByte` is the release's body with the
@@ -29,7 +29,7 @@
   ALL TWENTY-THREE WENT IN, AND THE LAST FOURTEEN IN A SINGLE BUILD. The
   release's bodies transferred with no adjustment at all -- not one routine
   needed a second pass -- which is what a hardware unit looks like when the two
-  versions share it unchanged. `demovt/block19a0.py` measures per block.
+  versions share it unchanged. `blockcmp.py` measures per block.
 
   FIVE OF THE RELEASE'S NINETEEN ARE ABSENT, and the RETF counts are what say
   so: MixerSetVolume (RETF 6) and MixerGetVolume (RETF 10) appear nowhere, and
@@ -351,7 +351,7 @@ end;
 
 { 0077..009a.  RETF 4.  The release's body with its TWO DEBUG CALLS REMOVED --
   1.39b brackets the port write with `WriteSNum` and `WriteChar` from its
-  `Debugging` unit, and 1.31 has neither, which is why census.py finds no
+  `Debugging` unit, and 1.31 has neither, which is why survey.py finds no
   printable string in the whole segment. Both `CALL SbWriteLoop`s are FAR
   (`9A`) because SbWriteLoop is an interface routine.
 
@@ -552,7 +552,7 @@ begin
 end;
 
 { 038f..0421.  RETF.  Reads the card's copyright string a byte at a time. It
-  needs no literal of its own, which is why census.py finds none: the string
+  needs no literal of its own, which is why survey.py finds none: the string
   it builds is DGROUP data, not code. }
 procedure SbGetCopyrightString;
 var

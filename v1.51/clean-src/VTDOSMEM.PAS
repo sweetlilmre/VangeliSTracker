@@ -41,7 +41,7 @@ interface
 { --------------------------------------------------------------------------
   THE FOUR NAMES BELOW ARE THE RELEASE'S, AND THE PAIRING WAS FOUND BY MEASUREMENT.
   This unit was on the list of eight with "no counterpart in LIB/" and carried invented
-  names for its whole life. `demovt/relmatch.py` scores segment 1880 against
+  names for its whole life. `relmatch.py` scores segment 1880 against
   `LIB/UMBUNIT.PAS` at 65.5%, with nothing else above 7% -- and the unit's four
   routines line up one for one, signature for signature:
 
@@ -61,7 +61,7 @@ interface
   rule is not to change a TYPE to match the release.
 
   THE FILENAME AND UNIT NAME STAY, for now: renaming a unit touches build.py's ORDER,
-  verify.py's UNITS and every `uses` clause, and nothing else in the tree references
+  units.py's UNITS and every `uses` clause, and nothing else in the tree references
   these five routines yet.
   -------------------------------------------------------------------------- }
 

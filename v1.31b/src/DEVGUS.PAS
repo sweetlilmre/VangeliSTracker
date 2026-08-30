@@ -108,7 +108,7 @@ implementation
 
 { THREE VARIABLES USED TO BE DECLARED HERE AND ALL THREE WERE DUPLICATES of
   globals another unit already owns. Every reference to one is a linker fixup,
-  so verify.py could not see any of it -- the bytes agreed either way -- and
+  so units.py could not see any of it -- the bytes agreed either way -- and
   `Callback` was standing in for TWO DIFFERENT ADDRESSES at once:
 
     DS:$4302/$4304   SavedSS/SavedSP, owned by SoundDevices, which switches

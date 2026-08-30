@@ -3,7 +3,7 @@
 
   Segment 142f -- NOTES AND EFFECTS. 2,176 bytes, seventeen routines.
 
-  COMPLETE. All 2,175 bytes of code; 142f:087f is one byte of padding. `verify.py` reports the prefix,
+  COMPLETE. All 2,175 bytes of code; 142f:087f is one byte of padding. `units.py` reports the prefix,
   which is the right measure while the unit is being built strictly top-down:
   Turbo Pascal lays procedures out in source order, so a stub of the wrong size
   displaces everything below it and the prefix stops at the first one.
@@ -199,7 +199,7 @@ type
   are identical; the IMAGE is not. A typed constant is initialised data written into
   the EXE, and a plain `var` is reserved space the linker never writes -- and the two
   live in different regions of DGROUP, so the choice fixes the ADDRESS as well. It was
-  unmeasurable until the program linked, and `demovt/dgroup.py` measures it now.
+  unmeasurable until the program linked, and `dgroup.py` measures it now.
 
   It also was not a case of taking DATA from the release. The values below are read out
   of the original's DGROUP image, and four of them are non-zero and land exactly where
@@ -227,7 +227,7 @@ type
   THE RENAMES ARE STILL DECLINED, for the reason recorded below: the release's `Tempo`
   collides with a field of `TPlayingNote`. Our names are kept and the release's are
   quoted beside them. Moving a declaration between units cannot change a byte of
-  either one's code, so `verify.py` reporting both units unchanged is the check.
+  either one's code, so `units.py` reporting both units unchanged is the check.
   -------------------------------------------------------------------------- }
 const
   { $0334..$0337 -- both of these were declared in PLAYMOD until the layout moved them. }
@@ -851,7 +851,7 @@ end;
   both bodies -- not inferred from position. Two of the thirteen ARE confirmed,
   by the calls at 142f:0114 and 142f:0163, and those two carry real names.
 
-  The bodies are deliberately wrong. `verify.py`'s prefix stops at 0184.
+  The bodies are deliberately wrong. `units.py`'s prefix stops at 0184.
   ========================================================================== }
 
 { --------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 
   NO SEGMENT OF ITS OWN. Declarations only, like `SONGUNIT.PAS` and `VTDRIVER.PAS`:
   nothing here compiles to an instruction, so this unit's `.TPU` has no code and
-  `verify.py` has nothing to compare.
+  `units.py` has nothing to compare.
 
   THE RELEASE HAS A REAL `VTGLOBAL.PAS` and this is the same idea -- the settings every
   other unit reads and the configurator writes. It exists because **two transcribed units
@@ -13,7 +13,7 @@
   exposes.
 
   **NO ADDRESS HERE IS LOAD-BEARING.** Every reference to a DGROUP variable is a linker
-  fixup, so Turbo Pascal emits a zero and `verify.py` excuses it; moving a declaration
+  fixup, so Turbo Pascal emits a zero and `units.py` excuses it; moving a declaration
   between units cannot change a byte of either one's code. That is also what makes it
   dangerous -- the byte comparison cannot tell a right home from a wrong one -- so the
   addresses are quoted from the disassembly and each one says how well it is known.
@@ -29,7 +29,7 @@ uses
 { EVERY ONE OF THESE IS A TYPED CONSTANT, AND THE LINKED IMAGE IS WHAT SAYS SO.
   They were plain `var`s, and that put 359 bytes of this unit's data nowhere: a plain
   `var` is reserved space the linker never writes, where a TYPED constant is
-  initialised data stored in the EXE. `demovt/dgroup.py` reads the original's
+  initialised data stored in the EXE. `dgroup.py` reads the original's
   initialised DGROUP straight out of the image, and this block is simply THERE --
   `DMA-SB-Mono` at $0882 and `VT_Esp.Lng` at $0948, with real values in between.
   The release agrees: its own `VTGLOBAL.PAS` declares almost the whole unit in `CONST`
