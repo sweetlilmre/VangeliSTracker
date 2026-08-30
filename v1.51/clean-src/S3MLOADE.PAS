@@ -1,58 +1,38 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1664 -- the Scream Tracker 3 (.S3M) loader. 3,472 bytes, of which
-  3,458 are the four routines. NEW IN v1.51, and the headline feature:
+  THE SCREAM TRACKER 3 LOADER, and the headline feature of this version --
   WHATSNEW.DOC opens with "Introduced .S3M support".
 
-  NO RELEASE SOURCE, for the same reason STMLOADE.PAS has none -- 1.39b is
-  January 1994 and this arrives in April. `MODLOADE.PAS` and `STMLOADE.PAS`
-  are the templates; where all three do the same thing they are written the
-  same way.
+  WHAT MAKES S3M DIFFERENT FROM EVERYTHING ELSE HERE. The MOD and STM loaders
+  read files laid out by POSITION: fixed header, then everything in a known
+  order. An .S3M has a DIRECTORY. After its header comes a table of paragraph
+  pointers -- one per instrument, one per pattern -- and each says where that
+  item begins. So this loader SEEKS rather than reads straight through, which
+  is why SeekPara exists and why it is the first routine in the file.
 
-  THE ROUTINE MAP, in address order, which is SOURCE order. The return forms
-  are measured and are the signatures:
+  A PARAGRAPH IS SIXTEEN BYTES, so a pointer is multiplied by 16 to become an
+  offset. That is the whole of SeekPara, and it is a routine rather than an
+  expression because it is done everywhere.
 
-    0000  no ENTER    RET  $06   SeekPara            St, Para
-    002b  ENTER $19b2 RET  $16   ReadPatterns        7 parameters
-    06cb  ENTER $17e  RET  $16   ReadInstruments     7 parameters
-    0a8b  ENTER $702  RETF $0c   LoadS3MFileFormat   Song, St, Header
+  THE PATTERNS ARE COMPRESSED. Where a MOD stores every cell of every row, an
+  .S3M stores only the cells that have something in them: each row is a run of
+  bytes where one byte says which channel and which of note, instrument,
+  volume and effect are present, and a zero byte ends the row. Unpacking that
+  is most of ReadPatterns.
 
-  0000 HAS NO `ENTER` AT ALL -- `PUSH BP / MOV BP,SP` -- so it declares no
-  locals, which is what makes it a one-statement routine.
+  AND THE SAMPLES MAY BE SIGNED OR UNSIGNED, which the format records in a
+  field rather than fixing -- so the loader has to look, and convert if it must.
 
   $19b2 IS 6,578 BYTES OF FRAME on ReadPatterns, and that is the S3M packed
   pattern buffer plus the unpacked working set.
 
   THE FILE FORMAT, read off the code rather than a specification:
 
-    +$000  28 bytes  song name          StrASCIIZ over $1c at 0aca
-    +$020  word      OrdNum             the order table's length
-    +$022  word      InsNum             instrument count
-    +$024  word      PatNum             pattern count
-    +$02c  4 bytes   'SCRM'             the magic, DS:$0468
-    +$030  byte      global volume
-    +$031  byte      initial speed
-    +$032  byte      initial tempo
-    +$040  32 bytes  channel settings   bit 3 is the pan side; $FF is unused
-    +$060            the order table begins -- 0a9f seeks here
-
   and after the order table come InsNum paragraph pointers, then PatNum of
   them, each a word to be multiplied by 16 and added to the module's base.
 
-  TWO UNIT VARIABLES, both in the uninitialised half of DGROUP:
-
-    DS:$491c  LongInt  the module's own start in the stream, set by the
-                       recogniser and read by SeekPara
-    DS:$491a  Word     the highest channel actually used, narrowed by
-                       ReadPatterns and applied to Song.NumChannels at the end
-
-  ADDRESS MAP
-    SeekPara           1664:0000     'SCRM'      DS:$0468
-    ReadPatterns       1664:002b     'SCRS'      DS:$046c
-    ReadInstruments    1664:06cb
-    LoadS3MFileFormat  1664:0a8b
-  =========================================================================== }
+  TWO UNIT VARIABLES, both in the uninitialised half of DGROUP:}
 
 unit S3MLoader;
 
@@ -87,11 +67,7 @@ type
     Flags       : Word;                  { +$26  mostly legacy; see the doc    }
     CwtV        : Word;                  { +$28  created-with tracker/version  }
 
-    { **+$2a IS THE SAMPLE SIGNEDNESS FIELD**, and naming it is worth more than the
-      other five put together: 1 means signed samples, 2 unsigned. This loader reads
-      every sample as ShortInt whatever it holds -- 1664:0b8a's `CBW` is what proved
-      that -- so an unsigned module plays wrong and the field that says so is right
-      here, unread. A gap you have named is a decision you can see. }
+
     Ffi         : Word;                  { +$2a  1 = signed, 2 = unsigned      }
     Magic       : array[1..4] of Char;   { +$2c  'SCRM'                       }
     { **$31 AND $32 CARRY 1.39b's NAMES, NOT THE SPECIFICATION'S.** The spec calls
@@ -171,11 +147,7 @@ var
   { Set to 1 by the recogniser and raised by ReadPatterns as it
     meets channels; the recogniser then narrows Song.NumChannels to it, so a
     module that declares sixteen channels and uses four reports four. }
-  { **DS:$491a, AND IT IS DECLARED FIRST.** 1664:02ab reads it at $491a and 1664:0014
-    adds into a LongInt at $491c/$491e, which is ModBase -- so the Word comes ahead of
-    the LongInt in this unit's block. Declared the other way round it lands at $491e
-    and ModBase at $491a, and eleven operands across three routines are wrong with
-    nothing else to say why. }
+
   ChansUsed : Word;
 
   { `SeekPara` adds a paragraph count to it, so it is the module's
@@ -193,14 +165,7 @@ var
   NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
 
 { ---------------------------------------------------------------------------
- No ENTER, RET $06.
-
-  `PUSH BP / MOV BP,SP` and no frame at all, which is Turbo Pascal's shape for
-  a routine with no locals. One statement: seek to a paragraph offset measured
-  from the module's own start. 1d89:0a13 is the 32-bit multiply, so the Word
-  is widened before it is scaled -- a Word times 16 would overflow at $1000
-  paragraphs and the file's tables reach further than that.
-  --------------------------------------------------------------------------- }
+ No ENTER, RET $06.}
 procedure SeekPara(var St : TStream; Para : Word);
 begin
   St.Seek(ModBase + LongInt(Para) * 16)
@@ -283,10 +248,7 @@ begin
 
           { The block's own length prefix, except where the caller says the
             format does not carry one. }
-          { BOTH TAIL PARAMETERS ARE BYTE-SIZED: 0113 is `CMP BYTE PTR
-            [BP+06],00` and 0119 is `CMP BYTE PTR [BP+04],1A`. And the bound is
-            `<= $1A`, which emits JBE; `< $1B` is the same set of values and
-            emits JB against a different immediate. }
+
           if A or (B > $1A) then
             St.Read(Len, 2)
           else
@@ -370,13 +332,7 @@ begin
                         if (c and $80) <> 0 then
                           begin
                             Note.Parameter := Blk[k + 1];
-                            { A `case`, NOT AN if/else CHAIN, AND THE COMPARE OPERAND IS THE
-                              TELL. The original tests `CMP AL,n` over and over -- the
-                              effect byte held in a register and compared in place. An
-                              if/else chain on a local emits `CMP BYTE PTR [BP-19a9],n`
-                              every time, four bytes against two, at more than twenty sites.
-                              Turbo Pascal keeps a case selector in AL when the labels are
-                              sparse enough for a compare chain. }
+
                             case Blk[k] of
                               1  : begin
                                      Note.Command := mcSetTempo;
@@ -385,11 +341,7 @@ begin
                                    end;
                               2  : begin
                                      Note.Command := mcJumpPattern;
-                                     { `Inc`, NOT `x := x + 1`. 035b is
-                                       `INC BYTE PTR [BP-1991]` -- one
-                                       instruction against a load, a widen, an
-                                       increment and a store. The wiki's
-                                       `inc-is-not-an-assignment`. }
+
                                      Inc(Note.Parameter)
                                    end;
                               3  : Note.Command := mcEndPattern;
@@ -449,12 +401,7 @@ begin
                               $0B : Note.Command := mcVib_VSlide;
                               $0C : Note.Command := mcT_VSlide;
                               $0F : Note.Command := mcSampleOffs;
-                              { A SELF-ASSIGNMENT, AND IT IS IN THE BINARY.
-                                049f is `MOV AL,[BP-1991] / MOV [BP-1991],AL`
-                                -- Note.Parameter loaded and stored straight
-                                back, eight bytes that compute nothing. Turbo
-                                Pascal does not elide it. Transcribed because
-                                the rule is to write what the code does. }
+
                               $11 : begin
                                       Note.Command := mcS3mRetrigNote;
                                       Note.Parameter := Note.Parameter
@@ -583,12 +530,7 @@ var
   Falls      : LongInt;           { -$7a  see the sign detection below      }
   Rises      : LongInt;           { -$7e                                    }
 begin
-  { NO ZERO TEST AT ALL. 06cf is `MOV AX,[BP+08] / MOV [BP-7e],AX /
-    MOV AX,1 / CMP AX,[BP-7e] / JBE / JMP end` -- the loop's own limit
-    temporary and its own entry test, which already skips a zero count. Both
-    an `if Num <> 0 then` wrapper and an `if Num = 0 then Exit` guard emit that
-    comparison a SECOND time. Same defect as ProcessPatterns in STMLOADE, and
-    the same tell: a decompiler renders the loop's entry test as a guard. }
+
   for i := 1 to Num do
     begin
       FillChar(Instrument, SizeOf(Instrument), 0);
@@ -647,14 +589,7 @@ begin
               Instrument.Vol  := Hdr.Vol;
               Instrument.DAdj := Hdr.C2Spd;
 
-              { A IS A Boolean, AND THE COMPARE WIDTH SAYS SO: 07fe is
-                `CMP BYTE PTR [BP+06],00`, where a Word parameter gives
-                `CMP WORD PTR`. The value still occupies two bytes of the
-                parameter block -- Turbo Pascal pushes a byte-sized value
-                parameter as a word -- so the RET $16 is unchanged.
 
-                $2100 is the numerator STMLOADE uses; $20ab is the other, and
-                the TRUE arm takes it. }
               if A then
                 Instrument.NAdj := $20AB
               else
@@ -665,15 +600,7 @@ begin
               if Instrument.Reps + Instrument.Repl > Instrument.Len then
                 Instrument.Repl := Instrument.Len - Instrument.Reps;
 
-              { THE RECORD'S OWN FIELD, TESTED AND CLAMPED. 0858 is
-                `CMP BYTE PTR [BP-10],3F / JBE / MOV BYTE PTR [BP-10],3F` --
-                one displacement, read and written, and -$10 is
-                Instrument.Vol (record offset 12 against a record at -$1c).
 
-                MODLOADE's ProcessInstruments does the odd thing here and tests
-                the HEADER's copy before clamping the record's; this routine
-                does not, and carrying that habit across cost two loads. Read
-                each unit, do not carry the sibling's quirk. }
               if Instrument.Vol > $3F then
                 Instrument.Vol := $3F;
 
@@ -796,26 +723,13 @@ const
     shape as PlayMod's dead `Pannings` table, from the opposite direction: there a
     declaration outlived its readers, here two declarations never had any.
 
-    THE FIRST OF THE TWO IS THE SAMPLE MAGIC, and this file's own address map named
-    it before it was declared -- line 53 records `'SCRS'  DS:$046c`. Scream Tracker 3
-    stamps every instrument header with it at +$4c, and the record above now names
-    that field `Magic` -- but nothing reads it. The constant is declared and never
-    compared against anything. Declared and unchecked is what the original is;
-    transcribed as found.
-
     THE SECOND IS 'SCRM' AGAIN. Turbo Pascal emits one typed constant per
     declaration, so the author wrote it twice. }
   S3MInsString  : array[1..4] of Char = 'SCRS';   { never read        }
   S3MIdString2  : array[1..4] of Char = 'SCRM';   { never read        }
 var
   S3M     : TS3MFile absolute Header;
-  { THE ORDER IS READ OFF THE COUNTER'S OWN DISPLACEMENT. 0b8e is
-    `MOV [BP-0402],1` for `for i := 1 to 32`, so exactly $400 bytes of locals
-    sit ABOVE the counter -- the two 512-byte paragraph tables and nothing
-    else. The scratch buffer is declared after it, at -$502. Turbo Pascal
-    allocates downward in declaration order, so this order is the measurement
-    and not a preference: with the buffer first, every local below it is 256
-    bytes out and the frame is still $702. }
+
   InsPara : TS3MParaTable;
   PatPara : TS3MParaTable;
   i       : Word;
