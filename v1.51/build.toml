@@ -107,7 +107,9 @@ list = [
   "CMDLINE.PAS",  # 116e  the command line
   "VTCFG.PAS",  # 11bb  the config file
   "VTCMD.PAS",  # 109c  the switch table -- IN PROGRESS (needs VTCfg)
-  "VTMAIN.PAS",  # 1000  the program -- BLOCKED, see below
+  "VTMAIN.PAS",  # 1000  the program -- compiles and links; the linked
+                 #       image is byte-identical. The old "BLOCKED" note
+                 #       named units that are all transcribed now.
 ]
 
 [stage]
