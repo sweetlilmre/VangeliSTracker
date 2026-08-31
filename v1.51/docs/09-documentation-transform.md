@@ -124,7 +124,9 @@ Rewriting a header is the only operation that forces every sentence to be read a
 
 ## Hazards, and the fix for each
 
-Every row cost real time. Four of them silently changed code while a comment was being edited, which is the entire reason the byte-compare is in the gate.
+Every row cost real time. Most touched only comments, or only tooling — but **three of these mechanisms changed what the compiler actually compiled**, across five incidents: the non-nesting braces (3×), the line-number tagger (2×), and the stripper's own prefix trim, described under *two mechanisms* above. That is the entire reason the byte-compare is in the per-unit gate rather than run occasionally at the end.
+
+**And the two that produced no diagnostic at all were both directives.** `{ [re] $G+}` stops being `{$G+}`, so 286 codegen is silently off; a trimmed prefix leaving `{$FFFF ... }` is silently the far-calls directive on. Both compile clean, both change every byte downstream, and nothing but a byte comparison can see either. The third — a tag prefixed onto a live statement — was loud, and the build is what caught it.
 
 | Hazard | Hit | How it showed, and the fix |
 |---|---|---|
@@ -145,7 +147,7 @@ Four questions decide whether the method arrives intact. The first is not option
 
 ### 1. Is there a mechanical "the code did not change" check?
 
-On a byte-exact reconstruction the linked-image compare is the strongest link in the chain, and it earned its place: four hazards above are code changes made while editing a comment. **Without some equivalent, do not run this transform.**
+On a byte-exact reconstruction the linked-image compare is the strongest link in the chain, and it earned its place: three of the mechanisms above altered what the compiler compiled while a comment was being edited, and the two of those that were **silent** were both comment edits that accidentally created or destroyed a **compiler directive**. **Without some equivalent, do not run this transform.**
 
 Substitutes, in descending order of strength, where there is no full rebuild:
 
@@ -155,7 +157,7 @@ Substitutes, in descending order of strength, where there is no full rebuild:
 
 ### 2. What is the paragraph grain?
 
-Decide it before writing a single tag, and encode the *same* grain in both stripper and checker. Pascal's braces gave blank-line paragraphs; `PLAYMOD.ASM` and `SOUNDDEV.ASM` have no blank lines at all, so their grain became a run of comment lines terminated by a bare `;`. A target in C, or a different assembler, needs its own answer — and a mixed-language tree needs one answer per language, in both tools.
+Decide it before writing a single tag, and encode the *same* grain in both stripper and checker. **Enumerate where the target language's comment syntax overlaps its directive syntax before writing either tool** — that overlap is where the silent failures live, as the two directive incidents above show. For C, `/* */` also does not nest, and `#pragma` and `#if 0` are the shapes to watch; in TASM it is the `;` comment against the conditional and macro directives. Pascal's braces gave blank-line paragraphs; `PLAYMOD.ASM` and `SOUNDDEV.ASM` have no blank lines at all, so their grain became a run of comment lines terminated by a bare `;`. A target in C, or a different assembler, needs its own answer — and a mixed-language tree needs one answer per language, in both tools.
 
 ### 3. What can a claim rest on?
 
