@@ -63,7 +63,6 @@ unit SongUnit;
 interface
 
 uses
-
   { SongElements -- 165a, and the release's own layering: its SONGUNIT.PAS uses
     SongElem, not the other way round. GetInstrument, GetTrack and GetPattern
     each CONSTRUCT one of its objects, and a constructor cannot be reached
@@ -80,7 +79,6 @@ uses
     names is a rename in a byte-exact unit and belongs in its own pass; until
     then this unit qualifies SongElements' types explicitly where it needs the
     constructors, and the local declarations serve PLAYMOD. }
-
   Objects, Dos, Heaps, SongElements, VTGlobal;
 
 const
@@ -100,8 +98,6 @@ type
 
 
 
-
-
   { THE THREE COLLECTION FIELDS ARE REAL `Objects.TCollection`s, AND THE FILLER
     IS WHAT PROVED IT. They used to be an 8-byte hand-rolled `TColl` -- a VMT
     word, an Items pointer and a Count -- each followed by exactly four bytes of
@@ -115,7 +111,6 @@ type
     Pascal promoting a SIGNED 16-bit value against an unsigned one. Declared a
     Word the whole comparison collapses to a 16-bit `CMP` and the routine is
     fourteen bytes shorter. TCollection's own declaration has it as Integer. }
-
 
 
   { --------------------------------------------------------------------------
@@ -138,14 +133,12 @@ type
     Done is VIRTUAL, as it is in the release; every other method is static, and
     that is what keeps 12ba's and 154d's call sites byte-identical.
     -------------------------------------------------------------------------- }
-
   PSongHeader = ^TSongHeader;
   TSongHeader = array[0..2047] of Byte;
 
   { NEW IN v1.51. Thirty-two per-channel panning positions, one byte each --
     see `TSong.ChannelPan` for how the size and the offset were measured, and
     `DefaultChannelPan` for what the values are.}
-
   TChannelPan = array[1..32] of Byte;
 
   PSong = ^TSong;
@@ -171,7 +164,6 @@ type
     SongStart : Word;        { +$02  first order entry to play         }
     SongLen   : Word;        { +$04  how many to play; the whole song  }
     Name     : PString;      { +$06  the module's title                 }
-
     InsidePath : PString;    { +$0a  where inside an archive it came from }
     Comment  : PSongComment; { +$0e  16 lines of the author's own text   }
     FileDir  : PString;      { +$12  the directory it was loaded from    }
@@ -189,9 +181,7 @@ type
       called "the release's Song.FileExt". Two segments, one offset. }
     FileName : String[8];    { +$16  8.3, split by FSplit on load        }
     FileExt  : String[4];    { +$1f  and the extension, which .WOW needs }
-
     FirstTick : Byte;        { +$24  play the first tick of a row?       }
-
 
     InitialTempo : Byte;     { +$25 }
     InitialBPM   : Byte;     { +$26 }
@@ -211,7 +201,6 @@ type
       segments are where its consumers will be. }
     ChannelPan : TChannelPan; { +$29..+$48 }
 
-
     Instruments : TCollection;
     { +$35 AND +$37 TAKE THE RELEASE'S NAMES. They were Len35 and Len37 --
       addresses for names, because 12ba could only show that both are lengths.
@@ -221,13 +210,11 @@ type
     SequenceLength   : Word; { +$35  how long the order list really is   }
     SequenceRepStart : Word; { +$37  where a repeat jumps back to        }
 
-
     PatternSequence : PPatternSequence;  { +$39 }
     PatternTempos   : PPatternSequence;  { +$3d }
 
     Patterns : TCollection;  { +$41..+$4c  count at +$47 }
     Tracks   : TCollection;  { +$4d..+$58  count at +$53 }
-
 
     Status   : ShortInt;     { +$59  how the load went; codes below     }
     ErrorCode : Word;        { +$5a  the DOS error, when there was one }
@@ -263,7 +250,6 @@ type
     function  GetInsidePath : String;                             { 02c2 RETF 4  }
     procedure SetInsidePath(S : String);                          { 02f5 RETF 8  }
 
-
     function  GetInstrument(i : Word) : PInstrument;
     { 0404  RETF 6.  154d calls it. }
     function  GetTrack(i : Word) : Pointer;
@@ -280,7 +266,6 @@ type
     procedure InitValues;                                        { 072f RETF 4  }
     procedure Empty;                                             { 0897 RETF 4  }
   end;
-
 
 { `ModOffset` SITS FOUR BYTES BELOW THE TABLE, so it is this unit's, and
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
@@ -312,8 +297,6 @@ const
   -------------------------------------------------------------------------- }
 
 const
-
-
   mcNone                   = 0;
   mcArpeggio               = 1;  { 0 xy                    }
   mcTPortUp                = 2;  { 1 xx                    }
@@ -394,7 +377,6 @@ const
     format the program recognises and cannot play. }
   msFileFormatNotSupported = 6;  { recognised, not played  }
 
-
   { THE RELEASE'S ENUM ORDER CARRIES OVER, AND THREE-FOR-THREE IS WHY THE REST
     ARE NOW WORTH ADDING. Counting `TSongFileFormat` from mffUnknown gives 1, 4
     and 7 for M_K_, JMPlayer and Wow8 -- exactly the three values recovered
@@ -427,9 +409,7 @@ const
   mffS3M         = 9;
   mffSTM         = 11;
 
-
 { This unit declares NO variables at all -- see the note below. }
-
 
 implementation
 
@@ -517,7 +497,6 @@ const
 var
   SongLoaders : array[1..NumLoaders] of TSongLoader;
 {$ELSE}
-
   SongLoaders : array[1..NumLoaders] of TSongLoader =
     (
       LoadJMFileFormat,     { the 'JMPLAY' recogniser  }
@@ -527,15 +506,12 @@ var
     );
 {$ENDIF}
 
-
 const
   DefaultChannelPan : TChannelPan =
     ($40, $B0, $B0, $40, $40, $B0, $B0, $40,
      $40, $B0, $B0, $40, $40, $B0, $B0, $40,
      $40, $B0, $B0, $40, $40, $B0, $B0, $40,
      $40, $B0, $B0, $40, $40, $B0, $B0, $40);
-
-
 
 
 constructor TSong.Init;
@@ -644,7 +620,6 @@ begin
   St.Done
 end;
 
-
 function TSong.GetInsidePath : String;
 begin
   if InsidePath <> nil then
@@ -652,7 +627,6 @@ begin
   else
     GetInsidePath := ''
 end;
-
 
 procedure TSong.SetInsidePath(S : String);
 begin
@@ -692,7 +666,6 @@ Break:
   else
     GetInstrument := PInstrument(Instruments.At(i))
 end;
-
 
 function TSong.GetTrack(i : Word) : Pointer;
 var
@@ -751,12 +724,10 @@ Break:
     GetPattern := PPattern(Patterns.At(i))
 end;
 
-
 function TSong.GetPatternSeq(i : Word) : PPattern;
 begin
   GetPatternSeq := GetPattern(GetPatternSequence(i))
 end;
-
 
 function TSong.GetPatternSequence(Seq : Word) : Word;
 begin
@@ -777,7 +748,6 @@ begin
   else
     GetPatternTempo := 0
 end;
-
 
 procedure TSong.GetNote(Seq, Row, Chan : Word; var Note : TFullNote);
 var

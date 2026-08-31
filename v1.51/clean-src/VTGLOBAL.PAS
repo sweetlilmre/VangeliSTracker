@@ -20,7 +20,6 @@ interface
 uses
   Dos, VTDriver, SoundDevices;
 
-
 const
   VTDir             : DirStr        = '';
   DevPtr            : PSoundDevice  = nil;
@@ -57,8 +56,6 @@ const
     player also sets it itself after printing once, so the banner appears at
     most once however many times that path is taken.}
   NoBanner          : Boolean       = False;
-
-
 
 
 

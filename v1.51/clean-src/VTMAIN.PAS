@@ -61,33 +61,25 @@ program DemoVT;
   comparing DevGus against VTSilenc alone. With 193a in the chain the SB
   registers first. Whether that changes the conclusion is not settled here;
   it is flagged because the note was written without this segment. }
-
 uses
   Dos, VTResid, DevSB, VTGlobal, VTShell, Objects, Heaps, PlayMod, VTCfg,
-
   VTCmd, DevGus,
 
   SoundDevices, SongUnit, VTCtrl, CmdLine, VTNotes, Hardware, VTDosMem,
   ModCommands, VTSilenc;
 
-
 const
   Guard     : Byte = 0;  { the poll re-entrancy guard }
 
-
   Fill0003  : Byte = 0;  { 1.31b's alignment pad, now explicit }
-
   SongOpen  : Boolean = False;  { a module is loaded and not yet freed        }
 
-
   PlayerStarted : Boolean = False;  { the mixer has been started              }
-
 
   Banner1 = '    ' + #218 + #196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
              #196#196#196#196#196#196#196#196#196 + #191;
-
   Banner2 = '    ' + #179 + '  DemoVT.  VangeliSTracker''s version for demos, v1.51  ' + #179;
   Banner3 = '    ' + #179 + '                (C) 1992-94  VangeliSTeam              ' + #179;
   Banner4 = '    ' + #192 + #196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
@@ -104,7 +96,6 @@ const
                    #196#196#196#196#196#196#196#196#196#196#196#196#196#196#196 +
                    #196#196#196#196#196#196#196#196#196#196#196#196#196 + #217;
 
-
   AltName  = 'inconexi';
 
   { **AND IT IS IN ENGLISH IN v1.51.** 1.31b carries the Spanish
@@ -118,7 +109,6 @@ const
     Only an aligned byte diff of the segment shows a literal changing. }
   NoSong   = 'Can''t find a song.';
 
-
   { **String[13] AND 'DemoVT v1.51'.** The declared width is measured, not chosen:
     the field runs from $0006 to $0013 because DEVGUS's block -- whose first typed
     constant is the driver record beginning `03 'GUS'` -- starts at $0014, and
@@ -131,9 +121,6 @@ var
     address-ordered const block -- the one insertion 1.31 makes in the release's
     sequence. This program SETS it (when the executable is called INCONEXI.EXE) and
     12ba is the only reader, which is why it was declared in both. }
-
-
-
   ChainPtr  : Pointer;   { -> TimerChain }
   Complain  : Boolean;   { and a pad at $0c73 }
   Song      : TSong;     { the module currently loaded, if any             }
@@ -158,12 +145,7 @@ var
   deliberately rather than by accident. Compare DEVGUS, where three globals sat
   in the wrong unit and nothing could see it.
   -------------------------------------------------------------------------- }
-
-
-
   SavedCD   : LongInt;
-
-
   Str1208   : String;
 
   { FOUR BYTES THIS TRANSCRIPTION CANNOT NAME, between the string above and
@@ -181,8 +163,6 @@ var
     not a gap in the transcription -- they are four bytes the program reserves and
     never uses. }
   Fill0E9E  : LongInt;
-
-
 
 { THE CONTROL BLOCK, is NOT declared here. It lives in VTCtrl,
   the unit for segment 14b7, which is the code that clears it. There must be
@@ -216,7 +196,6 @@ the chain to whatever held INT 1Ch before us.
   It is assembled pointing at itself so that a stray call before the patch
   spins rather than jumping into nothing; the body then zeroes both words.
   -------------------------------------------------------------------------- }
-
 procedure TimerChain; far; assembler;
 asm
   DB   0EAh              { JMP FAR seg:ofs -- the operand is data }
@@ -412,7 +391,6 @@ begin
           LastTick := 0;                          { $0058 := 0     }
           DriverTicks := 0;                         { $0c78 := 0     }
 
-
           RingSlot  := 0;
           FlushSlot := 1;
         end;
@@ -477,9 +455,7 @@ end;
 
 
 function PlayModule(Name, Params : PathStr) : Boolean; far;
-
 begin
-
   StopModule;
 
   Complain := False;
@@ -499,8 +475,6 @@ begin
   end;
   SetVTFreq;
   MaxOutputFreq := DesiredHz;                      { $02ce := $0bae }
-
-
   FillChar(UserVols, SizeOf(UserVols), VtVolume);
   Song.Init;
   Song.SetInsidePath(Params);
@@ -572,11 +546,9 @@ begin
     ShrinkSystemHeap(0);
     SwapVectors;
     Exec(ProgName, ShellParam);
-
     SwapVectors;
     ShrinkSystemHeap(SavedCD);
   end;
-
 
 end;
 
@@ -586,9 +558,7 @@ end;
   Everything the units set up for themselves has already happened by the time
   the first statement here runs -- the drivers are registered and the resident
   handler is installed by their initialisation sections, in link order.}
-
 var
-
   Dir  : DirStr;
   Name : NameStr;
   Ext  : ExtStr;
@@ -610,7 +580,6 @@ begin
 
   FSplit(ParamStr(0), Dir, Name, Ext);
 
-
   if Name = AltName then AltMode := True;
 
   ChainPtr := @TimerChain;
@@ -621,7 +590,6 @@ begin
     MOV  ES:[DI+3], AX
   end;
 
-
   CtrlBlock.CtrlEntryPoint := @Dispatch;              { -> CB+$121   }
   CtrlBlock.RegEntryPoint := @DispatchEntry;         { -> CB+$129   }
 
@@ -629,7 +597,6 @@ begin
 
   InitHeapVariables;
   InitUmbHeap;
-
   Cmd.Init;
   SongColl.Init(1, 1);
   InitSoundDevices;
@@ -637,7 +604,6 @@ begin
   DesiredHz := ShellHz;
   OneModPtr := @PlayModule;                       { the playlist calls through here }
   Complain := True;
-
   Cmd.ParseLine(GetDOSCmdLine);
 
   {    THIS PARAGRAPH SAID TWICE THAT NOTHING WRITES $4821. It is CB+$207, a published
@@ -659,6 +625,5 @@ begin
     second test assumed to be a different flag. }
   if not Complain then
     ShowBanner;
-
 
 end.

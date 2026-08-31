@@ -41,7 +41,6 @@ var
   ProgName  : String[79];
 
 
-
 implementation
 
 var

@@ -27,7 +27,6 @@ unit VTCfg;
 
 interface
 
-
 uses
   Dos, SongUnit, VTDriver, SoundDevices, GUS, PlayMod, ModCommands, VTShell,
   VTGlobal, SoundBlaster, DevSB, SongElements;
@@ -74,14 +73,11 @@ var
   what makes it dangerous, and exactly why it is written down. Move each one when its
   segment lands.
   -------------------------------------------------------------------------- }
-
   { Segment 193a, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
-
 
   { The release's `LIB/DEVDAC.PAS`. NO SEGMENT IN DEMOVT HAS BEEN IDENTIFIED AS THE
     DAC driver, and these three sit immediately after SoundDevices' $0bf0, so they
     may well be SoundDevices' own here. Unresolved. }
-
 
   { ---- AND THE VTGlobal GROUP HAS MOVED OUT, to src/VTGLOBAL.PAS ----
     `PermitFade`, `VtVolume`, `ShellLoopMod`, `ShellHz`, `FadeIncr`, `VTLoopMod`,
@@ -100,8 +96,6 @@ var
 
 
 
-
-
 { --------------------------------------------------------------------------
 KillSpaces. Strip blanks from both ends of a string, in place.
 
@@ -117,7 +111,6 @@ KillSpaces. Strip blanks from both ends of a string, in place.
   -------------------------------------------------------------------------- }
 procedure KillSpaces(var S : String);
 const
-
   ValidBlanks = [' ', #9, #0, #255];
 begin
   while (Length(S) > 0) and (S[1] in ValidBlanks) do
@@ -483,7 +476,6 @@ begin
   if not NotInStr(Line, 'RPort') then GetWord(RDacPort)
 end;
 
-
 procedure DoSectPlayMod; far;
 begin
   if not NotInStr(Line, 'PermitFade'  ) then GetBool(PermitFade);
@@ -499,7 +491,6 @@ begin
   if not NotInStr(Line, 'Device'      ) then GetString(DevID, SizeOf(DevID) - 1);
   if not NotInStr(Line, 'FilterOn'    ) then GetByte(Byte(FilterOn));
   if not NotInStr(Line, 'FilterOff'   ) then GetByte(Byte(FilterOff));
-
   if not NotInStr(Line, 'FilterIsOn'  ) then GetBool(ModCommands.FilterIsOn);
   if not NotInStr(Line, 'CanFallBack' ) then GetBool(CanFallBack);
   if not NotInStr(Line, 'FilterChange') then GetBool(PermitFilterChange);
@@ -508,7 +499,6 @@ begin
   if not NotInStr(Line, 'LowQuality'  ) then GetBool(LowQuality);
   if not NotInStr(Line, 'Volume'      ) then GetByte(VtVolume)
 end;
-
 
 procedure DoSectMisc; far;
 begin

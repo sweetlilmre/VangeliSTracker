@@ -84,7 +84,6 @@ asm
   DB   0EAh              { JMP FAR seg:ofs                        }
   DW   OFFSET OldInt2F   { patched with the old INT 2Fh offset     }
   DW   SEG OldInt2F      { patched with the old INT 2Fh segment    }
-
 end;
 
 { --------------------------------------------------------------------------
@@ -136,7 +135,6 @@ asm
                               reads its control block from ES:[DI-4].        }
   IRET                   { answered; do NOT chain                }
 @@NotUs:
-
   JMP  OldInt2F          { every failed test lands here           }
 end;
 
@@ -180,7 +178,6 @@ end;
 
   AFTER THIS RETURNS the program is findable: any process that knows the
   password can reach `Block` through `ES:[DI-4]`.}
-
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;
@@ -211,7 +208,6 @@ begin
   { a resident that answered 0:0 has no name to show. }
   if Other = nil then
     Other := @NoName;
-
 
   if Found then
   begin

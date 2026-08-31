@@ -133,7 +133,6 @@ var
   Oct  : Word;
   Note : Word;
 begin
-
   for P := 0 to Periods - 1 do
   begin
     for Oct := 0 to Octaves - 1 do

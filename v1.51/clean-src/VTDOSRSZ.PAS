@@ -24,7 +24,6 @@
   the rest of the program does use 286 instructions and will not build under
   it. }
 
-
 {$G-}
 
 unit VTDosRsz;

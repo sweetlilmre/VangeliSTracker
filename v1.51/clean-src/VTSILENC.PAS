@@ -51,8 +51,6 @@ uses
   VTDriver;
 
 const
-
-
   { **COM2 IN v1.51, COM1 IN 1.31b.** DGROUP +$0200 holds `f8 02` and +$0202 holds
     `03 00`. Two bytes, and no instruction anywhere names either value -- both are
     initialisers a command-line switch overwrites, so only the image says what the
@@ -63,14 +61,11 @@ const
   Frac    : Byte    = 0;      { the 5-in-12 accumulator }
   OldVec  : Pointer = nil;    { the displaced INT 0Ch vector }
 
-
   { DMA IS **TRUE** ON A DRIVER THAT PLAYS NOTHING, which looks wrong and is
     not. The mixer gates its work on `IsDmaDevice AND (TickSnapshot = Ticks)`,
     so a device that only paces the tick wants that gate active. Claiming DMA
     is how it gets it.}
   Driver : TSoundDevice = ( DevID : 'Silence'; DMA : True );
-
-
 
 
 
@@ -85,7 +80,6 @@ const
   CarryAt  = 12;         { ... and its modulus   }
 
 var
-
   SavedMCR, SavedLCR, SavedDiv, SavedIER : Word;   { .. $0e34 }
   { **STALE, AND UNANCHORED.** This unit links at position 4 and VTCmd at 2, so
     this variable must sit above VTCmd's $0ef6. It does not. The claim is
@@ -94,7 +88,6 @@ var
     from the image, and this one is not public, so the linker map is silent too.
     Left as it stands and marked, rather than replaced with a guess. }
   WasOn  : Boolean;     { STALE }
-
 
 
 { --------------------------------------------------------------------------
@@ -247,7 +240,6 @@ begin
   Port[ComPort + 4] := 8;                         { OUT2 -- gate the IRQ }
   Port[ComPort + 3] := $83;                       { DLAB + 8N1 }
 
-
   SavedDiv := Port[ComPort]
               + (Port[ComPort + 1] shl 8);
 
@@ -314,7 +306,6 @@ begin
 
     SetIRQVector(ComIrq, OldVec);
     OldVec := nil;
-
 
     if not WasOn then DisableIRQ(ComIrq)
   end

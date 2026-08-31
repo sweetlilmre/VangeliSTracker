@@ -31,7 +31,6 @@ const
   CtrlBlockSize = $300;      { what Reset clears }
 
 type
-
   { One channel's state, as a reader of the block sees it. Updated by the
     player every tick; a demo watching these can draw a VU meter, flash on a
     note, or colour something by which instrument is sounding.

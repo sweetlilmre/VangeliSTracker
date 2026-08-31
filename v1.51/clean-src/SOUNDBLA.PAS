@@ -149,7 +149,6 @@ const
   SbProForce   : Boolean = False;
   Sb16Force    : Boolean = False;  { pad at $0b21 }
 
-
 const
   SbVersionMin : Byte       = 0;
   SbVersionMaj : Byte       = 0;
@@ -197,7 +196,6 @@ const
   DoHiSpeed          : Boolean = False;
   Sb16Bit            : Boolean = False;
   TimeConst          : Byte    = 0;
-
 
   DMAStart           : Boolean = False;
   DMAStop            : Boolean = False;

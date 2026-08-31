@@ -30,7 +30,6 @@ unit VTDosMem;
 interface
 
 
-
 { what everything else should call. }
 function  UMBAllocate(var P : Pointer; Size : LongInt) : LongInt; far;
 procedure UMBFree(var P : Pointer); far;

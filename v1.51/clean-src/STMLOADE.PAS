@@ -111,8 +111,6 @@ type
     b4 : Byte;                         { parameter                            }
   end;
 
-
-
   TStmFilePattern = array[1..64] of array[1..4] of TStmFileNote;
 
   TStmFile = record
@@ -410,7 +408,6 @@ begin
                 Repl := 0
               end;
 
-
             Vol  := Stm.Instruments[i].Vol;
             DAdj := Stm.Instruments[i].C2Spd;
             NAdj := $2100;
@@ -489,7 +486,6 @@ begin
               end;
 
             if Instrument.Len > 0 then
-
               if Instrument.Len <= MaxSample then
                 begin
                   FullHeap.HGetMem(Pointer(Instrument.Data), Instrument.Len);
@@ -561,7 +557,6 @@ const
   StmIdString : array[1..8] of Char = '!Scream!';
 var
   Stm : TStmFile absolute Header;
-
   Pos : LongInt;
   i   : Word;
 begin
@@ -617,7 +612,6 @@ begin
     Song.SequenceRepStart := 1;
 
     Move(Stm.PatternList, Song.PatternSequence^, Song.SequenceLength);
-
 
     for i := 1 to Song.SequenceLength do
       Inc(Song.PatternSequence^[i]);

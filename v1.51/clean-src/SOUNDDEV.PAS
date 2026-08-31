@@ -16,9 +16,7 @@ interface
 
 uses VTDriver, Dos, Hardware;
 
-
 type
-
   { The block the provider hands back. Every offset here is read off
  and they agree with the release's TSampleBuffer exactly:
     InUse at +0, NSamples at +1, RateHz at +3, Channels at +5, DataType at +6
@@ -55,21 +53,17 @@ type
   type is always FAR in Turbo Pascal, which is what CALLF [DI+$1e] needs. }
 
 
-
 procedure SetDevice(D : PSoundDevice);
 function  InitDevice(D : PSoundDevice) : Word;
 function  LocateDevice(ID : String) : PSoundDevice;
-
 
 
 procedure StartSampling;
 procedure EndSampling;
 
 
-
 procedure SetPeriodicProc(Proc : TProc; PerSecond : Word);
 procedure SetBufferAsker(Proc : TAskBufferProc);
-
 
 
 function  GetRealFreq(Hz : Word) : Word;
@@ -80,17 +74,13 @@ procedure CalcTimerData(Hz : Word);
 function  DoGetBuffer : Word;
 
 
-
 procedure InitSoundDevices;
-
 
 
 function  GetPlayPos : Pointer;
 
 
-
 procedure SharedPoll;
-
 
 procedure DevInitSbDMA(Stereo : Boolean; Bits : Byte);
 
@@ -150,7 +140,6 @@ const
   NumChannels       : Word         = 1;
   ChannelIncr       : Word         = 1;
   DMABufferSize     : Word         = 46000;
-
   DeviceIdling      : Byte         = 1;      { pad at $0ba7         }
 
   { $0ba8..$0baf. THREE OF THE FOUR HOLD 16000, WHICH FIXES `DefaultHz`. The release
@@ -181,14 +170,11 @@ const
   DMAStopped        : Boolean      = False;
   DMAIrqWatch       : Byte         = 0;      { pad at $0bc3         }
 
-
   DMAChannel        : Word         = 255;
-
 
   NxOption          : Boolean      = False;  { set by `nx`, unread  }
 
   IsDmaDevice       : Boolean      = False;  { picks @@Prepare's path }
-
 
   Ticks             : Word         = 0;      { VTSilenc advances it  }
   TickSnapshot      : Word         = 0;      { compares it }
@@ -245,7 +231,6 @@ const
   OutSlot1          : Word         = 0;      { in by SelectOutput: 8 or 16    }
   OutSlot2          : Word         = 0;      { bit, mono or stereo. The mixer }
   OutSlot3          : Word         = 0;      { calls one indirectly per step. }
-
   MixRut            : Word         = 0;      { release: DeviceFillRut }
 
   DeviceList        : PSoundDevice = nil;
@@ -280,7 +265,6 @@ var
   DMABufferYet/DMABufferEnd were each the wrong way round.
   ========================================================================== }
 const
-
   DevStkSize = 1000;
 
 var
@@ -311,7 +295,6 @@ var
   SavedSS           : Word;
   SavedSP           : Word;
 
-
   DMABufferPtr      : Pointer;       { where the mixer is up to  }
   DMABuffer         : Pointer;
   DMABufferEnd      : Word;          { Ofs(DMABuffer^) + the size }
@@ -326,7 +309,6 @@ var
   ActualBuffer      : PSampleBuffer; { the block playing         }
   NextBuffer        : PSampleBuffer; { the one behind it         }
   PleaseFallback    : Word;          { no buffer was available   }
-
 
 
 { ---- WHAT CANNOT MATCH, AND WHERE ------------------------------------
@@ -662,7 +644,6 @@ begin
   if ActiveDevice = nil then                            { 02dd  AX OR DX   }
     SetDevice(D);
   Inc(NumDevices)
-
 end;
 
 { ==========================================================================
@@ -913,10 +894,8 @@ end;
   also load AX first. Verbatim, per the standing rule, rather than dropped --
   dropping it would shift every byte after it.
   ========================================================================== }
-
 function GetPlayPos : Pointer;
 var
-
   Left : Word;
 begin
   { HAND-WRITTEN, and 0703..070b of it is DEAD. See above.
@@ -949,7 +928,6 @@ begin
                     (DMABufferSize + Left - 100)
                     mod DMABufferSize)
 end;
-
 
 {$L SOUNDDEV.OBJ}
 procedure SetGains; external;

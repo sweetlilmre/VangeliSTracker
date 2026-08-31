@@ -157,7 +157,6 @@ type
   end;
 
 var
-
   InitialHeapEnd : Pointer;
   Heap           : THeap;
   UmbHeap        : THeapColl;

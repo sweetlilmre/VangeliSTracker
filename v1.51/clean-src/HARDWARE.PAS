@@ -32,7 +32,6 @@ uses
   Dos;                 { for GetIntVec and SetIntVec, to swap an IRQ's
                          handler and put the old one back            }
 
-
 { ---- the 8259s ---------------------------------------------------------- }
 
 procedure EnableIRQ(IRQ : Word); far;
@@ -46,9 +45,7 @@ function  SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer; far;
   as given; the minus-one the hardware wants is applied here. }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
 
-
 function  GetDMACount(Channel : Byte) : Word; far;
-
 procedure DMAReset(Channel : Byte); far;
 
 { DMASet with the address already split into page and offset. }
@@ -177,7 +174,6 @@ point an IRQ's vector somewhere, and hand back the old one.
   -------------------------------------------------------------------------- }
 function SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer;
 var
-
   p : Pointer;
   j : Word;
 begin
@@ -548,14 +544,12 @@ var
   Segm : Word;
   Offs : Word;
 begin
-
   Segm := Seg(Buf^) and $F000;
   Offs := Seg(Buf^) and $0FFF;
 
   if ($FFFF - Ofs(Buf^)) < Offs then              { would carry }
   begin
     Inc(Segm, $1000);                             { next page   }
-
 
     Offs := Offs - $10000 + Ofs(Buf^);
   end

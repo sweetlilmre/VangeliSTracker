@@ -67,7 +67,6 @@ type
     Flags       : Word;                  { +$26  mostly legacy; see the doc    }
     CwtV        : Word;                  { +$28  created-with tracker/version  }
 
-
     Ffi         : Word;                  { +$2a  1 = signed, 2 = unsigned      }
     Magic       : array[1..4] of Char;   { +$2c  'SCRM'                       }
     { **$31 AND $32 CARRY 1.39b's NAMES, NOT THE SPECIFICATION'S.** The spec calls
@@ -147,7 +146,6 @@ var
   { Set to 1 by the recogniser and raised by ReadPatterns as it
     meets channels; the recogniser then narrows Song.NumChannels to it, so a
     module that declares sixteen channels and uses four reports four. }
-
   ChansUsed : Word;
 
   { `SeekPara` adds a paragraph count to it, so it is the module's
@@ -248,7 +246,6 @@ begin
 
           { The block's own length prefix, except where the caller says the
             format does not carry one. }
-
           if A or (B > $1A) then
             St.Read(Len, 2)
           else
@@ -332,7 +329,6 @@ begin
                         if (c and $80) <> 0 then
                           begin
                             Note.Parameter := Blk[k + 1];
-
                             case Blk[k] of
                               1  : begin
                                      Note.Command := mcSetTempo;
@@ -341,7 +337,6 @@ begin
                                    end;
                               2  : begin
                                      Note.Command := mcJumpPattern;
-
                                      Inc(Note.Parameter)
                                    end;
                               3  : Note.Command := mcEndPattern;
@@ -401,7 +396,6 @@ begin
                               $0B : Note.Command := mcVib_VSlide;
                               $0C : Note.Command := mcT_VSlide;
                               $0F : Note.Command := mcSampleOffs;
-
                               $11 : begin
                                       Note.Command := mcS3mRetrigNote;
                                       Note.Parameter := Note.Parameter
@@ -530,7 +524,6 @@ var
   Falls      : LongInt;           { -$7a  see the sign detection below      }
   Rises      : LongInt;           { -$7e                                    }
 begin
-
   for i := 1 to Num do
     begin
       FillChar(Instrument, SizeOf(Instrument), 0);
@@ -589,7 +582,6 @@ begin
               Instrument.Vol  := Hdr.Vol;
               Instrument.DAdj := Hdr.C2Spd;
 
-
               if A then
                 Instrument.NAdj := $20AB
               else
@@ -599,7 +591,6 @@ begin
                 Instrument.Repl := Instrument.Len;
               if Instrument.Reps + Instrument.Repl > Instrument.Len then
                 Instrument.Repl := Instrument.Len - Instrument.Reps;
-
 
               if Instrument.Vol > $3F then
                 Instrument.Vol := $3F;
@@ -729,7 +720,6 @@ const
   S3MIdString2  : array[1..4] of Char = 'SCRM';   { never read        }
 var
   S3M     : TS3MFile absolute Header;
-
   InsPara : TS3MParaTable;
   PatPara : TS3MParaTable;
   i       : Word;

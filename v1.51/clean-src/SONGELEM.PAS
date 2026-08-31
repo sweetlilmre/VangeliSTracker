@@ -411,7 +411,6 @@ type
 
 implementation
 
-
 uses
   Heaps, GUS;
 
@@ -425,7 +424,6 @@ uses
   instrument is torn down before the next song loads. }
 const
   GUSAddr : LongInt = 0;
-
 
 constructor TInstrument.Init;
 begin
@@ -508,13 +506,11 @@ begin
         Instr^.NAdj := $2000;
         Instr^.DAdj := $2000;
       end;
-
       if LowQuality then
       begin
         Desample;
         Resample;
       end;
-
 
       l := Instr^.Len;
       if UsingGUS and (Instr^.Data <> nil) then

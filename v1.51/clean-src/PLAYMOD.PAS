@@ -62,7 +62,6 @@ interface
   fixup either way -- so PLAYMOD still verifying identical with the same 1,187
   pending fixups was the check. }
 
-
 uses
   SongUnit, SongElements, SoundDevices, VTCtrl, GUS, ModCommands, Filters,
   Heaps, Hardware;
@@ -158,7 +157,6 @@ type
 
 
 
-
   { The buffer's data is declared as an untyped Pointer and used as an array of
     16-bit samples; this is the type that makes the second view legal.}
   PWordArray = ^TWordArray;
@@ -173,7 +171,6 @@ type
     what is audible, and they change under an interrupt. A published row is a
     snapshot, complete and consistent, tied to a moment that will arrive. }
   PPlayingNote = ^TPlayingNote;
-
   TPlayingNote = record
     EoMod       : Boolean;      { +$00                                       }
     Tempo       : Byte;         { +$01                                       }
@@ -183,7 +180,6 @@ type
     Note        : array[1..MaxChannels] of TFullNote;   { and every note   }
     NMuestras   : Word;         { the release's name; unused so far        }
     Fill        : Byte;
-
 
   end;
 
@@ -220,9 +216,7 @@ const
   GusVoices = 16;
 
 type
-
   TGusEventRow = array[0..GusVoices - 1] of TGusEvent;   { 288 bytes            }
-
 
 
 
@@ -284,7 +278,6 @@ const
   FilterOff        : TFilterMethod = fmNone;
 
 
-
   { THE FILTER AS THE MIXER HAS IT. There are two variables of this name in
     the program: this one is what the mixer is DOING, and ModCommands' is what
     the E0x command last ASKED for. Whoever means one must not silently get the
@@ -314,7 +307,6 @@ const
   MaxSplPerTick    : Word          = 880;
 
 
-
   { THE RING CURSORS. A ring buffer needs a producer and a consumer, and the
     GUS ring has three sets of them because three different things write and
     read it at three different points in the delay.
@@ -340,8 +332,6 @@ const
   NoLoop           : Byte          = 0;
   NextIdx          : Word          = 0;
   ChanIdx          : Word          = 0;
-
-
 
 
   NewNote          : TFullNote     = (Instrument : 0; Period : 0; Volume : 0;
@@ -403,12 +393,9 @@ const
 
   TickIter         : Word          = 0;        { the tempo loop's counter       }
 
-
   StepVal          : LongInt       = 0;
   FBCount          : Word          = 0;        { never read                     }
   TickChans        : Byte          = 0;
-
-
 
 
 
@@ -477,27 +464,6 @@ implementation
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 type
   { ASK A DEVICE WHAT RATE IT CAN ACTUALLY DO. The player names a rate it would
     like; the driver answers with the nearest one its hardware can produce, and
@@ -549,18 +515,6 @@ var
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 { --------------------------------------------------------------------------
   THE RESAMPLING KERNEL, and the whole reason this unit links an object module.
   It is the inner loop of the entire program: for each output sample it reads
@@ -583,7 +537,6 @@ var
   ONE KERNEL DOES TWO JOBS. A silent channel still has to advance its position
   and still has to leave the output untouched, so rather than a second routine
   there is a `Silent` flag. The release later split it in two.}
-
 {$L PLAYMOD.OBJ}
 function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         SrcLimit, Max, ChanAdd : Word;
@@ -919,7 +872,6 @@ end;
 procedure SetNewSample(Chan : Byte; var Raw : TModRawChan; Desc : PInstrumentRec;
                        Offs : Word);
 begin
-
   if Desc <> nil then
   begin
     { HAND-WRITTEN, transcribed verbatim per the standing rule.
@@ -1148,7 +1100,6 @@ begin
   if UsingGUS then
     if (Raw.Flags and rcfDoesLoop) <> 0 then
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
-
       Offs + LongInt(Desc^.Data),
                LongInt(Desc^.Data) + Desc^.Reps,
                LongInt(Desc^.Data) + Desc^.Reps + Desc^.Repl)
@@ -1303,7 +1254,6 @@ begin
 
     NotePlaying := NextNote;
     SeqPlaying  := NextSeq;
-
     Volume := UserVols;
 
       if Song.GetPatternSequence(SeqPlaying) >=
@@ -1501,7 +1451,6 @@ begin
                      CurCanal^.Instrument,
                      CurCanal^.SOffsVal);
 
-
       NoteProcessed^.Tempo := CurSpeed;
 
       { Publish this channel's cue into the ring, to be released a buffer later
@@ -1524,13 +1473,11 @@ begin
     if MuestrasPerTick > MaxSplPerTick then
       MuestrasPerTick := MaxSplPerTick;
 
-
     NMuestras := Tempo * MuestrasPerTick;
 
     NoteHz := ActualHz;
     if NoteHz = 0 then
       NoteHz := 1;
-
 
     NoteCalcVal := ($364C0000 div NoteHz) shl 4;
 
@@ -1649,12 +1596,10 @@ begin
       Exit
   end;
 
-
   AdvanceEventRow;
   PublishWideRow;
 
   Inc(TickCount);
-
 
   Inc(CtrlBlock.TickCounter);
 
@@ -1705,7 +1650,6 @@ begin
         Exit;
       TickInRow := 0
     end;
-
 
 
   { run every channel's effect for this tick, unless this is the
@@ -1811,7 +1755,6 @@ begin
     { AND THESE TWO ARE COMMON TO BOTH PATHS. The software branch's
       `JMP` at 0e22 lands on 0e4a, not past it, which is what says so; written
       inside the GUS branch they would be jumped over. }
-
     { **THE TEST IS $80 AND THE STORE IS $7F**, which is not a slip: the clamp admits
       everything below $80 and pins the rest at the largest value that is not $80. }
     if RawPtr^.Volume >= $80 then
@@ -1837,7 +1780,6 @@ begin
     { a period of zero would divide by zero downstream. }
     if CanalPtr^.Period = 0 then
       CanalPtr^.Period := 1;
-
 
     if CanalPtr^.Period > $1FFF then
       CanalPtr^.Period := $1FFF;
@@ -1929,13 +1871,11 @@ begin
       THE VOLUME IS SCALED BY UserVols, so what a client reads is what it would HEAR
       rather than what the tune asked for. `MUL DX` with DX loaded first puts
       UserVols on the right of the multiply. }
-
     with WideRing[WideSlot, TmpVal] do
     begin
       Period     := CanalPtr^.RealPeriod;
       Instrument := CanalPtr^.Note.Instrument;
       Volume     := CanalPtr^.Volume * UserVols[TmpVal] shr 7;
-
 
       if Volume > $3F then
         Volume := $3F
@@ -1964,7 +1904,6 @@ begin
       at zero.}
     if CanalPtr^.DoRetrig then
       if CanalPtr^.Instrument <> nil then
-
         SetNewSample(TmpVal, RawPtr^,
                      CanalPtr^.Instrument, 0);
 
@@ -2066,7 +2005,6 @@ function BufferGiver : PSampleBuffer; far;
 begin
   BufferGiver := nil;
 
-
   if not Buffers[BuffGive].InUse then
     Exit;
 
@@ -2090,9 +2028,7 @@ end;
   it or none. An unset length means the whole song; an unset start means the
   beginning. A start beyond the end is the one case that cannot be rescued, and
   it gives up.}
-
 procedure PlayStart(var Song : TSong);
-
 var
   i, j : Word;
 begin
@@ -2164,7 +2100,6 @@ begin
   if RangeEnd < NextSeq then
     RangeEnd := NextSeq;
 
-
   NoteBuff[0].EoMod       := False;
   NoteBuff[0].Tempo       := 6;
   NoteBuff[0].NotePlaying := 0;
@@ -2209,7 +2144,6 @@ begin
   if not UsingGUS then
     for i := 1 to NumBuffers do
     begin
-
       FullHeap.HGetMem(Buffers[i].IData, SizeOfABuffer);
 
       if Buffers[i].IData = nil then

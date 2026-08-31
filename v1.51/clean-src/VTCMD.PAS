@@ -37,7 +37,6 @@ unit VTCmd;
 
 interface
 
-
 uses
   Dos, Objects,
   VTDriver, SoundDevices,
@@ -90,7 +89,6 @@ type
 var
   Cmd      : TVTCmd;      { the parser itself, one per program }
 
-
   { A `TStringCollection`, AND THE LINKED IMAGE IS WHAT SETTLED IT -- after this file
     had argued the opposite and been WRONG.
 
@@ -111,7 +109,6 @@ function DoSongColl(Path : PathStr) : Boolean;
 
 
 implementation
-
 
 { VTSilenc BEFORE FileUtil, AND THE LINK ORDER IS THE ONLY REASON. The two are
   unrelated and either order compiles; the original's segments run FILEUTIL then
@@ -157,7 +154,6 @@ begin
 
   SetDevice(DevPtr)
 end;
-
 
 
 procedure SetVTFreq;
@@ -372,7 +368,6 @@ begin
 
   SetVTDevice;
 end;
-
 
 
 procedure CmdInitFreq(s : String);
@@ -590,9 +585,7 @@ label
 begin
   DoSongColl := True;
 
-
   if CtrlBlock.Abort then Exit;
-
 
   if SongColl.Count = 0 then
     begin

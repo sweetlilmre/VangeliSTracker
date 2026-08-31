@@ -92,7 +92,6 @@ type
     RealPeriod : Word;          { the note's own pitch, unmodulated          }
 
 
-
     { THE NOTE PORTAMENTO, command 3xx: slide from the pitch being played
       TOWARDS a target and stop there. The step is SIGNED, and its sign is the
       direction -- the Start half works out which way to go once, so the Tick
@@ -107,7 +106,6 @@ type
     Arp0       : Word;          { the note itself                            }
     Arp1       : Word;          { plus x semitones                           }
     Arp2       : Word;          { plus y semitones                           }
-
 
 
     { THE VIBRATO, command 4xy: walk a repeating waveform and add it to the
@@ -131,7 +129,6 @@ type
     VSldIsFine : Boolean;       { EAx/EBx: the same for volume               }
 
 
-
     { THE RETRIGGER, command E9x: play the note again every x ticks within the
       row. The counter runs up to the period, and when it gets there it is
       cleared and the flag is raised -- the flag is what the mixer reads, so
@@ -139,7 +136,6 @@ type
     RetrigCt   : Byte;          { ticks since the last retrigger             }
     RetrigVal  : Byte;          { retrigger every this many ticks            }
     DoRetrig   : Boolean;       { raised for one tick when one is due        }
-
 
 
     { THE SAMPLE OFFSET, command 9xx: start the sample part-way in rather than
@@ -154,7 +150,6 @@ type
     SOffsVal   : Word;          { the parameter, times 256                   }
 
 
-
     { SCREAM TRACKER'S Qxy RETRIGGER, which does what E9x does AND changes the
       volume each time it fires. The x nibble picks one of sixteen behaviours,
       and they are not all the same KIND of arithmetic: some scale the volume
@@ -163,7 +158,6 @@ type
       Tick half never has to know which nibble it came from. }
     S3mRetAdd : Boolean;       { True: add S3mRetVal. False: scale by it     }
     S3mRetVal : Byte;          { the step, or the multiplier                 }
-
 
 
     { THE RING EVENT, AND IT IS NOT A SOUND EFFECT AT ALL. The demo needs to
@@ -179,7 +173,6 @@ type
     RingSem     : Byte;         { the cue's parameter                        }
     RingPending : Byte;         { non-zero: a cue is waiting                 }
   end;
-
 
 
 { --------------------------------------------------------------------------
@@ -220,7 +213,6 @@ const
   TempoAccum         : Word    = 0;      { release: BPMCount                   }
 
 
-
   { THE PLAY RANGE, twice over: what the player is working through, then what
     a caller has asked it to play next. Starting playback copies the second set
     into the first. `Range*` is the live copy. }
@@ -230,7 +222,6 @@ const
   ReqStart           : Word    = 0;      { release: FirstPattern               }
   ReqEnd             : Word    = 0;      { release: RepStart                   }
   ReqLen             : Word    = 0;      { release: SongLen                    }
-
 
 
   { What E0x last asked for. Exported so that the key handler can set it. }
@@ -244,7 +235,6 @@ const
   NextNote           : Word    = 1;      { the row                             }
   NextSeq            : Word    = 1;      { the order position                  }
   TickInRow          : Byte    = 0;      { release: TempoCt                    }
-
 
 
 { THE SEMITONE TABLE: HOW TO TRANSPOSE A PITCH WITHOUT A NOTE TABLE.
@@ -296,7 +286,6 @@ implementation
   a module that fiddles with the filter can be told to leave it alone.}
 
 
-
 { Forward: the two portamento Start routines fall back on the fine variants,
   which are declared a long way below.}
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
@@ -333,7 +322,6 @@ var
   Period : LongInt;               { the pitch to transpose FROM              }
   Scaled : LongInt;               { the same, shifted up 14 bits             }
 
-
 begin
   Can.ArpCt := 0;
 
@@ -344,7 +332,6 @@ begin
   { Into the table's fixed point: 1 shl 14 is 16384, which is the table's
     entry for "no semitones at all".}
   Scaled := Period shl 14;
-
 
   Can.Arp0 := Period;
 

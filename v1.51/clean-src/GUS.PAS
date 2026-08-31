@@ -99,7 +99,6 @@ const
   the module's -- `MaxVoice` is 31 below for the same reason -- and it is 12ba's
   `MaxChannels` that is 8. Two different numbers that a reader will want to conflate. }
 const
-
   GUSPort         : Word    = $FFFF;
 
   GUSIrq          : Word    = 11;
@@ -107,7 +106,6 @@ const
   GUSDivisor      : Word    = 19293;
   GUSTimer1RutPtr : Pointer = nil;
   GUSTimer2RutPtr : Pointer = nil;
-
 
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word); far;
@@ -162,7 +160,6 @@ const
      $0260, $0270, $0280, $0290, $02A0, $02B0);
 
 var
-
   { **THE SEVEN ADDRESSES BELOW ARE STALE, AND NOTHING HERE CAN CORRECT THEM.**
     They are consistent with each other -- $371a, +128, +128, +128, +32, +128,
     +32 lands on every one of them -- and consistent is all they are.
@@ -194,7 +191,6 @@ var
   LastFreqs      : array[0..MaxVoice] of LongInt;  { filled with $FF }
   LastPans       : array[0..MaxVoice] of Byte;     { filled with $7F }
   VoicesChanged  : array[0..MaxVoice] of Byte;     { filled with $00 }
-
 
 
 { --------------------------------------------------------------------------
@@ -689,7 +685,6 @@ begin
 
   SetMixControl;
 
-
   asm
     MOV  DX, GUSPort
     MOV  AL, 0Bh      { [1.39b] "Turn off output, to avoid   }
@@ -710,7 +705,6 @@ begin
     SetGusVoice(V);
     SetGusRegister8(grVoiceControl, 3);  { stopped      }
     SetGusRegister8(grVolumeControl, 3);  { volume idle  }
-
     if GetGusRegister16(grCurrentVol) > $1800 then
     begin
       SetGusRegister8(grRampStart, $18);
@@ -753,7 +747,6 @@ is there really a card at GUSPort? Near, private.
   something else entirely.
   -------------------------------------------------------------------------- }
 function ProbeUltrasound : Boolean;
-
 label
   Fin;
 var
@@ -853,7 +846,6 @@ set a voice's pan. Near, private.
   card is slow.
   -------------------------------------------------------------------------- }
 const
-
   VolumeTable : array[0..127] of Word = (
     $1800, $9DF0, $A5F0, $ACF0, $B1F0, $B570, $B8F0, $BC70,
     $BFF0, $C1B0, $C370, $C530, $C6F0, $C8B0, $CA70, $CC30,
@@ -988,16 +980,13 @@ const
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0);
 var
-
   i, k, Vol : Byte;
   j         : Word;
-
   First     : Boolean;
 begin
   GUSStopTimer1;
 
   { --- pass one: program everything that is flagged ------------------ }
-
   for i := 0 to GUSChannels - 1 do
     if VoicesChanged[i] <> 0 then
     begin

@@ -32,7 +32,6 @@ uses
   VTDriver, GUS, SoundDevices, PlayMod;
 
 const
-
   GUSDevID = 'GUS';
 
 type
@@ -49,11 +48,9 @@ type
 const
   LastTick : Word    = 0;   { clears it, so it is exported }
 
-
   Fill0016 : LongInt = 0;
 
   Busy     : Byte    = 0;   { in v1.51  the handler's guard          }
-
 
   { **THE FIRST OF THE FIVE IS AN ALIGNMENT PAD, AND 1.31b SAYS SO.** Its own
     DevGus declares `Busy : Byte = 0` and comments it "the re-entrancy guard;
@@ -78,7 +75,6 @@ const
     Nothing in the segment touches them. }
   Fill001C : LongInt = 0;
 
-
   PollBusy : Byte    = 0;
 
   { `03 'G' 'U' 'S'` and a zero -- INITIALISED DATA, so a typed
@@ -93,8 +89,6 @@ const
   );
 
 implementation
-
-
 
 
 
@@ -115,7 +109,6 @@ the timer callback. Runs on somebody else's stack, with DS
   is started and the tick counter has not moved since last time -- there is
   nothing new to do. When it is not started, the call happens unconditionally.
   -------------------------------------------------------------------------- }
-
 procedure NullTimerHandler; far;
 begin
   asm
@@ -129,7 +122,6 @@ begin
   INC  LastTick
   CALL FAR PTR FlushEventRow    { hand the queued voice
                                 commands to the card                     }
-
   DEC  Busy
 @@Out:
   end  { LEAVE / RETF, supplied by Pascal      }

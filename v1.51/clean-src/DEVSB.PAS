@@ -214,7 +214,6 @@ asm
                 IRET
 end;
 
-
 function DMASBGetRealFreq(Hz : Word) : Word; far;
 var
   i    : Word;
@@ -261,7 +260,6 @@ begin
 
   DMASBProGetRealFreq := NHz1
 end;
-
 
 procedure DMASBCalcTimerData(Hz : Word);
 begin
@@ -435,7 +433,6 @@ begin
         between them went. }
       asm PUSHF; STI end;
       asm POPF end;
-
 
       DMAReset(SbDMAChan);
 

@@ -91,7 +91,6 @@ asm
   MOV  ES:[DI], AX     { written back in place, over the sample just read }
   ADD  DI, SI          { one stride on: the buffer may be interleaved }
   LOOP @@Next          { CX counts samples, not bytes           }
-
 end;
 
 { --------------------------------------------------------------------------
@@ -128,7 +127,6 @@ asm
   MOV  ES:[DI], AX     { written back in place                  }
   ADD  DI, SI          { one stride on                          }
   LOOP @@Next          { next sample                            }
-
 end;
 
 { --------------------------------------------------------------------------
@@ -164,7 +162,6 @@ asm
   MOV  ES:[DI], AX     { written back in place                  }
   ADD  DI, SI          { one stride on                          }
   LOOP @@Next          { next sample                            }
-
 end;
 
 { --------------------------------------------------------------------------
