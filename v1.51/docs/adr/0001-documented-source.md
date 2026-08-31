@@ -1,7 +1,8 @@
 # 1. `clean-src` becomes a documented source, not a stripped one
 
 Date: 2026-08-30
-Status: proposed — awaiting confirmation
+Status: accepted — implemented across all 34 units, 2026-08-31.
+Outcome: `../09-documentation-transform.md`.
 
 ## Context
 
