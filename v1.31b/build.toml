@@ -28,7 +28,7 @@ default = "tp6"
 # subdirectory -- and its own TPC.CFG beside it carries the unit path.
 binpath = "C:\\TP6"
 dialect = "tp6"
-switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
+switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q /GD"
 
 [compiler.tp61]
 # Turbo Pascal 6.01: TPC.EXE dated 11-Jun-1991 at 69,278 bytes, beside 6.0's
@@ -51,10 +51,19 @@ switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X
 #
 # Omitted deliberately: /U and /O (the build directory is flat here); /M (this
 # drives the order itself -- TRIED AND REVERTED, because TP6 answers Error 68
-# on SongUnit's circular reference rather than resolving it on demand); /GD
-# (a detailed .MAP, until the map is useful); /V (debug info in the .TPU, and
+# on SongUnit's circular reference rather than resolving it on demand);
+# /V (debug info in the .TPU, and
 # the shipped binary was run through tdstrip so it carries none).
 #
+# /GD IS NOW ON, and this comment used to list it as omitted "until the map is
+# useful". The map became useful: linkbytes.py needs it, and without one that
+# tool could not complete a run in either consumer. Measured before keeping the
+# switch, because the switch line is the input whose errors do not fail --
+# VTMAIN.EXE is 58,176 bytes and sha256 f9008287... both with and without /GD,
+# so it changes no emitted byte and only adds the .MAP. With the map present
+# linkbytes reports 0 differing bytes in the linked image, and reports the one
+# byte when a byte is deliberately flipped.
+
 # $D+ and $L+ are kept because the original's configuration has them; they add
 # debug information rather than code, and tdstrip removes it afterwards.
 
