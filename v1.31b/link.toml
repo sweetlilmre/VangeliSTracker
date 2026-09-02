@@ -14,6 +14,12 @@
 # after [table] belongs to that table -- which put `segments` inside [lists] on
 # the first attempt and the reader raised KeyError.
 
+# The program unit the dependency walk starts from. It was a DEFAULT PARAMETER
+# inside linkorder.py naming this target's main program, and the only caller
+# never passed it -- so the default was not a fallback, it was the answer, and
+# the tool answered its documented question wrongly in any other project.
+main_unit = "DEMOVT"
+
 map_file = "build/VTMAIN.MAP"
 layout   = "docs/00-map.md"
 # The program segment is measured block by block -- it emits no unit, so the
