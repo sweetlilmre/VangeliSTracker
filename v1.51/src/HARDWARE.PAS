@@ -16,7 +16,7 @@
   unrelated port numbers, in an order that is not the channel order. Most of
   this unit is tables that say where each thing actually is.
 
-  [re] Segment 1d0c -- 768 bytes. Eight framed routines that the prologue
+  [re] SEGMENT 1d0c -- 768 bytes. Eight framed routines that the prologue
   scanner finds, and SIX FRAMELESS ONES that it cannot -- the DMA kernels are
   entered with registers already loaded and end in a near RET, so they only
   turn up by following calls.
@@ -37,13 +37,13 @@
   [re] Nothing proves 1.31 spelled any of this the same way: no debug
   information.
 
-  [re] ADDRESS MAP
   [re] 1d0c IN THIS IMAGE, NOT 1b24. The map said 1b24, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
-  reference images, and a byte search bounded by the paired extent: 64 bytes unchanged at 1d0c:0000, nine routines inside the segment.
+  reference images, and a byte search bounded by the paired extent: 64 bytes unchanged at 1d0c:0000, nine routines inside the SEGMENT.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     EnableIRQ       1d0c:0000     DisableIRQ      1d0c:0044
     IRQState        1d0c:007e     SetIRQVector    1d0c:00d7
     DMA16Set        1d0c:0128 *   DMA8Set         1d0c:0172 *
@@ -97,7 +97,7 @@ function  GetDMACount(Channel : Byte) : Word; far;
   one-instruction `PUSH [0b18]` that DMASet gets four lines later in the same
   caller. Two calls to two routines in this unit from one routine in another,
   and they disagree; the widths are the reason. Sixth interface corrected by a
-  caller in another segment. }
+  caller in another SEGMENT. }
 procedure DMAReset(Channel : Byte); far;
 
 { 1d0c:024c -- DMASet with the address already split into page and offset. }
@@ -595,24 +595,24 @@ end;
   READ THE ADDRESS ARITHMETIC CAREFULLY -- it is not the obvious formula, and
   the transcription keeps what is there rather than correcting it.
 
-  The page comes out as the top nibble of the segment, which is right: for a
+  The page comes out as the top nibble of the SEGMENT, which is right: for a
   linear address of Seg*16 + Ofs, bits 16..19 are exactly `Seg shr 12`.
 
   The 16-bit part, though, is computed as `(Seg and $0FFF) + Ofs`, with NO
-  shift left by four on the segment term. The exact answer would be
+  shift left by four on the SEGMENT term. The exact answer would be
   `((Seg and $0FFF) shl 4) + Ofs`. Treating a paragraph count as a byte count
   is only correct when `Seg and $0FFF` is ZERO -- that is, when the buffer's
-  segment is a multiple of $1000, so the buffer starts on a 64 KB boundary.
+  SEGMENT is a multiple of $1000, so the buffer starts on a 64 KB boundary.
 
   So the routine carries an unwritten CONTRACT: hand it a pointer whose
-  segment is 64 KB aligned. That is not an unreasonable thing to require of a
+  SEGMENT is 64 KB aligned. That is not an unreasonable thing to require of a
   DMA buffer -- a transfer may not cross a 64 KB boundary anyway, so a caller
   has to think about alignment regardless, and 17cf's pool is where the
   buffer comes from.
 
   The overflow test just above it is consistent with that reading: it checks
   whether `Ofs + (Seg and $0FFF)` would carry out of sixteen bits and bumps
-  the page if so. That is a correction for a SLIGHTLY misaligned segment, and
+  the page if so. That is a correction for a SLIGHTLY misaligned SEGMENT, and
   it is exact only in the same case the main formula is.
 
   Flagged rather than fixed. Resolving it properly needs the callers in 12ba

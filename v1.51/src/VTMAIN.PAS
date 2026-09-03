@@ -24,8 +24,8 @@
   for what it does, and every name is followed by the address it was read
   from.
 
-  [re] ADDRESS MAP
   [re] VERIFIED in this image: 64 bytes unchanged at 1000:0000 -- the map was already right.
+  [re] ADDRESS MAP
     banner text   1000:0000  four String[61], stride 62
     ShowBanner    1000:00f8     TimerChain    1000:016b
     PollDriver    1000:0171     TimerHandler  1000:01a5
@@ -34,8 +34,8 @@
     usage text    1000:0405  three String[44], then two more
     [re] init chain    1000:04b3     the body      1000:04e0
 
-  DGROUP (segment 1caa)
-    $0002  the poll re-entrancy guard     $0004  'DemoVT v1.31 (beta)'
+  DGROUP (SEGMENT 1e92)
+    $0002  the poll re-entrancy guard     $0006  'DemoVT v1.51'
     $009a  PlayModule, as a far pointer   $02d1  set when run as INCONEXI.EXE
     $09e8  "the banner has been shown"    $0b96  the sound driver object
     $0c6e  -> TimerChain                  $0c72  "say if no song was found"
@@ -87,10 +87,10 @@ program DemoVT;
   and that note concluded "a machine with both ends up on the GUS" while
   comparing DevGus against VTSilenc alone. With 193a in the chain the SB
   registers first. Whether that changes the conclusion is not settled here;
-  it is flagged because the note was written without this segment. }
+  it is flagged because the note was written without this SEGMENT. }
 { [re] THE ORDER OF THIS CLAUSE IS THE PROGRAM'S SEGMENT LAYOUT, AND IT IS SOLVED RATHER
   THAN CHOSEN. TP6 emits segments in reverse DFS post-order over the `uses` graph, so
-  the original's segment ADDRESSES read backwards are its finish order -- and that is
+  the original's SEGMENT ADDRESSES read backwards are its finish order -- and that is
   the one thing about the original link that can simply be measured. The first eleven
   entries below are the unique sequence that reproduces it; `linkorder.py`
   simulates the rule and diffs the result, and it agrees on all thirty positions.
@@ -105,7 +105,7 @@ program DemoVT;
   [re] The entries after the blank line are already finished by the time the walk reaches
   them, so they are no-ops in the ordering and their position is unobservable FROM THE
   SEGMENT MAP. It is not unobservable in general, and `VTGlobal` is the proof: it emits
-  no segment, so the map says nothing about it, but it does emit DATA, and its block
+  no SEGMENT, so the map says nothing about it, but it does emit DATA, and its block
   sits between VTShell's and DevSB's in the original's DGROUP. That is what moved it up
   into the ordered group. Any other declarations-only unit with initialised data can be
   placed the same way -- `dgroup.py` is the instrument, not `mapcmp.py`. }
@@ -151,7 +151,7 @@ const
     unit's block at 20 bytes in the original against our 24, and the original's
     version string starts at $0006 where 1.31b's starts at $0004 -- so two bytes went
     in ahead of it. A scan of the image for absolute references to $0004 finds
-    exactly two, both in this segment: `CMP byte [0004],0 / JZ` at 1000:02f7 and
+    exactly two, both in this SEGMENT: `CMP byte [0004],0 / JZ` at 1000:02f7 and
     `MOV byte [0004],1` at 1000:03c8. A BYTE, set and tested, and nothing else
     touches it.
 
@@ -186,7 +186,7 @@ const
   { [re] 1000:0000, FOUR SEPARATE UNTYPED CONSTANTS on a stride of 62 -- CP437 box
     drawing. NOT an `array[1..4] of String[61]`, which is what this was, and the
     difference is where the bytes live: a TYPED constant is initialised DGROUP data
-    and an UNTYPED one is a literal that Turbo Pascal lays down in the CODE segment.
+    and an UNTYPED one is a literal that Turbo Pascal lays down in the CODE SEGMENT.
     The original has them in CODE at 1000:0000..00f7, with ShowBanner's own code
     starting at 00f8 -- which is also the rule this project already knows, that a
     routine's literals are emitted immediately before it.
@@ -224,7 +224,7 @@ const
                    #196#196#196#196#196#196#196#196#196#196#196#196#196 + #217;
 
   { [re] 1000:048c -- compared against the program's OWN file name. Renaming the
-    executable to INCONEXI.EXE sets DS:$02d1, which nothing in this segment
+    executable to INCONEXI.EXE sets DS:$02d1, which nothing in this SEGMENT
     reads; whatever it selects lives in a unit not yet read. }
   AltName  = 'inconexi';
 
@@ -234,13 +234,13 @@ const
     what identifies it: $1d against $12, and the text follows immediately.
 
     THE STRING GOT SHORTER, WHICH IS WHY IT WAS NOT FOUND EARLIER. Everything after it
-    in the code segment moves ELEVEN BYTES down, and a routine-size check that is
-    already reporting the segment short by more than that has nothing to catch it on.
-    Only an aligned byte diff of the segment shows a literal changing. }
+    in the code SEGMENT moves ELEVEN BYTES down, and a routine-size check that is
+    already reporting the SEGMENT short by more than that has nothing to catch it on.
+    Only an aligned byte diff of the SEGMENT shows a literal changing. }
   NoSong   = 'Can''t find a song.';
 
   { [re] 1e92:0004 -- the name Install publishes over INT 2Fh. A TYPED constant, so it
-    lives in DGROUP rather than in the code segment, and TWO measurements say so:
+    lives in DGROUP rather than in the code SEGMENT, and TWO measurements say so:
     1000:0599 is `MOV DI,0004 / PUSH DS / PUSH DI`, and PUSH DS against PUSH CS is
     this project's standing test for where a constant lives -- an untyped one is a
     literal in CODE. And the LENGTH follows from the neighbour: VTSilenc's `Driver`
@@ -323,7 +323,7 @@ var
   eight addresses agreeing is a cross-check rather than an assumption.
 
   THE REST ARE STILL DECLARED HERE AND STILL WRONG TO BE. Every one below is a
-  DGROUP address this segment reads or writes whose OWNER has not been
+  DGROUP address this SEGMENT reads or writes whose OWNER has not been
   established -- some almost certainly belong to VTCmd or VTCfg. A DGROUP
   reference is a linker fixup, so the byte comparison cannot tell a right home
   from a wrong one; that is risk 1, and declaring them here is that risk taken
@@ -406,7 +406,7 @@ var
     field, and the reading had this one as a standalone PathStr. }
 
 { DS:$22c6, THE CONTROL BLOCK, is NOT declared here. It lives in VTCtrl,
-  the unit for segment 14b7, which is the code that clears it. There must be
+  the unit for SEGMENT 1538, which is the code that clears it. There must be
   exactly one of it: INT 2Fh publishes its address to every client, so a
   second copy would mean the demo talked to a block nothing was updating.
   See docs/06-transcription.md, "one DGROUP, many units". }
@@ -455,7 +455,7 @@ procedure TimerChain; far; assembler;
 asm
   DB   0EAh              { 1000:016b  JMP FAR seg:ofs -- the operand is data }
   DW   OFFSET TimerChain { 1000:016c  patched with the old INT 1Ch offset    }
-  DW   SEG TimerChain    { 1000:016e  patched with the old INT 1Ch segment   }
+  DW   SEG TimerChain    { 1000:016e  patched with the old INT 1Ch SEGMENT   }
                          { 1000:0170  the epilogue's RETF, never reached     }
 end;
 
@@ -508,7 +508,7 @@ asm
   PUSH DS                { 1000:01a7                                         }
   PUSH ES                { 1000:01a8                                         }
   MOV  AX, SEG @DATA     { 1000:01a9  the binary has MOV AX,1CAAh -- an
-                                      absolute segment, and copying it would
+                                      absolute SEGMENT, and copying it would
                                       point us at somebody else's data       }
   MOV  DS, AX            { 1000:01ac                                         }
   CLD                    { 1000:01ae                                         }
@@ -544,7 +544,7 @@ begin
   @@NotHooked:
     { **`MOV SI,0000` AND NOT `XOR SI,SI`**, six times over in this file. Same value,
       three bytes against two, and the original has the long form -- `be 00 00`, not
-      `31 f6`. It is the segment of the interrupt vector table being formed, and a
+      `31 f6`. It is the SEGMENT of the interrupt vector table being formed, and a
       1993 hand-assembler writes it out. This file already records the identical fix in
       VTRESID, where four of them cost four bytes; here it cost six. **The verbatim rule
       exists for exactly this.** }
@@ -553,7 +553,7 @@ begin
     MOV  AX, ES:[70h]      { 1000:01d5  INT 1Ch offset                       }
     MOV  SI, 0000h            { 1000:01d9                                       }
     MOV  ES, SI            { 1000:01dc                                       }
-    MOV  DX, ES:[72h]      { 1000:01de  INT 1Ch segment                      }
+    MOV  DX, ES:[72h]      { 1000:01de  INT 1Ch SEGMENT                      }
     LES  DI, ChainPtr      { 1000:01e3                                       }
     MOV  ES:[DI+1], AX     { 1000:01e7  patch the chain stub                 }
     MOV  ES:[DI+3], DX     { 1000:01eb                                       }
@@ -610,7 +610,7 @@ end;
   the INT 2Fh handshake. See ../v1.31b/docs/01-int2f.md.
 
   The PUSHA / PUSH DS / MOV DS pair is not decoration: the caller is a
-  different program with a different data segment, so nothing may be assumed
+  different program with a different data SEGMENT, so nothing may be assumed
   about any register on entry.
 
   The result is set to zero and never changed, so the demo is right to ignore
@@ -663,7 +663,7 @@ begin
             SO.** Placed after the case, every arm's exit jumps to 1000:02ab, the
             start of these two statements; the original's four arms jump to 02b6,
             past them. Eleven bytes, four `eb` displacements, and no other byte in the
-            segment different -- so the code was right and only its BRACKET was wrong.
+            SEGMENT different -- so the code was right and only its BRACKET was wrong.
 
             A jump that lands eleven bytes early is not a missing eleven bytes. It is
             the same eleven bytes on the wrong side of an `end`.
@@ -891,7 +891,7 @@ begin
       between them.
 
       THE DUPLICATE IS WHAT FOUND IT. Writing StopModule left this routine 53 bytes
-      LONGER than the original while the segment was still short overall, and the
+      LONGER than the original while the SEGMENT was still short overall, and the
       extra bytes disassembled to the same instructions the new routine has. Two
       copies of one sequence is what factoring out looks like from the wrong side. }
     SwapVectors;                                  { 1000:045f }
@@ -920,7 +920,7 @@ end;
   PUSH DI / PUSH 0 / CALLF 1d89:0fe9`, and a String function is handed the address of a
   temporary to build its result in. Declared as a variable it became a GLOBAL -- a
   program's `var` section is global in Pascal -- and the temporary got COPIED into it,
-  which is the thirteen bytes this segment was over: five to push the destination, three
+  which is the thirteen bytes this SEGMENT was over: five to push the destination, three
   for `PUSH 00FFh` and five for the string-copy call.
 
   [re] AND THE STATEMENT IS ONE CALL, NOT TWO. `FSplit`'s first argument is ParamStr's result
@@ -954,7 +954,7 @@ begin
   FSplit(ParamStr(0), Dir, Name, Ext);            { 1000:0542..055a  1d57:0241 }
 
   { [re] 1000:0565 -- renaming the executable to INCONEXI.EXE turns something on.
-    Nothing in this segment reads DS:$02d1. }
+    Nothing in this SEGMENT reads DS:$02d1. }
   if Name = AltName then AltMode := True;         { 1000:056c }
 
   ChainPtr := @TimerChain;                        { 1000:0577 }
@@ -1042,5 +1042,5 @@ begin
     the Halt, which no statement can produce: a written `Halt(0)` sits inside the block
     and is emitted before the epilogue, not after it. So those seven bytes are Turbo
     Pascal's own end-of-program sequence, and writing the call as well emitted it twice.
-    The code ends at 0643, and 1616 - 1604 is twelve bytes of segment padding. }
+    The code ends at 0643, and 1616 - 1604 is twelve bytes of SEGMENT padding. }
 end.

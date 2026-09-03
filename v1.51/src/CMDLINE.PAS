@@ -19,7 +19,7 @@
   may include another, because the parse state is saved and restored around
   the recursion rather than kept in locals.
 
-  [re] Segment 1182 -- 1,232 bytes, nine routines. COMPLETE at 1,232 of 1,232,
+  [re] SEGMENT 1182 -- 1,232 bytes, nine routines. COMPLETE at 1,232 of 1,232,
   158 pending fixups. Our code is 1,282: the two empty overrides at the bottom
   are routines the ORIGINAL'S LINKER DROPPED, which is why they sit last. Read
   the note there before moving them.
@@ -28,7 +28,7 @@
   nothing else above 7%. Its own header describes it as "a workframe for a command line
   options interpreter -- you just have to make a descendant object overriding the
   InterpretNoSwitch and InterpretSwitch methods", and that is exactly the shape of the
-  pair `116e` and `109c`: this segment is the framework and `109c` is the descendant
+  pair `116e` and `109c`: this SEGMENT is the framework and `109c` is the descendant
   holding the switch table. `109c` scores 42.1% against the release's own descendant,
   `VTCMD.PAS`.
 
@@ -38,7 +38,7 @@
       +04  Done               Objects.TObject's
       +08  ParseLine          called once, from ParseFile
       +0c  ParseFile          called once, from ParseLine
-      +10  SkipRest           NEVER CALLED from inside this segment -- 1086:0835 is
+      +10  SkipRest           NEVER CALLED from inside this SEGMENT -- 1086:0835 is
       +14  GetToken           called FOUR times: three in ParseLine, one in TokenParam
       +18  CmpSwitch
       +1c  TokenParam
@@ -52,7 +52,7 @@
   `Idx := 255` and nothing else. `Abort` still exists separately at +20 and sets
   `Aborting`.
 
-  [re] **AND `109c` NAMED IT.** The method had no caller inside this segment and was
+  [re] **AND `109c` NAMED IT.** The method had no caller inside this SEGMENT and was
   `Rut_0110` until one turned up: `1086:0835` is a `CALLF [DI+10]` and it is the LAST
   thing `TVTCmdSwitch.CmdInitShell` does, immediately after
   `ShellParam := Copy(Line, Idx, 255)`. A method that has just read the rest of the line
@@ -328,7 +328,7 @@ end;
 
 { THE DOS COMMAND LINE IS AT PSP:$80, length byte first -- which is a Pascal string
   already, so the whole routine is one cast. `PrefixSeg` is Turbo Pascal's own copy of
-  the PSP segment. `TCmdLine` is `String[127]` because $80 is where DOS puts it and 127
+  the PSP SEGMENT. `TCmdLine` is `String[127]` because $80 is where DOS puts it and 127
   is all the room there is. }
 function GetDOSCmdLine : TCmdLine;
 begin
@@ -345,7 +345,7 @@ end;
   docs/CONTINUATION.md.)
 
   `ParseLine` calls VMT slots +$24 and +$28, so `TCmdLineInterpreter` must declare nine
-  virtual methods. **But segment 116e contains only EIGHT routine bodies.** Counting
+  virtual methods. **But SEGMENT 1182 contains only EIGHT routine bodies.** Counting
   far returns finds exactly eight, and every one is accounted for:
 
       01b4 RETF 8    ParseLine        02b9 RETF 4    Rut_0110
@@ -355,7 +355,7 @@ end;
 
   `04a2..04b1` is Abort -- `MOV byte ES:[DI+0148],1`, which is `Aborting := True` and
   confirms the field layout a second time -- and `04b2..04cf` is GetDOSCmdLine, whose
-  thirty bytes end exactly at the segment's last byte. **There is no room for the two
+  thirty bytes end exactly at the SEGMENT's last byte. **There is no room for the two
   empty overrides and no trace of them.**
 
   **TURBO PASCAL SMART-LINKS AT THE ROUTINE LEVEL WHEN IT BUILDS THE EXE**, and these two

@@ -1396,9 +1396,9 @@ SetGains:
 ;     loops can walk it with plain [SI] addressing -- which costs nothing in
 ;     the inner loop and is the whole point. But DGROUP is then unreachable
 ;     through DS, so every global touched after that line is read through
-;     SS: instead. SS and DS are the same segment in a Pascal program, so
+;     SS: instead. SS and DS are the same SEGMENT in a Pascal program, so
 ;     the override is free. Miss one and it reads the sample buffer as if it
-;     were the data segment.
+;     were the data SEGMENT.
 ;
 ;     THE WRAP IS HANDLED AS TWO CALLS, NOT A MODULO. The buffer is
 ;     circular; if this batch would run past the end, the first call writes

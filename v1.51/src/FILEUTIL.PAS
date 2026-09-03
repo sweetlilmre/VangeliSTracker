@@ -23,7 +23,7 @@
   root, which is where a bare file name would have been looked for anyway --
   but a caller passing '' and expecting '' back will not get it.
 
-  [re] Segment 115a -- 64 bytes, of which 59 are the one routine and the rest
+  [re] SEGMENT 115a -- 64 bytes, of which 59 are the one routine and the rest
   is padding.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/FILEUTIL.PAS's AddBar2Path is this
@@ -37,13 +37,13 @@
   something missing from this transcription. Nothing proves 1.31 spelled any of
   this the same way: the binary has no debug information.
 
-  [re] ADDRESS MAP
   [re] 115a IN THIS IMAGE, NOT 116a. The map said 116a, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 64 bytes of AddBar2Path unchanged at 115a:0000.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     AddBar2Path  115a:0000
   =========================================================================== }
 

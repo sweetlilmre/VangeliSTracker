@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1650 -- build the period-to-note lookup. 160 bytes, all of it, one
+  SEGMENT 1650 -- build the period-to-note lookup. 160 bytes, all of it, one
   routine, no parameters. The body calls it once at 1000:05d7.
 
   A tracker pattern stores a PERIOD, not a note. Going the other way -- which
@@ -74,13 +74,13 @@ var
     variable block ends where GUS's begins at $371a, and $25c6 + 4096 is $35c6, so there
     are exactly $154 bytes after `NoteOf` -- which is 340, which is 85 times 4, which is
     `array[0..84] of String[3]`. `LIB/SONGUTIL.PAS` -- the release counterpart
-    `relmatch.py` scored this segment against at 71.1% -- declares `NoteIdx : TNoteSet`
+    `relmatch.py` scored this SEGMENT against at 71.1% -- declares `NoteIdx : TNoteSet`
     and `NoteStr : TNoteStringSet` as its two variables, and its `NoteStr` holds the
     printed name of each note, "e.g. 'A#2'". `NoteOf` is `NoteIdx`; this is the other one.
 
     NOTHING IN THE TRANSCRIBED TREE READS IT, and it holds no data -- it is a `var`, so
     the image is silent about it and `survey.py` finding no printable string in the
-    segment is consistent. It is here for its 340 bytes and its name, and the arithmetic
+    SEGMENT is consistent. It is here for its 340 bytes and its name, and the arithmetic
     is what says it exists. }
   NoteStr   : array[0..84] of String[3];             { DS:$35c6  340 bytes  }
 
@@ -114,7 +114,7 @@ implementation
   a flat declaration would lose that instruction.
 
   ORDINARY DGROUP DATA, not `absolute`. This pair was once declared
-  `absolute 0:$04bc`, which is segment ZERO -- the interrupt vector table -- and
+  `absolute 0:$04bc`, which is SEGMENT ZERO -- the interrupt vector table -- and
   made every access a far one through ES. The original indexes them DS-relative:
   1650:004e is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
   instruction. The offsets themselves are decided by link order, which is the open

@@ -23,20 +23,20 @@
   entry, and the player hands whatever is there to Dos.Exec. So an entry that
   names no program of its own falls back to the shell.
 
-  [re] Segment 1b19 -- 159 bytes, five routines, three of which do nothing.
+  [re] SEGMENT 1b19 -- 159 bytes, five routines, three of which do nothing.
 
   [re] DS:$3ade IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites
   it per playlist entry and 1000:03af hands it to Dos.Exec.
 
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
-  [re] ADDRESS MAP
   [re] 1b19 IN THIS IMAGE, NOT 1931. Charted in Ghidra by its two string
-  constants, which pin the segment AND show the layout did not move: the
-  String[3] 'CON' is at 1b19:001d and the String[7] 'COMSPEC' at 1b19:0021,
+  constants, which pin the SEGMENT AND show the layout did not move: the
   the same offsets they hold in v1.31b. Init is confirmed separately -- one
   of only two `ENTER $200,0` in the image is at 1b19:0029, its v1.31b
+  String[3] 'CON' is at 1b19:001d and the String[7] 'COMSPEC' at 1b19:0021,
   offset. The CS:$ offsets below are therefore unchanged.
+  [re] ADDRESS MAP
     AtExit  1b19:0000     'CON'      CS:$001d, a String[3]
     Init    1b19:0029     'COMSPEC'  CS:$0021, a String[7]
 
@@ -74,14 +74,18 @@ var
 
 { [re] ~~1b19:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND
   THEY WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next
-  segment starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 1b22:0000.
+  SEGMENT starts at 1b22, and 0x1b19*16 + 0x90 is 0x1b220, which IS 1b22:0000.
+  (In v1.31b the same sum reads 0x1931*16 + 0x90 = 0x193a0 = 193a:0000. A bulk
+  re-base rewrote the address on the right of "which IS" and left the
+  arithmetic on the left, so this sentence contradicted itself for one commit:
+  prose that DERIVES an address cannot be re-based one number at a time.)
   The three "stubs" are DevSB's first three Name functions read past the
   boundary, five bytes each at 1b22:0000, 0005 and 000a, with a fourth at 000f
   the scan stopped short of.
 
   [re] **A SEGMENT BOUNDARY IS NOT A SUGGESTION.** The note said they were
-  "kept because they are in the segment"; they are in the next one. Check the
-  span against the FOLLOWING segment's address before believing anything near
+  "kept because they are in the SEGMENT"; they are in the next one. Check the
+  span against the FOLLOWING SEGMENT's address before believing anything near
   the end of a unit -- the same arithmetic that confirmed 116e's 1,232 bytes
   are exact because 11bb begins at 1182:04d0. }
 

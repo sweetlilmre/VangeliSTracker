@@ -20,7 +20,7 @@
   rather than kept in ours. Change is where a sample stops being data and
   becomes something a device can sound.
 
-  [re] Segment 1848 -- 3,216 bytes, FIFTEEN routines. COMPLETE: 207 pending
+  [re] SEGMENT 1848 -- 3,216 bytes, FIFTEEN routines. COMPLETE: 207 pending
   fixups, written from the release's bodies verbatim in TWO builds. The first
   came back at 9% and the second was exact -- and the 9% was a jump
   displacement, not a wrong instruction.
@@ -35,7 +35,7 @@
   DumpToUltrasound call.
 
   [re] THE COUNTERPART IS `LIB/SONGELEM.PAS`, measured at 65.1% by `relmatch.py` --
-  the highest-scoring untranscribed segment in the tree when this was started.
+  the highest-scoring untranscribed SEGMENT in the tree when this was started.
 
   [re] **THE WHOLE STRUCTURE WAS READ WITHOUT DISASSEMBLING A SINGLE INSTRUCTION.**
   `survey.py 165a` reports fifteen far returns, no printable strings, ten far-call
@@ -89,7 +89,7 @@
   slot -- the pair share a frame size because they share a shape.
 
   THIRD, THE FAR CALLS COUNT THE ARITHMETIC. Two System helpers appear five times each
-  and nowhere else in the segment:
+  and nowhere else in the SEGMENT:
 
       [re] 1d89:0a2e  x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
                                               (Len DIV 2 three times, Reps, Repl)
@@ -263,7 +263,7 @@ type
   AN INSTRUMENT IS A SAMPLE PLUS A LOOP. `Len`, `Reps` and `Repl` are LongInt because a
   sample can exceed 64K, and `Data`/`Xtra` is how a sample longer than 65,520 bytes is
   held: the first 65,520 in one block and the rest in a second. `MaxSample` is 65,520
-  rather than 65,536 because a Turbo Pascal heap block cannot be a whole segment.
+  rather than 65,536 because a Turbo Pascal heap block cannot be a whole SEGMENT.
   --------------------------------------------------------------------------- }
 const
   MaxSample      = 65520;
@@ -388,7 +388,7 @@ type
 
   `MaxChannels` IS 8 HERE AND 32 IN THE RELEASE. The release takes it from
   `SoundDevices.MaxChannels`; 1.31's value is 8, measured in `12ba` three separate ways
-  (see PLAYMOD.PAS). **It reaches no instruction in this segment** -- TPattern.Init and
+  (see PLAYMOD.PAS). **It reaches no instruction in this SEGMENT** -- TPattern.Init and
   FreeContents both compute their block size from `Chans` and `Patt^.NChans`, and nothing
   here takes SizeOf(TPatternRec) -- so the figure is documentation, not a measurement.
 
@@ -488,7 +488,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  1848:005d -- FreeContents, and its three `HFreeMem` calls are the segment's first three
+  1848:005d -- FreeContents, and its three `HFreeMem` calls are the SEGMENT's first three
   `[DI+0c]` sites, at `00ca`, `010e` and `0123`.
 
   `IF NOT UsingGUS` GUARDS THE SAMPLE BUT NOT THE RECORD. When the Gravis holds the
@@ -544,7 +544,7 @@ end;
   argument compiles to two word pushes and costs two bytes more. Changed to `var Src`,
   which is also the release's -- and `GUS` still verifies identical. **The same lesson
   `VTDOSRSZ` taught: a parameter list can be wrong for a unit's whole life while the
-  unit itself measures perfect, and only a caller in another segment reveals it.**
+  unit itself measures perfect, and only a caller in another SEGMENT reveals it.**
 
   [re] ONE COUNT DOES NOT AGREE AND IS NOT YET EXPLAINED. `survey.py` finds FIVE `[DI+0c]`
   sites inside this routine -- `0257`, `02e6`, `0333`, `0357`, `0373` -- where the
@@ -689,13 +689,13 @@ end;
 
   THE POINTER ARITHMETIC IS THE FIDDLY PART. `p` is walked to the first byte past the
   halved sample, then normalised so the offset is small enough to subtract from
-  `Data`'s -- the `SHR 4` folds the offset into the segment and `AND $8` keeps what is
-  left. `SizeFree` is then the gap in bytes, computed segment-part and offset-part
+  `Data`'s -- the `SHR 4` folds the offset into the SEGMENT and `AND $8` keeps what is
+  left. `SizeFree` is then the gap in bytes, computed SEGMENT-part and offset-part
   separately because a LongInt subtraction of two far pointers is not what is wanted.
 
   [re] **FIVE LONGINT DIVISIONS, AND `survey.py` COUNTS FIVE.** `Len DIV 2 - 1`,
   `Len DIV 2 + 7`, `Len DIV 2`, `Reps DIV 2`, `Repl DIV 2` -- all five calls to
-  `1d89:0a2e` fall inside this routine and nowhere else in the segment. Term for term.
+  `1d89:0a2e` fall inside this routine and nowhere else in the SEGMENT. Term for term.
   --------------------------------------------------------------------------- }
 procedure TInstrument.Desample;
 var
@@ -839,7 +839,7 @@ end;
 
   `ENTER $606` IS THE ROUTINE'S FINGERPRINT: `MNote` 1026 + `MComm` 514 + `i` 2 = 1542.
   It builds both arrays at full size on the stack and then allocates blocks to fit --
-  1.5K of frame, which is why the segment's largest routine is this one.
+  1.5K of frame, which is why the SEGMENT's largest routine is this one.
 
   **THE TWO PASSES ARE INDEPENDENT AND THAT IS THE POINT.** A note with no effect advances
   `MNote` and leaves `MComm` alone, so the command array can start much later and end much
@@ -852,7 +852,7 @@ end;
   blanks free too.
 
   `FreeContents` BETWEEN THE BUILD AND THE ALLOCATE is what makes this safe to call on a
-  track that already has contents; the two `Move`s at `0a83` and `0aaf` are the segment's
+  track that already has contents; the two `Move`s at `0a83` and `0aaf` are the SEGMENT's
   second and third.
   --------------------------------------------------------------------------- }
 procedure TTrack.SetFullTrack(var Track : TFullTrack);

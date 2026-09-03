@@ -1,8 +1,8 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 12ba -- 5,968 bytes, the largest thing in the program after the
-  program itself. IN PROGRESS: transcribed from the top of the segment down,
+  SEGMENT 12ba -- 5,968 bytes, the largest thing in the program after the
+  program itself. IN PROGRESS: transcribed from the top of the SEGMENT down,
   which is the only order that works, because Turbo Pascal lays procedures out
   in source order and a missing routine displaces everything below it.
   `units.py` reports it as PARTIAL and measures what is here.
@@ -67,7 +67,7 @@ interface
 
 { ~~VTSilenc~~ IS NOT A DEPENDENCY, AND THE LINK ORDER IS WHAT SAYS SO. It was here
   for one identifier, `Ticks`, which is now declared in SoundDevices -- see the note
-  at its declaration there. The original's segment addresses put `1065`/VTSilenc at
+  at its declaration there. The original's SEGMENT addresses put `1065`/VTSilenc at
   the very END of the unit order and `12ba`/PlayMod in the middle, and TP6's order is
   reverse DFS post-order over the `uses` graph, so a dependency in this direction is
   impossible. `linkorder.py` checks every edge in the tree against it. }
@@ -90,7 +90,7 @@ type
 
     SplPosFrac : Word;          { +$01  position, fraction                   }
     SplPosInt  : Word;          { +$03  position, offset                     }
-    SplPosSeg  : Word;          { +$05  position, segment                    }
+    SplPosSeg  : Word;          { +$05  position, SEGMENT                    }
 
     SplOfs     : Word;          { +$07  the sample part being played         }
     SplSeg     : Word;          { +$09                                       }
@@ -229,7 +229,7 @@ const
 
 
   { The release's names for both. `MaxChannels` is 8 here and not 32 as 1.39b has
-    it -- every base-1 array in this segment is eight elements long and
+    it -- every base-1 array in this SEGMENT is eight elements long and
     `TPlayingNote` is 63 bytes rather than the release's 32 for exactly that
     reason. It is used as a MULTIPLIER at 12ba:1224, where `MaxSplPerTick *
     MaxChannels * 2` folds to `SHL AX,3 / SHL AX,1`; a different value would give
@@ -265,7 +265,7 @@ const
   `LIB/PLAYMOD.PAS`'s interface declares PlayingSong, LoopMod, ForceLoopMod,
   CanFallBack, FilterOn, FilterOff, FilterIsOn, MaxOutputFreq, DontExecute, Playing,
   ModTickProcValid, NoteTl, NoteHd, NoteSound, NoteProcessed, MaxSplPerTick in that
-  sequence, and every one lands on an address an instruction in this segment already
+  sequence, and every one lands on an address an instruction in this SEGMENT already
   named. `AltMode` at $02d1 is the single insertion 1.31 makes -- it has no counterpart
   in the release, which fits what it is for, the INCONEXI.EXE rename.
 
@@ -393,13 +393,13 @@ const
   `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes.
 
   NOTHING IN 1.31 READS IT. The initialisation section clears it at 12ba:1426 and
-  no other instruction in the segment touches $02c8 -- because the operand that
+  no other instruction in the SEGMENT touches $02c8 -- because the operand that
   would have read it is COMMENTED OUT in the expression at 1121, which is where
   the stray `True and` comes from. The release still carries it the same way.
   Declared for the one store, and to keep the pair together. }
 { --------------------------------------------------------------------------
   EXPORTED BECAUSE 11bb WRITES THEM, and for no other reason. These five were in the
-  implementation section until segment 11bb -- the configuration file reader -- turned
+  implementation section until SEGMENT 11bb -- the configuration file reader -- turned
   out to set every one of them from a key in VT.CFG:
 
       ForceLoopMod   $02c9   the `ForceLoopMod` key      11bb:0b0e
@@ -467,7 +467,7 @@ var
 
 { 12ba:132f -- negotiate the rate, size the buffers, program the DMA. Declared
   here because 12ba:0d4e calls it and it lives 1,500 bytes further down the
-  segment; the release exports it too, as `PROCEDURE ChangeSamplingRate(Hz:
+  SEGMENT; the release exports it too, as `PROCEDURE ChangeSamplingRate(Hz:
   WORD)`. Its body is a PLACEHOLDER until the transcription reaches 132f. }
 procedure ChangeSamplingRate(Hz : Word); far;
 
@@ -481,7 +481,7 @@ procedure ProcessTickEntry; far;
 procedure PlayStop; far;
 
 { 12ba:10a1 -- start playing a module. EXPORTED BECAUSE 1000 CALLS IT:
-  1000:0381 is `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000
+  1000:0381 is `CALLF 12ba:10a1` from inside PlayModule, and until SEGMENT 1000
   was read nothing outside this unit was known to reach it, so it was declared
   in the implementation only. The release exports it too, as
   `PROCEDURE PlayStart(VAR Song: TSong)`.
@@ -509,7 +509,7 @@ implementation
   OF THIS FILE -- it does NOT describe the declaration below it. }
   { DS:$02d1, THE RENAME FLAG, and it is declared in two units. VTMAIN owns it
     as `AltMode` -- set when the executable is called INCONEXI.EXE -- and
-    nothing in THAT segment reads it; this is the only reader. A global's
+    nothing in THAT SEGMENT reads it; this is the only reader. A global's
     address is a linker fixup, so the byte comparison cannot see the
     duplication either way, which is exactly the shape of risk 1 and exactly
     what DEVGUS's three duplicated globals looked like. Left declared here,
@@ -706,7 +706,7 @@ var
 
   NOT TRANSCRIBED YET. `PLAYMOD.ASM` currently holds a stub so that the link
   resolves and everything above it can be measured; the stub is the LAST thing
-  in the segment, so it displaces nothing.
+  in the SEGMENT, so it displaces nothing.
 
   The signature is read off the call sites at 009b, 0111 and 016f -- eight
   arguments, 22 bytes, so the kernel ends `RET $16`:
@@ -970,7 +970,7 @@ end;
 { --------------------------------------------------------------------------
   12ba:03cc -- a sample descriptor into GUS voice control. NOT TRANSCRIBED.
 
-  664 bytes, the largest routine in the segment so far, and docs/04-units.md
+  664 bytes, the largest routine in the SEGMENT so far, and docs/04-units.md
   covers only its first three statements. What IS established:
 
   THE SIGNATURE, read off the call site at 12ba:09e3 rather than the callee,
@@ -991,7 +991,7 @@ end;
       044c  LES DI,[BP+8]        then MOV ES:[DI+$17],AX   far, ES reloaded
 
   Both are correct at runtime, because `RawChannels` is in DGROUP and the
-  segment the caller pushed IS DS. But Turbo Pascal emits the far form for a
+  SEGMENT the caller pushed IS DS. But Turbo Pascal emits the far form for a
   `var` parameter, and it emits it at 044c -- so whatever produces the
   DS-relative form at 03da is a different source construct reaching the same
   record, not the same one compiled twice. Resolving that is the next step, and
@@ -1055,7 +1055,7 @@ begin
       LES     SI, Desc               { 03dd                                   }
       MOV     AX, ES:[SI+$12]        { 03e0  the sample data pointer, offset   }
       MOV     [DI+$0d], AX           { 03e4  -> Raw.SplOfs1                    }
-      MOV     AX, ES:[SI+$14]        { 03e7  ... and segment                    }
+      MOV     AX, ES:[SI+$14]        { 03e7  ... and SEGMENT                    }
       MOV     [DI+$0f], AX           { 03eb  -> Raw.SplSeg1                     }
 
       MOV     BYTE PTR NewFlags, rcfActiveChannel  { 03ee                  }
@@ -1251,7 +1251,7 @@ end;
   12ba:0664 -- MyMove. A hand-written Move, and the 1.39b release has it
   INSTRUCTION FOR INSTRUCTION: `LIB/PLAYMOD.PAS` line 701 declares
   `PROCEDURE MyMove(VAR Src, Dest; Bytes: WORD); ASSEMBLER` with exactly this
-  body, down to the label names. The closest pairing found in this segment, and
+  body, down to the label names. The closest pairing found in this SEGMENT, and
   the source below is the release's with our address comments added.
 
   WHY IT EXISTS. Word moves are twice the speed of byte moves on an 8086 but
@@ -1377,7 +1377,7 @@ begin
 
     { 0773..078d -- `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
       14b9, which is src/SONGUNIT.PAS. THAT UNIT WAS A STUB WHEN THIS WAS
-      WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its segment --
+      WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its SEGMENT --
       but the note stands for a different reason than it did: the call site
       is real: the arguments, their order and the far linkage are read off these
       bytes, and the target is a pending fixup exactly as the linker would leave
@@ -1746,7 +1746,7 @@ begin
     end;
 
     { 0d49..0d50 -- and act on it. `PUSH CS / CALL near` is how Turbo Pascal
-      calls a FAR routine that lives in the same segment, which is what
+      calls a FAR routine that lives in the same SEGMENT, which is what
       ChangeSamplingRate is. }
     ChangeSamplingRate(DesiredHz)                    { 0d49..0d50            }
   end;
@@ -2159,7 +2159,7 @@ begin
     begin
       { 124e..1265 -- a VIRTUAL call on the heap object at DS:$39ae, through
         `[DI+8]`, which is virtual method number two. See HEAPS.PAS, which is a
-        stub for segment 17cf and exists to put HGetMem in that slot.
+        stub for SEGMENT 17cf and exists to put HGetMem in that slot.
 
         `ADD DI,1390` is base-1 AND field-folded: $1394 - 11 + 7 is $1390, so the
         one expression carries the array's base and `IData`'s offset inside the
@@ -2349,7 +2349,7 @@ end;
 
   `PUSH BP / MOV BP,SP` rather than `ENTER`, no parameters, `RETF` with no count,
   and Turbo Pascal emits a unit's `BEGIN ... END.` block as the last Pascal code
-  in the segment -- which this is, with only the object module's kernel at 1600
+  in the SEGMENT -- which this is, with only the object module's kernel at 1600
   after it. The same shape was mistaken for an exported `Register` procedure in
   DEVGUS once, and cost that unit 26 bytes of code the original has not got.
 

@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 193a -- THE SOUND BLASTER DEVICE UNIT. **COMPLETE: 1,617 of 1,617
+  SEGMENT 193a -- THE SOUND BLASTER DEVICE UNIT. **COMPLETE: 1,617 of 1,617
   bytes**, seventeen blocks, 569 pending fixups, no real difference anywhere.
 
   BOTH BLOCKING NAMES ARE RESOLVED. They were:
@@ -158,7 +158,7 @@ function  DMASBMixName : TDevID; far;   begin end;
 function  DMASBMix2Name : TDevID; far;  begin end;
 
 { 0014..002a.  NEAR -- it ends in `RET`, not `RETF`, so it is an
-  implementation-only helper and nothing outside the segment reaches it.
+  implementation-only helper and nothing outside the SEGMENT reaches it.
 
   It copies three port numbers out of this card's hardware unit into the
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which

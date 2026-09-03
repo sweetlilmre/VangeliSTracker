@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1880 -- DOS memory blocks. 240 bytes, five routines.
+  SEGMENT 1880 -- DOS memory blocks. 240 bytes, five routines.
 
   This is what 17cf's pool is built on: 188f hands back the slack the .EXE was
   loaded with, and this asks DOS for it again in named blocks.
@@ -41,7 +41,7 @@ interface
 { --------------------------------------------------------------------------
   THE FOUR NAMES BELOW ARE THE RELEASE'S, AND THE PAIRING WAS FOUND BY MEASUREMENT.
   This unit was on the list of eight with "no counterpart in LIB/" and carried invented
-  names for its whole life. `relmatch.py` scores segment 1880 against
+  names for its whole life. `relmatch.py` scores SEGMENT 1880 against
   `LIB/UMBUNIT.PAS` at 65.5%, with nothing else above 7% -- and the unit's four
   routines line up one for one, signature for signature:
 
@@ -101,7 +101,7 @@ implementation
 
   ON FAILURE the out pointer is set to nil and the result is zero. On success
   the offset is always zero -- these are whole paragraphs, so the pointer is
-  a bare segment.
+  a bare SEGMENT.
   -------------------------------------------------------------------------- }
 function DOSAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
@@ -121,7 +121,7 @@ begin
     MOV  Paras, AX         { 1880:002c                                     }
   @@Got:
     LES  DI, P             { 1880:002f  the ADDRESS of the caller's ptr    }
-    MOV  ES:[DI+2], AX     { 1880:0032  the segment, or 0                  }
+    MOV  ES:[DI+2], AX     { 1880:0032  the SEGMENT, or 0                  }
     XOR  AX, AX            { 1880:0036                                     }
     MOV  ES:[DI], AX       { 1880:0038  the offset is always zero          }
   end;
@@ -131,11 +131,11 @@ end;
 { --------------------------------------------------------------------------
   1880:005a -- give a block back.
 
-  HAND ASSEMBLER, verbatim: INT 21h $49 wants the block's segment in ES, and
-  Pascal cannot load a segment register.
+  HAND ASSEMBLER, verbatim: INT 21h $49 wants the block's SEGMENT in ES, and
+  Pascal cannot load a SEGMENT register.
 
   It clears the caller's pointer BEFORE the DOS call, not after, so a UMBFree
-  that fails still leaves the caller holding nil rather than a stale segment.
+  that fails still leaves the caller holding nil rather than a stale SEGMENT.
   The carry flag is discarded either way.
 
   EQUIVALENT PASCAL, for reference -- the assembler below is what runs:
@@ -146,7 +146,7 @@ end;
 procedure DOSFree(var P : Pointer); assembler;
 asm
   LES  DI, P             { 1880:005d  the ADDRESS of the caller's pointer  }
-  MOV  AX, ES:[DI+2]     { 1880:0060  keep the segment                     }
+  MOV  AX, ES:[DI+2]     { 1880:0060  keep the SEGMENT                     }
   XOR  BX, BX            { 1880:0064                                       }
   MOV  ES:[DI+2], BX     { 1880:0066  P := nil, before the call            }
   MOV  ES:[DI], BX       { 1880:006a                                       }
@@ -190,7 +190,7 @@ end;
 
   Plain Pascal in the binary: `ENTER`, a byte local for the old state, and
   three near calls with `PUSH CS` in front of them, which is how Borland
-  Pascal reaches a far routine in its own segment.
+  Pascal reaches a far routine in its own SEGMENT.
 
   Both save the result before restoring the link state, so the restore cannot
   disturb it.

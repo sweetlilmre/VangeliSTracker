@@ -22,7 +22,7 @@
   sample bytes. Anyone who has read MODLOADE will recognise every routine
   here, which is deliberate.
 
-  [re] Segment 15d0 -- 2,368 bytes, of which 2,365 are the four routines. NEW
+  [re] SEGMENT 15d0 -- 2,368 bytes, of which 2,365 are the four routines. NEW
   IN v1.51; v1.31b has no such unit.
 
   [re] THERE IS NO RELEASE SOURCE FOR THIS UNIT. The 1.39b release is January 1994
@@ -33,7 +33,7 @@
   statement -- so the names are ITS names, and where the two units do the same
   thing they are written the same way on purpose.
 
-  [re] HOW IT WAS FOUND. `segpair.py --pair` reports 15d0 as a segment of v1.51 that
+  [re] HOW IT WAS FOUND. `segpair.py --pair` reports 15d0 as a SEGMENT of v1.51 that
   nothing in v1.31b pairs with; the SongLoaders table at DS:$0430 names
   15d0:0764 as entry [3] of four, where v1.31b's table at DS:$03c4 has two.
   Ghidra's decompiler read the four routines.
@@ -452,7 +452,7 @@ begin
           INVERTED. The values are identical either way; the code is not,
           because Turbo Pascal emits the `then` branch as the fall-through and
           jumps to the `else`. Put the trivial arm first and the two blocks
-          swap places in the segment.
+          swap places in the SEGMENT.
 
           045c is a signed LongInt `> 0`:
 
@@ -489,7 +489,7 @@ begin
               bytes that fetch C2Spd (`MOV AX,[BP-22] / SHL AX,5 /
               LES DI,[BP+04] / ADD DI,AX / MOV AX,ES:[DI+28] / MOV [BP-0c],AX`)
               past the five that store the literal. Same three values, and the
-              statements are in the segment in the order they are written. }
+              statements are in the SEGMENT in the order they are written. }
             Vol  := Stm.Instruments[i].Vol;
             DAdj := Stm.Instruments[i].C2Spd;
             NAdj := $2100;

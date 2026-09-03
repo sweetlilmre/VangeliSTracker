@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1b24 -- the 8259 interrupt controllers and the 8237 DMA channels.
+  SEGMENT 1b24 -- the 8259 interrupt controllers and the 8237 DMA channels.
   768 bytes. Under every sound driver in the program: the Sound Blaster needs
   a DMA channel and an IRQ, the GUS needs an IRQ, and both go through here.
 
@@ -76,7 +76,7 @@ function  GetDMACount(Channel : Byte) : Word; far;
   one-instruction `PUSH [0b18]` that DMASet gets four lines later in the same
   caller. Two calls to two routines in this unit from one routine in another,
   and they disagree; the widths are the reason. Sixth interface corrected by a
-  caller in another segment. }
+  caller in another SEGMENT. }
 procedure DMAReset(Channel : Byte); far;
 
 { 1b24:024c -- DMASet with the address already split into page and offset. }
@@ -541,24 +541,24 @@ end;
   READ THE ADDRESS ARITHMETIC CAREFULLY -- it is not the obvious formula, and
   the transcription keeps what is there rather than correcting it.
 
-  The page comes out as the top nibble of the segment, which is right: for a
+  The page comes out as the top nibble of the SEGMENT, which is right: for a
   linear address of Seg*16 + Ofs, bits 16..19 are exactly `Seg shr 12`.
 
   The 16-bit part, though, is computed as `(Seg and $0FFF) + Ofs`, with NO
-  shift left by four on the segment term. The exact answer would be
+  shift left by four on the SEGMENT term. The exact answer would be
   `((Seg and $0FFF) shl 4) + Ofs`. Treating a paragraph count as a byte count
   is only correct when `Seg and $0FFF` is ZERO -- that is, when the buffer's
-  segment is a multiple of $1000, so the buffer starts on a 64 KB boundary.
+  SEGMENT is a multiple of $1000, so the buffer starts on a 64 KB boundary.
 
   So the routine carries an unwritten CONTRACT: hand it a pointer whose
-  segment is 64 KB aligned. That is not an unreasonable thing to require of a
+  SEGMENT is 64 KB aligned. That is not an unreasonable thing to require of a
   DMA buffer -- a transfer may not cross a 64 KB boundary anyway, so a caller
   has to think about alignment regardless, and 17cf's pool is where the
   buffer comes from.
 
   The overflow test just above it is consistent with that reading: it checks
   whether `Ofs + (Seg and $0FFF)` would carry out of sixteen bits and bumps
-  the page if so. That is a correction for a SLIGHTLY misaligned segment, and
+  the page if so. That is a correction for a SLIGHTLY misaligned SEGMENT, and
   it is exact only in the same case the main formula is.
 
   Flagged rather than fixed. Resolving it properly needs the callers in 12ba

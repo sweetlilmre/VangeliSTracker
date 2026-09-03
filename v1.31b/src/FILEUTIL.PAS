@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 116a -- make sure a directory string ends in a separator. 64 bytes,
+  SEGMENT 116a -- make sure a directory string ends in a separator. 64 bytes,
   of which 59 are the one routine and the rest is padding.
 
   DemoVT builds file names by concatenation, so a directory that does not end

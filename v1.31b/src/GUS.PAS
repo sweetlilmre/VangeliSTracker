@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1723 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
+  SEGMENT 1723 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
   routines and six frameless ones the prologue scanner cannot see.
 
   Every port write to the card happens here. 1084 is the DRIVER -- the record
@@ -10,7 +10,7 @@
 
   THE THING WORTH KNOWING BEFORE READING ANY OF IT. Starting a voice does not
   program the card. `TriggerVoice` writes the voice's addresses into tables in
-  the data segment, raises an active flag, and installs `RestartChannels` as
+  the data SEGMENT, raises an active flag, and installs `RestartChannels` as
   the TIMER 1 callback. The next timer tick sweeps those flags, builds a
   command list, and blasts it at the GF1 in one loop.
 
@@ -447,7 +447,7 @@ end;
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
   interrupt.
 
-  BOTH CONTROL REGISTERS ARE SHADOWED in the data segment, at DS:$0592 and
+  BOTH CONTROL REGISTERS ARE SHADOWED in the data SEGMENT, at DS:$0592 and
   DS:$0593, because neither is readable. Every change is made to the shadow
   and the shadow is written out whole -- the only way to set one bit without
   knowing the others.
@@ -493,7 +493,7 @@ end;
   `TimerControl`.
 
   The callback is only called if the far pointer is non-nil, and the test is
-  on BOTH halves -- a segment of zero with a non-zero offset would still be
+  on BOTH halves -- a SEGMENT of zero with a non-zero offset would still be
   called. That is deliberate enough to preserve.
 
   DS:$058e is the one that matters to the rest of the program: 1084:008a puts

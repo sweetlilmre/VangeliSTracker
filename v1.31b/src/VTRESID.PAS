@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1b54 -- residency: the INT 2Fh server, the chain to whoever held
+  SEGMENT 1b54 -- residency: the INT 2Fh server, the chain to whoever held
   the vector before, and the exit handler that gives it back. 432 bytes, all
   of it, nothing left unread.
 
@@ -71,7 +71,7 @@ procedure OldInt2F; assembler;
 asm
   DB   0EAh              { 1b54:0000  JMP FAR seg:ofs                        }
   DW   OFFSET OldInt2F   { 1b54:0001  patched with the old INT 2Fh offset     }
-  DW   SEG OldInt2F      { 1b54:0003  patched with the old INT 2Fh segment    }
+  DW   SEG OldInt2F      { 1b54:0003  patched with the old INT 2Fh SEGMENT    }
                          { 1b54:0005  RET -- supplied by Pascal, not written  }
                          { here: an assembler procedure already gets an  }
                          { epilogue and a written one duplicates it.     }
@@ -110,7 +110,7 @@ asm
   XOR  BX, MaskBX        { 1b54:001a  -> $3F17                               }
   XOR  CX, MaskCX        { 1b54:001e  -> $1343                               }
   MOV  DI, SEG @DATA     { 1b54:0022  the binary has MOV DI,1CAAh -- an
-                                      absolute segment, not ours to copy     }
+                                      absolute SEGMENT, not ours to copy     }
   MOV  ES, DI            { 1b54:0025                                         }
   MOV  DI, OFFSET SelfName  { 1b54:0027  the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
@@ -137,7 +137,7 @@ begin
   asm
     LES  DI, Stub          { 1b54:0040                                       }
     MOV  AX, ES:[DI+1]     { 1b54:0044  the displaced offset                 }
-    MOV  DX, ES:[DI+3]     { 1b54:0048  and segment                          }
+    MOV  DX, ES:[DI+3]     { 1b54:0048  and SEGMENT                          }
     MOV  SI, 0             { 1b54:004c  MOV, not XOR -- the original loads an }
                            { immediate zero, and BASM emits what it is told   }
     MOV  ES, SI            { 1b54:004f  ES := 0000, the vector table         }
@@ -224,7 +224,7 @@ begin
 
     The two literals are pushed from CS, and that is the reason they are plain
     untyped constants above rather than typed ones: an untyped string constant
-    is a literal, and Turbo Pascal lays a literal down in the CODE segment --
+    is a literal, and Turbo Pascal lays a literal down in the CODE SEGMENT --
     at 1b54:0061 and 1b54:007b, in the gap between ExitHandler and here. A
     typed constant would live in DGROUP and be pushed from DS. `NoName` is the
     exception and has to be typed, because Install takes its address. }

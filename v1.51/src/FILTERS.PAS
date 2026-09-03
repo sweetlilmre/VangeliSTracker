@@ -34,12 +34,12 @@
   that forgets to pass the previous return value back in gets a discontinuity
   at every boundary.
 
-  [re] Segment 15c7 -- 144 bytes, all of it.
+  [re] SEGMENT 15c7 -- 144 bytes, all of it.
 
   [re] THAT IS WHAT THE 3/2/1 SELECTOR WAS. The parameter had been read as a
   "strength" running 3 down to 1, which is exactly ORD(fm1_2)..ORD(fm7_8) of
   the release's enum -- one value per kernel, in the order they sit in the
-  segment, with fmNone = 0 falling through untouched.
+  SEGMENT, with fmNone = 0 falling through untouched.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/FILTERS.PAS holds all four of these
   routines instruction for instruction, under the names used below. It also
@@ -51,10 +51,10 @@
   use it. Nothing proves 1.31 spelled any of this the same way: the binary has
   no debug information.
 
-  [re] ADDRESS MAP -- 15c7, NOT 1544. This said 1544, which is where these
   four sit in v1.31b; at 15c7:0000 in THIS image is unrelated code. All four
   are byte-identical here at 15c7 with their internal offsets unchanged,
   found by searching this image for the bytes read out of the older one.
+  [re] ADDRESS MAP -- 15c7, NOT 1544. This said 1544, which is where these
     Filter1_2Word  15c7:0000    Filter3_4Word    15c7:0010
     Filter7_8Word  15c7:002e    FilterChunkWord  15c7:004c
   =========================================================================== }
@@ -245,9 +245,9 @@ asm
   MOV  CX, Len         { 15c7:005a  how many samples; the kernels LOOP on CX }
   JCXZ @@Done          { 15c7:005d  nothing to do -- and BX is already the answer }
   MOV  AL, Method      { 15c7:005f  the selector, one byte                 }
-  CMP  AL, fm1_2       { 15c7:0062  gentlest first: it sits first in the segment }
+  CMP  AL, fm1_2       { 15c7:0062  gentlest first: it sits first in the SEGMENT }
   JNZ  @@Try2          { 15c7:0064                                         }
-  CALL Filter1_2Word   { 15c7:0066  NEAR -- all four routines share one segment }
+  CALL Filter1_2Word   { 15c7:0066  NEAR -- all four routines share one SEGMENT }
   JMP  @@Done          { 15c7:0069                                         }
 @@Try2:
   CMP  AL, fm3_4       { 15c7:006b                                         }

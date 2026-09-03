@@ -21,7 +21,7 @@
   will see mffJMPlayer on a file that is nothing of the kind. That is safe
   only because Status is what callers actually test.
 
-  [re] Segment 1839 -- 80 bytes, of which 77 are the single routine.
+  [re] SEGMENT 1839 -- 80 bytes, of which 77 are the single routine.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/UNKLOADE.PAS is this unit statement
   for statement -- the same three assignments around the same comparison, and
@@ -37,15 +37,15 @@
   stay and carry the release's spellings. Nothing proves 1.31 spelled any of
   this the same way: no debug information.
 
-  [re] ADDRESS MAP
   [re] 1839 IN THIS IMAGE, NOT 164b, and DS:$04b6 not DS:$040e. Charted in
   Ghidra rather than inferred: `ENTER $200,0` (C8 00 02 00) occurs exactly
-  TWICE in this image and one of them is 1839:0000, which is where this
   unit's single routine sits. The 76 bytes there are this routine statement
   for statement -- two temporaries at BP-$100 and BP-$200, two helper calls
   each pushing a literal 6, the string compare, a store of 6 or 0, RETF $0C
-  -- and it carries `MOV DI,04b6`, which is 'JMPLAY' re-based. 'JMPLAY'
   itself is at 1e92:04b6, so DGROUP is 1e92 here.
+  [re] ADDRESS MAP
+  TWICE in this image and one of them is 1839:0000, which is where this
+  -- and it carries `MOV DI,04b6`, which is 'JMPLAY' re-based. 'JMPLAY'
     LoadJMFileFormat  1839:0000     ModJMIdString  DS:$04b6, six raw bytes
   =========================================================================== }
 

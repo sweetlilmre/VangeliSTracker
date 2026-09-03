@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 142f -- NOTES AND EFFECTS. 2,176 bytes, seventeen routines.
+  SEGMENT 142f -- NOTES AND EFFECTS. 2,176 bytes, seventeen routines.
 
   COMPLETE. All 2,175 bytes of code; 142f:087f is one byte of padding. `units.py` reports the prefix,
   which is the right measure while the unit is being built strictly top-down:
@@ -136,7 +136,7 @@ type
 
   `142f:03ed` reads DS:$034c, DS:$0340 and DS:$034a, and all three were declared in
   PLAYMOD.PAS. That cannot stand: PlayMod `uses` ModCommands, so ModCommands cannot
-  use PlayMod, and the effect routines in this segment write the sequencer's
+  use PlayMod, and the effect routines in this SEGMENT write the sequencer's
   position directly. The release resolves it the same way -- `LIB/MODCOMMA.PAS`
   declares `NextNote`, `NextSeq` and `MySongLen` in its own interface, with the
   comment "Values set from outside this UNIT ... They both must have been set BEFORE
@@ -263,14 +263,14 @@ implementation
 { --------------------------------------------------------------------------
   EVERY ROUTINE IN THIS UNIT IS NEAR. `RET 0C` at 142f:00a0 is a near return with
   twelve bytes of parameters -- three `var` references -- so the internal effect
-  routines are called near from within the segment, and only the two the interface
+  routines are called near from within the SEGMENT, and only the two the interface
   publishes are far. That is also why the parameters sit at [BP+04] upward rather
   than [BP+06]: Song at [BP+0C], Can at [BP+08], N at [BP+04], which is Pascal
   order with the first-declared pushed first.
   -------------------------------------------------------------------------- }
 
 { Forward, because StartTPortUp and StartTPortDown fall back on them and their
-  bodies are 1,000 bytes further down the segment -- 142f:0114 calls 142f:04e2
+  bodies are 1,000 bytes further down the SEGMENT -- 142f:0114 calls 142f:04e2
   and 142f:0163 calls 142f:052f. The release declares them FORWARD for the same
   reason and in the same place. }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
@@ -479,7 +479,7 @@ end;
 
   AND AGAIN THERE IS NO SCALING. The release reads `BYTE((can.PeriodIncr) SHR 2)`
   and writes `INTEGER(WORD(n.Parameter) SHL 2)`; 1.31 has neither shift. That is
-  the second routine in this segment to show it -- see the unit header. 1.39b moved
+  the second routine in this SEGMENT to show it -- see the unit header. 1.39b moved
   the whole unit to quarter-period units and 1.31 works in whole periods.
   -------------------------------------------------------------------------- }
 procedure StartNPortamento(var Song : TSong; var Can : TCanal; var N : TFullNote);
@@ -511,7 +511,7 @@ end;
   it is reached, in either direction.
 
   IT IS THE RELEASE'S BODY INSTRUCTION FOR INSTRUCTION, which is the closest
-  pairing in this segment so far.
+  pairing in this SEGMENT so far.
 
   THE TWO `TEST reg,80h` ARE THE SIGN CHECKS, and they are why this is assembler
   rather than Pascal: `TEST AH,80h` asks whether the step is negative and
@@ -608,7 +608,7 @@ end;
   0..255..24 and never go negative.
 
   `MOV BX,0350` IS A DGROUP OFFSET, NOT A CODE ADDRESS, and it has to be: `XLAT`
-  reads `DS:BX+AL`. 142f:0350 in the code segment is the middle of TickT_VSlide, so
+  reads `DS:BX+AL`. 142f:0350 in the code SEGMENT is the middle of TickT_VSlide, so
   the table is a typed constant living in DGROUP -- which is exactly where Turbo
   Pascal puts a `const` declared inside a procedure, and exactly how the release
   declares it.
@@ -729,7 +729,7 @@ end;
 { ==========================================================================
   NOTHING BELOW IS A STUB ANY MORE. Kept as a section marker because the routines
   below are the ones the interface publishes plus the DemoVT-only command, and they
-  are last in the segment. Note
+  are last in the SEGMENT. Note
   that TickVolSlide, above, is one the prologue scanner never found at all -- it is
   frameless, and it was located by reading the jumps that reach it. Expect more of
   those among what is left, so do not treat the scanner's list as complete. They are named by ADDRESS on purpose:
@@ -1005,10 +1005,10 @@ end;
   not answerable from eight identical bodies.
 
   ADDRESS NAMES, AND FOR THE SAME REASON AS BEFORE: an empty body cannot confirm a
-  pairing. That is now eleven one-byte routines in this segment waiting on the
+  pairing. That is now eleven one-byte routines in this SEGMENT waiting on the
   DISPATCH TABLE at 142f:063f, which maps command numbers to addresses and is the
   only thing that can name any of them. Doing that is the natural end of this
-  segment rather than a chore -- the table settles eleven names at once.
+  SEGMENT rather than a chore -- the table settles eleven names at once.
   -------------------------------------------------------------------------- }
 procedure TickFPortUpDown; assembler;
 asm
@@ -1122,7 +1122,7 @@ end;
   Which is suggestive and still not proof -- five empty bodies in a row match five
   other empty bodies in a row whatever the order. Address names until the dispatch
   table at 063f says otherwise. That is now SIXTEEN one-byte routines in this
-  segment waiting on that one table.
+  SEGMENT waiting on that one table.
   -------------------------------------------------------------------------- }
 procedure TickNoteCut; assembler;
 asm
@@ -1145,7 +1145,7 @@ asm
 end;
 
 { --------------------------------------------------------------------------
-  142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this segment with no
+  142f:0622 -- A DEMOVT-ONLY COMMAND, and the one routine in this SEGMENT with no
   counterpart in the release at all.
 
   It stores the parameter into `Can.RingChan` and 1 into `Can.RingNote`, and 12ba
@@ -1286,7 +1286,7 @@ end;
 { --------------------------------------------------------------------------
   142f:064b -- CommandStart. The row-start half of the unit: fold the new note into
   the channel, then dispatch to whichever Start routine the command wants. 565
-  bytes, the largest routine in the segment, and almost all of it is the `case`.
+  bytes, the largest routine in the SEGMENT, and almost all of it is the `case`.
 
   FAR, and the frame says so: `RETF 0C` at 087c, with the parameters at [BP+06]
   upward rather than [BP+04] as every other routine in this unit has them. The

@@ -145,7 +145,7 @@ StackSize       EQU     1000
 ; shape this routine:
 ;
 ;   1. It borrows whatever registers the interrupted code was using, so it saves
-;      all of them -- PUSHA plus the two segment registers -- and not just the
+;      all of them -- PUSHA plus the two SEGMENT registers -- and not just the
 ;      ones it happens to touch.
 ;   2. It cannot assume DS. The interrupted code had its own, so DS is loaded
 ;      from SEG @DATA before any variable is read.
@@ -153,7 +153,7 @@ StackSize       EQU     1000
 ;      for, and why the guard cannot live in DGROUP.
 ;
 ; THE GUARD IS IN THE CODE SEGMENT, WHICH IS THE POINT OF IT. It is read and
-; set at 1010 and 101a, before SS and DS are trusted -- CS is the only segment
+; set at 1010 and 101a, before SS and DS are trusted -- CS is the only SEGMENT
 ; register an interrupt can rely on, because the processor set it. A guard in
 ; DGROUP would need DS to already be right, which is the thing being
 ; established.
@@ -243,7 +243,7 @@ SharedPoll:
                                           ;       through a pointer, not a name
 @@Guard:
         DB      0                         ; 104b  THE GUARD, and it lives in the
-                                          ;       CODE segment on purpose -- see
+                                          ;       CODE SEGMENT on purpose -- see
                                           ;       the routine header
         DB      0C3h                      ; 104c  a trailing byte with no
                                           ;       instruction reaching it,

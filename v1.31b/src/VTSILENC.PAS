@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1065 -- the "Silence" driver. 496 bytes, eight routines.
+  SEGMENT 1065 -- the "Silence" driver. 496 bytes, eight routines.
 
   A SOUND DRIVER THAT MAKES NO SOUND. Its name is in the driver record at
   DS:$001e, seven characters: 'Silence'.
@@ -94,7 +94,7 @@ const
 { ~~procedure Register; far;~~ -- 1065:0172 IS THE UNIT'S INITIALISATION
   SECTION, not an exported procedure, and the LINK is what settled it: nothing
   anywhere calls `Register`, so the smart linker discarded it and everything it
-  referenced, leaving VTSILENC at 30 bytes of a 489-byte segment. The original's
+  referenced, leaving VTSILENC at 30 bytes of a 489-byte SEGMENT. The original's
   init chain calls 1065:0172. **This is the same error DEVGUS already had and
   this file already describes** -- see the note there, where fixing it took the
   unit from 402 bytes to 376. }

@@ -23,7 +23,7 @@
   This unit holds no code at all. The layout is shared by every driver and by
   the core that walks them, and Pascal needs one owner for a type.
 
-  [re] No segment of its own. See docs/06-transcription.md, "one DGROUP, many
+  [re] No SEGMENT of its own. See docs/06-transcription.md, "one DGROUP, many
   units".
 
   [re] The binary settles the record-not-object reading twice:

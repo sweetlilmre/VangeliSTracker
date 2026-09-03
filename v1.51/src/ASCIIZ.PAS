@@ -19,7 +19,7 @@
   characters. That matters to a caller laying out a column: the width is a
   guarantee, not a ceiling.
 
-  [re] Segment 1830 -- one function, 144 bytes, all of it.
+  [re] SEGMENT 1830 -- one function, 144 bytes, all of it.
 
   [re] It is a FUNCTION returning String, so the call frame has the result
   pointer pushed above the parameters and `RETF 6` removes only the parameters

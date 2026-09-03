@@ -16,7 +16,7 @@
   THE HARDWARE IS NEXT DOOR. Every port write and every DSP command lives in
   the SoundBlaster unit; this one decides WHEN, and calls in.
 
-  [re] Segment 1b22. **COMPLETE: 1,617 of 1,617 bytes**, seventeen blocks, 569
+  [re] SEGMENT 1b22. **COMPLETE: 1,617 of 1,617 bytes**, seventeen blocks, 569
   pending fixups, no real difference anywhere.
 
   [re] BOTH BLOCKING NAMES ARE RESOLVED. They were:
@@ -173,7 +173,7 @@ function  DMASBMixName : TDevID; far;   begin end;
 function  DMASBMix2Name : TDevID; far;  begin end;
 
 { 0014..002a.  NEAR -- it ends in `RET`, not `RETF`, so it is an
-  implementation-only helper and nothing outside the segment reaches it.
+  implementation-only helper and nothing outside the SEGMENT reaches it.
 
   It copies three port numbers out of this card's hardware unit into the
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which

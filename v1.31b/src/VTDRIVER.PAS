@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  THE SOUND DEVICE RECORD -- no segment of its own.
+  THE SOUND DEVICE RECORD -- no SEGMENT of its own.
 
   Like SongUnit, this unit holds no code. The layout is shared by every driver
   (1065, 1084, 193a) and by the player core that walks them (1a17), and Pascal

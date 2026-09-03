@@ -44,7 +44,7 @@
   reach back into the player; the variables have to sit on this side of the
   dependency.
 
-  [re] Segment 147d -- 2,176 bytes, seventeen routines. COMPLETE: all 2,175
+  [re] SEGMENT 147d -- 2,176 bytes, seventeen routines. COMPLETE: all 2,175
   bytes of code, and 147d:087f is one byte of linker padding.
 
   [re] `units.py` reports the prefix, which is the right measure while a unit
@@ -446,7 +446,7 @@ implementation
 
 { [re] EVERY ROUTINE IN THIS UNIT IS NEAR. `RET 0C` at 147d:00a0 is a near
   return with twelve bytes of parameters -- three `var` references -- so the
-  internal effect routines are called near from within the segment, and only the
+  internal effect routines are called near from within the SEGMENT, and only the
   two the interface publishes are far. That is also why the parameters sit at
   [BP+04] upward rather than [BP+06]: Song at [BP+0C], Can at [BP+08], N at
   [BP+04], which is Pascal order with the first-declared pushed first. }
@@ -455,7 +455,7 @@ implementation
   which are declared a long way below.
 
   [re] 147d:0114 calls 147d:04e2 and 147d:0163 calls 147d:052f, 1,000 bytes
-  further down the segment. The release declares them FORWARD for the same
+  further down the SEGMENT. The release declares them FORWARD for the same
   reason and in the same place. }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
                            var N : TFullNote); forward;
@@ -712,7 +712,7 @@ end;
 
   AND AGAIN THERE IS NO SCALING. The release reads `BYTE((can.PeriodIncr) SHR 2)`
   and writes `INTEGER(WORD(n.Parameter) SHL 2)`; 1.31 has neither shift. That is
-  the second routine in this segment to show it -- see the unit header. 1.39b moved
+  the second routine in this SEGMENT to show it -- see the unit header. 1.39b moved
   the whole unit to quarter-period units and 1.31 works in whole periods.
   -------------------------------------------------------------------------- }
 procedure StartNPortamento(var Song : TSong; var Can : TCanal; var N : TFullNote);
@@ -744,7 +744,7 @@ end;
   it is reached, in either direction.
 
   IT IS THE RELEASE'S BODY INSTRUCTION FOR INSTRUCTION, which is the closest
-  pairing in this segment so far.
+  pairing in this SEGMENT so far.
 
   THE TWO `TEST reg,80h` ARE THE SIGN CHECKS, and they are why this is assembler
   rather than Pascal: `TEST AH,80h` asks whether the step is negative and
@@ -841,7 +841,7 @@ end;
   0..255..24 and never go negative.
 
   [re] `MOV BX,0350` IS A DGROUP OFFSET, NOT A CODE ADDRESS, and it has to be:
-  `XLAT` reads `DS:BX+AL`. 147d:0350 in the code segment is the middle of
+  `XLAT` reads `DS:BX+AL`. 147d:0350 in the code SEGMENT is the middle of
   TickT_VSlide, so the table is a typed constant living in DGROUP -- which is
   exactly where Turbo Pascal puts a `const` declared inside a procedure, and
   exactly how the release declares it.
@@ -1448,7 +1448,7 @@ end;
   Which is suggestive and still not proof -- five empty bodies in a row match five
   other empty bodies in a row whatever the order. Address names until the dispatch
   table at 063f says otherwise. That is now SIXTEEN one-byte routines in this
-  segment waiting on that one table.
+  SEGMENT waiting on that one table.
   -------------------------------------------------------------------------- }
 procedure TickNoteCut; assembler;
 asm
@@ -1741,8 +1741,8 @@ end;
   still needs an entry.
 
   IT HOLDS OFFSETS, NOT PROCEDURE POINTERS. Everything in this unit is in one
-  segment, so a 16-bit offset is enough and the call is near. Two bytes per
-  command instead of four, and no segment fixup for the linker to resolve.
+  SEGMENT, so a 16-bit offset is enough and the call is near. Two bytes per
+  command instead of four, and no SEGMENT fixup for the linker to resolve.
 
   SEVERAL COMMANDS SHARE A TICK, and the sharing is the interesting part: the
   fine portamentos both point at one routine, the fine volume slides at

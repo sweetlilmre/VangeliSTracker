@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 164b -- the JMPlayer recogniser. 80 bytes, of which 77 are the
+  SEGMENT 164b -- the JMPlayer recogniser. 80 bytes, of which 77 are the
   single routine.
 
   IT RECOGNISES A FORMAT IN ORDER TO REFUSE IT. This is the part that was

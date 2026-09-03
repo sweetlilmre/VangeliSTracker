@@ -8,7 +8,7 @@
   routines in two layers -- a plain pair that calls DOS directly, and a pair
   that wraps them in the upper-memory dance.
 
-  [re] Segment 1a68 -- 240 bytes, five routines.
+  [re] SEGMENT 1a68 -- 240 bytes, five routines.
 
       DOSAllocate  1a68:0000   INT 21h $48, with a fallback
       DOSFree   1a68:005a   INT 21h $49
@@ -44,7 +44,7 @@ interface
   THE FOUR NAMES BELOW ARE THE RELEASE'S, AND THE PAIRING WAS FOUND BY
   MEASUREMENT.
   This unit was on the list of eight with "no counterpart in LIB/" and carried invented
-  names for its whole life. `relmatch.py` scores segment 1880 against
+  names for its whole life. `relmatch.py` scores SEGMENT 1a68 against
   `LIB/UMBUNIT.PAS` at 65.5%, with nothing else above 7% -- and the unit's four
   routines line up one for one, signature for signature:
 
@@ -102,7 +102,7 @@ implementation
 
   ON FAILURE the out pointer is set to nil and the result is zero. On success
   the offset is always zero -- these are whole paragraphs, so the pointer is
-  a bare segment.
+  a bare SEGMENT.
 
   [re] Compiler output with an assembler middle, and it has to be that shape:
   the frame is `ENTER 6,0` with a Word local at [BP-6], the two conversions are
@@ -134,7 +134,7 @@ begin
     MOV  Paras, AX         { 1a68:002c                                     }
   @@Got:
     LES  DI, P             { 1a68:002f  the ADDRESS of the caller's ptr    }
-    MOV  ES:[DI+2], AX     { 1a68:0032  the segment, or 0                  }
+    MOV  ES:[DI+2], AX     { 1a68:0032  the SEGMENT, or 0                  }
     XOR  AX, AX            { 1a68:0036                                     }
     MOV  ES:[DI], AX       { 1a68:0038  the offset is always zero          }
   end;
@@ -145,10 +145,10 @@ end;
   1a68:005a -- give a block back.
 
   IT IS ASSEMBLER BECAUSE INT 21h $49 WANTS THE BLOCK'S SEGMENT IN ES, and
-  Pascal has no way to load a segment register.
+  Pascal has no way to load a SEGMENT register.
 
   IT CLEARS THE CALLER'S POINTER BEFORE THE DOS CALL, not after, so a free that
-  fails still leaves the caller holding nil rather than a stale segment that
+  fails still leaves the caller holding nil rather than a stale SEGMENT that
   looks usable. The carry flag is discarded either way, which makes that
   ordering the only thing standing between a failed free and a dangling
   pointer.
@@ -161,7 +161,7 @@ end;
 procedure DOSFree(var P : Pointer); assembler;
 asm
   LES  DI, P             { 1a68:005d  the ADDRESS of the caller's pointer  }
-  MOV  AX, ES:[DI+2]     { 1a68:0060  keep the segment                     }
+  MOV  AX, ES:[DI+2]     { 1a68:0060  keep the SEGMENT                     }
   XOR  BX, BX            { 1a68:0064                                       }
   MOV  ES:[DI+2], BX     { 1a68:0066  P := nil, before the call            }
   MOV  ES:[DI], BX       { 1a68:006a                                       }
@@ -218,7 +218,7 @@ end;
 
   [re] 1a68:0097. Plain Pascal in the binary: `ENTER`, a byte local for the old
   state, and three near calls with `PUSH CS` in front of them, which is how
-  Borland Pascal reaches a far routine in its own segment.
+  Borland Pascal reaches a far routine in its own SEGMENT.
   -------------------------------------------------------------------------- }
 function UMBAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var

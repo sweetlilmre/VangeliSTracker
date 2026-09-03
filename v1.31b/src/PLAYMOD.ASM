@@ -5,13 +5,13 @@
 ; that chooses between them. THE WHOLE OF THE SEGMENT THAT IS NOT PASCAL.
 ;
 ; WHY THIS IS AN ASSEMBLER MODULE. Turbo Pascal lays a unit's initialisation
-; block down as the last PASCAL code in the segment, and that block is at
+; block down as the last PASCAL code in the SEGMENT, and that block is at
 ; 141e..148e. Everything after it came from a `{$L}` object module, and the
 ; first instruction says so on its own: 148f is
 ;
 ;       2E 89 16 E3 14     MOV WORD PTR CS:[14E3],DX
 ;
-; a store into the code segment, patching an immediate inside this same module.
+; a store into the code SEGMENT, patching an immediate inside this same module.
 ; No Pascal statement produces that. 1.39b builds the same code the same way,
 ; from LIB/PLAYMOD.ASM under a $L, and this file is its 1.31 counterpart.
 ;
@@ -22,7 +22,7 @@
 ;       12ba:1320   31 C0    XOR AX,AX     <- compiled Pascal, in PlayStart
 ;       12ba:169d   33 C0    XOR AX,AX     <- this module
 ;
-; Same instruction, same segment, two different encodings, because two different
+; Same instruction, same SEGMENT, two different encodings, because two different
 ; tools emitted them. Likewise AND CH,CH is 22 ED here and SUB AX,CX is 2B C1,
 ; both the forms Turbo Pascal's own inline assembler does not choose.
 ;
@@ -108,7 +108,7 @@
 ;
 ; THE SEGMENT ENDS AT 1745 AND 1746..174F IS PADDING -- ten zero bytes, which
 ; are the linker's and not this module's. `blockcmp.py` therefore tops out at
-; 5,958 of 5,968 bytes rather than the whole segment. Segment size is not code
+; 5,958 of 5,968 bytes rather than the whole SEGMENT. SEGMENT size is not code
 ; size; the docs have that as a standing warning and this is a clean instance.
 ;
 ; MEASURE THIS FILE WITH objcheck.py, NOT units.py's ZERO RULE. Every
@@ -224,7 +224,7 @@ DumpRaw:
 ;     [1.39b] "The loop. Entered with: DL = volume, BL = fractional part of the
 ;              increment, BP = integer part of the increment, BH = fractional
 ;              part of the position within the sample, SI = integer part of the
-;              position within the sample, ES = segment of the buffer, DI =
+;              position within the sample, ES = SEGMENT of the buffer, DI =
 ;              offset within the buffer, CX = number of samples to produce."
 ;
 ; THE REGISTERS MOVED AND THE SHAPE DID NOT. This kernel keeps the volume in CL
@@ -280,7 +280,7 @@ EmptyRaw:
                 MOV     DL,CH                   ; 157d
                 XOR     DH,DH                   ; 157f
 
-; 1581 -- DS := ES. Nothing is read from the source here, so the segment is only
+; 1581 -- DS := ES. Nothing is read from the source here, so the SEGMENT is only
 ; wanted for the `ADC SI,DX` to carry into, and the caller's DS is not needed.
                 PUSH    ES                      ; 1581
                 POP     DS                      ; 1582

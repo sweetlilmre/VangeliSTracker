@@ -4,9 +4,9 @@
   SEGMENT 1a17 -- THE PLAYER CORE. 4304 bytes, the largest unit in the
   program and the one everything else hangs off.
 
-  COMPLETE. Every routine in the segment is transcribed, and 4261 of its 4303
+  COMPLETE. Every routine in the SEGMENT is transcribed, and 4261 of its 4303
   bytes compare against the original with ZERO real mismatches -- the rest is
-  segment padding plus 27 bytes that cannot match from the source: two parked
+  SEGMENT padding plus 27 bytes that cannot match from the source: two parked
   compiler differences and three places where wrapping a frameless run in a
   Pascal procedure forces an entry or an exit the original does not have. Each
   is documented where it occurs. See docs/06-transcription.md.
@@ -60,7 +60,7 @@ type
     THE RELEASE MAKES THIS A VARIANT RECORD, `CASE DataType : TDataType OF
     dtInteger: (IData : PIntBuff); dtShortInt: (SData : PShortBuff)`, and both
     arms are a far pointer at the same offset. Flattened to one field here
-    because the layout is identical and nothing in this segment reads it as
+    because the layout is identical and nothing in this SEGMENT reads it as
     anything but an address.
 
     DataType IS SIGNED, and that is from the bytes rather than a choice:
@@ -240,7 +240,7 @@ const
   DMAChannel        : Word         = 255;    { DS:$0bc4                       }
 
   { DS:$0bc6 -- WAS DECLARED IN VTGLOBAL. 109c:06d3 sets it from the `nx` switch and a
-    scan of every segment finds NO READER anywhere in the program, so it still has no
+    scan of every SEGMENT finds NO READER anywhere in the program, so it still has no
     name. Its address is what puts it here: $0bc4 and $0bc7 are both this unit's. }
   Rut_0bc6          : Boolean      = False;  { DS:$0bc6                       }
 
@@ -329,7 +329,7 @@ const
   { DS:$0c00 -- this unit already had it as `MixRut`, "the output loop 1a17:1087/1090
     installs, mono or stereo", declared as a lone `var` well away from the other four.
     It is the fifth entry of the same table: the release's DeviceFillRut. A NEAR
-    pointer, as the other four are, because the kernels are in this segment. }
+    pointer, as the other four are, because the kernels are in this SEGMENT. }
   MixRut            : Word         = 0;      { DS:$0c00  release: DeviceFillRut }
 
   DeviceList        : PSoundDevice = nil;    { DS:$0c02                       }
@@ -440,7 +440,7 @@ var
   points are bare `PUBLIC` labels with no prologue or epilogue.
 
   And the ENCODINGS settle it, because the two assemblers disagree and each
-  matches a different part of this segment:
+  matches a different part of this SEGMENT:
 
     instruction     original      TASM 4.1   TP6 inline asm
     AND AL,AL       22 C0 @1014   22 C0      20 C0
@@ -693,7 +693,7 @@ end;
   or when the driver is already the current one, it is a bare store.
 
   The `PUSH CS / CALL near` at 01b0 and 01c1 is the same-segment far call
-  idiom: Stop and Start both end in RETF, so the return segment has to be
+  idiom: Stop and Start both end in RETF, so the return SEGMENT has to be
   pushed by hand. Transcribed as ordinary Pascal calls, which is what the
   original source must have had.
   ========================================================================== }
@@ -886,7 +886,7 @@ end;
   be already finished using"). 1a17:03f0 jumps straight from the Size store to
   the promotion, so in 1.31 the flag is left set and the block is never
   released. The disassembly wins; whether that is a leak or whether something
-  else clears it is not settled from this segment alone.
+  else clears it is not settled from this SEGMENT alone.
 
   THE UNDERRUN PATH DROPS THE RATE TO PeriodicHz on a non-DMA device, which
   makes the timer tick slowly until buffers come back rather than spinning at
@@ -962,7 +962,7 @@ end;
 
 { ==========================================================================
   1a17:053c -- InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
-  invasive thing in the segment.
+  invasive thing in the SEGMENT.
 
   It installs the two null callbacks and then CARVES THE DMA BUFFER OUT OF
   TURBO PASCAL'S HEAP BY HAND, reaching into System's own HeapPtr and FreeList
@@ -1070,7 +1070,7 @@ begin
 end;
 
 { ==========================================================================
-  1a17:06ff -- GetPlayPos. Far; the only entry point in this segment that
+  1a17:06ff -- GetPlayPos. Far; the only entry point in this SEGMENT that
   the DEMO reaches rather than the player. 1000:0288 calls it as
   `MarkPos := GetPlayPos`, masks the offset down to a multiple of four, and
   uses it to remember where the player had got to.

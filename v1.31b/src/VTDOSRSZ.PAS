@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 188f -- shrink the program's memory block. 32 bytes, of which 29
+  SEGMENT 188f -- shrink the program's memory block. 32 bytes, of which 29
   are the one routine.
 
   DemoVT starts as an ordinary .EXE, so DOS has given it every free paragraph
@@ -14,7 +14,7 @@
 
       paragraphs := (TopSeg + ceil(ExtraBytes / 16)) - PrefixSeg
 
-  so the caller names the segment it wants the block to reach rather than
+  so the caller names the SEGMENT it wants the block to reach rather than
   having to know where the program starts.
 
   NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
@@ -46,12 +46,12 @@ implementation
   188f:0000.
 
   HAND ASSEMBLER, verbatim, and it can be nothing else: INT 21h with a
-  segment register as an argument is not expressible in Pascal.
+  SEGMENT register as an argument is not expressible in Pascal.
 
-  The original reads its base segment from DS:$0c62. That is NOT copied here:
+  The original reads its base SEGMENT from DS:$0c62. That is NOT copied here:
   the standing rule is that no absolute DGROUP address crosses over. It is
   Turbo Pascal's own `PrefixSeg`, and the identification is from the DOS API
-  rather than from the address -- INT 21h $4A requires ES to hold the segment
+  rather than from the address -- INT 21h $4A requires ES to hold the SEGMENT
   of an MCB-owned block, and for a running program that is the PSP. Nothing
   else it could be.
 
@@ -78,7 +78,7 @@ implementation
   AND THE NAME IS `SetMemTop`, which is Borland's. Read as a pointer the arithmetic is
   `(Ofs(P) + 15) shr 4 + Seg(P) - PrefixSeg` -- the paragraph count needed to reach P --
   which is what Turbo Vision's `Memory.SetMemTop` does, and the release's `HEAPS.PAS`
-  calls `SetMemTop(HeapEnd)` at exactly the point 17cf:01d3 calls this. So **segment
+  calls `SetMemTop(HeapEnd)` at exactly the point 17cf:01d3 calls this. So **SEGMENT
   188f is probably Borland's `Memory` UNIT rather than DemoVT's own**, smart-linked down
   to the one routine anything references: 32 bytes is a single procedure, and TP's
   linker discards what a unit does not use.
@@ -105,7 +105,7 @@ asm
   ADD  BX, WORD PTR P+2  { 188f:000d  [BP+08h] -- Seg(P)                    }
   MOV  AX, PrefixSeg     { 188f:0010  was MOV AX,[0C62h]                    }
   SUB  BX, AX            { 188f:0013  absolute top -> a length              }
-  MOV  ES, AX            { 188f:0015  $4A wants the block's own segment     }
+  MOV  ES, AX            { 188f:0015  $4A wants the block's own SEGMENT     }
   MOV  AH, 4Ah           { 188f:0017  DOS: resize memory block              }
   INT  21h               { 188f:0019  carry ignored -- see above            }
 end;

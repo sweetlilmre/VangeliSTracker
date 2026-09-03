@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1642 -- one function, 144 bytes, all of it.
+  SEGMENT 1642 -- one function, 144 bytes, all of it.
 
   Turn an ASCIIZ run of bytes into a Pascal String of EXACTLY the width asked
   for: copied up to the terminator, truncated if longer, space-padded if

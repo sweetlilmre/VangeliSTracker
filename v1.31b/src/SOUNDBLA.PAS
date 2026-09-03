@@ -1,8 +1,8 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 19a0 -- THE SOUND BLASTER HARDWARE LAYER. **COMPLETE: 1,898 of 1,898
-  bytes** (1,905 in the segment map; the last 7 are padding). Twenty-three
+  SEGMENT 19a0 -- THE SOUND BLASTER HARDWARE LAYER. **COMPLETE: 1,898 of 1,898
+  bytes** (1,905 in the SEGMENT map; the last 7 are padding). Twenty-three
   routines, 475 pending fixups, no real difference anywhere.
 
   It pairs with the release's
@@ -16,7 +16,7 @@
   release's own declaration order beside the rest.
 
   TWENTY-THREE FAR RETURNS AND NOT ONE PRINTABLE STRING. `survey.py` finds no
-  literal anywhere in the segment, which already says the release's
+  literal anywhere in the SEGMENT, which already says the release's
   `SbGetCopyrightString` and its `USES Debugging` calls are absent -- and the
   first block confirms it: 1.31's `SbWriteByte` is the release's body with the
   two `WriteSNum`/`WriteChar` debug calls removed.
@@ -321,7 +321,7 @@ end;
 { 0077..009a.  RETF 4.  The release's body with its TWO DEBUG CALLS REMOVED --
   1.39b brackets the port write with `WriteSNum` and `WriteChar` from its
   `Debugging` unit, and 1.31 has neither, which is why survey.py finds no
-  printable string in the whole segment. Both `CALL SbWriteLoop`s are FAR
+  printable string in the whole SEGMENT. Both `CALL SbWriteLoop`s are FAR
   (`9A`) because SbWriteLoop is an interface routine.
 
   Note DX survives the second SbWriteLoop and carries DSPWritePort into the
@@ -481,7 +481,7 @@ end;
   **`SbRegDone` IS ABSENT ENTIRELY.** The release puts it immediately after this
   routine. 0297 is this one's RETF, 0298..029b is four bytes of literal, and
   029c is SbGetDSPVersion's ENTER -- there is no room for it, and nothing in the
-  segment calls it. }
+  SEGMENT calls it. }
 procedure SbRegInit;
 begin
   if not SbRegDetect then Exit;                    { 025a..0263 }
@@ -693,7 +693,7 @@ begin
   Sb16Inited := True
 end;
 
-{ 06de..0769.  RETF 4.  The last routine in the segment; 076a..0770 is padding.
+{ 06de..0769.  RETF 4.  The last routine in the SEGMENT; 076a..0770 is padding.
   `Sb16Done` is absent, as `SbProDone` is. }
 procedure Sb16StartSample(Len : Word; Cont : Boolean);
 begin

@@ -23,7 +23,7 @@
   This unit holds the block and the routine that clears it, and almost nothing
   else. The code is incidental; the layout is the point.
 
-  [re] Segment 1538 -- 32 bytes, of which 25 are the one routine and the rest
+  [re] SEGMENT 1538 -- 32 bytes, of which 25 are the one routine and the rest
   is padding. DS:$22c6 is the structure; ES:[DI-4] in the handshake points at
   it. `01-int2f.md` documents the server side.
 
@@ -34,7 +34,7 @@
        C/CDVT.H            struct sDVT_info, #pragma pack(1)
       ASM/VTASM.INC       VTRunInfo SEGMENT AT 0
       TPAS/PASDVT.PAS     TVTRunInfo = RECORD
-      PMODE/PMODEDVT.INC  the same segment, 32-bit
+      PMODE/PMODEDVT.INC  the same SEGMENT, 32-bit
       DEMOVT.DOC          prose, with the ASM layout reprinted
 
   [re] CDVT.H says "C interface code to DemoVT v1.5 and higher", so it is this
@@ -48,10 +48,10 @@
   it. What stays reserved below is reserved in the bindings TOO -- the
   author's own `_reserved`, not our "we have not looked here yet".
 
-  [re] THE ORIGINAL HAS ONE FLAT DGROUP and every segment reaches into it by
+  [re] THE ORIGINAL HAS ONE FLAT DGROUP and every SEGMENT reaches into it by
   absolute address. Turbo Pascal has no such thing: a variable belongs to
   exactly one unit and everyone else imports it. The block is declared HERE,
-  in the segment that clears it, and VTMAIN imports it -- see
+  in the SEGMENT that clears it, and VTMAIN imports it -- see
   docs/06-transcription.md, "one DGROUP, many units".
 
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
@@ -126,7 +126,7 @@ type
 
       [re] EVERY PART OF THAT WAS ALREADY IN THIS RECONSTRUCTION, TRANSCRIBED
       AND UNRECOGNISED. `ModCommands.StartRingEvent` is command 8's handler -- the one
-      routine in its segment with no counterpart in the release -- and it stores
+      routine in its SEGMENT with no counterpart in the release -- and it stores
       the parameter. 12ce:0187 increments this array by that parameter. 1000:03e4
       clears all 256 bytes when a module starts. Three sites, correct to the
       byte, none of them able to say WHY, because the reason is on the client

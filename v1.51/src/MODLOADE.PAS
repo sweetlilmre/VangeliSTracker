@@ -27,7 +27,7 @@
   EXTENSION -- so the loader looks at the name it was given. A format that can
   only be identified from outside its own contents is unusual and it is real.
 
-  [re] Segment 173d. **COMPLETE: 3,920 of 3,920 bytes.** Five routines, 302
+  [re] SEGMENT 173d. **COMPLETE: 3,920 of 3,920 bytes.** Five routines, 302
   pending fixups, no real difference anywhere. It went in in one pass: the
   release's five bodies transferred essentially verbatim and THREE measured
   differences had to be found -- a ninety-two-byte delta-decoding block the
@@ -60,7 +60,7 @@
   THE ROUTINE MAP, and it is SEVEN routines where the release has FIVE.
 
   [re] `survey.py` finds exactly ONE far return in 3,920 bytes -- `0f40 RETF 12` --
-  so `LoadModFileFormat` is the only routine anything outside the segment can
+  so `LoadModFileFormat` is the only routine anything outside the SEGMENT can
   reach, and every other routine here is NEAR. That is what a unit with one
   exported procedure and a pile of implementation-section helpers looks like,
   and it matches the release's shape exactly.
@@ -108,7 +108,7 @@
   [re] START HERE: transcribe strictly top-down from 0000, add 154d to units.py only
   when a real body exists, and use a per-block check rather than the prefix --
   `blockcmp.py` is the template and took ten minutes to point at a new
-  segment. }
+  SEGMENT. }
 
 unit ModLoader;
 
@@ -268,7 +268,7 @@ type
   (string compare) five times -- four magics plus the '.WOW' test on FileExt.
   --------------------------------------------------------------------------- }
 
-{ 173d:0000..04e1.  Near -- nothing outside the segment calls it. }
+{ 173d:0000..04e1.  Near -- nothing outside the SEGMENT calls it. }
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TModFilePattern;
@@ -492,7 +492,7 @@ begin
                   TOUCHES IT. It is declared in this unit's implementation
                   because this is the only reader; the name is OURS, taken from
                   the role, since the release has no counterpart. If a later
-                  segment turns out to WRITE it -- 109c's switches or 11bb's
+                  SEGMENT turns out to WRITE it -- 109c's switches or 11bb's
                   config keys are the candidates -- move the declaration there
                   and rename it to whatever sets it.
                   ------------------------------------------------------------ }
@@ -636,7 +636,7 @@ begin
 end;
 
 { 173d:0bf7..0f4f.  RETF 12 -- the ONLY far return in 3,920 bytes, and the only
-  routine anything outside the segment can reach. The '.WOW' literal at 0bf3
+  routine anything outside the SEGMENT can reach. The '.WOW' literal at 0bf3
   sits immediately before it, which is where Turbo Pascal puts a routine's
   literals. }
 procedure LoadModFileFormat(var Song : TSong; var St : TStream;

@@ -24,7 +24,7 @@
   AND THE SAMPLES MAY BE SIGNED OR UNSIGNED, which the format records in a
   field rather than fixing -- so the loader has to look, and convert if it must.
 
-  [re] Segment 1664 -- 3,472 bytes, of which 3,458 are the four routines. NEW
+  [re] SEGMENT 1664 -- 3,472 bytes, of which 3,458 are the four routines. NEW
   IN v1.51.
 
   [re] NO RELEASE SOURCE, for the same reason STMLOADE.PAS has none -- 1.39b is
@@ -234,7 +234,7 @@ end;
 
   PLACEHOLDER holding its position. Turbo Pascal lays routines out in source
   order, so this has to exist and be in the right place or everything below it
-  moves; it is the wrong length, so measure this segment per routine and not
+  moves; it is the wrong length, so measure this SEGMENT per routine and not
   by a prefix.
 
   Seven parameters, 22 bytes, in this order -- read off the recogniser's call
@@ -422,7 +422,7 @@ begin
                                 `CMP ...,F0 / JB` -- so the conditions are `> $F0` and `>= $F0`,
                                 with the coarse slide as the final `else`. The draft had each of
                                 the three inverted: the same values, and the two blocks the other
-                                way round in the segment. }
+                                way round in the SEGMENT. }
                               4  : if Note.Parameter > $F0 then
                                      begin
                                        Note.Command := mcVolFineDown;
@@ -646,7 +646,7 @@ begin
           { `> 0` WITH THE WORK FIRST, as in STMLOADE's ProcessInstruments.
             The original's three-branch LongInt compare -- high word signed,
             low word unsigned -- is the shape of `> 0`; `<= 0` inverts it and
-            swaps the two blocks in the segment. }
+            swaps the two blocks in the SEGMENT. }
           if Instrument.Len > 0 then
             begin
               { THE WORK COMES FIRST. 07f7 is `JE` to the zeroing block, and

@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1084 -- the Gravis UltraSound DRIVER. 384 bytes, ten routines.
+  SEGMENT 1084 -- the Gravis UltraSound DRIVER. 384 bytes, ten routines.
 
   Not the hardware layer -- that is 1723, and every port write happens there.
   This is the thin record of eight entry points that 1a17 walks, plus the
@@ -141,7 +141,7 @@ implementation
   Pascal emits for `if Busy <= 0`.
 
   A PRIVATE STACK. SS:SP are saved to DS:$4302 and DS:$4304, then SS is
-  pointed at the data segment and SP at $4302 -- so the callback's stack
+  pointed at the data SEGMENT and SP at $4302 -- so the callback's stack
   grows downwards from just below the two words holding the caller's. The
   interrupted program's stack may be tiny, and a mixing routine's frame is
   not; borrowing it would corrupt whatever was interrupted. The same trick
@@ -171,7 +171,7 @@ begin
   MOV  SoundDevices.SavedSS, SS { 1084:0015  keep the interrupted stack }
   MOV  SoundDevices.SavedSP, SP { 1084:0019                            }
   MOV  DX, DS       { 1084:001d                                        }
-  MOV  SS, DX       { 1084:001f  ours lives in the data segment        }
+  MOV  SS, DX       { 1084:001f  ours lives in the data SEGMENT        }
   MOV  SP, OFFSET SoundDevices.SavedSS  { 1084:0021  was MOV SP,4302h  }
   CMP  UsingGUS, 0    { 1084:0024                                        }
   JZ   @@Do          { 1084:0029  not started -> always call            }

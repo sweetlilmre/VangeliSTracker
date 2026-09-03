@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 109c -- THE COMMAND-LINE SWITCHES. 3,296 bytes, twenty-two routines.
+  SEGMENT 109c -- THE COMMAND-LINE SWITCHES. 3,296 bytes, twenty-two routines.
 
   COMPLETE. All 3,296 bytes, 484 pending fixups, from the release's bodies in five builds.
 
@@ -113,7 +113,7 @@ type
   { TWO DESCENDANTS, NOT ONE, and the split is what makes `116e`'s two empty overrides
     unreachable. `TVTCmdSwitch` overrides InterpretSwitch and adds four virtuals of its
     own; `TVTCmd` then overrides InterpretNoSwitch. Between them every slot the base
-    left empty is filled by a routine in THIS segment. }
+    left empty is filled by a routine in THIS SEGMENT. }
   TVTCmdSwitch =
     object(TCmdLineInterpreter)
       procedure CmdInitShell     (Shell : String);        virtual;  { VMT +$2c }
@@ -140,7 +140,7 @@ var
     how you append to an UNSORTED collection -- a sorted one takes `Insert` and
     would not be given a position -- and `DoSongColl` reads it back through an
     explicit `PString(...)^` cast, which a string collection would not need.
-    Eighth interface detail settled by a caller in another segment. }
+    Eighth interface detail settled by a caller in another SEGMENT. }
   { A `TStringCollection`, AND THE LINKED IMAGE IS WHAT SETTLED IT -- after this file
     had argued the opposite and been WRONG.
 
@@ -177,7 +177,7 @@ implementation
 { The release also uses `VTScreens`, which 1.31 has not got. `SongUnit` IS needed and
   was not here: `CmdModOffset` assigns `ModOffset`, which the DGROUP layout has just
   moved out of VTGlobal and into SongUnit -- $03c0 is four bytes below SongUnit's own
-  `SongLoaders` at $03c4. Adding it cannot move a segment, because everything in this
+  `SongLoaders` at $03c4. Adding it cannot move a SEGMENT, because everything in this
   clause is already reached through `PlayMod` before the walk gets here; the order was
   re-checked with `linkorder.py` either way. }
 uses
@@ -187,7 +187,7 @@ uses
 { ===========================================================================
   109c:0000 and 109c:0038 -- the two device/rate helpers. Both are in the INTERFACE, so
   both are FAR, and both take no parameters -- which is exactly the two `RETF` with no
-  count that `survey.py` finds at `0037` and `0045`, the only two in the segment.
+  count that `survey.py` finds at `0037` and `0045`, the only two in the SEGMENT.
   =========================================================================== }
 
 { --------------------------------------------------------------------------
@@ -263,8 +263,8 @@ end;
   because the `GOTO` leaves immediately afterwards.
 
   `Exts[0]` AND `Dirs[0]` ARE ASSIGNED TO, so both arrays are typed constants and live in
-  DGROUP rather than the code segment. That is why 3,296 bytes contain no `'.MOD'` and no
-  `'.669'` -- the strings are initialised data, and the only text in the segment is the
+  DGROUP rather than the code SEGMENT. That is why 3,296 bytes contain no `'.MOD'` and no
+  `'.669'` -- the strings are initialised data, and the only text in the SEGMENT is the
   switch table.
 
   `'.123'` AT `Exts[0]` IS A PLACEHOLDER that is always overwritten before use: the
@@ -436,7 +436,7 @@ end;
 
 { 109c:0435 -- ONE `Val`, WHERE THE RELEASE HAS `VAL(s, i, r);` TWICE IN A ROW. The
   duplicate is plainly accidental in 1.39b and 1.31 does not have it: `1ba1:0f81` is
-  called nine times in this segment for nine routines that parse a number, so exactly
+  called nine times in this SEGMENT for nine routines that parse a number, so exactly
   one apiece. **The count is the whole argument.** }
 procedure CmdInitFreq(s : String);
 var
@@ -517,7 +517,7 @@ end;
       c6 06 e8 09 01     MOV byte [09e8],1
       c9 c3              LEAVE / RET
 
-  It is the `nb` switch, and `1000` is what names it: that segment tests `[09e8]` and
+  It is the `nb` switch, and `1000` is what names it: that SEGMENT tests `[09e8]` and
   skips a four-line banner when it is set. See the declaration of `NoBanner`. }
 procedure CmdNoBanner;
 begin
@@ -602,7 +602,7 @@ end;
 
 
 { 109c:06d3 -- the `nx` switch, and the same three instructions as CmdNoBanner but
-  writing `[0bc6]`. **Nothing in any segment reads that byte**, so there is no behaviour
+  writing `[0bc6]`. **Nothing in any SEGMENT reads that byte**, so there is no behaviour
   to name the routine after; a switch that was wired up and left unfinished. }
 procedure Rut_06d3;
 begin
@@ -700,7 +700,7 @@ end;
   **`Copy(Line, Idx, 255)` IS THE POINT OF THE WHOLE THING.** `Line` and `Idx` are
   `TCmdLineInterpreter`'s fields -- the raw line and the tokeniser's cursor -- so this
   takes the untokenised remainder verbatim, quotes and switches and all. It is the only
-  place in either segment that reaches past `GetToken` into the cursor itself.
+  place in either SEGMENT that reaches past `GetToken` into the cursor itself.
 
   **AND THE LAST STATEMENT IS WHY `116e` HAS AN EXTRA VIRTUAL.** `109c:0835` is
   `CALLF [DI+10]`, the ninth slot, whose whole body is `Idx := 255` -- and this is its only

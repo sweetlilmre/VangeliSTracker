@@ -17,7 +17,7 @@
   shapes: a nibble pair for anything displaying "octave 4, note 3", and a
   single linear 0..83 for anything that wants to index a table by note.
 
-  [re] Segment 183e -- 160 bytes, all of it, one routine, no parameters. The
+  [re] SEGMENT 183e -- 160 bytes, all of it, one routine, no parameters. The
   body calls it once at 1000:05d7.
 
   [re] IN     DS:$04bc  the period table: 7 octaves x 12 semitones, words, on a
@@ -96,13 +96,13 @@ var
     variable block ends where GUS's begins at $371a, and $25c6 + 4096 is $35c6, so there
     are exactly $154 bytes after `NoteOf` -- which is 340, which is 85 times 4, which is
     `array[0..84] of String[3]`. `LIB/SONGUTIL.PAS` -- the release counterpart
-    `relmatch.py` scored this segment against at 71.1% -- declares `NoteIdx : TNoteSet`
+    `relmatch.py` scored this SEGMENT against at 71.1% -- declares `NoteIdx : TNoteSet`
     and `NoteStr : TNoteStringSet` as its two variables, and its `NoteStr` holds the
     printed name of each note, "e.g. 'A#2'". `NoteOf` is `NoteIdx`; this is the other one.
 
     [re] NOTHING IN THE TRANSCRIBED TREE READS IT, and it holds no data -- it is a `var`, so
     the image is silent about it and `survey.py` finding no printable string in the
-    segment is consistent. It is here for its 340 bytes and its name, and the arithmetic
+    SEGMENT is consistent. It is here for its 340 bytes and its name, and the arithmetic
     is what says it exists. }
   NoteStr   : array[0..84] of String[3];             { DS:$5920  340 bytes  }
 
@@ -143,7 +143,7 @@ implementation
   that instruction.
 
   [re] ORDINARY DGROUP DATA, not `absolute`. This pair was once declared
-  `absolute 0:$04bc`, which is segment ZERO -- the interrupt vector table -- and
+  `absolute 0:$04bc`, which is SEGMENT ZERO -- the interrupt vector table -- and
   made every access a far one through ES. The original indexes them DS-relative:
   183e:004e is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
   instruction. The offsets themselves are decided by link order, which is the open

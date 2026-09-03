@@ -33,16 +33,16 @@
   makes that an ordinary case rather than an error path, and it is why the
   driver chain ends with something that always succeeds.
 
-  [re] Segment 115e -- 496 bytes, eight routines. Register puts 1bff:1008 in
+  [re] SEGMENT 115e -- 496 bytes, eight routines. Register puts 1bff:1008 in
   slot +$2a.
 
-  [re] ADDRESS MAP
   [re] 115e IN THIS IMAGE, NOT 1065. The map said 1065, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 1170:000b -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     DevName      115e:0000     IrqHandler  115e:0005 *
     Probe       115e:0039     Start       115e:0046
     AskRate     115e:00f3     ChgHz      115e:0104
@@ -79,7 +79,7 @@ const
 
     THE FIVE ADDRESSES ABOVE WERE v1.31b's UNTIL THE LINKER WAS ASKED, and so
     were the two instruction addresses this paragraph cites -- 1065 is a v1.31b
-    segment. The ARGUMENT is untouched: the widths, the order, and the reasoning
+    SEGMENT. The ARGUMENT is untouched: the widths, the order, and the reasoning
     about the initialised half of DGROUP all hold. Only the numbers moved, which
     is what makes prose like this dangerous -- it stayed persuasive while every
     figure in it was wrong. }
@@ -138,7 +138,7 @@ const
 { [re] ~~procedure Register; far;~~ -- 115e:0172 IS THE UNIT'S INITIALISATION
   SECTION, not an exported procedure, and the LINK is what settled it: nothing
   anywhere calls `Register`, so the smart linker discarded it and everything it
-  referenced, leaving VTSILENC at 30 bytes of a 489-byte segment. The original's
+  referenced, leaving VTSILENC at 30 bytes of a 489-byte SEGMENT. The original's
   init chain calls 115e:0172. **This is the same error DEVGUS already had and
   this file already describes** -- see the note there, where fixing it took the
   unit from 402 bytes to 376. }

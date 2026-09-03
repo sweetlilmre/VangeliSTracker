@@ -17,7 +17,7 @@
   IT USES THE COMMAND-LINE PARSER'S TOKENISER rather than its own. A config
   line and a command line are the same problem, so the same object walks both.
 
-  [re] Segment 11cf -- 4,080 bytes, twenty routines. COMPLETE.
+  [re] SEGMENT 11cf -- 4,080 bytes, twenty routines. COMPLETE.
 
   [re] AND ESSENTIALLY THE WHOLE UNIT WENT IN VERBATIM FROM THE RELEASE. Twenty routines,
   and only three needed anything measured out of the binary rather than copied:
@@ -37,13 +37,13 @@
   NOT IN `LIB/`. Every pairing in this project before this one came from `LIB/`, and
   the working assumption had hardened into "the root holds the tracker's own units
   and will not pair". It was wrong. 41 of VTCFG.PAS's 52 distinctive string literals
-  appear in this segment and the segment contains essentially nothing else -- its
+  appear in this SEGMENT and the SEGMENT contains essentially nothing else -- its
   complete string inventory is VTCFG's keyword list plus `VT.CFG` and `.CFG`. Only
   three keys are missing, `ForceEGA`, `Line` and `TmpPath`, which are exactly what a
   headless player drops: a video mode, a mixer line input and a swap path.
 
   [re] (That test works because Turbo Pascal puts an untyped string constant in the CODE
-  segment -- the `PUSH CS` rule from `VTRESID` -- so a segment carries its unit's
+  SEGMENT -- the `PUSH CS` rule from `VTRESID` -- so a SEGMENT carries its unit's
   literals verbatim. It is one-way: a high score is strong evidence, a low score is
   none at all. See `pairmap.py`.)
 
@@ -56,13 +56,13 @@
   byte 1 is #9, bit 0 of byte 4 is #32, and bit 7 of byte 31 is #255. That is
   `KillSpaces`'s `ValidBlanks = [' ', #9, #0, #255]` character for character, and
   `11cf:0035` loads it with `MOV DI,0 / PUSH CS / PUSH DI` -- CS-relative, offset
-  zero. **So an untyped SET constant goes in the code segment exactly as a string
+  zero. **So an untyped SET constant goes in the code SEGMENT exactly as a string
   literal does**, which extends a rule the docs had only for strings, and it is why
-  the segment does not begin on an instruction boundary.
+  the SEGMENT does not begin on an instruction boundary.
 
   [re] THE INITIALISATION SECTION AT 11cf:0f2e IS THE RELEASE'S TOO. An earlier draft of
   this header said 1.31 had added it; that was wrong, and wrong for an avoidable
-  reason -- it came from the segment map's description of what the init does rather
+  reason -- it came from the SEGMENT map's description of what the init does rather
   than from reading the bottom of `VTCFG.PAS`, which has the same block and the same
   three literals. It splits `ParamStr(0)` and reads up to four files, one pair named
   after the executable and one pair named `VT.CFG`, each tried in the program's own
@@ -76,7 +76,7 @@ interface
 
 { [re] `DevSB` IS HERE FOR THE FOUR SB PRO MIXER BYTES, which this unit writes from its
   `MasterVol`, `DACVol`, `FMVol` and `Filter` keys and which the DGROUP layout showed
-  belong to DevSB's block at $09ea. It cannot move a segment: DevSB is reached from the
+  belong to DevSB's block at $09ea. It cannot move a SEGMENT: DevSB is reached from the
   program's own clause long before VTCfg, so it is already placed when the walk arrives
   here. `linkorder.py` is the check. }
 uses
@@ -86,7 +86,7 @@ uses
     unit writes from the `LowQuality` key. It was reaching a duplicate declared in
     SongUnit; two bytes of that unit's variables, and removing them is what put
     VTNOTES' `NoteOf` back on $25c6. Already reached through SongUnit, so it cannot
-    move a segment. }
+    move a SEGMENT. }
 
 { 11cf:0e4f -- read and interpret a file as a configuration file. }
 procedure ReadConfiguration(FName : PathStr); far;
@@ -130,14 +130,14 @@ var
   address is a linker fixup, so this cannot change a byte of
   either unit and the byte comparison cannot see it either way -- which is exactly
   what makes it dangerous, and exactly why it is written down. Move each one when its
-  segment lands.
+  SEGMENT lands.
   -------------------------------------------------------------------------- }
 { [re] ~~THIS UNIT DECLARED FOURTEEN GLOBALS AND NOW DECLARES NONE.~~ The last four went
   with the DGROUP layout: the three DAC ports are SoundDevices' typed constants and
   `VTDir` is VTGlobal's, all four at addresses this unit already carried but could
   not own. It writes every one of them from a config key and reaches them all
   through a `uses`. See the notes below, which are kept for what they record. }
-  { Segment 1b22, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
+  { SEGMENT 1b22, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
   { [re] ~~SbProMixMasterVol $09ea, SbProMixDACVol $09eb, SbProMixFMVol $09ec,
     SbProMixFilter $09ed~~ -- ALL FOUR MOVED TO DEVSB.PAS. This unit writes them, from
     the `MasterVol`, `DACVol`, `FMVol` and `Filter` keys, which is why they were
@@ -165,7 +165,7 @@ var
     line that this unit writes from the config file, and a private declaration cannot be
     shared. The release has always kept them in its own `VTGLOBAL.PAS`; ours now does
     too. `SbPort`, `SbIrq`, `SbDMAChan` and `SbHiSpeed` went to `SOUNDBLA.PAS`, a
-    declared stub for segment `19a0`, for the same reason.
+    declared stub for SEGMENT `19a0`, for the same reason.
 
     [re] **AND `VTDir` WAS WRONG.** It was declared here as a `PathStr` at `DS:$09e8`, marked
     provisional, on the strength of `11cf:0a00` referring to `09e8`. That reference is
@@ -212,7 +212,7 @@ var
   -------------------------------------------------------------------------- }
 procedure KillSpaces(var S : String);
 const
-  { [re] The 32 bytes at 11cf:0000, and the reason the segment starts with data. }
+  { [re] The 32 bytes at 11cf:0000, and the reason the SEGMENT starts with data. }
   ValidBlanks = [' ', #9, #0, #255];
 begin
   while (Length(S) > 0) and (S[1] in ValidBlanks) do    { 0024..0040          }
@@ -294,13 +294,13 @@ end;
 { --------------------------------------------------------------------------
   11cf:0131 -- GetString. Take everything after the `=` on the current line and
   return it as a string, honouring quotes and stripping comments. 786 bytes, the
-  largest routine in the segment, and almost all of it is Pascal string handling.
+  largest routine in the SEGMENT, and almost all of it is Pascal string handling.
 
   [re] `11cf:0127..0130` IS ITS DATA. Ten bytes, five length-1 string literals --
   `01 3D`, `01 27`, `01 3B`, `01 3A`, `01 23` -- which are the five characters this
   routine and GetNum look for with `Pos`: equals, quote, semicolon, colon and hash.
   A one-character Pascal literal is still a string with a length byte, and it goes in
-  the code segment like any other. That is the second block of data in this segment
+  the code SEGMENT like any other. That is the second block of data in this SEGMENT
   after the set constant at 0000.
 
   THE QUOTE HANDLING IS THE HALF THAT LOOKS ODD AND IS RIGHT. Inside quotes a doubled
@@ -467,7 +467,7 @@ end;
 
       i := LP(Ptr((i AND $F0000) SHR 4, i AND $FFFF))^
 
-  splits that number into a segment and an offset and reads four bytes from there.
+  splits that number into a SEGMENT and an offset and reads four bytes from there.
   So a configuration file can set a value to whatever is in memory at a given
   address. In a tracker that is a debugging hook; in a demo player shipped inside
   another program it is a way for the host to hand values in. Either way it is the
@@ -663,7 +663,7 @@ end;
 
   THE HANDLER ARRIVES AS AN OFFSET, NOT A POINTER, and that is why the `asm` block
   exists. `Ptr(Seg(DoSectGeneric), Offs)` rebuilds a full address by borrowing this
-  routine's OWN segment -- which is sound because all seven handlers are in this unit
+  routine's OWN SEGMENT -- which is sound because all seven handlers are in this unit
   -- and then `CALL [DoSect]` calls through it. Pascal has procedural variables and
   the release does not use one here; a `Word` in the table is two bytes instead of
   four, and Seg(self) is free.
@@ -697,7 +697,7 @@ end;
 
 { --------------------------------------------------------------------------
   THE SECTION TABLE. Seven entries, each an OFFSET and a name, and the ORDER IS NOT
-  THE ROUTINES' ORDER: the handlers sit in the segment as SB, GUS, SBPro, DAC,
+  THE ROUTINES' ORDER: the handlers sit in the SEGMENT as SB, GUS, SBPro, DAC,
   PlayMod, Misc, Screen, and the table lists PlayMod before DAC. The release has both
   orders the same way round, which is one more small confirmation that this is the
   same source rather than a rewrite.
@@ -812,11 +812,11 @@ end;
   second, and the later read overwrites the earlier. **That is why `PSYCHO.EXE`
   passing `@neurosis.cfg` works**: it is the same mechanism, and the map records this
   as the second rename-sensitive check in the program after the `'inconexi'` one in
-  segment 1000. Rename the executable and it reads a different configuration.
+  SEGMENT 1000. Rename the executable and it reads a different configuration.
 
   THE RELEASE HAS THIS BLOCK TOO, and an earlier version of this header said it did
   not. That was wrong and it was wrong for an avoidable reason: the claim came from
-  the segment map's description of what the init does, not from reading the bottom of
+  the SEGMENT map's description of what the init does, not from reading the bottom of
   `VTCFG.PAS`, which has the same block and the same three literals. **Read the file
   before saying what is not in it.**
   ========================================================================== }

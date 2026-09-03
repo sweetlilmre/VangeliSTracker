@@ -26,7 +26,7 @@
   hooking anything, and if a DemoVT is already there it prints that copy's
   name and stops. Two players on one timer would fight over the sound card.
 
-  [re] Segment 1d3c -- 432 bytes, all of it, nothing left unread. This is the
+  [re] SEGMENT 1d3c -- 432 bytes, all of it, nothing left unread. This is the
   half of the handshake that the Psycho Neurosis reconstruction's own
   src/DEMOVT.PAS talks to; everything that file assumes is confirmed here. See
   ../v1.31b/docs/01-int2f.md.
@@ -34,13 +34,13 @@
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information, so no
   unit or routine name survives.
 
-  [re] ADDRESS MAP
   [re] 1d3c IN THIS IMAGE, NOT 1b54. The map said 1b54, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 48 bytes unchanged at 1d42:0001.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     OldInt2F     1d3c:0000     Handler      1d3c:0006
     ExitHandler  1d3c:002f     'Ojo...'     1d3c:0061
     ' residente' 1d3c:007b     Install      1d3c:0088
@@ -99,7 +99,7 @@ var
 
   THE INSTRUCTION IS ITS OWN STORAGE. This is a five-byte JMP FAR, and the
   four bytes of its operand ARE where the displaced vector is kept: Install
-  writes the old segment and offset into the instruction, and from then on
+  writes the old SEGMENT and offset into the instruction, and from then on
   jumping here jumps there. No variable holds the old vector, and the handler
   chains with one three-byte jump rather than an indirect call through memory.
 
@@ -114,7 +114,7 @@ procedure OldInt2F; assembler;
 asm
   DB   0EAh              { 1d3c:0000  JMP FAR seg:ofs                        }
   DW   OFFSET OldInt2F   { 1d3c:0001  patched with the old INT 2Fh offset     }
-  DW   SEG OldInt2F      { 1d3c:0003  patched with the old INT 2Fh segment    }
+  DW   SEG OldInt2F      { 1d3c:0003  patched with the old INT 2Fh SEGMENT    }
                        { [re] 1d3c:0005  RET -- supplied by Pascal, not
                          written here: an assembler procedure already gets an
                          epilogue and a written one duplicates it. }
@@ -163,7 +163,7 @@ asm
   XOR  BX, MaskBX        { 1d3c:001a  -> $3F17                               }
   XOR  CX, MaskCX        { 1d3c:001e  -> $1343                               }
   MOV  DI, SEG @DATA     { 1d3c:0022  the binary has MOV DI,1CAAh -- an
-                                      absolute segment, not ours to copy     }
+                                      absolute SEGMENT, not ours to copy     }
   MOV  ES, DI            { 1d3c:0025  ES:DI will point at SelfName          }
   MOV  DI, OFFSET SelfName  { 1d3c:0027  the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
@@ -200,7 +200,7 @@ begin
   asm
     LES  DI, Stub          { 1d3c:0040                                       }
     MOV  AX, ES:[DI+1]     { 1d3c:0044  the displaced offset                 }
-    MOV  DX, ES:[DI+3]     { 1d3c:0048  and segment                          }
+    MOV  DX, ES:[DI+3]     { 1d3c:0048  and SEGMENT                          }
     MOV  SI, 0             { 1d3c:004c  [re] MOV, not XOR -- the original
                              loads an immediate zero, and BASM emits what it
                              is told }
@@ -208,7 +208,7 @@ begin
     MOV  ES:[0BCh], AX     { 1d3c:0051  $2F * 4 -- the offset half           }
     MOV  SI, 0             { 1d3c:0055  ES is reloaded rather than kept       }
     MOV  ES, SI            { 1d3c:0058                                       }
-    MOV  ES:[0BEh], DX     { 1d3c:005a  and the segment half                  }
+    MOV  ES:[0BEh], DX     { 1d3c:005a  and the SEGMENT half                  }
   end;
 end;
 
@@ -291,7 +291,7 @@ begin
 
     [re] The two literals are pushed from CS, and that is the reason they are plain
     untyped constants above rather than typed ones: an untyped string constant
-    is a literal, and Turbo Pascal lays a literal down in the CODE segment --
+    is a literal, and Turbo Pascal lays a literal down in the CODE SEGMENT --
     at 1d3c:0061 and 1d3c:007b, in the gap between ExitHandler and here. A
     typed constant would live in DGROUP and be pushed from DS. `NoName` is the
     exception and has to be typed, because Install takes its address. }
@@ -313,7 +313,7 @@ begin
     MOV  AX, ES:[0BCh]     { 1d3c:015c  read the old INT 2Fh offset          }
     MOV  SI, 0             { 1d3c:0160                                       }
     MOV  ES, SI            { 1d3c:0163                                       }
-    MOV  DX, ES:[0BEh]     { 1d3c:0165  and its segment                      }
+    MOV  DX, ES:[0BEh]     { 1d3c:0165  and its SEGMENT                      }
     LES  DI, Stub          { 1d3c:016a  the JMP FAR that will chain to it    }
     MOV  ES:[DI+1], AX     { 1d3c:016e  patch it INTO the instruction        }
     MOV  ES:[DI+3], DX     { 1d3c:0172                                       }

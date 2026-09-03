@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1544 -- the output filter. 144 bytes, all of it.
+  SEGMENT 1544 -- the output filter. 144 bytes, all of it.
 
   Three first-order FIR low-pass filters, run in place over a strided buffer
   of 16-bit samples, plus a far entry that picks between them. This is the
@@ -20,7 +20,7 @@
   THAT IS WHAT THE 3/2/1 SELECTOR WAS. The parameter had been read as a
   "strength" running 3 down to 1, which is exactly ORD(fm1_2)..ORD(fm7_8) of
   the release's enum -- one value per kernel, in the order they sit in the
-  segment, with fmNone = 0 falling through untouched.
+  SEGMENT, with fmNone = 0 falling through untouched.
 
   The fractional tails are done with SAR/ADC pairs rather than a multiply --
   ADC picks up the bit SAR shifted out, so it rounds instead of truncating,

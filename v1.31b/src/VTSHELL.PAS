@@ -1,10 +1,10 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 1931 -- startup housekeeping. 159 bytes, five routines, three of
+  SEGMENT 1931 -- startup housekeeping. 159 bytes, five routines, three of
   which do nothing.
 
-  Three things happen here, and they are only in the same segment because
+  Three things happen here, and they are only in the same SEGMENT because
   they all happen once at startup:
 
     * the console is opened AS A FILE, under the name 'CON'
@@ -53,15 +53,15 @@ var
   ProgName  : String[79];{ DS:$3ade }
 
 { ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND THEY
-  WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next segment
+  WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next SEGMENT
   starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 193a:0000. The
   three "stubs" are DevSB's first three Name functions read past the boundary,
   five bytes each at 193a:0000, 0005 and 000a, with a fourth at 000f the scan
   stopped short of.
 
   **A SEGMENT BOUNDARY IS NOT A SUGGESTION.** The note said they were "kept
-  because they are in the segment"; they are in the next one. Check the span
-  against the FOLLOWING segment's address before believing anything near the
+  because they are in the SEGMENT"; they are in the next one. Check the span
+  against the FOLLOWING SEGMENT's address before believing anything near the
   end of a unit -- the same arithmetic that confirmed 116e's 1,232 bytes are
   exact because 11bb begins at 116e:04d0. }
 

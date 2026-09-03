@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.31 (beta) -- (C) 1992-93 VangeliSTeam (JCAB).
 
-  Segment 14b7 -- the control block and its reset. 32 bytes, of which 25 are
+  SEGMENT 14b7 -- the control block and its reset. 32 bytes, of which 25 are
   the one routine and the rest is padding.
 
   This unit exists because of the control block, not because of the code.
@@ -9,10 +9,10 @@
   that asks -- ES:[DI-4] in the handshake points at it -- so it is the whole
   of DemoVT's published interface. `01-int2f.md` documents the fields.
 
-  THE ORIGINAL HAS ONE FLAT DGROUP and every segment reaches into it by
+  THE ORIGINAL HAS ONE FLAT DGROUP and every SEGMENT reaches into it by
   absolute address. Turbo Pascal has no such thing: a variable belongs to
   exactly one unit and everyone else imports it. The block is declared HERE,
-  in the segment that clears it, and VTMAIN imports it -- see
+  in the SEGMENT that clears it, and VTMAIN imports it -- see
   docs/06-transcription.md, "one DGROUP, many units".
 
   NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.

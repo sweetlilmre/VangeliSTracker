@@ -19,17 +19,17 @@
   the caller passes the end of its own heap and the arithmetic here turns that
   into a length.
 
-  [re] Segment 1a77 -- 32 bytes, of which 29 are the one routine.
+  [re] SEGMENT 1a77 -- 32 bytes, of which 29 are the one routine.
 
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
-  [re] ADDRESS MAP
   [re] 1a77 IN THIS IMAGE, NOT 188f. The map said 188f, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 16-byte PREFIX only, at 1a77:0000 -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     SetMemTop  1a77:0000
   =========================================================================== }
 
@@ -83,11 +83,11 @@ implementation
       Intr($21, Regs)
 
   [re] HAND ASSEMBLER, verbatim, and it can be nothing else: INT 21h with a
-  segment register as an argument is not expressible in Pascal. The original
-  reads its base segment from DS:$0c62, which is NOT copied here -- no absolute
+  SEGMENT register as an argument is not expressible in Pascal. The original
+  reads its base SEGMENT from DS:$0c62, which is NOT copied here -- no absolute
   DGROUP address crosses over. It is Turbo Pascal's own `PrefixSeg`, and the
   identification is from the DOS API rather than from the address: INT 21h $4A
-  requires ES to hold the segment of an MCB-owned block, and for a running
+  requires ES to hold the SEGMENT of an MCB-owned block, and for a running
   program that is the PSP.
 
   [re] THE PARAMETER IS ONE `Pointer`, NOT TWO `Word`s, AND A CALLER IN ANOTHER
@@ -106,7 +106,7 @@ implementation
   arithmetic is `(Ofs(P) + 15) shr 4 + Seg(P) - PrefixSeg` -- the paragraph
   count needed to reach P -- which is what Turbo Vision's `Memory.SetMemTop`
   does, and the release's `HEAPS.PAS` calls `SetMemTop(HeapEnd)` at exactly the
-  point 19b7:01d3 calls this. So **segment 188f is probably Borland's `Memory`
+  point 19b7:01d3 calls this. So **SEGMENT 1a77 is probably Borland's `Memory`
   UNIT rather than DemoVT's own**, smart-linked down to the one routine
   anything references. THE FILENAME AND UNIT NAME ARE STILL THE INVENTED ONES,
   deliberately: renaming a unit touches the build order, the unit table, every
@@ -121,9 +121,9 @@ asm
   MOV  CL, 4             { 1a77:0009  8086: no shift by immediate > 1       }
   SHR  BX, CL            { 1a77:000b  bytes -> paragraphs                   }
   ADD  BX, WORD PTR P+2  { 1a77:000d  [BP+08h] -- Seg(P), giving the top    }
-  MOV  AX, PrefixSeg     { 1a77:0010  the program's own PSP segment         }
+  MOV  AX, PrefixSeg     { 1a77:0010  the program's own PSP SEGMENT         }
   SUB  BX, AX            { 1a77:0013  absolute top -> a length in paragraphs}
-  MOV  ES, AX            { 1a77:0015  $4A wants the block's own segment     }
+  MOV  ES, AX            { 1a77:0015  $4A wants the block's own SEGMENT     }
   MOV  AH, 4Ah           { 1a77:0017  DOS: resize memory block              }
   INT  21h               { 1a77:0019  carry ignored -- see above            }
 end;

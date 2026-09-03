@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 153a -- THE MODULE OBJECT. **COMPLETE: 2,224 of 2,224 bytes.**
+  SEGMENT 153a -- THE MODULE OBJECT. **COMPLETE: 2,224 of 2,224 bytes.**
   Sixteen routines, 198 pending fixups, no real difference anywhere.
 
   This unit used to hold no code at all: it was the shared layout, declared once
@@ -9,12 +9,12 @@
   code segments index by absolute offset -- 154d and 164b while loading, 165a
   and 14b9 while building it, 12ba while playing. See docs/06-transcription.md,
   "one DGROUP, many units". It still is that, and it is now also the unit that
-  owns segment 14b9.
+  owns SEGMENT 153a.
 
   THE NAME CLASH IS WHY IT IS THIS FILE AND NOT `VTSONG.PAS`. The tree carried
   two files here and their names were crossed: `VTSONG.PAS` was a five-routine
-  STUB standing in for segment 14b9, while this file carried the release's unit
-  name and the record. The segment's counterpart in the release IS
+  STUB standing in for SEGMENT 153a, while this file carried the release's unit
+  name and the record. The SEGMENT's counterpart in the release IS
   `LIB/SONGUNIT.PAS` -- one unit holding TSong and its twenty-one methods -- so
   the stub was folded in here and deleted. This file was already imported by
   PLAYMOD, UNKLOADE and VTCFG, three byte-exact units whose `uses` clauses would
@@ -67,7 +67,7 @@ uses
     Heaps    -- `FullHeap` at DS:$39ae. 153a:0339 calls its VMT slot +$30 and
                 153a:0329 slot +$34, which HEAPS.PAS independently declares as
                 HNewStr and HDisposeStr. That is the same object 12ba calls at
-                +$08, so the VMT geometry is confirmed from a third segment. }
+                +$08, so the VMT geometry is confirmed from a third SEGMENT. }
   { SongElements -- 165a, and the release's own layering: its SONGUNIT.PAS uses
     SongElem, not the other way round. GetInstrument, GetTrack and GetPattern
     each CONSTRUCT one of its objects, and a constructor cannot be reached
@@ -341,7 +341,7 @@ type
       where a Byte gives the unsigned JBE. Both are `Song.Status > msOk` and
       `> msFileTooShort` in LoadMod. 14b9 and 164b only ever compare it for
       EQUALITY or store it, which is sign-independent, so neither could see
-      this -- the fifth thing settled only by a caller in another segment.
+      this -- the fifth thing settled only by a caller in another SEGMENT.
       (The release has it as an enumeration; this is read from the bytes rather
       than taken from the release, which is the standing rule working.) }
     Status   : ShortInt;     { +$59  how the load went; codes below     }
@@ -353,13 +353,13 @@ type
       no longer holds -- it was waiting on exactly this routine. }
 
     { ------------------------------------------------------------------------
-      THE SIXTEEN ROUTINES OF SEGMENT 14b9, IN ADDRESS ORDER.
+      THE SIXTEEN ROUTINES OF SEGMENT 153a, IN ADDRESS ORDER.
 
       Turbo Pascal lays a unit's routines out in SOURCE order, so this list must
       stay in address order or everything below the first misplacement shifts.
 
       [re] The order is the release's implementation order with five routines removed,
-      and 21 - 5 = 16 is the segment's far-return count exactly. The five absent
+      and 21 - 5 = 16 is the SEGMENT's far-return count exactly. The five absent
       are `Save` and `SaveFName` (a player does not write modules),
       `GetErrorString` (survey.py finds NO printable string in 2,224 bytes but
       `.MOD`, and that routine is nothing but message literals), and
@@ -627,7 +627,7 @@ implementation
   which are two independent arguments arriving at the same clause.
 
   The link argument: TP6 lays segments out in reverse DFS post-order over the `uses`
-  graph, so the original's segment addresses read backwards ARE its finish order, and
+  graph, so the original's SEGMENT addresses read backwards ARE its finish order, and
   between HEAPS and SONGUNIT that order is GUS, SongElements, VTNotes, UnkLoader,
   AsciiZ, ModLoader, Filters. VTNotes has to be reached before UnkLoader and Filters
   after ModLoader, and this unit is the only one positioned to do either -- everything
@@ -638,7 +638,7 @@ implementation
   StrConst, AsciiZ, Filters`. Take out the six loaders 1.31 has not got (see `Load`,
   which tests `<= 2`) and `StrConst`, and rename `SongUtils` to the name this tree uses
   for `1650` -- and what is left IS the clause below, in that order. Nothing was fitted:
-  the order was derived from the segment addresses first and the release checked after.
+  the order was derived from the SEGMENT addresses first and the release checked after.
 
   A `uses` entry that references nothing is not unusual here -- VTCMD carried a
   `DevGUS` doing exactly that, and the link order is what found it. Costs no bytes:
@@ -648,7 +648,7 @@ uses
   { S3MLoader BEFORE StmLoader, AND THE SEGMENT ORDER IS WHY. Turbo Pascal's
     link order is reverse DFS post-order over the uses graph with clauses taken
     in declaration order, so the unit named LATER in a clause finishes later and
-    lands EARLIER in the segment map. The original has 15d0 (STM) below 1664
+    lands EARLIER in the SEGMENT map. The original has 15d0 (STM) below 1664
     (S3M), so StmLoader has to be named second. Written the other way round the
     two segments swap, which `segpair --pair` reports as OUT OF ORDER and which
     moves every DGROUP block below them. }
@@ -674,12 +674,12 @@ const
     with a real variable.
 
     [re] FOUR ENTRIES NOW, AND THE TABLE ITSELF IS THE MEASUREMENT. DS:$0430 holds
-    sixteen bytes, read straight out of ref/vt1.51.bin as four (offset, segment)
+    sixteen bytes, read straight out of ref/vt1.51.bin as four (offset, SEGMENT)
     pairs:
 
         [re] [1] 1839:0000    UnkLoader   -- the 'JMPLAY' recogniser, unchanged
-        [2] 1664:0a8b    the segment this tree calls LOADER2
-        [3] 15d0:0764    the segment this tree calls LOADER1
+        [2] 1664:0a8b    the SEGMENT this tree calls LOADER2
+        [3] 15d0:0764    the SEGMENT this tree calls LOADER1
         [4] 173d:0bd4    ModLoader   -- the ProTracker loader
 
     v1.31b's table at $03c4 held eight bytes and exactly entries [1] and [4].
@@ -688,9 +688,9 @@ const
   NumLoaders = 4;
 
   { **THE TWO ENTRIES ARE `NIL` AND THE REAL ONES ARE NAMED IN THIS COMMENT.**
-    They are `UnkLoader.LoadJMFileFormat` (segment 164b, the 'JMPLAY'
+    They are `UnkLoader.LoadJMFileFormat` (SEGMENT 1839, the 'JMPLAY'
     recogniser, transcribed and byte-exact) and `ModLoader.LoadModFileFormat`
-    (segment 154d, the ProTracker loader, a declared stub in MODLOADE.PAS).
+    (SEGMENT 173d, the ProTracker loader, a declared stub in MODLOADE.PAS).
     Both are named here because both are known, not guessed: 164b and 154d are
     the only two loader segments in the program's whole map, and 1.31 keeps
     exactly the FIRST and LAST of the release's eight-entry list.

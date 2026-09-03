@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1911 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
+  SEGMENT 1911 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
   routines and six frameless ones the prologue scanner cannot see.
 
   Every port write to the card happens here. 1084 is the DRIVER -- the record
@@ -10,7 +10,7 @@
 
   THE THING WORTH KNOWING BEFORE READING ANY OF IT. Starting a voice does not
   program the card. `TriggerVoice` writes the voice's addresses into tables in
-  the data segment, raises an active flag, and installs `RestartChannels` as
+  the data SEGMENT, raises an active flag, and installs `RestartChannels` as
   the TIMER 1 callback. The next timer tick sweeps those flags, builds a
   command list, and blasts it at the GF1 in one loop.
 
@@ -31,13 +31,13 @@
   This file claimed the opposite for a long time -- that Port[] always
   matched -- and it was wrong in both directions. See docs/06-transcription.md.
 
-  [re] ADDRESS MAP
   [re] 1911 IN THIS IMAGE, NOT 1723. The map said 1723, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 64 bytes of a mapped routine unchanged at 1956:000a.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     SetGusVoice        1911:0000 *   GetGusRegister8    1911:0013 *
     SetGusRegister8    1911:0030 *   GetGusRegister16   1911:004a *
     SetGusRegister16   1911:0065 *   GusDelay           1911:007d *
@@ -511,7 +511,7 @@ end;
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
   interrupt.
 
-  [re] BOTH CONTROL REGISTERS ARE SHADOWED in the data segment, at DS:$0592 and
+  [re] BOTH CONTROL REGISTERS ARE SHADOWED in the data SEGMENT, at DS:$0592 and
   DS:$0593, because neither is readable. Every change is made to the shadow
   and the shadow is written out whole -- the only way to set one bit without
   knowing the others.
@@ -575,7 +575,7 @@ end;
   `TimerControl`.
 
   The callback is only called if the far pointer is non-nil, and the test is
-  on BOTH halves -- a segment of zero with a non-zero offset would still be
+  on BOTH halves -- a SEGMENT of zero with a non-zero offset would still be
   called. That is deliberate enough to preserve.
 
   [re] DS:$058e is the one that matters to the rest of the program: 106e:008a puts
@@ -1205,7 +1205,7 @@ var
     there the third pass's limit temporary takes -$07 and every reference in
     the routine is one byte out.
 
-    Nothing in the segment READS it, so the name is the release's rather than
+    Nothing in the SEGMENT READS it, so the name is the release's rather than
     anything measured here. }
   First     : Boolean;
 begin

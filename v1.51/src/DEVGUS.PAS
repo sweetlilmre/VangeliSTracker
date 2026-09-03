@@ -14,7 +14,7 @@
   the poll only has to count. Compare the Sound Blaster driver in 193a, where
   the same slot has to move data.
 
-  [re] Segment 106e -- 384 bytes, ten routines. It calls into 1723 (the GUS
+  [re] SEGMENT 106e -- 384 bytes, ten routines. It calls into 1723 (the GUS
   hardware) and 1a17 (the player core).
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/DEVGUS.PAS is the counterpart and it
@@ -24,13 +24,13 @@
   this unit's own tick counter, which is the version drift already recorded in
   docs/06-transcription.md, so there is nothing to pair it with.
 
-  [re] ADDRESS MAP
   [re] 106e IN THIS IMAGE, NOT 1084. The map said 1084, which is this unit's
-  segment in v1.31b; these addresses were inherited when the file was and
+  SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 107c:0008 -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
+  [re] ADDRESS MAP
     NullTimerHandler  106e:0000   Poll             106e:004c
     DevName           106e:0055   DevDetect        106e:0061
     DevInit           106e:0072   DevEnd           106e:00d5
@@ -94,7 +94,7 @@ const
   Busy     : Byte    = 0;   { DS:$001a in v1.51  the handler's guard          }
 
   { [re] FIVE BYTES BETWEEN THE TWO GUARDS. Busy is at DS:$001a and PollBusy at
-    DS:$0020, and nothing in the segment touches what lies between. Declared as
+    DS:$0020, and nothing in the SEGMENT touches what lies between. Declared as
     filler for the same reason Fill0016 above is: it keeps the SIZE honest and
     says plainly that the name is missing. }
   { **THE FIRST OF THE FIVE IS AN ALIGNMENT PAD, AND 1.31b SAYS SO.** Its own
@@ -124,7 +124,7 @@ const
     Five bytes that version does not have.
 
     So these are v1.51's own and only a reader in THIS image can name them.
-    Nothing in the segment touches them. }
+    Nothing in the SEGMENT touches them. }
   Fill001C : LongInt = 0;
 
   { [re] NEW IN v1.51, DS:$0020. Poll acquired a body and needs its own guard: the
@@ -197,7 +197,7 @@ implementation
   Pascal emits for `if Busy <= 0`.
 
   [re] A PRIVATE STACK. SS:SP are saved to DS:$4302 and DS:$4304, then SS is
-  pointed at the data segment and SP at $4302 -- so the callback's stack
+  pointed at the data SEGMENT and SP at $4302 -- so the callback's stack
   grows downwards from just below the two words holding the caller's. The
   interrupted program's stack may be tiny, and a mixing routine's frame is
   not; borrowing it would corrupt whatever was interrupted. The same trick
@@ -264,7 +264,7 @@ begin
       saves registers PUSHA, ES, DS -- it          nothing: the compiler's
                       borrowed them                own prologue covers it
       loads DS        MOV AX,SEG @DATA             not needed; DS is right
-      guard           Busy, in the CODE segment    PollBusy, in DGROUP -- DS
+      guard           Busy, in the CODE SEGMENT    PollBusy, in DGROUP -- DS
                       because DS is not trusted    is already trusted here
                       yet
       stack           SoundDevices.DevStack        SoundDevices.PollStack
@@ -299,7 +299,7 @@ begin
     below is why nothing could find it: SP is loaded with the address of `SavedSS`,
     the variable ABOVE the block, and the stack then grows down through it. The
     block's own address appears in no instruction anywhere in the image. }
-  MOV  SS, DX         { 106e:003e  ours lives in the data segment        }
+  MOV  SS, DX         { 106e:003e  ours lives in the data SEGMENT        }
   MOV  SP, OFFSET SoundDevices.SavedSS  { 106e:0040  the top of PollStack }
   CALL DWORD PTR SoundDevices.PeriodicProc { 106e:0043                   }
   MOV  SS, SoundDevices.SavedSS { 106e:0047                              }
