@@ -1,0 +1,38 @@
+# The {$L} object modules, and where each lands in its segment.
+#
+# DERIVED on 3 Sep 2026, not transcribed. Each module is located the way
+# units.py locates it -- by its opening 24 bytes, which are code and not a
+# fixup -- inside our own .TPU, then offset by where that unit's code starts
+# in the same file. Searching the ORIGINAL image instead finds SOUNDDEV at the
+# same place and does not find PLAYMOD at all, because the image has its
+# relocations applied and the .TPU still carries the assembler's addends.
+#
+# Both offsets are confirmed by an instrument that did not produce them:
+# units.py stopped at +1837 in PLAYMOD, three bytes into the module below,
+# and at +0840 in SOUNDDEV, inside its module. That is what the stop was.
+#
+#   segment   where the unit's code sits in the original image
+#   length    the segment's EXTENT, not the trimmed code length that
+#             units.toml carries -- objcheck reads the bytes from `to` to
+#             the end as the linker's padding and checks they are zero,
+#             so a trimmed length puts `to` past the end and it indexes
+#             off the segment
+#   from      where the object module lands inside it
+#   to        the first byte past the module; the tail beyond is linker
+#             padding and is checked to be zero rather than compared
+
+# Where the real sources are, so a stale build is refused rather than measured.
+sources  = "src"
+rewrites = ["tp6_far"]
+
+[module.PLAYMOD]
+segment = 0x12CE
+length  = 6896
+from    = 0x1834
+to      = 0x1AEB
+
+[module.SOUNDDEV]
+segment = 0x1BFF
+length  = 4304
+from    = 0x0746
+to      = 0x10C4

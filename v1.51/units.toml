@@ -39,6 +39,9 @@ length  = 4068
 [unit.PLAYMOD]
 segment = 0x12CE
 length  = 6890
+# links a {$L} object module, so the zero rule cannot
+# measure it -- objcheck.py reads the relocations instead.
+object  = "PLAYMOD.OBJ"
 
 [unit.MODCOMMA]
 segment = 0x147D
@@ -107,6 +110,9 @@ length  = 1897
 [unit.SOUNDDEV]
 segment = 0x1BFF
 length  = 4291
+# links a {$L} object module, so the zero rule cannot
+# measure it -- objcheck.py reads the relocations instead.
+object  = "SOUNDDEV.OBJ"
 
 [unit.HARDWARE]
 segment = 0x1D0C
