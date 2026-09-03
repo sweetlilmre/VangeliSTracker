@@ -1,0 +1,8 @@
+# Makefile for Turbo Pascal interface.
+
+.asm.obj:
+        tasm /ml /zi /t /z $*
+
+pastst.exe: pastst.pas pasdvt.pas
+        tpc /m pastst
+

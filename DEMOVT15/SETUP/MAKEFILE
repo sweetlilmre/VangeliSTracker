@@ -1,0 +1,18 @@
+# Makefile for Setup program.
+
+.asm.obj:
+        tasm /zi /t /z $*
+
+OBJS=detecasm.obj \
+     detectio.pas \
+     devices.pas  \
+     dvtsetup.pas \
+     gfx.pas      \
+     hexconve.pas \
+     menus.pas    \
+     output.pas   \
+     reader.pas   \
+
+dvtsetup.exe: $(OBJS)
+        tpc /m dvtsetup
+

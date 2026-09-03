@@ -1,0 +1,11 @@
+# Makefile for Tran's PMode interface.
+
+.asm.obj:
+        tasm /ml /m1 /w-PDC /t /z /zi $<
+
+pmodetst.exe: pmodetst.obj pmodedvt.obj pmode.obj
+        tlink /3 /x /c pmode+pmodedvt+pmodetst,pmodetst
+
+pmode.obj: pmode.asm
+        tasm /ml /m2 /q /zi /z /t pmode
+

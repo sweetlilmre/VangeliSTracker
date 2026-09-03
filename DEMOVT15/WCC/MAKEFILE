@@ -1,0 +1,14 @@
+# Makefile for DPMI (Watcom C++ 9.5) interface.
+
+DPMICC=wcc386 -d3 -mf -3r -ox -w9 -zq
+DPMILN=wcl386 -l=dos4g -d2 -ox -mf -fm
+
+dpmitst.exe: dpmitst.obj dpmidvt.obj
+        $(DPMILN) dpmitst.obj dpmidvt.obj
+
+dpmidvt.obj: dpmidvt.c dpmidvt.h
+        $(DPMICC) dpmidvt.c
+
+dpmitst.obj: dpmitst.c dpmidvt.h
+        $(DPMICC) dpmitst.c
+

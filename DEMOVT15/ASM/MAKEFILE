@@ -1,0 +1,12 @@
+# Makefile for ASM interface.
+
+.asm.obj:
+        tasm /ml /zi /t /z $*
+
+land.exe: land.obj
+        tlink /s /c /3 land
+
+land.obj: land.asm landpal.inc vgasm.inc vblib.inc vtasm.inc
+
+landpal.inc: land.col
+        ..\misc\bin2db land.col landpal.inc

@@ -1,0 +1,13 @@
+detectio.pas 386, VGA etc detection code.
+reader.pas DVT.NFO fancy courful reader.
+gfx.pas Screen output routines.
+menus.pas Menu handling routines.
+hexconve.pas Conversion functions.
+detecasm.asm ASM code. Links to Detectio.Pas.
+dvt.nfo Text file for the reader.
+output.pas More screen handling code.
+devices.pas Environment strings code.
+makefile Makefile for Setup program.
+dvtsetup.exe Setup executable.
+dvtsetup.pas Setup main program.
+descript.ion 4DOS/NDOS description file.

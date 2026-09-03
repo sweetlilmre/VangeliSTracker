@@ -1,0 +1,126 @@
+  The file EXAMPLES.EXE is an LHArc self-extractor that will hopefully
+create the proper subdirectories and place the files in them. Run the
+.BAT files included to see the examples.
+
+   The examples are mostly quick hacks and haven't been thoroughly
+tested: they may fail when tried with slow machines and SoundBlaster.
+Some interfaces may also be missing some of the newer functions, so
+show your interest and add them! :-) To see the WC++9.5 example you must
+have a DOS4GW in your PATH.
+
+   Not all MODs or S3Ms will play correctly (but most do). Report us
+with an exact description of the problem and we might fix it. If you're
+interested in DemoVT supporting .MTMs (or other formats), let us know...
+
+   We STRONGLY advise you to test your production in slow machines and
+with different soundcards/replay rates. You don't want it to sound
+terrible, just because you didn't add some CallMusic() sentences, do
+you? I'd recommend a 386SX/25 with Trident 8900 and SoundBlaster at
+22000Hz as the minimum equipment required (even if the graphics look
+terribly slow, make sure the music plays correctly).
+
+   Finally, we encourage you to tell us if you find any bugs or
+misbehaviour in the program. But, please, state clearly the problem and
+the situations when it appears, not just a 'doesn't work'. You will find
+our addresses in the file DemoVT.DOC.
+
+   The directory structure should be this (sizes may vary):
+
+DEMODEMO.MOD    25532  Example MOD file.
+DEMOVT.DOC      28736  DemoVT 1.51 DOCs.
+DEMOVT.EXE      36177  DemoVT 1.51 executable.
+DESCRIPT.ION      613  4DOS/NDOS description file.
+DISTROSI.TXT     2776  List of Iguana/VT distro sites.
+DVT.NFO          3930  Text file for the Setup program.
+EXAMPLES.EXE   122793  Self-extractor with interfaces.
+FILE_ID.DIZ       376  BBS description file.
+README.1ST       5077  Quick info about the package.
+RELEASES.TXT     2025  List of Iguana/VT releases.
+RUNASM.BAT        121  Runs the ASM example.
+RUNBCC4.BAT       124  Runs the BCC4 example.
+RUNC.BAT          119  Runs the C example.
+RUNTPAS.BAT       124  Runs the Pascal example.
+RUNWCC.BAT        124  Runs the WC++9.5 example.
+RUNPMODE.BAT      124  Runs the PMode 2.4 example.
+WHATSNEW.DOC     2509  Chronological updates to DVT.
+
+ASM\
+
+    DESCRIPT.ION      317  4DOS/NDOS description file.
+    LAND.ASM        16882  ASM example source.
+    LAND.COL          768  Raw palette file.
+    LAND.EXE         3585  ASM example executable.
+    LANDPAL.INC      2162  Palette include file.
+    MAKEFILE          260  Makefile for ASM example.
+    VBLIB.INC        9073  Vertical blanking interrupt routines.
+    VGASM.INC        4334  VGA routines.
+    VTASM.INC       13314  ASM Interface to DVT 1.51.
+
+BCC4\
+
+    BCCDVT.CPP       9363  BCC4 interface to DVT 1.51.
+    BCCTST.CPP       5396  BCC4 example source.
+    BCCTST.EXE      20920  BCC4 example executable.
+    DESCRIPT.ION      179  4DOS/NDOS description file.
+    MAKE.BAT          105  Make batch file.
+
+C\
+
+    CDVT.C           3292  C interface to DVT 1.51.
+    CDVT.H           4925  C interface header.
+    CTST.C           1482  C example source.
+    CTST.EXE         7404  C example executable.
+    DESCRIPT.ION      195  4DOS/NDOS description file.
+    MAKEFILE          367  Makefile for C example.
+
+MISC\
+
+    BIN2DB.EXE       3376  Binary file to .INC executable.
+    BIN2DB.PAS       1047  Binary file to .INC source.
+    DESCRIPT.ION      126  4DOS/NDOS description file.
+
+SETUP\
+
+    DESCRIPT.ION      495  4DOS/NDOS description file.
+    DETECASM.ASM      653  ASM code. Links to Detectio.Pas.
+    DETECTIO.PAS     2458  386, VGA etc detection code.
+    DEVICES.PAS      3129  Environment strings code.
+    DVT.NFO          3930  Text file for the reader.
+    DVTSETUP.EXE    12738  Setup executable.
+    DVTSETUP.PAS    15513  Setup main program.
+    GFX.PAS          2194  Screen output routines.
+    HEXCONVE.PAS     2928  Conversion functions.
+    MAKEFILE          314  Makefile for Setup program.
+    MENUS.PAS        3862  Menu handling routines.
+    OUTPUT.PAS      18788  More screen handling code.
+    READER.PAS       4663  DVT.NFO fancy courful reader.
+
+TPAS\
+
+    DESCRIPT.ION      197  4DOS/NDOS description file.
+    MAKEFILE          146  Makefile for Pascal example.
+    PASDVT.PAS       9126  Pascal interface to DVT 1.51.
+    PASTST.EXE       5802  Pascal example executable.
+    PASTST.PAS       9678  Pascal example source.
+
+WCC\
+
+    DESCRIPT.ION      238  4DOS/NDOS description file.
+    DPMIDVT.C        8477  WC++9.5 interface to DVT 1.51.
+    DPMIDVT.H        7242  WC++9.5 interface include.
+    DPMITST.C        1472  WC++9.5 example source.
+    DPMITST.EXE     36178  WC++9.5 example executable.
+    MAKEFILE          345  Makefile for WC++9.5 example.
+
+PMODE\
+
+    DESCRIPT.ION      309  4DOS/NDOS description file.
+    MAKEFILE          274  Makefile for PMode example.
+    PMODE.ASM       74226  Tran's PMode 2.4 code.
+    PMODE.INC        1837  Tran's PMode 2.4 header.
+    PMODEDVT.ASM    10995  PMode interface to DVT 1.51.
+    PMODEDVT.INC     3625  PMode interface header.
+    PMODETST.ASM     2544  PMode example source.
+    PMODETST.EXE     5389  PMode example executable.
+
+    Notes on PMode - GET THE FULL PMODE24.ZIP distribution.

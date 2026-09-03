@@ -1,0 +1,649 @@
+
+
+
+           What it is, and how to use it
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           Let's  talk  about DemoVT.  It's a program that is capable of
+        playing  a  MOD  music while another program is running.  If you
+        know  what  the  ShellVT  program  is,  then  the  DemoVT  is  a
+        "slightly"  modified  version.  Its  primary use is intended for
+        graphics demonstrations (demos)  and games, but it could be used
+        for  other  kinds  of  applications.   It  should  work  on  286
+        machines, but it has only been tried on 386SX and above.
+
+           It  is  NOT a TSR program.  Instead,  when it is run it loads
+        the  music  file  and  then executes another program via the DOS
+        EXEC  function.  When  the  executed program terminates,  DemoVT
+        terminates also (more on this later).
+
+           It  is NOT a stand alone background modplayer.  It requires a
+        minimal  (and allows a maximal)  collaboration with the executed
+        program.  ShellVT  is  a great stand alone choice if that's what
+        you want ;-)
+
+         DEMOVT   test.mod  /f:20000  /d:DMA-SB-Mono  /port:$220  /irq:7
+        /dma:1 /v:74 /sh:test1.exe
+
+           The  above (it should have been just one line)  is an example
+        of  how to play the TEST.MOD file through the Sound Blaster card
+        at  220-7-1,  at  a  sample rate of 20000 Hz and a volume of 74,
+        while running the TEST1.EXE program.
+
+           Sample  rates  range  from  4000  to  44100  Hz (it won't get
+        higher than your card allows). Possible devices are:
+
+         Silence       - No sound. Quiet. interprets the music anyway.
+         DMA-SB-Mono   - Any Sound Blaster in mono. Also PAS cards.
+         DMA-SB-Stereo - SB Pro and SB 16 in stereo.
+         GUS           - Gravis Ultrasound. Fixed rate of 44100 Hz.
+
+           Port,  IRQ  and  DMA range to any available to your favourite
+        card.  You  don't  want  us  to list all different possibilities
+        here,  do you?  Volumes are from 0 to 127. The /sh: program file
+        should have the file extension and the path if necessary.
+
+           In  'silence'  mode, DemoVT will use a serial port for timing
+        (this  lets  you  use  the  timer 0 for your own purposes).  Any
+        serial  port  is  useable,  but it will use COM1 by default.  To
+        change it, just use the /port: and /irq: options:
+
+                  COM1 - /d:Silence /port:$3F8 /irq:4
+                  COM2 - /d:Silence /port:$2F8 /irq:3
+                  COM3 - /d:Silence /port:$3E8 /irq:4
+                  COM4 - /d:Silence /port:$2E8 /irq:3
+
+           IRQ  values  for  COM3  and  COM4  are usually changed to any
+        other.  COM2  to COM4 may be absent,  but DemoVT will not detect
+        this and will hang.
+
+
+
+           DemoVT script files
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           Above  we said that DemoVT finishes when the executed program
+        terminates.  That's not completely true.  In fact, it's possible
+        to  keep  the DemoVT running after that.  How?  Using scripts to
+        make  the  DemoVT  load  a  (possibly)  different MOD and/or run
+        another  (possibly)  different  program.  If  you  did  this  by
+        executing   repeatedly   DemoVT,   the   sound  card  would  get
+        initialised each time, thus making an awful click.
+
+           Create a text file with this:
+
+         ; -------------- Start of TEST.VTO --------------------
+
+         /f:44100         ; 44100 Hz
+         /d:DMA-SB-Stereo ; Stereo Sound Blaster.
+         /port:$220       ; Sound Blaster Port.
+         /irq:7           ; Sound Blaster IRQ.
+         /dma:1           ; Sound Blaster DMA.
+         /v:127           ; Sound volume.
+
+                 test1.mod /sh:test1.exe    ; 1st MOD & 1st program.
+         / /v:74 test2.mod /sh:test2.exe    ; 2nd MOD & 2nd program.
+                                            ; Volume of 127
+
+         ; --------------- End of TEST.VTO ---------------------
+
+           Note  the  "/"  at the start of the second MOD/Program.  It's
+        required  to  make  the first ones to be executed.  It separates
+        the  different  execution  lines.  Also,  it's important to make
+        /sh:  the  last  switch in the line.  You can add a full command
+        line  to  the  program  if  you  want.  And  you  can really add
+        comments starting with ";".
+
+           The above script would be used executing:
+
+         DEMOVT @test.vto
+
+           For  those  of  you  who have seen it,  the Inconexia Demo by
+        Iguana  generates  a  script  like  the above,  bigger,  with an
+        executable file for each part.
+
+           If you want to run several programs under a unique MOD,  like
+        different  parts  of  a trackmo,  just specify the MOD file only
+        with  the first executable.  As an example,  here's included the
+        VTO that runs the whole Inconexia demo:
+
+         ; --------------- End of INCONEXI.VTO ---------------------
+
+         /d:gus        ; Use the Gravis Ultrasound.
+         /port:$240    ; GUS Port.
+         /irq:11       ; GUS Irq.
+         /v:80         ; Initial volume.
+
+           inconexi.003        /sh:inconexi.004
+         / inconexi.005        /sh:inconexi.006
+         / inconexi.008        /sh:inconexi.009
+         /                     /sh:inconexi.010
+         /                     /sh:inconexi.011
+         /                     /sh:inconexi.012
+         /                     /sh:inconexi.013
+         / inconexi.014 /v:128 /sh:inconexi.015
+
+         ; --------------- End of INCONEXI.VTO ---------------------
+
+
+
+           Advanced options
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           To  play  the  MOD  from  a different sequence position (i.e.
+        14),  use  the  following switch: /ss:14 Also,  use the switches
+        /sl:22  and  /sr:18  to load only the sequence up to position 22
+        and to repeat from position 18.  All values range from 1 to 128.
+        Experiment with this.
+
+           If  you  want  to  have  the  MOD file stored inside a bigger
+        file,  you  can  use the switch /off:193847.  This will load the
+        MOD from position 193847 in the file. Also, experiment with it.
+
+
+
+           Synchronisation
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           This  is  the big thing in DemoVT that makes it very special.
+        It's  also  very tricky,  so we advice you to read all this very
+        carefully  and  look  into  the  examples.  And,  of course,  to
+        experiment a lot with it.
+
+           The  first  thing  to  talk  about is the delay.  When DemoVT
+        interprets  the MOD's partiture,  it does it half a second ahead
+        of  the  sound  it  generates.  The important thing is to always
+        remember  this  delay  when interacting with the music (changing
+        the  volume or jumping in the partiture).  DemoVT will hide this
+        delay  when  it tells you about its state,  but you will have to
+        keep it in mind when you try to alter DemoVT's state.
+
+           The first way to synchronize is using semaphores.  There's an
+        array  of 256 semaphores; each of them gets incremented whenever
+        a  command  number  8  is  found in any channel of the MOD.  The
+        parameter  of this command tells which one of the 256 semaphores
+        gets  incremented.  Your program can check any semaphore anytime
+        for  a  given  value,  to  see if the music has passed through a
+        point in the partiture.  When DemoVT is started,  all semaphores
+        are set to zero.
+
+           The  second  way to synchronize is using precise timing.  The
+        DemoVT  provides  you  with  a  counter that gets incremented 50
+        times  per  second,  and  which is also used for the MOD timing.
+        You  can  read  it  and therefore know exactly how much time has
+        passed  since  the  music started.  DemoVT also lets you control
+        exactly  when  does  the  music start.  In fact,  DemoVT doesn't
+        start playing until you explicitly tell.
+
+
+
+           Modes of operation
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           DemoVT  can  operate in Poll Mode or Timer Mode.  When DemoVT
+        starts it is in Poll Mode. Read below for more information.
+
+
+
+           Ok! What else?
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           Now  that I've got you interested,  I'll tell you a couple of
+        things.
+
+           This is what I expect from you:
+
+           First,  if  you  use  this,  you  MUST  credit  me:  JCAB  of
+        VangeliSTeam/Iguana.
+
+           Second,   if   you   have   used  DemoVT  for  non-profitable
+        non-commercial purposes,  please contact me at the address below
+        and  tell  me  what  you  used  it for,  and how you did it.  If
+        possible,  send  me  a  copy of the program or whatever you have
+        made  using  the  DemoVT.   You'll  be  sent  greetings  in  the
+        following releases.
+
+           Third,  if  you're  going  to  use it for a commercial and/or
+        profitable  purpose,  you must first contact me to get a written
+        permission.
+
+           You  could  also  use  it  without  paying,   contacting  nor
+        crediting me. If you do so then fuck you.
+
+           If   you  find  this  program  worth  it,   you  can  send  a
+        contribution  of  $10,  or  anything  you  feel is fair,  to the
+        address below.
+
+           You  are  also encouraged to send any comments about anything
+        you  want  concerning  the  program  and/or  documentation,   or
+        questions about your particular use of DemoVT.  Please,  enclose
+        a self-addressed,  stamped envelope if you expect an answer.  It
+        would be very encouraging to receive feedback about my work.
+
+           This  program  is  Copyrighted  by Juan Carlos Ar‚valo Baeza,
+        aka  VangeliSTeam,  and is thus protected by copyright laws.  It
+        is  not  public  domain;  it can be freely distributed,  but can
+        only be used under the conditions stated above.
+
+           DISCLAIMER:
+
+           This  document  is  just  the  description of what I use this
+        program for,  and how I do it. It's enough for me, but I give no
+        kind  of warranty about the way it behaves,  and won't be liable
+        for any kind of damages it could cause to anybody else.
+
+           CONTACT ADDRESS:
+
+        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+        ³ Juan Carlos Ar‚valo      ³
+        ³ Apdo. de Correos 156.405 ³
+        ³ 28080 - Madrid           ³
+        ³ Spain                    ³
+        ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+           Also, electronically:
+
+         Fidonet:   2:341/27.16
+         CDNet:    94:620/200.1
+         SoundNet: 34:2000/200.16
+         Internet: jcarlos@gw.iic.uam.es
+                   jarevalo@dit.upm.es    (more reliable)
+                   a880104@zipi.fi.upm.es (Jare's)
+
+           You  can  also  login  to any of these Bulletin Board Systems
+        and leave a message to the sysop:
+
+        ÕÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍ¸
+        ³BBS name             ³Country    ³Phone #        ³Sysop       ³
+        ÆÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍµ
+        ³BlasterSound (Iguana ³Spain      ³+34-58-293-583 ³Mikel       ³
+        ³World  Headquarters) ³           ³               ³            ³
+        ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄ´
+        ³Deckard (VangeliSTeam³Spain      ³+34-1-643-10-67³Pedro de Paz³
+        ³World  Headquarters) ³           ³               ³            ³
+        ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍ¾
+
+
+
+           Technical information
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           This  program  is  heavily based on the Public Domain utility
+        called VangeliSTracker,  also made by me. The last version up to
+        date of VangeliSTracker is 1.39,  and its source code is also in
+        the  Public  Domain,  so you can find many technical insights of
+        DemoVT in it.
+
+           When  using the Silence  "output device",  the timing is done
+        by using the COM1 serial port and IRQ 4.  It might have problems
+        with some mouse drivers.  I know it's wicked, but that's the way
+        it's made.
+
+           When  using  sound output through the GUS card,  the internal
+        timers   of   this  card  are  used,   and  the  partiture  gets
+        interpreted  only  through  interrupts.  Anyway,  the  Timer and
+        Polled modes are emulated.  No DMA is used.  The instrument data
+        is  kept  in  the  card's  memory.  It's  up to you to make sure
+        there's enough of that memory.
+
+           When  using  Sound Blaster,  the DMA provides the timing.  It
+        also  takes  up more memory because of the DMA buffers involved,
+        and  the  instruments of the MOD are kept in main memory and UMB
+        memory.
+
+           In  Timer  mode,  only  INT  1Ch (must be called a minimum of
+        12.5  times per second)  is used,  and the timer hardware is not
+        reprogrammed.
+
+
+
+           Libraries provided
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           The  DemoVT  is designed to be used through a few routines we
+        provide  in  the  libraries.  They  are  provided  for Real Mode
+        Assembler,  PMode Assembler (Tran's PMode),  Turbo Pascal,  Real
+        Mode C and DPMI (Watcom) C.
+
+           Here  you  can  find the descriptions of those routines.  The
+        names  used are those of the assembler interface.  To know about
+        the  other  interfaces  (C  and  PAS),  please,  look  into  the
+        interface source code and into the examples provided.
+
+        -------------------------------- InitMusic
+           Call this if you want to mess with the DemoVT.  I suppose you
+        want  to.  It detects whether DemoVT is present (DL = 1)  or not
+        (DL = 0), and initalizes the above pointers.
+
+        -------------------------------- CallMusic
+           Calls the player when in polled mode.  This means that if you
+        want  to  use the timer (IRQ 0)  for your application,  you must
+        manually  call  the  DemoVT  so that it will play the partiture.
+        This  routine must be called at least at a 50Hz average rate; if
+        you  don't,  the music will jump.  You can call it several times
+        before  making  a  long  process;  experiment how many times you
+        need to avoid jumps.
+
+        -------------------------------- VTConnectTimer
+           Turn  on timer mode.  In this mode the player uses the system
+        timer  to  perform its task,  so you don't need to manually call
+        InitMusic.  But  you  also  can't use the timer for you.  Please
+        don't   hook   to  the  IRQ0  and  then  call  the  old  handler
+        (DemoVT's), if you want to do such a thing use the polled mode.
+
+        -------------------------------- VTDisconnectTimer
+           Enter  polled  mode.  From  now  on,  make  frequent calls to
+        CallMusic,  and  feel  free  to do what you desire with the IRQ0
+        timer.
+
+        -------------------------------- VTGetTickCounter
+           Reads  the  internal  50Hz  counter of the DemoVT into DX:AX.
+        Use  this to synchronize with the music in terms of time played.
+        (For  synchronization  you can also use the semaphores described
+        later.)
+
+        -------------------------------- VTBeginSync
+           Performs   the   usual  preparations  for  calling  the  next
+        routines.  Call  this when you want to be a bit in sync with the
+        music.  If you just want a background music you won't need this,
+        but I'd advise you to call it anyway  'cause I'm not sure of the
+        behaviour (I ALWAYS call it).
+
+        -------------------------------- VTWaitForStart
+           Performs  a half-second wait and initializes the tick counter
+        to  zero.  In  the  DemoVT,  the music always goes half a second
+        behind  the  partiture; this means that,  for example,  a volume
+        change  will  take  effect  that  half  second  later.  Use this
+        routine  to  prepare  yourself  for  that change.  Another place
+        where  you  will  want  to  use  this is at the start of a song.
+        Right  after  calling VTBeginSync,  there will be no music; call
+        VTWaitForStart,  and  it  will return at the precise moment when
+        the first note of the song is starting to fill your ears.
+
+        -------------------------------- VTJumpPos
+           Jump to some precise pattern in the sequence (AH)  , and to a
+        note  inside  that  pattern  (AL).  Both  values range from 1 to
+        whatever.  Remeber  this,  FastTracker musicians!  The jump will
+        take effect half a second after you call this.
+
+        -------------------------------- VTCheckSemaphore
+           Compares  AL  with  the  value of the semaphore number  'BX'.
+        Sempahore  values  are incremented by a special command embedded
+        in  the  MOD:  Command  number 8.  The parameter of this command
+        gives the number of the semaphore to increment.
+
+        -------------------------------- VTSetSemaphore
+           Sets the value of the semaphore # BX to the value AL.  You'll
+        find  this  useful  to  clear the value of a semaphore that gets
+        set  by  a  command  in  a  pattern  that repeats several times.
+        Huuhh... when you need this you will know, I guess.
+
+        -------------------------------- VTMiddleSync
+           Checks if the sempahore # BX is set.  If not, it jumps to the
+        position DH,  DL (pattern,  note)  in the MOD.  In any case,  it
+        waits  for  the  next  semaphore (BX +1)  to activate and exists
+        without jumping.
+           You can use this to set precise synchronization points.  When
+        you want to get to one (for example,  when starting some part of
+        a trackmo),  you want to wait for that time to come, or get back
+        to  it  if  it  already  passed  (by  some  slow disk reading or
+        something  like  that).  We used this to allow you to skip parts
+        of  the Inconexia trackmo and keep the music synchronized.  It's
+        hard  to explain; read the above description and keep it in mind
+        when you need something like this.
+
+        -------------------------------- VTSetSoundVolume
+           Changes  the sound's volume to AL.  It will really change 1/2
+        second after this call.  You don't have to worry about the delay
+        when  you  use  this to fade the music.  Just wait half a second
+        after you finish fading.
+
+        -------------------------------- VTGetSoundVolume
+           Reads  the  sound's  volume into AL.  Fairly straightforward,
+        ain't it?
+
+
+
+           Software interface
+           ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+           If  you  are  so  nice  that  you refuse to use our wonderful
+        library,  then  you can try to access the DemoVT directly.  Good
+        luck.
+
+           To  access the DemoVT from your program,  you must first call
+        the  Multiplex Interrupt DOS service (INT 2Fh).  The appropriate
+        setup calling sequence in assembler is the following:
+
+                   MagicAX    = 5654h;  {'VT'}
+                   MagicBX    = 5472h;  {'Tr'}
+                   MagicCX    = 6163h;  {'ac'}
+                   MagicXorBX = 6B65h;  {'ke'}
+                   MagicXorCX = 7220h;  {'r '}
+
+                   MOV     AX,MagicAX
+                   MOV     BX,MagicBX
+                   MOV     CX,MagicCX
+                   XOR     DI,DI
+                   MOV     ES,DI
+                   INT     2Fh
+                   XOR     DL,DL
+                   AND     AX,AX
+                   JNZ     @@no
+                   CMP     BX,MagicBX XOR MagicXorBX
+                   JNZ     @@no
+                   CMP     CX,MagicCX XOR MagicXorCX
+                   JNZ     @@no
+                   INC     DL
+           @@no:
+
+           After this,  register DL will contain a 1 if the DemoVT is in
+        fact  installed,  or  a  0  if  it  is  not.  If  the  DemoVT is
+        installed,  then ES:DI will contain a far pointer to a character
+        string  in  Pascal  format  (length  byte first)  describing the
+        DemoVT program and version.  Also, in ES:[DI-4] is a far pointer
+        to  a  data  structure that contains adittional data.  Here is a
+        description of the data found under this pointer:
+
+        ; These are modified by DemoVT, and you can read them.
+         Semaphores     DB  256  DUP(?)  ; Array of semaphores.  You can
+        read or
+                                       ; modify  them  (usually cleaning
+        them).
+
+
+         ChansTrig      DB  32  DUP(?) ; == 1  -> channel retriggered a
+        note.
+         NumChannels    DB ?           ; Number of channels in the MOD.
+
+         CtrlEntryPoint DD  ?          ; Address of ther DemoVT service
+        proc.
+         TickCounter    DD  ?          ; This one provides some form for
+        you
+                                      ;  to  do  timing,  incremented at
+        50Hz.
+         RegEntryPoint  DD ?          ; DVT Service taking parm in AX.
+         ChansData      TChanData 32 DUP (<>) ; Per-channel info.
+         Note           DB ?          ; Note in the current pattern.
+         Seq            DB ?          ; Number of playing pattern.
+
+                        DB 81 DUP(?)  ; Reserved.
+
+        ;  These  are  supposed  to  be modified by you ; to tell DemoVT
+        your intentions. :)
+                        DB  ?         ; Reserved.
+                        DW  ?         ; Reserved.
+
+         JumpNewPos     DB  ?         ;  Indicates that you want to jump
+        to
+                                      ; another position inside the MOD.
+         JumpPosSeq     DB  ?         ; Sequence position to jump to.
+         JumpPosNote    DB  ?         ;  Note inside the pattern to jump
+        to.
+
+         SoundVolume    DB  ?         ; Put your favourite volume here.
+                                      ;  You  can  perform fades and the
+        like.
+                                      ; 0-255.
+         Abort          DB  ?          ;  Set  to 1 to force DVT to exit
+        after
+                                      ; your program exits.
+
+                        DB 248 DUP(?) ; Reserved.
+
+           The structure TChanData is:
+
+        TChanData STRUC
+              Period DW ?
+              Ins    DB ?
+              Vol    DB ? ENDS
+
+           Variable descriptions are as follows:
+
+         ==========
+         Semaphores
+         ==========
+
+           Everytime  DemoVT  finds  a  command  8  in the MOD file,  it
+        increments  one of the bytes in this variable.  The parameter of
+        the command says which of the bytes is incremented.  You can use
+        the  semaphores  to  synchronize your program to the music being
+        played. For more information, see the chapter "Synchronisation".
+
+         =========
+         ChansTrig
+         =========
+
+           Those  variables  are  set  to  1  when the corresponding MOD
+        channel retriggers a note.  You should set it to 0 when you read
+        it.  With this, you can implement channel non-volume bars. It is
+        updated with the real sound, not the half a second delay.
+
+         ===========
+         NumChannels
+         ===========
+
+           This is the number of channels that the MOD contains.
+
+         ==============
+         CtrlEntryPoint
+         ==============
+
+           This   variable  contains  a  pointer  to  the  routine  that
+        provides  the DemoVT services.  Service number must be pushed on
+        the  stack,  and none of the services requires parameters.  This
+        routine  can  be  called directly from Turbo Pascal.  If you are
+        using  the  C  language,  then  you must declare this routine as
+        "FAR PASCAL".
+
+           Service numbers are:
+
+           Service  0: Start Timer mode,  using the system timer.  After
+        calling this routine,  music keeps running automaticly. You must
+        use  this  when  you're  not  sure  if  you will be able to call
+        service 2 often enough (i.e.  when reading files using DOS's INT
+        21h).
+
+           Service  1: Start Poll mode.  Just the opposite of service 0.
+        DemoVT always starts in Poll mode.  Poll mode is a better choice
+        when  you  need  a fine timing and/or need to synchronize to the
+        video retrace, which mostly happens in demos and games.
+
+           Service  2: Call the song routine when in Poll mode.  Must be
+        called more than 50 times per second,  unless you're using Timer
+        mode (service 0). This keeps the music running.
+
+           Service  3:  Begin  synchronization.  You  should  call  this
+        before  the  music starts playing.  It resets everything to make
+        it  an  exact  half a second wait before the sound starts coming
+        out.
+
+         ===========
+         TickCounter
+         ===========
+
+           This  variable  gets  incremented  by  DemoVT  50  times  per
+        second.  It's  intended for you,  to get a steady timing method,
+        so you can synchronize correctly with the music.
+
+         =============
+         RegEntryPoint
+         =============
+
+           This  is the same as the CtrlEntryPoint above,  only that the
+        service  number is given in the AX register.  This is needed for
+        DPMI interfaces.
+
+         =========
+         ChansData
+         =========
+
+           This  gives information on the period (the note),  the volume
+        and the instrument being played on each channel.
+
+         ====
+         Note
+         Seq
+         ====
+
+           This  tells  you  the  current position/note in the partiture
+        that is being played right now.
+
+           Sequence  positions  and  notes are always 1-based in DemoVT.
+        Sequence ranges from 1 to 128 and notes from 1 to 64.
+
+         ===========
+         JumpNewPos
+         JumpPosSeq
+         JumpPosNote
+         ===========
+
+           Those three variables are used to jump in the music.  You are
+        supposed  to  know  that MOD music is made out of patterns of 64
+        notes  each,  and  that  patterns  are arranged in a sequence of
+        pattern numbers.  Well, maybe you use different names for those,
+        but  you'll  understand.  To force a jump in the music,  you put
+        the  desired  sequence position in JumpPosSeq,  the desired note
+        of the pattern in JumpPosNote,  and then a 1 in JumpNewPos.  The
+        music  will  automaticly  jump  to  that position (well,  half a
+        second later ;-D).
+
+           Sequence  positions  and  notes are always 1-based in DemoVT.
+        Sequence ranges from 1 to 128 and notes from 1 to 64.
+
+         ===========
+         SoundVolume
+         ===========
+
+           You  can change this to whatever volume you want the music to
+        use.  It  ranges  from  0 to 255,  and the default volume is 255
+        (maximum).  This  does  not  correspond to the /v: switch of the
+        DemoVT program.  Sound volume ALWAYS ranges from 0 to 255,  with
+        255  corresponding  to  the  /v:  volume.  This change will take
+        effect half a second later.
+
+         =====
+         Abort
+         =====
+
+           Set  this  to  1 if you want DemoVT to exit to DOS as soon as
+        your  program does,  without playing any more MODs nor executing
+        any more programs.
+
+           This is used to abort a demo when the user presses ESC.
+
+         =========
+         reservedX
+         =========
+
+           Those  are unused variables.  Don't mangle with them or maybe
+        your  wonderful  program  won't  work  with  future  versions of
+        DemoVT that support MegaBlasterSuperUltraSound WOWWHATCARD.
+
+           <Geeezz. I sound like Mikrozoft>
+           <<At least I didn't call it "undocumented">>
+
+
+
+           Madrid, 17th of April, 1993.
+

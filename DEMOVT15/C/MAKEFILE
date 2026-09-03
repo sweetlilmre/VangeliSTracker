@@ -1,0 +1,18 @@
+# Makefile for the C interface.
+
+DOSCC=tcc -a -v -ms -c
+DOSLN=tcc -a -v -ms
+ # DOSCC=bcc -a -v -ms -c
+ # DOSLN=bcc -a -v -ms
+ # DOSCC=cl /W4 /AS /Gs /Zp4 /c
+ # DOSLN=cl /W4 /AS /Gs /Zp4
+
+ctst.exe: ctst.obj cdvt.obj
+        $(DOSLN) ctst.obj cdvt.obj
+
+cdvt.obj: cdvt.c cdvt.h
+        $(DOSCC) cdvt.c
+
+ctst.obj: ctst.c cdvt.h
+        $(DOSCC) ctst.c
+

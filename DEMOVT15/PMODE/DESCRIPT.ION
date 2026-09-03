@@ -1,0 +1,8 @@
+pmodedvt.inc PMode interface header.
+pmodedvt.asm PMode interface to DVT 1.51.
+pmode.inc Tran's PMode 2.4 header.
+pmode.asm Tran's PMode 2.4 header.
+makefile Makefile for PMode example.
+pmodetst.exe PMode example executable.
+pmodetst.asm PMode example source.
+descript.ion 4DOS/NDOS description file.

@@ -1,0 +1,53 @@
+
+        --- DemoVT v1.51   April-1994   (released version)
+
+           o Introduced .S3M support. Added some commands.
+           o Under GUS,  the CallMusic() is no longer a dumb do-nothing.
+             Now  the  partiture  is  not interpreted during interrupts,
+             and behaves more like under SB.
+           o Better behaviour with missing/erroneous VTO files.
+
+        --- DemoVT v1.50   April-1994   (almost-released version)
+
+           o Added  the  possibility  of  aborting the DemoVT before the
+             script is finised.
+           o Now  it can play MODs with more than 64 different patterns.
+             This is Jare's contribution. ð8-o God assist us!!!
+           o Added   the   possibility   of   using  any  COM  port  for
+             synchronizing in the  'silence'  mode.  Just use the /port:
+             and /irq: options.
+           o This version is not useable with the Inconexia anymore,  in
+             'silence' mode.
+
+        --- DemoVT v1.32   February-1994    (beta version)
+
+           o Fixed  GUS  playing  routines.  They  failed with some MODs
+             when looping the instruments.
+           o Added  the  possibility  of  specifying several programs to
+             run  while  the same MOD keeps playing.  This was suggested
+             by Jeff Lawson.  I did it just the way you told me,  Jeff!!
+             :-)
+           o Changed   the   contact  addresses  (Internet,   SoundNet).
+             PLEASE!!!  Don't use the old adresses, as they do not exist
+             anymore.
+           o Added  a register-driven entry point.  This makes it easier
+             to handle DemoVT from DPMI and other PMode extenders.
+           o Added  more  fields to the DemoVT interface data structure.
+             This   will   let  you  implement  volume  bars,   spectrum
+             analyzers (non-real) and stuff like that.
+           o Added  more  interface  libraries  for different languages,
+             compilers  and  environments:  Turbo  Pascal,  real  mode C
+             (Borland  and  Microsoft),  DPMI (Watcom C++ 9.5 + DOS4GW),
+             Tran's PMode.
+           o Fixed GUS volume table.
+           o Fixed  player routines so they work fine with the fixed GUS
+             volume table.
+           o This  is  a  betatest  version  only.  Not  released to the
+             public domain.  Please,  do not distribute this executable.
+             Use 1.5 instead.
+
+
+        --- DemoVT v1.00   November-1993
+
+           o Initial release.
+

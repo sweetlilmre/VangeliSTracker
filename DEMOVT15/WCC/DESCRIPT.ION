@@ -1,0 +1,6 @@
+dpmidvt.c WC++9.5 interface to DVT 1.51.
+dpmitst.c WC++9.5 example source.
+dpmidvt.h WC++9.5 interface include.
+makefile Makefile for WC++9.5 example.
+dpmitst.exe WC++9.5 example executable.
+descript.ion 4DOS/NDOS description file.

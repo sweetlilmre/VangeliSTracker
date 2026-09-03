@@ -1,0 +1,5 @@
+pasdvt.pas Pascal interface to DVT 1.51.
+makefile Makefile for Pascal example.
+pastst.pas Pascal example source.
+pastst.exe Pascal example executable.
+descript.ion 4DOS/NDOS description file.
