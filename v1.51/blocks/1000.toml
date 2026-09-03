@@ -1,0 +1,94 @@
+# The program's own segment, block by block, against the LINKED image.
+#
+# GENERATED on 3 Sep 2026 from this version's own linker map: the leading
+# constants, then one block per public symbol in the program segment, the
+# last running to the segment's end. Every boundary is a symbol our build
+# emitted, so nothing here was read off the binary by eye.
+#
+# THE SIBLING'S CONFIG HAS TWO BOUNDARIES THIS ONE DOES NOT, and they are
+# the ones that were read rather than derived -- a usage-text block inside
+# the last routine, and a split of the init chain from the body. The entry
+# point looked like it would give the second one and does not: this
+# version's entry is 0000:051b, which is the `@` symbol itself and already
+# a boundary here. Subdividing further would be guessing, so it is not
+# done.
+
+segment = 0x1000          # the program's own code segment
+length  = 1745             # its whole extent, from the map
+unit    = 'VTMAIN.EXE'    # the LINKED image, not a .TPU
+strip_header = true       # so the segment starts at the load image's start
+at      = 0x0000          # and its position is therefore known, not searched
+window  = 200
+
+# THIS RULE FORGIVES NOTHING, deliberately. Our load image is byte-identical
+# to the original -- 63,040 of 63,040 bytes -- so there is no fixup class to
+# allow for, and a rule written for differences that do not exist is a rule
+# nobody has ever seen fire.
+#
+# `varbase` at the top of the segment means no word is ever read as a DGROUP
+# variable offset, and an omitted `segment_delta` forgives no segment word.
+# Copying the sibling's 0x0C70 would have put a number here that nothing in
+# this version measured. If a difference ever appears, it will be REPORTED,
+# and whoever reads it can set a real boundary then.
+rule    = 'linked'
+varbase = 0x10000
+
+[[block]]
+name = 'The Leading Constants'
+from = 0x0000
+to   = 0x00F8
+
+[[block]]
+name = 'Showbanner'
+from = 0x00F8
+to   = 0x016B
+
+[[block]]
+name = 'Timerchain'
+from = 0x016B
+to   = 0x0171
+
+[[block]]
+name = 'Polldriver'
+from = 0x0171
+to   = 0x01A5
+
+[[block]]
+name = 'Timerhandler'
+from = 0x01A5
+to   = 0x01BD
+
+[[block]]
+name = 'Hooktimer'
+from = 0x01BD
+to   = 0x020A
+
+[[block]]
+name = 'Unhooktimer'
+from = 0x020A
+to   = 0x024C
+
+[[block]]
+name = 'Dispatch'
+from = 0x024C
+to   = 0x02C0
+
+[[block]]
+name = 'Dispatchentry'
+from = 0x02C0
+to   = 0x02C7
+
+[[block]]
+name = 'Stopmodule'
+from = 0x02C7
+to   = 0x030D
+
+[[block]]
+name = 'Playmodule'
+from = 0x030D
+to   = 0x051B
+
+[[block]]
+name = 'the init chain and body'
+from = 0x051B
+to   = 0x06D1
