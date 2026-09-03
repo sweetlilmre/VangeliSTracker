@@ -179,6 +179,9 @@ matched = 81
 [routine."UNKLOADE.LoadJMFileFormat"]
 matched = 77
 
+[routine."VTCTRL.Reset"]
+matched = 25
+
 [routine."VTDOSRSZ.SetMemTop"]
 matched = 31
 
@@ -221,6 +224,9 @@ matched = 6
 [routine."VTSHELL.AtExit"]
 matched = 41
 
+[routine."VTSHELL.Init"]
+matched = 97
+
 [routine."VTSILENC.AskRate"]
 matched = 17
 
@@ -238,6 +244,9 @@ matched = 52
 
 [routine."VTSILENC.Probe"]
 matched = 13
+
+[routine."VTSILENC.Register"]
+matched = 119
 
 [routine."VTSILENC.Start"]
 matched = 173

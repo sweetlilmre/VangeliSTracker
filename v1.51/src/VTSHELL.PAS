@@ -152,6 +152,7 @@ end;
   0029 rather than 0000 because an initialisation section is the LAST code in a
   unit, and AtExit occupies 0000..0028 ahead of it.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b19:0029 Init }
 begin
   Assign(ConFile, 'CON');                         { 1b19:0037  1d89:05a9 }
   Rewrite(ConFile);                               { 1b19:0041  1d89:061e }

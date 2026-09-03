@@ -291,6 +291,7 @@ implementation
   identical either way -- the unit verified at 25 of 25 as a procedure. What was
   wrong was the KIND of thing they are, and only linking exposes it.
   -------------------------------------------------------------------------- }
+{ @asm 000 1538:0000 Reset }
 begin
   FillChar(CtrlBlock, CtrlBlockSize, 0);          { 1538:0008 .. 1538:000d }
   CtrlBlock.SoundVolume := $FF;                     { 1538:0012  DS:$24cc    }

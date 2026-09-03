@@ -130,6 +130,7 @@ implementation
   identical either way -- the unit verified at 25 of 25 as a procedure. What was
   wrong was the KIND of thing they are, and only linking exposes it.
   -------------------------------------------------------------------------- }
+{ @asm 000 14b7:0000 Reset }
 begin
   FillChar(CtrlBlock, CtrlBlockSize, 0);          { 14b7:0008 .. 14b7:000d }
   CtrlBlock.MasterVol := $FF;                     { 14b7:0012  DS:$24cc    }

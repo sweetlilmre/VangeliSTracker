@@ -375,6 +375,7 @@ end;
   register wins -- and 1084 registers before this one. 'Silence' is therefore
   the last resort, which is exactly what it should be.
   -------------------------------------------------------------------------- }
+{ @asm 000 1065:0172 Register }
 begin
   Driver.Name            := @DevName;               { 1065:017b  DS:$0034 }
   Driver.Autodetect      := @Probe;                 { 1065:0188  DS:$0038 }
