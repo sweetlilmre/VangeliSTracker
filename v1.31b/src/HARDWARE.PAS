@@ -253,6 +253,7 @@ end;
   byte-pointer flip-flop, set the mode, then write address and count as
   low-then-high byte pairs to the same port, and unmask last.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:0128 +74 }
 procedure DMA16Set; assembler;
 asm
   AND  AH, 3             { 1b24:0128  DMA 4..7 -> 0..3 on this controller   }
@@ -305,6 +306,7 @@ end;
   tightly: address at channel*2 and count at channel*2 + 1, rather than the
   second controller's stride of four.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:0172 +54 }
 procedure DMA8Set; assembler;
 asm
   MOV  AL, AH            { 1b24:0172                                        }
@@ -344,6 +346,7 @@ end;
   Channel in AH. Two instructions and an OUT; the whole of stopping a
   transfer.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:01a8 +10 }
 procedure DMA16Reset; assembler;
 asm
   AND  AH, 3             { 1b24:01a8                                        }
@@ -352,6 +355,7 @@ asm
   OUT  0D4h, AL          { 1b24:01af                                        }
 end;
 
+{ @asm 000 1b24:01b2 +7 }
 procedure DMA8Reset; assembler;
 asm
   MOV  AL, AH            { 1b24:01b2                                        }
@@ -366,6 +370,7 @@ end;
   HAND ASSEMBLER, verbatim. Clear the flip-flop, then two reads from the
   count port give low byte then high byte.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:01b9 +28 }
 procedure GetDMA16Count; assembler;
 asm
   AND  AH, 3             { 1b24:01b9                                        }
@@ -406,6 +411,7 @@ end;
   Reporting a refusal rather than a plausible-looking wrong number is the
   part worth copying. $FFFF is not a valid count here.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:01d5 +56 }
 procedure GetDMA8Count; assembler;
 asm
   XOR  AL, AL            { 1b24:01d5                                        }
@@ -451,6 +457,7 @@ end;
 
   Below 4 goes to the 8-bit controller, above 4 to the 16-bit one.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:020d +21 }
 procedure GetDMACountAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:020d  the floppy                            }
@@ -465,6 +472,7 @@ asm
 @@Out:
 end;
 
+{ @asm 000 1b24:0222 +21 }
 procedure DMASetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:0222                                        }
@@ -479,6 +487,7 @@ asm
 @@Out:
 end;
 
+{ @asm 000 1b24:0237 +21 }
 procedure DMAResetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:0237                                        }
@@ -499,6 +508,7 @@ end;
   HAND ASSEMBLER, verbatim: each one is nothing but moving parameters into
   the registers the kernels expect, and a far call.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b24:024c +27 }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:024f  [BP+0Eh]                         }
@@ -509,6 +519,7 @@ asm
   CALL DMASetAsm              { 1b24:025e                                   }
 end;
 
+{ @asm 000 1b24:0267 +15 }
 function GetDMACount(Channel : Byte) : Word; assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:026a                                   }
@@ -589,6 +600,7 @@ begin
   DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);  { 1b24:02e9 }
 end;
 
+{ @asm 000 1b24:02f0 }
 procedure DMAReset(Channel : Byte); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:02f3                                   }

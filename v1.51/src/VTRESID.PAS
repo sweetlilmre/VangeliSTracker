@@ -35,9 +35,14 @@
   unit or routine name survives.
 
   [re] ADDRESS MAP
-    OldInt2F     1b54:0000     Handler      1b54:0006
-    ExitHandler  1b54:002f     'Ojo...'     1b54:0061
-    ' residente' 1b54:007b     Install      1b54:0088
+  [re] 1d3c IN THIS IMAGE, NOT 1b54. The map said 1b54, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: 48 bytes unchanged at 1d42:0001.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    OldInt2F     1d3c:0000     Handler      1d3c:0006
+    ExitHandler  1d3c:002f     'Ojo...'     1d3c:0061
+    ' residente' 1d3c:007b     Install      1d3c:0088
   =========================================================================== }
 
 unit VTResid;
@@ -103,6 +108,7 @@ var
   [re] 1b54:0000. Like the timer chain in the program itself. ExitHandler reads
   the two words at +1 and +3 straight back out of the instruction.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d3c:0000 +6 }
 procedure OldInt2F; assembler;
 asm
   DB   0EAh              { 1b54:0000  JMP FAR seg:ofs                        }
@@ -142,6 +148,7 @@ end;
       else chain to the old handler;
 
   -------------------------------------------------------------------------- }
+{ @asm 000 1d3c:0006 +41 }
 procedure Handler; assembler;
 asm
   STI                    { 1b54:0006  DOS multiplex handlers run enabled     }
@@ -185,6 +192,7 @@ end;
 
   [re] 1b54:002f. The operand bytes are +1 and +3.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d3c:002f +89 }
 procedure ExitHandler; far;
 begin
   ExitProc := SavedExit;                          { 1b54:0032, 1b54:0039 }
@@ -230,6 +238,7 @@ end;
   which goes straight to the INT 2Fh call. And 1b54:0137 copies [BP-$100] --
   the parameter's own slot -- into `SelfName`, so the assignment is
   `SelfName := Name` with nothing in between. }
+{ @asm 000 1d3c:0088 }
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;       { [BP-$101] }

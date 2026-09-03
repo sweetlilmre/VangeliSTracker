@@ -66,6 +66,7 @@ var
   It is assembled pointing at itself, which is why the disassembly shows
   `JMP FAR 1b54:0000` at 1b54:0000.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b54:0000 +6 }
 procedure OldInt2F; assembler;
 asm
   DB   0EAh              { 1b54:0000  JMP FAR seg:ofs                        }
@@ -95,6 +96,7 @@ end;
       else chain to the old handler;
 
   -------------------------------------------------------------------------- }
+{ @asm 000 1b54:0006 +41 }
 procedure Handler; assembler;
 asm
   STI                    { 1b54:0006  DOS multiplex handlers run enabled     }
@@ -128,6 +130,7 @@ end;
 
   The old vector is read out of the JMP FAR's own operand bytes, +1 and +3.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b54:002f +89 }
 procedure ExitHandler; far;
 begin
   ExitProc := SavedExit;                          { 1b54:0032, 1b54:0039 }
@@ -169,6 +172,7 @@ end;
   which goes straight to the INT 2Fh call. And 1b54:0137 copies [BP-$100] --
   the parameter's own slot -- into `SelfName`, so the assignment is
   `SelfName := Name` with nothing in between. }
+{ @asm 000 1b54:0088 }
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;       { [BP-$101] }

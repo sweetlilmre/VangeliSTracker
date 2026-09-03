@@ -25,11 +25,16 @@
   docs/06-transcription.md, so there is nothing to pair it with.
 
   [re] ADDRESS MAP
-    NullTimerHandler  1084:0000   Poll             1084:004c
-    DevName           1084:0055   DevDetect        1084:0061
-    DevInit           1084:0072   DevEnd           1084:00d5
-    DevGetRealFreq    1084:00e4   DevChgHz         1084:00f5
-    DevPoll           1084:00fc   the init section 1084:0101
+  [re] 106e IN THIS IMAGE, NOT 1084. The map said 1084, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 107c:0008 -- located, code CHANGED.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    NullTimerHandler  106e:0000   Poll             106e:004c
+    DevName           106e:0055   DevDetect        106e:0061
+    DevInit           106e:0072   DevEnd           106e:00d5
+    DevGetRealFreq    106e:00e4   DevChgHz         106e:00f5
+    DevPoll           106e:00fc   the init section 106e:0101
 
   DGROUP
     $0060  THE DRIVER RECORD ('GUS')     $0076..$0095  its eight slots
@@ -207,6 +212,7 @@ implementation
   MOV AX,SEG @DATA. The original begins PUSH BP / MOV BP,SP at 1084:0000 and
   ends LEAVE / RETF at 1084:004a, which is the standard prologue and epilogue
   wrapped around a hand-written body. }
+{ @asm 000 106e:0000 +76 }
 procedure NullTimerHandler; far;
 begin
   asm
@@ -234,6 +240,7 @@ end;
   the card is playing from its own memory and needs nothing from the host.
   NullTimerHandler above reads this counter to decide whether anything moved.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:004c +9 }
 procedure Poll; far;
 begin
   { 106e:0024..0058 -- THE WORK THAT LEFT THE INTERRUPT. In v1.31b this routine

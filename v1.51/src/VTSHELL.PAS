@@ -31,6 +31,10 @@
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
   [re] ADDRESS MAP
+  [re] SEGMENT UNVERIFIED IN THIS IMAGE. These addresses are v1.31b's,
+  inherited with the file. segpair --pair pairs this unit's segment with
+  1b19 here, but nothing matched inside the paired extent, so nothing is asserted.
+  Do not write an @asm marker from this map until it is charted.
     AtExit  1931:0000     'CON'      CS:$001d, a String[3]
     Init    1931:0029     'COMSPEC'  CS:$0021, a String[7]
 

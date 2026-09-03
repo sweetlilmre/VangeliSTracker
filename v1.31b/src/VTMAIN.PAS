@@ -367,6 +367,7 @@ end;
   writing the RETF and let the epilogue be it, and to make the procedure FAR so that
   the epilogue is `RETF` and not a near `RET`. `1000:01b7` jumps here with a far JMP
   and `1000:0577` takes its address, so far is what it is. }
+{ @asm 000 1000:016b +6 }
 procedure TimerChain; far; assembler;
 asm
   DB   0EAh              { 1000:016b  JMP FAR seg:ofs -- the operand is data }
@@ -381,6 +382,7 @@ end;
   Four calls, not a loop: the binary has the LES/CALLF pair written out four
   times over. DS:$0002 keeps the timer out of itself when a poll runs long.
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:0171 +52 }
 procedure PollDriver;
 type
   TPoll = procedure;
@@ -415,6 +417,7 @@ end;
       PollDriver;   -- then jump to the old handler
 
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:01a5 +24 }
 procedure TimerHandler; assembler;
 asm
   PUSHF                  { 1000:01a5  the chain expects the flags on top     }
@@ -445,6 +448,7 @@ end;
   It does nothing if the stub already holds a vector, so calling it twice is
   harmless -- which is why parts can call MusicStart without checking.
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:01bd +77 }
 procedure HookTimer;
 begin
   { 1000:01c0 -- the stub's operand is the "are we hooked" flag. }
@@ -488,6 +492,7 @@ end;
   Note that neither this nor HookTimer touches the sound hardware. Silence is
   a consequence of the driver no longer being polled.
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:020a +66 }
 procedure UnhookTimer;
 begin
   asm
@@ -528,6 +533,7 @@ end;
   The result is set to zero and never changed, so the demo is right to ignore
   it.
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:024c +105 }
 function Dispatch(Func : Word) : Word; far;
 begin
   asm
@@ -598,6 +604,7 @@ end;
   the frame on entry, and reading it as an assignment produced two extra locals and two
   extra copies. Same class as the invented `String` locals in `1b54` and `164b`: **a
   frame is explained by the parameters before it is explained by declarations.** }
+{ @asm 000 1000:02b5 +336 }
 function PlayModule(Name, Params : PathStr) : Boolean; far;
 { AND THERE IS NO LOCAL AT ALL. `[BP-1]` is the FUNCTION RESULT: the tail of the
   routine is `8a 46 ff / c9 / ca 08 00`, `MOV AL,[BP-1] / LEAVE / RETF 8`, which is

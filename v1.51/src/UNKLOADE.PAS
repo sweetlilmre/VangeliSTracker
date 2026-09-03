@@ -38,6 +38,10 @@
   this the same way: no debug information.
 
   [re] ADDRESS MAP
+  [re] SEGMENT UNVERIFIED IN THIS IMAGE. These addresses are v1.31b's,
+  inherited with the file. segpair --pair pairs this unit's segment with
+  1839 here, but 8 bytes matched and nothing longer -- too short to trust, so nothing is asserted.
+  Do not write an @asm marker from this map until it is charted.
     LoadJMFileFormat  164b:0000     ModJMIdString  DS:$040e, six raw bytes
   =========================================================================== }
 

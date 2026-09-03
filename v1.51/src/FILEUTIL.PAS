@@ -38,7 +38,12 @@
   this the same way: the binary has no debug information.
 
   [re] ADDRESS MAP
-    AddBar2Path  116a:0000
+  [re] 115a IN THIS IMAGE, NOT 116a. The map said 116a, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: 64 bytes of AddBar2Path unchanged at 115a:0000.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    AddBar2Path  115a:0000
   =========================================================================== }
 
 unit FileUtil;

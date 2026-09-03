@@ -38,15 +38,20 @@
   information.
 
   [re] ADDRESS MAP
-    EnableIRQ       1b24:0000     DisableIRQ      1b24:0044
-    IRQState        1b24:007e     SetIRQVector    1b24:00d7
-    DMA16Set        1b24:0128 *   DMA8Set         1b24:0172 *
-    DMA16Reset      1b24:01a8 *   DMA8Reset       1b24:01b2 *
-    GetDMA16Count   1b24:01b9 *   GetDMA8Count    1b24:01d5 *
-    GetDMACountAsm  1b24:020d     DMASetAsm       1b24:0222
-    DMAResetAsm     1b24:0237     DMARawSet       1b24:024c
-    GetDMACount     1b24:0267     DMASet          1b24:0276
-    DMAReset        1b24:02f0                     (* frameless)
+  [re] 1d0c IN THIS IMAGE, NOT 1b24. The map said 1b24, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: 64 bytes unchanged at 1d0c:0000, nine routines inside the segment.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    EnableIRQ       1d0c:0000     DisableIRQ      1d0c:0044
+    IRQState        1d0c:007e     SetIRQVector    1d0c:00d7
+    DMA16Set        1d0c:0128 *   DMA8Set         1d0c:0172 *
+    DMA16Reset      1d0c:01a8 *   DMA8Reset       1d0c:01b2 *
+    GetDMA16Count   1d0c:01b9 *   GetDMA8Count    1d0c:01d5 *
+    GetDMACountAsm  1d0c:020d     DMASetAsm       1d0c:0222
+    DMAResetAsm     1d0c:0237     DMARawSet       1d0c:024c
+    GetDMACount     1d0c:0267     DMASet          1d0c:0276
+    DMAReset        1d0c:02f0                     (* frameless)
 
   DGROUP
     $0c10  the 16-bit page-register ports    $0c18  the 8-bit ones
@@ -268,6 +273,7 @@ end;
   byte-pointer flip-flop, set the mode, then write address and count as
   low-then-high byte pairs to the same port, and unmask last.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:0128 +74 }
 procedure DMA16Set; assembler;
 asm
   AND  AH, 3             { 1b24:0128  DMA 4..7 -> 0..3 on this controller   }
@@ -320,6 +326,7 @@ end;
   tightly: address at channel*2 and count at channel*2 + 1, rather than the
   second controller's stride of four.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:0172 +54 }
 procedure DMA8Set; assembler;
 asm
   MOV  AL, AH            { 1b24:0172                                        }
@@ -359,6 +366,7 @@ end;
   Channel in AH. Two instructions and an OUT; the whole of stopping a
   transfer.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:01a8 +10 }
 procedure DMA16Reset; assembler;
 asm
   AND  AH, 3             { 1b24:01a8                                        }
@@ -367,6 +375,7 @@ asm
   OUT  0D4h, AL          { 1b24:01af                                        }
 end;
 
+{ @asm 000 1d0c:01b2 +7 }
 procedure DMA8Reset; assembler;
 asm
   MOV  AL, AH            { 1b24:01b2                                        }
@@ -381,6 +390,7 @@ end;
   HAND ASSEMBLER, verbatim. Clear the flip-flop, then two reads from the
   count port give low byte then high byte.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:01b9 +28 }
 procedure GetDMA16Count; assembler;
 asm
   AND  AH, 3             { 1b24:01b9                                        }
@@ -421,6 +431,7 @@ end;
   Reporting a refusal rather than a plausible-looking wrong number is the
   part worth copying. $FFFF is not a valid count here.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:01d5 +56 }
 procedure GetDMA8Count; assembler;
 asm
   XOR  AL, AL            { 1b24:01d5                                        }
@@ -473,6 +484,7 @@ end;
 
   The same channel guard as the two routines below -- see the block there for
   why 2 and 4 are refused. }
+{ @asm 000 1d0c:020d +21 }
 procedure GetDMACountAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:020d  the floppy                            }
@@ -512,6 +524,7 @@ end;
   hardware that may be configured any way at all, and a wrong jumper setting
   should cost the sound rather than the machine.
   =========================================================================== }
+{ @asm 000 1d0c:0222 +21 }
 procedure DMASetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:0222  the floppy controller's channel        }
@@ -527,6 +540,7 @@ asm
 end;
 
 { The same guard as DMASetAsm above, for the same two reasons. }
+{ @asm 000 1d0c:0237 +21 }
 procedure DMAResetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1b24:0237                                        }
@@ -547,6 +561,7 @@ end;
   HAND ASSEMBLER, verbatim: each one is nothing but moving parameters into
   the registers the kernels expect, and a far call.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:024c +27 }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:024f  [BP+0Eh]                         }
@@ -557,6 +572,7 @@ asm
   CALL DMASetAsm              { 1b24:025e                                   }
 end;
 
+{ @asm 000 1d0c:0267 +15 }
 function GetDMACount(Channel : Byte) : Word; assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:026a                                   }
@@ -637,6 +653,7 @@ begin
   DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);  { 1b24:02e9 }
 end;
 
+{ @asm 000 1d0c:02f0 }
 procedure DMAReset(Channel : Byte); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1b24:02f3                                   }

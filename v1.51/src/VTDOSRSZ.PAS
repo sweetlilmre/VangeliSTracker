@@ -24,7 +24,12 @@
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
   [re] ADDRESS MAP
-    SetMemTop  188f:0000
+  [re] 1a77 IN THIS IMAGE, NOT 188f. The map said 188f, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: a 16-byte PREFIX only, at 1a77:0000 -- located, code CHANGED.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    SetMemTop  1a77:0000
   =========================================================================== }
 
 { This unit is held to 8086 instructions. $G- forbids the 80286 forms Turbo
@@ -107,6 +112,7 @@ implementation
   `uses` clause and this header, and the identification is strong rather than
   certain.
   -------------------------------------------------------------------------- }
+{ @asm 000 1a77:0000 }
 procedure SetMemTop(P : Pointer); assembler;
 asm
   MOV  BX, WORD PTR P    { 188f:0003  [BP+06h] -- Ofs(P)                    }

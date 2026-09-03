@@ -169,6 +169,7 @@ end;
       if Frac >= 12 then begin Dec(Frac, 12); Inc(Ticks) end;
       Port[$20] := $20
   -------------------------------------------------------------------------- }
+{ @asm 000 1065:0005 +52 }
 procedure IrqHandler; assembler;
 asm
   CLI                    { 1065:0005                                       }

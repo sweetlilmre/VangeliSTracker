@@ -32,19 +32,24 @@
   matched -- and it was wrong in both directions. See docs/06-transcription.md.
 
   [re] ADDRESS MAP
-    SetGusVoice        1723:0000 *   GetGusRegister8    1723:0013 *
-    SetGusRegister8    1723:0030 *   GetGusRegister16   1723:004a *
-    SetGusRegister16   1723:0065 *   GusDelay           1723:007d *
-    DumpToUltrasound   1723:0089     GUSInitTimer1      1723:0100
-    GUSInitTimer2      1723:0140     GUSStopTimer1      1723:0180
-    ServiceTimer1      1723:01b5 *   ServiceTimer2      1723:01db *
-    GUSIrqHandler      1723:0201 *   InitGusIRQ         1723:025a
-    DoneGusIRQ         1723:029f     SetMixControl      1723:02d3 *
-    StartUltrasound    1723:0357     ProbeUltrasound    1723:045a *
-    DetectUltrasound   1723:04f1     SwapGusAddress     1723:0539 *
-    ChangeVol          1723:0565 *   ChangeSample       1723:0662 *
-    RestartChannels    1723:077a     TriggerVoice       1723:08e6
-    ChangeVoiceParams  1723:0980     SetGusChannels     1723:0a6a
+  [re] 1911 IN THIS IMAGE, NOT 1723. The map said 1723, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: 64 bytes of a mapped routine unchanged at 1956:000a.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    SetGusVoice        1911:0000 *   GetGusRegister8    1911:0013 *
+    SetGusRegister8    1911:0030 *   GetGusRegister16   1911:004a *
+    SetGusRegister16   1911:0065 *   GusDelay           1911:007d *
+    DumpToUltrasound   1911:0089     GUSInitTimer1      1911:0100
+    GUSInitTimer2      1911:0140     GUSStopTimer1      1911:0180
+    ServiceTimer1      1911:01b5 *   ServiceTimer2      1911:01db *
+    GUSIrqHandler      1911:0201 *   InitGusIRQ         1911:025a
+    DoneGusIRQ         1911:029f     SetMixControl      1911:02d3 *
+    StartUltrasound    1911:0357     ProbeUltrasound    1911:045a *
+    DetectUltrasound   1911:04f1     SwapGusAddress     1911:0539 *
+    ChangeVol          1911:0565 *   ChangeSample       1911:0662 *
+    RestartChannels    1911:077a     TriggerVoice       1911:08e6
+    ChangeVoiceParams  1911:0980     SetGusChannels     1911:0a6a
                                              (* near, private to the unit)
 
   THE NAMES ARE THE RELEASE'S, NOT GUESSES. Every routine and global here is
@@ -323,6 +328,7 @@ var
 
 { Choose which voice the following register accesses apply to. It stays chosen
   until this is called again -- see the port map above. }
+{ @asm 000 1911:0000 +19 }
 procedure SetGusVoice(N : Byte); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0003 }
@@ -332,6 +338,7 @@ asm
 end;
 
 { The read alias: registers below $40 are read at register+$80. }
+{ @asm 000 1911:0013 +29 }
 function GetGusRegister8(Reg : Byte) : Byte; assembler;
 asm
         MOV     DX,GUSPort  { 1723:0016 }
@@ -347,6 +354,7 @@ asm
 end;
 
 { No alias on the write path -- writes use the register number as given. }
+{ @asm 000 1911:0030 +26 }
 procedure SetGusRegister8(Reg, Val : Byte); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0033 }
@@ -358,6 +366,7 @@ asm
         OUT     DX,AL       { 1723:0045 }
 end;
 
+{ @asm 000 1911:004a +27 }
 function GetGusRegister16(Reg : Byte) : Word; assembler;
 asm
         MOV     DX,GUSPort  { 1723:004d }
@@ -372,6 +381,7 @@ asm
         IN      AX,DX  { 1723:0060  a WORD read }
 end;
 
+{ @asm 000 1911:0065 +24 }
 procedure SetGusRegister16(Reg : Byte; Val : Word); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0068 }
@@ -393,6 +403,7 @@ end;
   one whatever the CPU speed. A `for` loop would get faster with the machine;
   this does not.
   -------------------------------------------------------------------------- }
+{ @asm 000 1911:007d +12 }
 procedure GusDelay; assembler;
 asm
   MOV  DX, GUSPort  { 1723:007d                                       }
@@ -447,6 +458,7 @@ end;
   the page byte back out of ES rather than from the frame. It looks like a
   pointer load and it is not one; the source pointer is the separate
   LDS SI,Src further down. }
+{ @asm 000 1911:0089 +119 }
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
@@ -565,6 +577,7 @@ end;
   [re] DS:$058e is the one that matters to the rest of the program: 1084:008a puts
   the GUS driver's own handler there, so timer 2 is what drives the music.
   -------------------------------------------------------------------------- }
+{ @asm 000 1911:01b5 +38 }
 procedure ServiceTimer1;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $FB);  { 1723:01c0 }
@@ -583,6 +596,7 @@ end;
 
   Reading the register to clear it is not an option; it is write-only, which is
   why the shadow exists. See the note above the timer routines. }
+{ @asm 000 1911:01db +38 }
 procedure ServiceTimer2;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $F7);  { 1723:01e6  drop it }
@@ -619,6 +633,7 @@ end;
   UNMASK LAST, and read register $0F on the way out to clear anything the
   card latched while we were inside.
   -------------------------------------------------------------------------- }
+{ @asm 000 1911:0201 +89 }
 procedure GUSIrqHandler; assembler;
 asm
   CLI                       { 1723:0201                                       }
@@ -721,6 +736,7 @@ end;
   MOV DX,AX -- where the original loads the port straight into DX with
   MOV DX,[GUSPort] and loads the VALUE first. Three bytes and a different
   instruction order, from a `+ 0` that reads as harmless. }
+{ @asm 000 1911:02d3 +132 }
 procedure SetMixControl;
 var
   V : Byte;
@@ -763,6 +779,7 @@ end;
   it, 7 releases it with the DAC and the IRQ enabled. The delay between is
   the settling wait, and it is why `GusDelay` exists.
   -------------------------------------------------------------------------- }
+{ @asm 000 1911:0357 +259 }
 procedure StartUltrasound;
 var
   V : Word;

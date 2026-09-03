@@ -95,6 +95,7 @@ implementation
       Regs.AH := $4A;
       Intr($21, Regs)
   -------------------------------------------------------------------------- }
+{ @asm 000 188f:0000 }
 procedure SetMemTop(P : Pointer); assembler;
 asm
   MOV  BX, WORD PTR P    { 188f:0003  [BP+06h] -- Ofs(P)                    }

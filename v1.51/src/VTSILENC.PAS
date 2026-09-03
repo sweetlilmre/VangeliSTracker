@@ -37,11 +37,16 @@
   slot +$2a.
 
   [re] ADDRESS MAP
-    DevName      1065:0000     IrqHandler  1065:0005 *
-    Probe       1065:0039     Start       1065:0046
-    AskRate     1065:00f3     ChgHz      1065:0104
-    DevPoll      1065:010b     Stop        1065:0110
-    Register    1065:0172                     (* frameless, IRET)
+  [re] 115e IN THIS IMAGE, NOT 1065. The map said 1065, which is this unit's
+  segment in v1.31b; these addresses were inherited when the file was and
+  never re-based. Measured two ways -- segpair --pair over the two
+  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 1170:000b -- located, code CHANGED.
+  NOTE the per-line addresses through this file are still v1.31b's.
+    DevName      115e:0000     IrqHandler  115e:0005 *
+    Probe       115e:0039     Start       115e:0046
+    AskRate     115e:00f3     ChgHz      115e:0104
+    DevPoll      115e:010b     Stop        115e:0110
+    Register    115e:0172                     (* frameless, IRET)
 
   DGROUP
     $0018  the 5-in-12 accumulator     $001a  the displaced INT 0Ch vector
@@ -211,6 +216,7 @@ end;
       if Frac >= 12 then begin Dec(Frac, 12); Inc(Ticks) end;
       Port[$20] := $20
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0005 +52 }
 procedure IrqHandler; assembler;
 asm
   CLI                    { 1065:0005                                       }

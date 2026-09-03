@@ -5,6 +5,12 @@
 # hand-edit them. To accept a regression, lower `target` with a `reason`.
 # [plan] is DECIDED: investigation order is the priority order.
 
+[routine."DEVGUS.NullTimerHandler"]
+matched = 76
+
+[routine."DEVGUS.Poll"]
+matched = 9
+
 [routine."FILTERS.Filter1_2Word"]
 matched = 16
 
@@ -16,6 +22,117 @@ matched = 30
 
 [routine."FILTERS.FilterChunkWord"]
 matched = 53
+
+[routine."GUS.DumpToUltrasound"]
+matched = 119
+
+[routine."GUS.GUSIrqHandler"]
+matched = 89
+
+[routine."GUS.GetGusRegister16"]
+matched = 27
+
+[routine."GUS.GetGusRegister8"]
+matched = 29
+
+[routine."GUS.GusDelay"]
+matched = 12
+
+[routine."GUS.ServiceTimer1"]
+matched = 38
+
+[routine."GUS.ServiceTimer2"]
+matched = 38
+
+[routine."GUS.SetGusRegister16"]
+matched = 24
+
+[routine."GUS.SetGusRegister8"]
+matched = 26
+
+[routine."GUS.SetGusVoice"]
+matched = 19
+
+[routine."GUS.SetMixControl"]
+matched = 132
+
+[routine."GUS.StartUltrasound"]
+matched = 259
+
+[routine."HARDWARE.DMA16Reset"]
+matched = 10
+
+[routine."HARDWARE.DMA16Set"]
+matched = 74
+
+[routine."HARDWARE.DMA8Reset"]
+matched = 7
+
+[routine."HARDWARE.DMA8Set"]
+matched = 54
+
+[routine."HARDWARE.DMARawSet"]
+matched = 27
+
+[routine."HARDWARE.DMAReset"]
+matched = 15
+
+[routine."HARDWARE.DMAResetAsm"]
+matched = 21
+
+[routine."HARDWARE.DMASetAsm"]
+matched = 21
+
+[routine."HARDWARE.GetDMA16Count"]
+matched = 28
+
+[routine."HARDWARE.GetDMA8Count"]
+matched = 56
+
+[routine."HARDWARE.GetDMACount"]
+matched = 15
+
+[routine."HARDWARE.GetDMACountAsm"]
+matched = 21
+
+[routine."VTDOSRSZ.SetMemTop"]
+matched = 31
+
+[routine."VTMAIN.Dispatch"]
+matched = 105
+
+[routine."VTMAIN.HookTimer"]
+matched = 77
+
+[routine."VTMAIN.PlayModule"]
+matched = 336
+
+[routine."VTMAIN.PollDriver"]
+matched = 52
+
+[routine."VTMAIN.TimerChain"]
+matched = 6
+
+[routine."VTMAIN.TimerHandler"]
+matched = 24
+
+[routine."VTMAIN.UnhookTimer"]
+matched = 66
+
+[routine."VTRESID.ExitHandler"]
+matched = 89
+
+[routine."VTRESID.Handler"]
+matched = 41
+
+[routine."VTRESID.Install"]
+matched = 294
+
+[routine."VTRESID.OldInt2F"]
+matched = 6
+
+[routine."VTSILENC.IrqHandler"]
+matched = 52
 
 [artefact."VTMAIN"]
 ours = "build/VTMAIN.EXE"

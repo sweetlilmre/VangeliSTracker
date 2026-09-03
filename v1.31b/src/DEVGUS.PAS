@@ -157,6 +157,7 @@ implementation
   MOV AX,SEG @DATA. The original begins PUSH BP / MOV BP,SP at 1084:0000 and
   ends LEAVE / RETF at 1084:004a, which is the standard prologue and epilogue
   wrapped around a hand-written body. }
+{ @asm 000 1084:0000 +76 }
 procedure NullTimerHandler; far;
 begin
   asm

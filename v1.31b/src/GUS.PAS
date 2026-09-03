@@ -265,6 +265,7 @@ var
   This corrects a rule recorded in docs/06-transcription.md: port code is
   faithfully Pascal only when the port number is CONSTANT. }
 
+{ @asm 000 1723:0000 +19 }
 procedure SetGusVoice(N : Byte); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0003 }
@@ -274,6 +275,7 @@ asm
 end;
 
 { The read alias: registers below $40 are read at register+$80. }
+{ @asm 000 1723:0013 +29 }
 function GetGusRegister8(Reg : Byte) : Byte; assembler;
 asm
         MOV     DX,GUSPort  { 1723:0016 }
@@ -289,6 +291,7 @@ asm
 end;
 
 { No alias on the write path -- writes use the register number as given. }
+{ @asm 000 1723:0030 +26 }
 procedure SetGusRegister8(Reg, Val : Byte); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0033 }
@@ -300,6 +303,7 @@ asm
         OUT     DX,AL       { 1723:0045 }
 end;
 
+{ @asm 000 1723:004a +27 }
 function GetGusRegister16(Reg : Byte) : Word; assembler;
 asm
         MOV     DX,GUSPort  { 1723:004d }
@@ -314,6 +318,7 @@ asm
         IN      AX,DX  { 1723:0060  a WORD read }
 end;
 
+{ @asm 000 1723:0065 +24 }
 procedure SetGusRegister16(Reg : Byte; Val : Word); assembler;
 asm
         MOV     DX,GUSPort  { 1723:0068 }
@@ -335,6 +340,7 @@ end;
   one whatever the CPU speed. A `for` loop would get faster with the machine;
   this does not.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:007d +12 }
 procedure GusDelay; assembler;
 asm
   MOV  DX, GUSPort  { 1723:007d                                       }
@@ -389,6 +395,7 @@ end;
   the page byte back out of ES rather than from the frame. It looks like a
   pointer load and it is not one; the source pointer is the separate
   LDS SI,Src further down. }
+{ @asm 000 1723:0089 +119 }
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
@@ -489,6 +496,7 @@ end;
   DS:$058e is the one that matters to the rest of the program: 1084:008a puts
   the GUS driver's own handler there, so timer 2 is what drives the music.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:01b5 +38 }
 procedure ServiceTimer1;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $FB); { 1723:01c0 }
@@ -499,6 +507,7 @@ begin
     end;
 end;
 
+{ @asm 000 1723:01db +38 }
 procedure ServiceTimer2;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $F7); { 1723:01e6 }
@@ -535,6 +544,7 @@ end;
   UNMASK LAST, and read register $0F on the way out to clear anything the
   card latched while we were inside.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0201 +89 }
 procedure GUSIrqHandler; assembler;
 asm
   CLI                       { 1723:0201                                       }
@@ -637,6 +647,7 @@ end;
   MOV DX,AX -- where the original loads the port straight into DX with
   MOV DX,[GUSPort] and loads the VALUE first. Three bytes and a different
   instruction order, from a `+ 0` that reads as harmless. }
+{ @asm 000 1723:02d3 +132 }
 procedure SetMixControl;
 var
   V : Byte;
@@ -679,6 +690,7 @@ end;
   it, 7 releases it with the DAC and the IRQ enabled. The delay between is
   the settling wait, and it is why `GusDelay` exists.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0357 +259 }
 procedure StartUltrasound;
 var
   V : Word;
@@ -1022,6 +1034,7 @@ end;
   of a live counter as 1b24's Count8, solved by retry rather than by
   judging the difference.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:077a +364 }
 procedure RestartChannels;
 const
   { $06c2..$0701 -- TWO BYTES PER VOICE, thirty-two voices, and the release declares
