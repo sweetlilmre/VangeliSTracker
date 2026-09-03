@@ -852,18 +852,7 @@ end;
 
   AND FOR A GRAVIS IT QUEUES INSTEAD OF SETTING UP. The card walks its own
   memory, so what it needs is a command in the ring rather than a pointer in a
-  record. Same decision, two entirely different outputs.
-
-  Both are correct at run time, because `RawChannels` is in DGROUP and the
-  SEGMENT the caller pushed IS DS -- but Turbo Pascal's code generator emits
-  only the far form for a `var` parameter. The tell that settles it is `21 C0`
-  at 03f7: `AND AX,AX` in the `r/m,reg` direction, which the INLINE ASSEMBLER
-  emits and the code generator does not (it tests with `OR`, as `08 C0` at
- and `0B 46 06` at 03d2 both show). In TP's asm a `var` parameter
-  names the POINTER, so loading its low word gives the offset. Same shape as
-  `1a17`'s GetPlayPos: a compiled routine with hand-written asm inside it, and
-  the encodings are what separate the two halves.
-  -------------------------------------------------------------------------- }
+  record. Same decision, two entirely different outputs. }
 { [1.39b] "Start a new sample on one of the channels."
 
   The release's own one-line description of this routine, in translation. Its

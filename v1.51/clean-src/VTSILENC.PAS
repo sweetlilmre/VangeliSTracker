@@ -289,11 +289,6 @@ slot +$32, stop the clock and hand the port back.
   -------------------------------------------------------------------------- }
 procedure Stop; far;
 begin
-  { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
- and jumps over the whole body with a single `JZ +54`. An
-    `if OldVec = nil then Exit` compiles instead to `JNZ +2 / JMP +54` --
-    a conditional jump around an unconditional one, two bytes longer and
-    the wrong shape. Same behaviour; only this form reproduces the bytes. }
   if OldVec <> nil then                           { never started }
   begin
     Port[ComPort + 4] := Lo(SavedMCR);

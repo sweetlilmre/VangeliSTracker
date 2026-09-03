@@ -18,7 +18,7 @@ uses VTDriver, Dos, Hardware;
 
 type
   { The block the provider hands back. Every offset here is read off
- and they agree with the release's TSampleBuffer exactly:
+ They agree with the release's TSampleBuffer exactly:
     InUse at +0, NSamples at +1, RateHz at +3, Channels at +5, DataType at +6
     and the data pointer at +7.
 

@@ -157,9 +157,7 @@ begin
     LES  DI, Stub
     MOV  AX, ES:[DI+1]     { the displaced offset                 }
     MOV  DX, ES:[DI+3]     { and SEGMENT                          }
-    MOV  SI, 0             { [re] MOV, not XOR -- the original
-                             loads an immediate zero, and BASM emits what it
-                             is told }
+    MOV  SI, 0
     MOV  ES, SI            { ES := 0000, the vector table         }
     MOV  ES:[0BCh], AX     { $2F * 4 -- the offset half           }
     MOV  SI, 0             { ES is reloaded rather than kept       }
@@ -222,7 +220,7 @@ begin
   { take INT 2Fh, and leave the displaced vector inside the
     JMP FAR so the chain works without a variable to hold it. }
   asm
-    MOV  SI, 0             { [re] MOV SI,0000 -- NOT `XOR SI,SI` }
+    MOV  SI, 0
     MOV  ES, SI            { ES := 0, the vector table            }
     MOV  AX, ES:[0BCh]     { read the old INT 2Fh offset          }
     MOV  SI, 0

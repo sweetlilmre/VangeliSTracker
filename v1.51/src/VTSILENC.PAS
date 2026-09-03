@@ -39,7 +39,8 @@
   [re] 115e IN THIS IMAGE, NOT 1065. The map said 1065, which is this unit's
   SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
-  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 1170:000b -- located, code CHANGED.
+  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only,
+  at 1170:000b -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
   [re] ADDRESS MAP
@@ -406,7 +407,7 @@ end;
 { [re] @asm 000 115e:0110 +98 }
 procedure Stop; far;
 begin
-  { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
+  { [re] A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
     115e:0113 and jumps over the whole body with a single `JZ +54`. An
     `if OldVec = nil then Exit` compiles instead to `JNZ +2 / JMP +54` --
     a conditional jump around an unconditional one, two bytes longer and

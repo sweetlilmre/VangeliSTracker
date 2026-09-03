@@ -1496,7 +1496,7 @@ end;
       03da  MOV DI,[BP+8]        then MOV [DI+$0d],AX      DS-relative
       044c  LES DI,[BP+8]        then MOV ES:[DI+$17],AX   far, ES reloaded
 
-  Both are correct at run time, because `RawChannels` is in DGROUP and the
+  [re] Both are correct at run time, because `RawChannels` is in DGROUP and the
   SEGMENT the caller pushed IS DS -- but Turbo Pascal's code generator emits
   only the far form for a `var` parameter. The tell that settles it is `21 C0`
   at 03f7: `AND AX,AX` in the `r/m,reg` direction, which the INLINE ASSEMBLER

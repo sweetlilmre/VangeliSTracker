@@ -17,7 +17,6 @@
   the SoundBlaster unit; this one decides WHEN, and calls in.
 
   ---------------------------------------------------------------------------
-  [re] THE ROUTINE MAP, AND THE INITIALISATION SECTION IS WHAT NAMED IT.
 
   AND ITS FOUR `Name` FUNCTIONS ARE EMPTY -- five bytes each, `PUSH BP /
   MOV BP,SP / LEAVE / RETF`, with no assignment at all. That is a String

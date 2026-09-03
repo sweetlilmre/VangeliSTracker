@@ -289,7 +289,7 @@ procedure Sb16StartSample(Len : Word; Cont : Boolean);        { 06de RETF 4 }
 
 implementation
 
-{ 0000..005a.  ENTER 0004 -- ct, stat and the Boolean result. The release's
+{ [re] 0000..005a.  ENTER 0004 -- ct, stat and the Boolean result. The release's
   body verbatim, including the empty `FOR ct := 1 TO 100 DO;` delay loop at
   000b..0018 and the two reads into the SAME variable at 0035/003d, which is
   the release's `stat := PORT[DSPRStatPort]; stat := PORT[DSPReadPort];` --

@@ -27,7 +27,8 @@
   [re] 106e IN THIS IMAGE, NOT 1084. The map said 1084, which is this unit's
   SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
-  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 107c:0008 -- located, code CHANGED.
+  reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only,
+  at 107c:0008 -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
   [re] ADDRESS MAP

@@ -53,7 +53,7 @@ type
     block to play, or nil when there is none -- see 1bff:03d2, which calls it
     when the queue empties. }
   { The block the provider hands back. Every offset here is read off
-    1bff:03d2..0529 and they agree with the release's TSampleBuffer exactly:
+    1bff:03d2..0529. They agree with the release's TSampleBuffer exactly:
     InUse at +0, NSamples at +1, RateHz at +3, Channels at +5, DataType at +6
     and the data pointer at +7.
 

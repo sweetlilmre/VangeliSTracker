@@ -26,7 +26,8 @@
   [re] 1a77 IN THIS IMAGE, NOT 188f. The map said 188f, which is this unit's
   SEGMENT in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
-  reference images, and a byte search bounded by the paired extent: a 16-byte PREFIX only, at 1a77:0000 -- located, code CHANGED.
+  reference images, and a byte search bounded by the paired extent: a 16-byte PREFIX only,
+  at 1a77:0000 -- located, code CHANGED.
   The per-line addresses through this file are re-based to this image too;
   the OFFSETS are inherited and are verified only where an @asm marker sits.
   [re] ADDRESS MAP
