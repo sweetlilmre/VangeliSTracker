@@ -103,6 +103,7 @@ var
 
   [re] 1b19:0000. Plain Pascal.
   -------------------------------------------------------------------------- }
+{ @asm 000 1b19:0000 +41 }
 procedure AtExit; far;
 begin
   ExitProc := SavedExit;                          { 1b19:0003 .. 1b19:000d }

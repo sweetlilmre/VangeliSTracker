@@ -109,6 +109,7 @@ const
   discrepancy this unit used to carry. So the faithful transcription is the
   direct comparison, and it is also the short one.
   -------------------------------------------------------------------------- }
+{ @asm 000 1839:0000 }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
                            var Header : TSongHeader);
 var

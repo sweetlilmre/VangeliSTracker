@@ -183,6 +183,7 @@ var
   than RETF n, so the CALLER clears the arguments either way and the two
   signatures can differ without anything going wrong.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0000 +5 }
 procedure DevName; far;
 begin
 end;
@@ -292,6 +293,7 @@ end;
   at 1086:0021 settles NOTHING -- its JNZ has a zero displacement. The
   producers settle it, and TRUE means present. See VTDriver.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0039 +13 }
 function Probe : Boolean; far;
 begin
   Probe := True;                                  { 115e:003d }
@@ -315,6 +317,7 @@ end;
   is what gates the UART's interrupt line through to the 8259. Without it the
   chip raises interrupts that never reach the controller.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0046 +173 }
 procedure Start(Rate : Word); far;
 begin
   IsDmaDevice := True;                            { 115e:0049 }
@@ -366,6 +369,7 @@ end;
   one this driver can honour -- the answer costs nothing and keeps the core
   from having to special-case it.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:00f3 +17 }
 function AskRate(Want : Word) : Word; far;
 begin
   AskRate := Want;                                { 115e:00f7 }
@@ -378,10 +382,12 @@ end;
 
   [re] 115e:0104 and 115e:010b -- slots +$22 and +$2e. Empty, as in 1084.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0104 +7 }
 procedure ChgHz(W : Word); far;
 begin
 end;
 
+{ @asm 000 115e:010b +5 }
 procedure DevPoll; far;
 begin
 end;
@@ -397,6 +403,7 @@ end;
   IRQ 4 is only masked again if it had been masked before. A serial mouse
   sharing that line keeps working.
   -------------------------------------------------------------------------- }
+{ @asm 000 115e:0110 +98 }
 procedure Stop; far;
 begin
   { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at

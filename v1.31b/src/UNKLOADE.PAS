@@ -90,6 +90,7 @@ const
   bytes, three far pointers -- but touches only the first and the last. It is
   declared to keep the frame and the RETF right.
   -------------------------------------------------------------------------- }
+{ @asm 000 164b:0000 }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
                            var Header : TSongHeader);
 var

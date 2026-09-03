@@ -79,6 +79,7 @@ var
   Restoring FIRST and cleaning up second is the required order -- if Close
   faulted, the chain would still be intact.
   -------------------------------------------------------------------------- }
+{ @asm 000 1931:0000 +41 }
 procedure AtExit; far;
 begin
   ExitProc := SavedExit;                          { 1931:0003 .. 1931:000d }

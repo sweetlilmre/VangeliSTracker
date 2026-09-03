@@ -328,6 +328,7 @@ end;
   the caller has already accounted for. Declared as the function it is, the
   bytes match.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:0055 +12 }
 function DevName : TDevID; far;
 begin
   DevName := '';  { 106e:005b }
@@ -340,6 +341,7 @@ end;
   TRUE means the card answered. No caller in the program tests the result --
   see the note on Autodetect in VTDRIVER.PAS.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:0061 +17 }
 function DevDetect : Boolean; far;
 begin
   DevDetect := GUS.DetectUltrasound;  { 106e:0065 }
@@ -372,6 +374,7 @@ end;
   of parameter are popped, but the body reads the rate from DGROUP at
   [0bcc] rather than from the frame. Declared without the parameter it
   compiles to a plain RETF and every caller's stack is two bytes out. }
+{ @asm 000 106e:0072 +99 }
 procedure DevInit(Hz : Word); far;
 begin
   GUS.StartUltrasound;  { 106e:0075 }
@@ -398,6 +401,7 @@ end;
   106e:00d5 -- slot +$32, stop. Two calls into the hardware layer, in the
   reverse order to Start's.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:00d5 +15 }
 procedure DevEnd; far;
 begin
   GUS.DoneGusIRQ;       { 106e:00d8 }
@@ -411,6 +415,7 @@ end;
   any rate the caller names is one it can play. A driver that could not would
   answer with the nearest it supports; see 193a.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:00e4 +17 }
 function DevGetRealFreq(Hz : Word) : Word; far;
 begin
   DevGetRealFreq := Hz;  { 106e:00e8 }
@@ -427,10 +432,12 @@ end;
   The first takes a word and the second takes nothing, and neither does
   anything with it. Whatever these mean, the GUS has no use for them.
   -------------------------------------------------------------------------- }
+{ @asm 000 106e:00f5 +7 }
 procedure DevChgHz(Hz : Word); far;
 begin
 end;
 
+{ @asm 000 106e:00fc +5 }
 procedure DevPoll; far;
 begin
 end;

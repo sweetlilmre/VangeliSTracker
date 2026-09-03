@@ -164,6 +164,7 @@ const
   one of those ALSO has to clear IRQ 2 on the first -- that is the cascade
   line the second controller is wired to, and a masked IRQ 2 makes the whole
   upper eight silent. }
+{ @asm 000 1d0c:0000 +68 }
 procedure EnableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then                                 { 1d0c:0003 }
@@ -184,6 +185,7 @@ end;
   one too. The asymmetry is deliberate.
   -------------------------------------------------------------------------- }
 { Pascal, for the same reason as EnableIRQ above. }
+{ @asm 000 1d0c:0044 +58 }
 procedure DisableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then                                 { 1d0c:0047 }
@@ -206,6 +208,7 @@ end;
 { Pascal. Note the second arm is an AND of two comparisons, not a nested if:
   an IRQ on the slave is only really open if the CASCADE is open too, and a
   masked IRQ 2 silences the whole upper eight. }
+{ @asm 000 1d0c:007e +89 }
 function IRQState(IRQ : Word) : Boolean;
 begin
   if IRQ < 8 then                                 { 1d0c:0081 }
@@ -227,6 +230,7 @@ end;
   Returning the displaced vector is what makes an install/uninstall pair
   possible without a separate save call.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:00d7 +81 }
 function SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer;
 var
   { [re] FOUR UNUSED BYTES AGAIN. ENTER $0a,0 reserves ten; `p` is at [BP-8]
@@ -614,6 +618,7 @@ end;
   Flagged rather than fixed. Resolving it properly needs the callers in 12ba
   and 19a0, which have not been transcribed.
   -------------------------------------------------------------------------- }
+{ @asm 000 1d0c:0276 +122 }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word);
 var
   Segm : Word;           { [BP-2] }

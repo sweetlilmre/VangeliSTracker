@@ -5,11 +5,35 @@
 # hand-edit them. To accept a regression, lower `target` with a `reason`.
 # [plan] is DECIDED: investigation order is the priority order.
 
+[routine."DEVGUS.DevChgHz"]
+matched = 7
+
+[routine."DEVGUS.DevDetect"]
+matched = 17
+
+[routine."DEVGUS.DevEnd"]
+matched = 15
+
+[routine."DEVGUS.DevGetRealFreq"]
+matched = 17
+
+[routine."DEVGUS.DevInit"]
+matched = 99
+
+[routine."DEVGUS.DevName"]
+matched = 12
+
+[routine."DEVGUS.DevPoll"]
+matched = 5
+
 [routine."DEVGUS.NullTimerHandler"]
 matched = 76
 
 [routine."DEVGUS.Poll"]
 matched = 9
+
+[routine."FILEUTIL.AddBar2Path"]
+matched = 61
 
 [routine."FILTERS.Filter1_2Word"]
 matched = 16
@@ -23,11 +47,35 @@ matched = 30
 [routine."FILTERS.FilterChunkWord"]
 matched = 53
 
+[routine."GUS.ChangeSample"]
+matched = 280
+
+[routine."GUS.ChangeVoiceParams"]
+matched = 234
+
+[routine."GUS.ChangeVol"]
+matched = 253
+
+[routine."GUS.DetectUltrasound"]
+matched = 72
+
+[routine."GUS.DoneGusIRQ"]
+matched = 52
+
 [routine."GUS.DumpToUltrasound"]
 matched = 119
 
+[routine."GUS.GUSInitTimer1"]
+matched = 64
+
+[routine."GUS.GUSInitTimer2"]
+matched = 64
+
 [routine."GUS.GUSIrqHandler"]
 matched = 89
+
+[routine."GUS.GUSStopTimer1"]
+matched = 53
 
 [routine."GUS.GetGusRegister16"]
 matched = 27
@@ -38,11 +86,23 @@ matched = 29
 [routine."GUS.GusDelay"]
 matched = 12
 
+[routine."GUS.InitGusIRQ"]
+matched = 69
+
+[routine."GUS.ProbeUltrasound"]
+matched = 151
+
+[routine."GUS.RestartChannels"]
+matched = 364
+
 [routine."GUS.ServiceTimer1"]
 matched = 38
 
 [routine."GUS.ServiceTimer2"]
 matched = 38
+
+[routine."GUS.SetGusChannels"]
+matched = 72
 
 [routine."GUS.SetGusRegister16"]
 matched = 24
@@ -58,6 +118,12 @@ matched = 132
 
 [routine."GUS.StartUltrasound"]
 matched = 259
+
+[routine."GUS.SwapGusAddress"]
+matched = 44
+
+[routine."GUS.TriggerVoice"]
+matched = 154
 
 [routine."HARDWARE.DMA16Reset"]
 matched = 10
@@ -80,8 +146,17 @@ matched = 15
 [routine."HARDWARE.DMAResetAsm"]
 matched = 21
 
+[routine."HARDWARE.DMASet"]
+matched = 122
+
 [routine."HARDWARE.DMASetAsm"]
 matched = 21
+
+[routine."HARDWARE.DisableIRQ"]
+matched = 58
+
+[routine."HARDWARE.EnableIRQ"]
+matched = 68
 
 [routine."HARDWARE.GetDMA16Count"]
 matched = 28
@@ -94,6 +169,39 @@ matched = 15
 
 [routine."HARDWARE.GetDMACountAsm"]
 matched = 21
+
+[routine."HARDWARE.IRQState"]
+matched = 89
+
+[routine."HARDWARE.SetIRQVector"]
+matched = 81
+
+[routine."S3MLOADE.LoadS3MFileFormat"]
+matched = 760
+
+[routine."S3MLOADE.ReadInstruments"]
+matched = 960
+
+[routine."S3MLOADE.ReadPatterns"]
+matched = 1696
+
+[routine."S3MLOADE.SeekPara"]
+matched = 43
+
+[routine."STMLOADE.LoadSTMFileFormat"]
+matched = 474
+
+[routine."STMLOADE.LoadSamples"]
+matched = 483
+
+[routine."STMLOADE.ProcessInstruments"]
+matched = 422
+
+[routine."STMLOADE.ProcessPatterns"]
+matched = 987
+
+[routine."UNKLOADE.LoadJMFileFormat"]
+matched = 77
 
 [routine."VTDOSRSZ.SetMemTop"]
 matched = 31
@@ -109,6 +217,9 @@ matched = 336
 
 [routine."VTMAIN.PollDriver"]
 matched = 52
+
+[routine."VTMAIN.ShowBanner"]
+matched = 115
 
 [routine."VTMAIN.TimerChain"]
 matched = 6
@@ -131,8 +242,32 @@ matched = 294
 [routine."VTRESID.OldInt2F"]
 matched = 6
 
+[routine."VTSHELL.AtExit"]
+matched = 41
+
+[routine."VTSILENC.AskRate"]
+matched = 17
+
+[routine."VTSILENC.ChgHz"]
+matched = 7
+
+[routine."VTSILENC.DevName"]
+matched = 5
+
+[routine."VTSILENC.DevPoll"]
+matched = 5
+
 [routine."VTSILENC.IrqHandler"]
 matched = 52
+
+[routine."VTSILENC.Probe"]
+matched = 13
+
+[routine."VTSILENC.Start"]
+matched = 173
+
+[routine."VTSILENC.Stop"]
+matched = 98
 
 [artefact."VTMAIN"]
 ours = "build/VTMAIN.EXE"

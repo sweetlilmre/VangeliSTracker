@@ -418,6 +418,7 @@ var
   [re] 1000:00f8. Guarded by DS:$09e8, because both the
   body and PlayModule call it.
   -------------------------------------------------------------------------- }
+{ @asm 000 1000:00f8 +115 }
 procedure ShowBanner;
 begin
   if not NoBanner then                               { 1000:00fb }

@@ -223,6 +223,7 @@ var
   is widened before it is scaled -- a Word times 16 would overflow at $1000
   paragraphs and the file's tables reach further than that.
   --------------------------------------------------------------------------- }
+{ @asm 000 1664:0000 +43 }
 procedure SeekPara(var St : TStream; Para : Word);
 begin
   St.Seek(ModBase + LongInt(Para) * 16)
@@ -239,6 +240,7 @@ end;
   Seven parameters, 22 bytes, in this order -- read off the recogniser's call
   site at 0d34 and off the RET.
   --------------------------------------------------------------------------- }
+{ @asm 000 1664:002b +1696 }
 procedure ReadPatterns(var Song : TSong; var St : TStream;
                        var Buf; var Para : TS3MParaTable;
                        Num : Word; A : Boolean; B : Byte);
@@ -589,6 +591,7 @@ end;
   block at 0938. `A` selects the pitch numerator: $2100 when zero, $20ab when
   not.
   --------------------------------------------------------------------------- }
+{ @asm 000 1664:06cb +960 }
 procedure ReadInstruments(var Song : TSong; var St : TStream;
                           var Buf; var Para : TS3MParaTable;
                           Num : Word; A : Boolean; B : Word);
@@ -805,6 +808,7 @@ end;
   temporaries for the magic comparison, a 256-byte scratch, and the two
   paragraph tables at 512 bytes each.
   --------------------------------------------------------------------------- }
+{ @asm 000 1664:0a8b }
 procedure LoadS3MFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const

@@ -452,6 +452,7 @@ end;
   and the shadow is written out whole -- the only way to set one bit without
   knowing the others.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0100 +64 }
 procedure GUSInitTimer1(Count : Byte);
 begin
   SetGusRegister8(grTimer1Count, Count);          { 1723:0109 }
@@ -462,6 +463,7 @@ begin
   Port[GUSPort + 9] := TimerMask;       { 1723:013b }
 end;
 
+{ @asm 000 1723:0140 +64 }
 procedure GUSInitTimer2(Count : Byte);
 begin
   SetGusRegister8(grTimer2Count, Count);          { 1723:0149 }
@@ -472,6 +474,7 @@ begin
   Port[GUSPort + 9] := TimerMask;       { 1723:017b }
 end;
 
+{ @asm 000 1723:0180 +53 }
 procedure GUSStopTimer1;
 begin
   TimerControl := TimerControl and $FB;  { 1723:0186 }
@@ -609,6 +612,7 @@ end;
   again if it was not. A driver that blindly masked on the way out would
   silence whatever else had been sharing that line.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:025a +69 }
 procedure InitGusIRQ;
 begin
   if GusIRQInited then Exit;                              { 1723:025d }
@@ -619,6 +623,7 @@ begin
   GetGusRegister8(grVoiceIRQ);                                   { 1723:029a  clear status }
 end;
 
+{ @asm 000 1723:029f +52 }
 procedure DoneGusIRQ;
 begin
   if not GusIRQInited then Exit;               { 1723:02a2 }
@@ -772,6 +777,7 @@ end;
   below walks twelve candidate addresses, and eleven of them may belong to
   something else entirely.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:045a +151 }
 function ProbeUltrasound : Boolean;
 { NO `Ok` LOCAL -- assign to the function result directly. The original writes
   its Boolean to [BP-1], an ODD offset that Turbo Pascal will not give a
@@ -839,6 +845,7 @@ end;
   first and leaves by `Exit` the moment a port answers; only falling out of
   the search clears it. A `Found` local and a `repeat` were both wrong -- the
   result is assigned directly and the search is a FOR. }
+{ @asm 000 1723:04f1 +72 }
 function DetectUltrasound : Boolean;
 var
   I : Word;
@@ -874,6 +881,7 @@ end;
   accumulates. Shifting the whole thing left nine and masking each half is
   the cheapest way to land both.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0539 +44 }
 procedure SwapGusAddress(var A : LongInt);
 begin
   { ONE STATEMENT. The release's SwapGusAddress is
@@ -932,6 +940,7 @@ const
   direction bit in the volume-control register accordingly. $40 is the
   decreasing-ramp bit.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0565 +253 }
 procedure ChangeVol(Channel, Vol, Ramp : Byte);
 var
   Oldv : Byte;  { [BP-1] }
@@ -983,6 +992,7 @@ end;
   StartUltrasound fills LastLoopStart with $FE rather than $FF -- a voice that
   has never been programmed must not look like a looping one.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0662 +280 }
 procedure ChangeSample(Voice : Byte);
 var
   Cur, Loop, Fin : LongInt;
@@ -1270,6 +1280,7 @@ end;
   backwards list made this look like `LastVolumes[Voice] := Pan` because [BP+08]
   was where Pan sat.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:08e6 +154 }
 procedure TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan : Byte;
                          StartA, LoopA, EndA : LongInt);
 begin
@@ -1317,6 +1328,7 @@ end;
   recorded, because RestartChannels will apply it; a voice that is not queued
   gets the ramp applied immediately.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0980 +234 }
 procedure ChangeVoiceParams(Channel, Vol : Byte; Freq : LongInt;
                             Panning : Byte);
 begin
@@ -1359,6 +1371,7 @@ end;
   all it has. Register $0E takes the count in the top bits with the low bit
   set, hence `+ $C0 - 1`.
   -------------------------------------------------------------------------- }
+{ @asm 000 1723:0a6a }
 procedure SetGusChannels(N : Byte);
 begin
   if N > $20 then N := $20        { 1723:0a6d  at most 32 }
