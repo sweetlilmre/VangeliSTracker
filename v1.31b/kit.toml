@@ -27,6 +27,33 @@
 src   = "src"                          # the Pascal sources under reconstruction
 build = "build"                        # where the DOSBox build stages and leaves its output
 wiki  = "../kit/wiki"                  # the field manual, inside the kit
+# The same directory, under the name routines.py and the span instruments ask
+# for. They want the LINKED output rather than the staged sources; here the two
+# share a directory. Absent until now, so routines.py could not run at all.
+built = "build"
+# The status register: the ratchet, the observations and the plan. FIVE
+# instruments want it -- artefact.py, observe.py, plan.py, ratchet.py and
+# routines.py -- and every one of them exited 2 here until this line existed.
+# This reconstruction had the instruments and not the ratchet: nothing in it
+# could notice a match getting shorter. re-kit issue #1.
+register = "status.toml"
+# Which files in `built` are OURS. EXPLICIT, not a glob, and deliberately so:
+# a glob can include but not exclude, and a compare tool aimed at an original
+# measures it against itself and PASSES, which is the worst kind of wrong. Our
+# build leaves exactly one executable. The originals are ref/*.bin and
+# ../DEMOVT15/DEMOVT.EXE, and neither is in `built`.
+built_pattern = ["VTMAIN.EXE"]
+# The shared assembler includes, compared against the units. WITHOUT THIS the
+# duplicate check has a hole exactly where its own fix lives: a marker followed
+# by {$I} is skipped as shared, so an include body is compared against nothing
+# and a unit holding its own copy pairs with nobody. This tree has VTGAIN.INC,
+# so the hole was real here and the instrument said so on every run.
+includes = "src"
+# Assembler duplicated between units that cannot become one text. Measured
+# empty -- see the file's own header. shared_asm.py refuses to report without
+# it, so this answer is what lets the check run at all rather than what
+# excuses anything.
+exempt = "src/shared-exempt.txt"
 
 [target]
 # The paragraph the disassembly calls the start of the load image. Every address

@@ -1,0 +1,11 @@
+# Assembler duplicated between units that cannot become one text.
+#
+# EMPTY, and measured empty: shared_asm.py reports 0 duplicate(s) in this tree,
+# so nothing here needs exempting. The file exists because the instrument
+# refuses to report without one -- an exemption list is a precondition for
+# looking, not only for forgiving.
+#
+# One `UNIT.Routine` per line. Before adding one, DIFF THE TWO TEXTS: four
+# entries in the sibling corpus each carried a reason that was false, and the
+# declarations they claimed differed were the same line character for
+# character. See kit/wiki/observations/exemption-that-cannot-fail/.
