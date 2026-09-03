@@ -17,12 +17,12 @@
   IT USES THE COMMAND-LINE PARSER'S TOKENISER rather than its own. A config
   line and a command line are the same problem, so the same object walks both.
 
-  [re] Segment 11bb -- 4,080 bytes, twenty routines. COMPLETE.
+  [re] Segment 11cf -- 4,080 bytes, twenty routines. COMPLETE.
 
   [re] AND ESSENTIALLY THE WHOLE UNIT WENT IN VERBATIM FROM THE RELEASE. Twenty routines,
   and only three needed anything measured out of the binary rather than copied:
 
-      ShellParam is a `String[127]`   11bb:0d5c pushes 7F, not FF
+      ShellParam is a `String[127]`   11cf:0d5c pushes 7F, not FF
       TmpPath is absent               DoSectMisc has four tests, not five
       ForceEGA is absent              DoSectScreen is five bytes, an empty body
 
@@ -47,7 +47,7 @@
   literals verbatim. It is one-way: a high score is strong evidence, a low score is
   none at all. See `pairmap.py`.)
 
-  [re] `11bb:0000..001f` IS DATA, AND IT IS A SET CONSTANT. The first routine starts at
+  [re] `11cf:0000..001f` IS DATA, AND IT IS A SET CONSTANT. The first routine starts at
   0020; the 32 bytes before it are
 
       01 02 00 00 01 00 ... 00 80
@@ -55,12 +55,12 @@
   [re] which is a `set of Char` with exactly four members: bit 0 of byte 0 is #0, bit 1 of
   byte 1 is #9, bit 0 of byte 4 is #32, and bit 7 of byte 31 is #255. That is
   `KillSpaces`'s `ValidBlanks = [' ', #9, #0, #255]` character for character, and
-  `11bb:0035` loads it with `MOV DI,0 / PUSH CS / PUSH DI` -- CS-relative, offset
+  `11cf:0035` loads it with `MOV DI,0 / PUSH CS / PUSH DI` -- CS-relative, offset
   zero. **So an untyped SET constant goes in the code segment exactly as a string
   literal does**, which extends a rule the docs had only for strings, and it is why
   the segment does not begin on an instruction boundary.
 
-  [re] THE INITIALISATION SECTION AT 11bb:0f2e IS THE RELEASE'S TOO. An earlier draft of
+  [re] THE INITIALISATION SECTION AT 11cf:0f2e IS THE RELEASE'S TOO. An earlier draft of
   this header said 1.31 had added it; that was wrong, and wrong for an avoidable
   reason -- it came from the segment map's description of what the init does rather
   than from reading the bottom of `VTCFG.PAS`, which has the same block and the same
@@ -88,7 +88,7 @@ uses
     VTNOTES' `NoteOf` back on $25c6. Already reached through SongUnit, so it cannot
     move a segment. }
 
-{ 11bb:0e4f -- read and interpret a file as a configuration file. }
+{ 11cf:0e4f -- read and interpret a file as a configuration file. }
 procedure ReadConfiguration(FName : PathStr); far;
 
 implementation
@@ -120,7 +120,7 @@ var
   [re] **AND `FilterIsOn` AT $0348 IS A RETROSPECTIVE CONFIRMATION.** 142f left two
   variables of that name -- PlayMod's at $02cd and ModCommands' at $0348 -- with
   nothing in the transcribed tree reading the second, and ModCommands kept its copy
-  unexported so the two could not shadow each other. 11bb:0b0e's `FilterIsOn` key
+  unexported so the two could not shadow each other. 11cf:0b0e's `FilterIsOn` key
   writes $0348. So the config file is what sets it, the duplication is real, and the
   decision not to export it was right for a reason that had not appeared yet.
 
@@ -137,7 +137,7 @@ var
   `VTDir` is VTGlobal's, all four at addresses this unit already carried but could
   not own. It writes every one of them from a config key and reaches them all
   through a `uses`. See the notes below, which are kept for what they record. }
-  { Segment 193a, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
+  { Segment 1b22, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
   { [re] ~~SbProMixMasterVol $09ea, SbProMixDACVol $09eb, SbProMixFMVol $09ec,
     SbProMixFilter $09ed~~ -- ALL FOUR MOVED TO DEVSB.PAS. This unit writes them, from
     the `MasterVol`, `DACVol`, `FMVol` and `Filter` keys, which is why they were
@@ -168,7 +168,7 @@ var
     declared stub for segment `19a0`, for the same reason.
 
     [re] **AND `VTDir` WAS WRONG.** It was declared here as a `PathStr` at `DS:$09e8`, marked
-    provisional, on the strength of `11bb:0a00` referring to `09e8`. That reference is
+    provisional, on the strength of `11cf:0a00` referring to `09e8`. That reference is
     `MOV DI,09e8 / PUSH CS / PUSH DI` -- a far pointer into THIS UNIT'S OWN CODE
     SEGMENT, a string constant, not a DGROUP address at all. The DGROUP byte at `$09e8`
     is `109c`'s no-banner Boolean, which `1000` tests one byte at a time. `VTDir` is
@@ -194,7 +194,7 @@ var
 
 
 { --------------------------------------------------------------------------
-  11bb:0020 -- KillSpaces. Strip blanks from both ends of a string, in place.
+  11cf:0020 -- KillSpaces. Strip blanks from both ends of a string, in place.
 
   TWO `while`s AND NOT ONE, and they are not symmetrical: the leading blanks are
   removed by COPYING the string down (`S := Copy(S, 2, 255)`, which costs a 256-byte
@@ -203,7 +203,7 @@ var
   one -- there is no cheap way to drop a leading character from a Pascal string.
 
   [re] `Dec(S[0])` IS THE LENGTH BYTE. `S[0]` is a `Char` holding the length, so `Dec` on
-  it shortens the string; 11bb:008e is `DEC byte ptr ES:[DI]` with DI at the string's
+  it shortens the string; 11cf:008e is `DEC byte ptr ES:[DI]` with DI at the string's
   base. Written `S[0] := Chr(Ord(S[0]) - 1)` it would be several instructions.
 
   `ValidBlanks` INCLUDES #0 AND #255, which is not fussiness -- a config line read
@@ -212,7 +212,7 @@ var
   -------------------------------------------------------------------------- }
 procedure KillSpaces(var S : String);
 const
-  { [re] The 32 bytes at 11bb:0000, and the reason the segment starts with data. }
+  { [re] The 32 bytes at 11cf:0000, and the reason the segment starts with data. }
   ValidBlanks = [' ', #9, #0, #255];
 begin
   while (Length(S) > 0) and (S[1] in ValidBlanks) do    { 0024..0040          }
@@ -257,7 +257,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  11bb:0097 -- NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
+  11cf:0097 -- NotInStr. TRUE when `S` does NOT begin with `SS`, compared without
   regard to case. The awkward name and the inverted sense are the release's; every
   caller writes `NOT NotInStr(...)`, which is how GetBool tests eleven spellings of
   "true" in four languages.
@@ -292,11 +292,11 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0131 -- GetString. Take everything after the `=` on the current line and
+  11cf:0131 -- GetString. Take everything after the `=` on the current line and
   return it as a string, honouring quotes and stripping comments. 786 bytes, the
   largest routine in the segment, and almost all of it is Pascal string handling.
 
-  [re] `11bb:0127..0130` IS ITS DATA. Ten bytes, five length-1 string literals --
+  [re] `11cf:0127..0130` IS ITS DATA. Ten bytes, five length-1 string literals --
   `01 3D`, `01 27`, `01 3B`, `01 3A`, `01 23` -- which are the five characters this
   routine and GetNum look for with `Pos`: equals, quote, semicolon, colon and hash.
   A one-character Pascal literal is still a string with a length byte, and it goes in
@@ -368,9 +368,9 @@ end;
   the config file was expected to be written by whoever was using the program
   rather than by the program itself. A value matching nothing is false.
 
-  [re] 11bb:0443 -- GetBool.
+  [re] 11cf:0443 -- GetBool.
 
-  [re] `11bb:0407..0442` IS ITS LITERAL TABLE and the ORDER IS THE RELEASE'S EXACTLY:
+  [re] `11cf:0407..0442` IS ITS LITERAL TABLE and the ORDER IS THE RELEASE'S EXACTLY:
 
       01 'S'   01 'Y'   03 'OUI'  02 'DA'   03 'POR'  04 'TAMB' 04 'ALSO'
       04 'TRUE' 04 'VERD' 04 'CIER' 01 '1'
@@ -433,7 +433,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:05a9 -- GetPath. GetString, then expand the result against the current
+  11cf:05a9 -- GetPath. GetString, then expand the result against the current
   directory so a relative path in the config file means what the user expects.
 
   `SizeOf(P) - 1` IS 79 HERE AND 255 IN GetBool, because P is a `PathStr` --
@@ -451,7 +451,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:05f2 -- GetNum. Read a number, and it accepts two forms.
+  11cf:05f2 -- GetNum. Read a number, and it accepts two forms.
 
   THE ORDINARY FORM is a decimal or (via `Val`) a `$`-prefixed hex literal, taken
   from after the `=` and stopped at the first comment character exactly as GetString
@@ -520,7 +520,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0826 and 11bb:0850 -- GetWord and GetByte. GetNum with a cast, and the two
+  11cf:0826 and 11cf:0850 -- GetWord and GetByte. GetNum with a cast, and the two
   are identical but for the width. `ENTER 0006,0` each: the LongInt local and the
   one-byte result.
   -------------------------------------------------------------------------- }
@@ -558,7 +558,7 @@ end;
   A key none of them recognises falls off the end of the chain and is ignored,
   which is how a file written for a different version still loads.
 
-  [re] 11bb:089f..0d9f. Each is a chain of
+  [re] 11cf:089f..0d9f. Each is a chain of
   `if not NotInStr(Line, <key>) then Get<Type>(<variable>)`.
 
   ALL SEVEN ARE `far`, and they have to be: DoSectGeneric at 0da0 calls whichever one
@@ -608,7 +608,7 @@ begin
 end;
 
 { [re] The big one: twenty tests, and `Volume` appears TWICE -- first and last. The
-  release has the duplicate too, and it is not a transcription slip: 11bb:0b0e's
+  release has the duplicate too, and it is not a transcription slip: 11cf:0b0e's
   chain writes DS:$08ba at both the tenth and the twentieth test. Harmless, since
   the second overwrites the first with the same value. }
 procedure DoSectPlayMod; far;
@@ -629,7 +629,7 @@ begin
   { [re] QUALIFIED ON PURPOSE. PlayMod now exports a `FilterIsOn` of its own at
     DS:$02cd -- its address forced it into that unit's interface -- and this unit
     uses both, so a bare reference would bind to whichever `uses` entry comes
-    last. 11bb:0b0e writes $0348, which is ModCommands'. }
+    last. 11cf:0b0e writes $0348, which is ModCommands'. }
   if not NotInStr(Line, 'FilterIsOn'  ) then GetBool(ModCommands.FilterIsOn);
   if not NotInStr(Line, 'CanFallBack' ) then GetBool(CanFallBack);
   if not NotInStr(Line, 'FilterChange') then GetBool(PermitFilterChange);
@@ -650,7 +650,7 @@ begin
   if not NotInStr(Line, 'ModPath'    ) then GetPath  (ModPath)
 end;
 
-{ 11bb:0d9b -- FIVE BYTES, and an empty body. The release reads `ForceEGA` here; a
+{ 11cf:0d9b -- FIVE BYTES, and an empty body. The release reads `ForceEGA` here; a
   player with no screen has nothing to configure. It exists at all because
   DoSectGeneric's table needs an address for the section. }
 procedure DoSectScreen; far;
@@ -658,7 +658,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  11bb:0da0 -- DoSectGeneric. Read lines until the next `[` and hand each one to the
+  11cf:0da0 -- DoSectGeneric. Read lines until the next `[` and hand each one to the
   handler for the section we are inside. One routine drives all seven.
 
   THE HANDLER ARRIVES AS AN OFFSET, NOT A POINTER, and that is why the `asm` block
@@ -722,7 +722,7 @@ const
 
 
 { --------------------------------------------------------------------------
-  11bb:0e0b -- FindNextSect. Skip forward to the next line that starts with `[`,
+  11cf:0e0b -- FindNextSect. Skip forward to the next line that starts with `[`,
   leaving it in `Line` for the caller to identify.
   -------------------------------------------------------------------------- }
 procedure FindNextSect;
@@ -737,7 +737,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  11bb:0e4f -- ReadConfiguration. The only routine this unit publishes: open the
+  11cf:0e4f -- ReadConfiguration. The only routine this unit publishes: open the
   file, then alternate between finding a section header and running its handler.
 
   `FileMode` IS SAVED, FORCED TO 0 AND RESTORED around the `Reset`, which is how you
@@ -797,9 +797,9 @@ end;
 
 
 { ==========================================================================
-  11bb:0f2e -- THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
+  11cf:0f2e -- THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
 
-  [re] `11bb:0f1f..0f2d` IS ITS DATA: three literals, `02 'VT'`, `06 'VT.CFG'` and
+  [re] `11cf:0f1f..0f2d` IS ITS DATA: three literals, `02 'VT'`, `06 'VT.CFG'` and
   `04 '.CFG'`, which are exactly the three the release's block uses.
 
   THE RULE IS "A FILE NAMED AFTER THE EXECUTABLE, AND VT.CFG AS WELL IF WE ARE NOT

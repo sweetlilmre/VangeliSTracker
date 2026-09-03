@@ -19,7 +19,7 @@
   characters. That matters to a caller laying out a column: the width is a
   guarantee, not a ceiling.
 
-  [re] Segment 1642 -- one function, 144 bytes, all of it.
+  [re] Segment 1830 -- one function, 144 bytes, all of it.
 
   [re] It is a FUNCTION returning String, so the call frame has the result
   pointer pushed above the parameters and `RETF 6` removes only the parameters
@@ -64,7 +64,7 @@ implementation
   and can be subscripted like any other string. No local is used and no copy is
   made at the end.
 
-  [re] 1642:0000. Plain Pascal in the binary -- ENTER 4,0, which is ONE counter
+  [re] 1830:0000. Plain Pascal in the binary -- ENTER 4,0, which is ONE counter
   plus the compiler's temporary for the FOR limit, not two declared locals.
 
   [re] An earlier version of this file built the string in a local and assigned
@@ -79,25 +79,25 @@ var
   z : array[0..65520] of Char absolute s;
   i : Word;                       { [re] [BP-2] }
 begin
-  i := 0;                                         { 1642:0004 }
+  i := 0;                                         { 1830:0004 }
 
   { An empty source skips the copy entirely and falls through to the padding,
     which is what makes StrAsciiZ(empty, 8) eight spaces rather than ''. }
-  if z[0] <> #0 then                              { 1642:000c }
+  if z[0] <> #0 then                              { 1830:000c }
     repeat
-      StrAsciiZ[i + 1] := z[i];                   { 1642:001a, 1642:0026 }
-      Inc(i);                                     { 1642:0029 }
-    until (i > l) or (z[i] = #0);                 { 1642:002f, 1642:003c }
+      StrAsciiZ[i + 1] := z[i];                   { 1830:001a, 1830:0026 }
+      Inc(i);                                     { 1830:0029 }
+    until (i > l) or (z[i] = #0);                 { 1830:002f, 1830:003c }
 
   { The loop leaves `i` one past the last character it copied, and on the
     truncation arm it has already gone one further than the width allows --
     hence the correction before the count is used as a position. }
-  if i > l then Dec(i);                           { 1642:0045, 1642:004a }
-  StrAsciiZ[0] := Chr(l);                         { 1642:004d  ALWAYS l     }
+  if i > l then Dec(i);                           { 1830:0045, 1830:004a }
+  StrAsciiZ[0] := Chr(l);                         { 1830:004d  ALWAYS l     }
 
-  if i < l then                                   { 1642:0056 }
-    for i := i + 1 to l do                        { 1642:0068, 1642:006d }
-      StrAsciiZ[i] := ' ';                        { 1642:007d }
+  if i < l then                                   { 1830:0056 }
+    for i := i + 1 to l do                        { 1830:0068, 1830:006d }
+      StrAsciiZ[i] := ' ';                        { 1830:007d }
 end;
 
 end.

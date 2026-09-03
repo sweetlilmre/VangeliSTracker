@@ -19,7 +19,7 @@
   may include another, because the parse state is saved and restored around
   the recursion rather than kept in locals.
 
-  [re] Segment 116e -- 1,232 bytes, nine routines. COMPLETE at 1,232 of 1,232,
+  [re] Segment 1182 -- 1,232 bytes, nine routines. COMPLETE at 1,232 of 1,232,
   158 pending fixups. Our code is 1,282: the two empty overrides at the bottom
   are routines the ORIGINAL'S LINKER DROPPED, which is why they sit last. Read
   the note there before moving them.
@@ -38,7 +38,7 @@
       +04  Done               Objects.TObject's
       +08  ParseLine          called once, from ParseFile
       +0c  ParseFile          called once, from ParseLine
-      +10  SkipRest           NEVER CALLED from inside this segment -- 109c:0835 is
+      +10  SkipRest           NEVER CALLED from inside this segment -- 1086:0835 is
       +14  GetToken           called FOUR times: three in ParseLine, one in TokenParam
       +18  CmpSwitch
       +1c  TokenParam
@@ -48,18 +48,18 @@
 
   [re] `GetToken` AT +14 IS THE ANOMALY. The release declares ParseLine, ParseFile, GetToken,
   which would put GetToken at +10; four calls land on +14 instead, so something sits
-  between ParseFile and GetToken. That something is `116e:02ac`, fourteen bytes that set
+  between ParseFile and GetToken. That something is `1182:02ac`, fourteen bytes that set
   `Idx := 255` and nothing else. `Abort` still exists separately at +20 and sets
   `Aborting`.
 
   [re] **AND `109c` NAMED IT.** The method had no caller inside this segment and was
-  `Rut_0110` until one turned up: `109c:0835` is a `CALLF [DI+10]` and it is the LAST
+  `Rut_0110` until one turned up: `1086:0835` is a `CALLF [DI+10]` and it is the LAST
   thing `TVTCmdSwitch.CmdInitShell` does, immediately after
   `ShellParam := Copy(Line, Idx, 255)`. A method that has just read the rest of the line
   out of `Line` directly needs the tokeniser to stop handing the same text back as
   switches -- so `SkipRest` it is. **The name is ours; the release has no such method.**
 
-  [re] AND `Idx` AT +$146 CONFIRMS THE RELEASE'S FIELD LAYOUT EXACTLY. `116e:02b2` writes a
+  [re] AND `Idx` AT +$146 CONFIRMS THE RELEASE'S FIELD LAYOUT EXACTLY. `1182:02b2` writes a
   Word 255 at Self+$146, which is 326. With the VMT link at +0, `Line : String` at +2
   and `FileDir : DirStr` after it, Idx lands at 2 + 256 + 68 = 326 -- and 68 is
   `DirStr`, which is `String[67]` and not the 80 of `PathStr`. Turbo Pascal splits a
@@ -86,7 +86,7 @@ type
         saves and restores them around each included line, which a local
         could not survive.
 
-        [re] Idx at +$146 is ANCHORED by 116e:02b2. }
+        [re] Idx at +$146 is ANCHORED by 1182:02b2. }
       Line     : String;          { +$002                                     }
       FileDir  : DirStr;          { +$102  the directory an @file came from,
                                      so a relative name inside it resolves    }
@@ -101,7 +101,7 @@ type
         `Line` directly and then calls this, so the tokeniser does not hand
         the same text back as more switches.
 
-        [re] 116e:02ac -- the extra virtual, VMT +$10; see the header. }
+        [re] 1182:02ac -- the extra virtual, VMT +$10; see the header. }
       procedure SkipRest;                                             virtual;
 
       function  GetToken : TCmdLine;                                  virtual;
@@ -118,7 +118,7 @@ function GetDOSCmdLine : TCmdLine;
 implementation
 
 { --------------------------------------------------------------------------
-  116e:0002 -- ParseLine. Split a line into tokens and dispatch each one.
+  1182:0002 -- ParseLine. Split a line into tokens and dispatch each one.
 
   THREE KINDS OF TOKEN, distinguished by the first character: `/` or `-` is a switch,
   `@` names another file to read, anything else is a bare argument. The `@` case is
@@ -178,7 +178,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:01b8 -- ParseFile. Read a file a line at a time and hand each to ParseLine.
+  1182:01b8 -- ParseFile. Read a file a line at a time and hand each to ParseLine.
 
   `FSplit(FExpand(FName), FileDir, Name, Ext)` KEEPS THE DIRECTORY IN A FIELD and
   throws the name and extension away -- `FileDir` is what a nested `@file` would be
@@ -222,13 +222,13 @@ begin
 end;
 
 
-{ 116e:02ac -- SkipRest. Fourteen bytes: `Idx := 255` and nothing else. That makes
+{ 1182:02ac -- SkipRest. Fourteen bytes: `Idx := 255` and nothing else. That makes
   GetToken's `for I := Idx to Length(Line)` run zero times for ever after, so the rest of
   the line is skipped without touching `Aborting` -- which `ParseLine` tests and would use
   to leave the loop and every enclosing `@file` with it. **Two ways to stop, and this is
   the gentler one.**
 
-  [re] ITS ONE CALLER IS `109c:0835`, at the end of `CmdInitShell`, which is what gives it its
+  [re] ITS ONE CALLER IS `1086:0835`, at the end of `CmdInitShell`, which is what gives it its
   name: `-sh PROG args...` hands everything after the switch to the shelled program, so
   the interpreter must not then read those arguments as its own. }
 procedure TCmdLineInterpreter.SkipRest;
@@ -238,7 +238,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:02dd -- GetToken. Take the next token from `Line`, advancing `Idx`.
+  1182:02dd -- GetToken. Take the next token from `Line`, advancing `Idx`.
 
   IT BUILDS THE RESULT IN PLACE, one character at a time, rewriting the length byte on
   every iteration -- `GetToken[0] := Chr(i - Idx + 1)`. A Pascal function returning a
@@ -276,7 +276,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  116e:03a9 -- CmpSwitch. Does `Token` begin with `Switch`, ignoring case -- and if so,
+  1182:03a9 -- CmpSwitch. Does `Token` begin with `Switch`, ignoring case -- and if so,
   CONSUME the switch and leave the parameter behind in `Token`.
 
   IT IS A TEST THAT MUTATES ITS ARGUMENT, which is why every caller in `109c` reads
@@ -305,7 +305,7 @@ begin
 end;
 
 
-{ 116e:0463 -- TokenParam. The switch's parameter, taking the NEXT token if the switch
+{ 1182:0463 -- TokenParam. The switch's parameter, taking the NEXT token if the switch
   did not carry one. So `-port 220` and `-port:220` are the same thing, and CmpSwitch
   above has already stripped whichever separator was used. }
 function TCmdLineInterpreter.TokenParam(var Token : TCmdLine) : TCmdLine;
@@ -317,7 +317,7 @@ begin
 end;
 
 
-{ 116e:04a2 -- Abort. The harder of the two stops: `ParseLine` tests this at the top of
+{ 1182:04a2 -- Abort. The harder of the two stops: `ParseLine` tests this at the top of
   every iteration and leaves, and `ParseFile` tests it before every line, so setting it
   unwinds the whole nested `@file` chain rather than just the current line. }
 procedure TCmdLineInterpreter.Abort;
@@ -363,7 +363,7 @@ end;
 
       [re] ParseLine, ParseFile, SkipRest, GetToken, CmpSwitch, TokenParam, Abort
           all reached through `TVTCmd`'s VMT, because `109c` overrides none of them --
-          and `SkipRest` is called from `109c:0835` as well.  KEPT.
+          and `SkipRest` is called from `1086:0835` as well.  KEPT.
 
       InterpretNoSwitch, InterpretSwitch
           `109c` overrides BOTH, so every live VMT points into 109c instead. And
@@ -371,7 +371,7 @@ end;
           objects that are -- so the base's own VMT is dead and is dropped, taking the
           last reference to these two with it.  DISCARDED BY THE LINKER.
 
-  [re] `109c:0b7c` IS WHAT PROVED THE SLOT COUNT: it is a `CALLF [DI+2c]`, and +$2c is the first
+  [re] `1086:0b7c` IS WHAT PROVED THE SLOT COUNT: it is a `CALLF [DI+2c]`, and +$2c is the first
   virtual `TVTCmdSwitch` ADDS. A new virtual at +$2c means the inherited ones stop at +$28,
   so nine slots is right and `InterpretSwitch` really is the base's ninth.
 

@@ -23,7 +23,7 @@
   entry, and the player hands whatever is there to Dos.Exec. So an entry that
   names no program of its own falls back to the shell.
 
-  [re] Segment 1931 -- 159 bytes, five routines, three of which do nothing.
+  [re] Segment 1b19 -- 159 bytes, five routines, three of which do nothing.
 
   [re] DS:$3ade IS THE PROGRAM PSYCHO NEUROSIS ACTUALLY RUNS. 109c overwrites
   it per playlist entry and 1000:03af hands it to Dos.Exec.
@@ -31,12 +31,14 @@
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
   [re] ADDRESS MAP
-  [re] SEGMENT UNVERIFIED IN THIS IMAGE. These addresses are v1.31b's,
-  inherited with the file. segpair --pair pairs this unit's segment with
-  1b19 here, but nothing matched inside the paired extent, so nothing is asserted.
-  Do not write an @asm marker from this map until it is charted.
-    AtExit  1931:0000     'CON'      CS:$001d, a String[3]
-    Init    1931:0029     'COMSPEC'  CS:$0021, a String[7]
+  [re] 1b19 IN THIS IMAGE, NOT 1931. Charted in Ghidra by its two string
+  constants, which pin the segment AND show the layout did not move: the
+  String[3] 'CON' is at 1b19:001d and the String[7] 'COMSPEC' at 1b19:0021,
+  the same offsets they hold in v1.31b. Init is confirmed separately -- one
+  of only two `ENTER $200,0` in the image is at 1b19:0029, its v1.31b
+  offset. The CS:$ offsets below are therefore unchanged.
+    AtExit  1b19:0000     'CON'      CS:$001d, a String[3]
+    Init    1b19:0029     'COMSPEC'  CS:$0021, a String[7]
 
   [re] DGROUP
     $39de  the console Text variable      $3ade  the program to run
@@ -55,7 +57,7 @@ var
     through here rather than through Output, which is what makes it immune to
     redirection.
 
-    [re] DS:$3ade -- a String[79]. 1ba1:0aed truncates to $4f on the way in,
+    [re] DS:$3ade -- a String[79]. 1d89:0aed truncates to $4f on the way in,
     which is what fixes the declared width.
 
     [re] THE ORDER HERE IS `ConFile`, THEN `ProgName`, THEN `SavedExit`, and it
@@ -70,18 +72,18 @@ var
     command interpreter and overwritten per entry by the playlist reader. }
   ProgName  : String[79];{ DS:$5e38 }
 
-{ [re] ~~1931:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND
+{ [re] ~~1b19:0090, 0095, 009a -- three empty far procedures~~ WITHDRAWN, AND
   THEY WERE NEVER IN THIS SEGMENT. This unit spans 144 bytes -- the next
-  segment starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 193a:0000.
+  segment starts at 193a, and 0x1931*16 + 0x90 is 0x193a0, which IS 1b22:0000.
   The three "stubs" are DevSB's first three Name functions read past the
-  boundary, five bytes each at 193a:0000, 0005 and 000a, with a fourth at 000f
+  boundary, five bytes each at 1b22:0000, 0005 and 000a, with a fourth at 000f
   the scan stopped short of.
 
   [re] **A SEGMENT BOUNDARY IS NOT A SUGGESTION.** The note said they were
   "kept because they are in the segment"; they are in the next one. Check the
   span against the FOLLOWING segment's address before believing anything near
   the end of a unit -- the same arithmetic that confirmed 116e's 1,232 bytes
-  are exact because 11bb begins at 116e:04d0. }
+  are exact because 11bb begins at 1182:04d0. }
 
 implementation
 
@@ -99,12 +101,12 @@ var
   Close faulted with the restore still pending, the chain would be broken and
   every handler below this one would be skipped -- including the runtime's own.
 
-  [re] 1931:0000. Plain Pascal.
+  [re] 1b19:0000. Plain Pascal.
   -------------------------------------------------------------------------- }
 procedure AtExit; far;
 begin
-  ExitProc := SavedExit;                          { 1931:0003 .. 1931:000d }
-  Close(ConFile);                                 { 1931:0016  1ba1:0673 }
+  ExitProc := SavedExit;                          { 1b19:0003 .. 1b19:000d }
+  Close(ConFile);                                 { 1b19:0016  1d89:0673 }
 end;
 
 { --------------------------------------------------------------------------
@@ -119,7 +121,7 @@ end;
   returns an empty string and FExpand turns it into the current directory --
   the Exec then fails, and nothing here checks.
 
-  [re] 1931:0029. Plain Pascal. The frame is `ENTER $200,0`, which is two
+  [re] 1b19:0029. Plain Pascal. The frame is `ENTER $200,0`, which is two
   256-byte String temporaries and nothing else -- they belong to the COMSPEC
   expression, not to any named local.
 
@@ -129,8 +131,8 @@ end;
       push @temp2          FExpand's result
       push @temp1          FExpand's argument, AND GetEnv's result
       push CS:$0021        GetEnv's argument, 'COMSPEC'
-      call 1b6f:02a5       GetEnv  -- fills temp1, drops its own argument
-      call 1b6f:0178       FExpand -- picks up what is still on the stack
+      call 1d57:02a5       GetEnv  -- fills temp1, drops its own argument
+      call 1d57:0178       FExpand -- picks up what is still on the stack
 
   That is Turbo Pascal's string-function convention: the result pointer is
   pushed by the CALLER and left for it to clear, so a nested call reuses the
@@ -139,18 +141,18 @@ end;
   pointer. It reads like a missing push until you know to expect it.
 
   [re] **IT IS THE UNIT'S INITIALISATION SECTION, NOT A PROCEDURE**, by the
-  same reasoning as VTCTRL's: the original's init chain calls 1931:0029,
+  same reasoning as VTCTRL's: the original's init chain calls 1b19:0029,
   nothing else calls it, and a procedure nothing calls is discarded by the
   smart linker -- which is why our image had VTSHELL at ZERO bytes. It sits at
   0029 rather than 0000 because an initialisation section is the LAST code in a
   unit, and AtExit occupies 0000..0028 ahead of it.
   -------------------------------------------------------------------------- }
 begin
-  Assign(ConFile, 'CON');                         { 1931:0037  1ba1:05a9 }
-  Rewrite(ConFile);                               { 1931:0041  1ba1:061e }
+  Assign(ConFile, 'CON');                         { 1b19:0037  1d89:05a9 }
+  Rewrite(ConFile);                               { 1b19:0041  1d89:061e }
 
-  SavedExit := ExitProc;                          { 1931:0046 .. 1931:0050 }
-  ExitProc  := @AtExit;                           { 1931:0054 .. 1931:005d }
+  SavedExit := ExitProc;                          { 1b19:0046 .. 1b19:0050 }
+  ExitProc  := @AtExit;                           { 1b19:0054 .. 1b19:005d }
 
-  ProgName := FExpand(GetEnv('COMSPEC'))          { 1931:0061 .. 1931:0083 }
+  ProgName := FExpand(GetEnv('COMSPEC'))          { 1b19:0061 .. 1b19:0083 }
 end.

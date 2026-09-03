@@ -18,7 +18,7 @@
 ;     the DSP writers      talking to a Sound Blaster
 ;     the output selectors mono or stereo, 8-bit or 16-bit
 ;
-; [re] 1a17:0746 .. 1a17:10c3. WHY THIS IS AN ASSEMBLER MODULE AND NOT PASCAL:
+; [re] 1bff:0746 .. 1bff:10c3. WHY THIS IS AN ASSEMBLER MODULE AND NOT PASCAL:
 ; it was transcribed as three Pascal `assembler` procedures and cost four bytes
 ; that no source shape could reach -- an epilogue at 1007 where the original has
 ; a 00 pad, another at 104d, and a near RET at 10c1 where the original ends
@@ -119,7 +119,7 @@ StackSize       EQU     1000
 ; TimerHandler slot straight at this, so it is reached by a far call through a
 ; pointer and returns RETF.
 ; ==========================================================================
-; [re] 1a17:1008. VTSILENC stores @SoundDevices.SharedPoll in its driver
+; [re] 1bff:1008. VTSILENC stores @SoundDevices.SharedPoll in its driver
 ; record. The re-entrancy guard at 104b is a byte of DATA INSIDE THE CODE,
 ; addressed CS-relative, which is why it cannot move to DGROUP.
 ;
@@ -214,7 +214,7 @@ SharedPoll:
 ; already switched off before v1.51 dropped it.
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
 
-; [re] 1033 -- THE CALL TO @@Prepare AT 1a17:0edf. As inline Pascal asm this
+; [re] 1033 -- THE CALL TO @@Prepare AT 1bff:0edf. As inline Pascal asm this
 ; had to be DB 0E8h, 0A9h, 0FEh, a hand-computed literal, because @@Prepare is
 ; a label in a different procedure. In one module it is a symbol again.
         CALL    @@Prepare                 ; 1033
@@ -261,7 +261,7 @@ SharedPoll:
 ; TWO SELECTORS, ONE TAIL. One picks mono or stereo by its argument; the other
 ; forces mono and ignores both arguments. They share their ending.
 ;
-; [re] 1a17:104d .. 1a17:10c3. 1087 and 1090 SHARE A TAIL and both open with a
+; [re] 1bff:104d .. 1bff:10c3. 1087 and 1090 SHARE A TAIL and both open with a
 ; hand-written ENTER 0,0 and close LEAVE / RETF 4 -- which no two Pascal
 ; procedures can do, and which is the clearest single sign that this run was
 ; never compiled. 1090 picks by its FIRST argument; 1087 forces mono and
@@ -363,7 +363,7 @@ SelectOutput:
 ; fed sample by sample from the timer, and a non-DMA device is always mono.
 ;
 ; [re] 1090. IT NEEDED A NAME OF ITS OWN, and 193a is what asked for it:
-; 193a:0352 calls 1a17:1090 directly, so the second entry point has to be
+; 1b22:0352 calls 1bff:1090 directly, so the second entry point has to be
 ; PUBLIC. The release calls this pair DevInitSbNonDMA (1087) and DevInitSbDMA
 ; (1090).
 ;

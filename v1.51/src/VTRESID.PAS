@@ -26,7 +26,7 @@
   hooking anything, and if a DemoVT is already there it prints that copy's
   name and stops. Two players on one timer would fight over the sound card.
 
-  [re] Segment 1b54 -- 432 bytes, all of it, nothing left unread. This is the
+  [re] Segment 1d3c -- 432 bytes, all of it, nothing left unread. This is the
   half of the handshake that the Psycho Neurosis reconstruction's own
   src/DEMOVT.PAS talks to; everything that file assumes is confirmed here. See
   ../v1.31b/docs/01-int2f.md.
@@ -39,7 +39,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 48 bytes unchanged at 1d42:0001.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     OldInt2F     1d3c:0000     Handler      1d3c:0006
     ExitHandler  1d3c:002f     'Ojo...'     1d3c:0061
     ' residente' 1d3c:007b     Install      1d3c:0088
@@ -64,7 +65,7 @@ const
     Written with character codes so this file stays seven-bit -- #173 is the
     inverted exclamation mark and #162 an o-acute, both CP437.
 
-    [re] 1b54:0061 and 1b54:007b. }
+    [re] 1d3c:0061 and 1d3c:007b. }
   Already = #13#10'    ' + #173#173 + 'Ojo, que est' + #160 + ' el ';
   Resident = ' residente!!';
 
@@ -72,7 +73,7 @@ const
     a null ES:DI -- it identified itself as a DemoVT and then gave nowhere to
     read its name from.
 
-    [re] 1caa:0c20 -- ten characters. Written with #168 for
+    [re] 1e92:0c20 -- ten characters. Written with #168 for
     the inverted question mark so this file stays seven-bit; the binary holds
     it as CP437 $A8.
 
@@ -105,16 +106,16 @@ var
   It is assembled pointing at itself, so an unpatched stub is an infinite loop
   -- which is safe only because Install always patches it before hooking.
 
-  [re] 1b54:0000. Like the timer chain in the program itself. ExitHandler reads
+  [re] 1d3c:0000. Like the timer chain in the program itself. ExitHandler reads
   the two words at +1 and +3 straight back out of the instruction.
   -------------------------------------------------------------------------- }
 { @asm 000 1d3c:0000 +6 }
 procedure OldInt2F; assembler;
 asm
-  DB   0EAh              { 1b54:0000  JMP FAR seg:ofs                        }
-  DW   OFFSET OldInt2F   { 1b54:0001  patched with the old INT 2Fh offset     }
-  DW   SEG OldInt2F      { 1b54:0003  patched with the old INT 2Fh segment    }
-                       { [re] 1b54:0005  RET -- supplied by Pascal, not
+  DB   0EAh              { 1d3c:0000  JMP FAR seg:ofs                        }
+  DW   OFFSET OldInt2F   { 1d3c:0001  patched with the old INT 2Fh offset     }
+  DW   SEG OldInt2F      { 1d3c:0003  patched with the old INT 2Fh segment    }
+                       { [re] 1d3c:0005  RET -- supplied by Pascal, not
                          written here: an assembler procedure already gets an
                          epilogue and a written one duplicates it. }
 end;
@@ -151,30 +152,30 @@ end;
 { @asm 000 1d3c:0006 +41 }
 procedure Handler; assembler;
 asm
-  STI                    { 1b54:0006  DOS multiplex handlers run enabled     }
-  CMP  AX, ReqAX         { 1b54:0007  'VT'                                   }
-  JNZ  @@NotUs           { 1b54:000a  not our password -- pass it on         }
-  CMP  BX, ReqBX         { 1b54:000c  'Tr'                                   }
-  JNZ  @@NotUs           { 1b54:0010                                         }
-  CMP  CX, ReqCX         { 1b54:0012  'ac'                                   }
-  JNZ  @@NotUs           { 1b54:0016  all three must match                   }
-  XOR  AX, AX            { 1b54:0018  AX := 0 says "yes, and it is me"       }
-  XOR  BX, MaskBX        { 1b54:001a  -> $3F17                               }
-  XOR  CX, MaskCX        { 1b54:001e  -> $1343                               }
-  MOV  DI, SEG @DATA     { 1b54:0022  the binary has MOV DI,1CAAh -- an
+  STI                    { 1d3c:0006  DOS multiplex handlers run enabled     }
+  CMP  AX, ReqAX         { 1d3c:0007  'VT'                                   }
+  JNZ  @@NotUs           { 1d3c:000a  not our password -- pass it on         }
+  CMP  BX, ReqBX         { 1d3c:000c  'Tr'                                   }
+  JNZ  @@NotUs           { 1d3c:0010                                         }
+  CMP  CX, ReqCX         { 1d3c:0012  'ac'                                   }
+  JNZ  @@NotUs           { 1d3c:0016  all three must match                   }
+  XOR  AX, AX            { 1d3c:0018  AX := 0 says "yes, and it is me"       }
+  XOR  BX, MaskBX        { 1d3c:001a  -> $3F17                               }
+  XOR  CX, MaskCX        { 1d3c:001e  -> $1343                               }
+  MOV  DI, SEG @DATA     { 1d3c:0022  the binary has MOV DI,1CAAh -- an
                                       absolute segment, not ours to copy     }
-  MOV  ES, DI            { 1b54:0025  ES:DI will point at SelfName          }
-  MOV  DI, OFFSET SelfName  { 1b54:0027  the binary has 432Ch. The four bytes
+  MOV  ES, DI            { 1d3c:0025  ES:DI will point at SelfName          }
+  MOV  DI, OFFSET SelfName  { 1d3c:0027  the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
                               reads its control block from ES:[DI-4].        }
-  IRET                   { 1b54:002a  answered; do NOT chain                }
+  IRET                   { 1d3c:002a  answered; do NOT chain                }
 @@NotUs:
   { [re] A NEAR JUMP, not a far one. The original is `E9 D2FF` -- three bytes
     back to offset 0000 -- because the chain target IS the JMP FAR stub
     above, whose operand holds the displaced vector. Jumping FAR here
     assembles a five-byte JMP to the stub's address instead, which is two
     bytes longer and one indirection short of the idiom. }
-  JMP  OldInt2F          { 1b54:002b  every failed test lands here           }
+  JMP  OldInt2F          { 1d3c:002b  every failed test lands here           }
 end;
 
 { --------------------------------------------------------------------------
@@ -190,24 +191,24 @@ end;
   left with a dangling chain. Nothing here checks; DemoVT expects to be the
   last thing installed and the first thing removed.
 
-  [re] 1b54:002f. The operand bytes are +1 and +3.
+  [re] 1d3c:002f. The operand bytes are +1 and +3.
   -------------------------------------------------------------------------- }
 { @asm 000 1d3c:002f +89 }
 procedure ExitHandler; far;
 begin
-  ExitProc := SavedExit;                          { 1b54:0032, 1b54:0039 }
+  ExitProc := SavedExit;                          { 1d3c:0032, 1d3c:0039 }
   asm
-    LES  DI, Stub          { 1b54:0040                                       }
-    MOV  AX, ES:[DI+1]     { 1b54:0044  the displaced offset                 }
-    MOV  DX, ES:[DI+3]     { 1b54:0048  and segment                          }
-    MOV  SI, 0             { 1b54:004c  [re] MOV, not XOR -- the original
+    LES  DI, Stub          { 1d3c:0040                                       }
+    MOV  AX, ES:[DI+1]     { 1d3c:0044  the displaced offset                 }
+    MOV  DX, ES:[DI+3]     { 1d3c:0048  and segment                          }
+    MOV  SI, 0             { 1d3c:004c  [re] MOV, not XOR -- the original
                              loads an immediate zero, and BASM emits what it
                              is told }
-    MOV  ES, SI            { 1b54:004f  ES := 0000, the vector table         }
-    MOV  ES:[0BCh], AX     { 1b54:0051  $2F * 4 -- the offset half           }
-    MOV  SI, 0             { 1b54:0055  ES is reloaded rather than kept       }
-    MOV  ES, SI            { 1b54:0058                                       }
-    MOV  ES:[0BEh], DX     { 1b54:005a  and the segment half                  }
+    MOV  ES, SI            { 1d3c:004f  ES := 0000, the vector table         }
+    MOV  ES:[0BCh], AX     { 1d3c:0051  $2F * 4 -- the offset half           }
+    MOV  SI, 0             { 1d3c:0055  ES is reloaded rather than kept       }
+    MOV  ES, SI            { 1d3c:0058                                       }
+    MOV  ES:[0BEh], DX     { 1d3c:005a  and the segment half                  }
   end;
 end;
 
@@ -222,7 +223,7 @@ end;
   AFTER THIS RETURNS the program is findable: any process that knows the
   password can reach `Block` through `ES:[DI-4]`.
 
-  [re] 1b54:0088. RETF 8: Name at [BP+$0a], Block at [BP+6]. The program calls
+  [re] 1d3c:0088. RETF 8: Name at [BP+$0a], Block at [BP+6]. The program calls
   it as Install('DemoVT v1.31 (beta)', @CtrlBlock).
   -------------------------------------------------------------------------- }
 { [re] THE FRAME IS `ENTER 0206,0` AND ONLY $106 OF IT IS DECLARED. The other 256
@@ -234,8 +235,8 @@ end;
 
   [re] Two ways to tell a temporary from a variable here. `Name` is a value
   `String` parameter, so the compiler ALREADY copies it to [BP-$100] on entry;
-  a second copy into a local would be visible and there is none at 1b54:009a,
-  which goes straight to the INT 2Fh call. And 1b54:0137 copies [BP-$100] --
+  a second copy into a local would be visible and there is none at 1d3c:009a,
+  which goes straight to the INT 2Fh call. And 1d3c:0137 copies [BP-$100] --
   the parameter's own slot -- into `SelfName`, so the assignment is
   `SelfName := Name` with nothing in between. }
 { @asm 000 1d3c:0088 }
@@ -244,34 +245,34 @@ var
   Found : Boolean;       { [BP-$101] }
   Other : Pointer;       { [BP-$106] }
 begin
-  { 1b54:009f -- the same INT 2Fh call src/DEMOVT.PAS's MusicDetect makes. }
+  { 1d3c:009f -- the same INT 2Fh call src/DEMOVT.PAS's MusicDetect makes. }
   asm
-    MOV  AX, ReqAX         { 1b54:009f                                       }
-    MOV  BX, ReqBX         { 1b54:00a2                                       }
-    MOV  CX, ReqCX         { 1b54:00a5                                       }
-    XOR  DI, DI            { 1b54:00a8  ES:DI := 0:0, so a reply is visible  }
-    MOV  ES, DI            { 1b54:00aa                                       }
-    INT  2Fh               { 1b54:00ac  anyone out there answering to this?  }
-    XOR  DL, DL            { 1b54:00ae  assume not                           }
-    AND  AX, AX            { 1b54:00b0  zero means somebody claimed it       }
-    JNZ  @@None            { 1b54:00b2                                       }
-    CMP  BX, 3F17h         { 1b54:00b4  and the signature must be OURS       }
-    JNZ  @@None            { 1b54:00b8                                       }
-    CMP  CX, 1343h         { 1b54:00ba                                       }
-    JNZ  @@None            { 1b54:00be                                       }
-    INC  DL                { 1b54:00c0  a DemoVT is already resident         }
+    MOV  AX, ReqAX         { 1d3c:009f                                       }
+    MOV  BX, ReqBX         { 1d3c:00a2                                       }
+    MOV  CX, ReqCX         { 1d3c:00a5                                       }
+    XOR  DI, DI            { 1d3c:00a8  ES:DI := 0:0, so a reply is visible  }
+    MOV  ES, DI            { 1d3c:00aa                                       }
+    INT  2Fh               { 1d3c:00ac  anyone out there answering to this?  }
+    XOR  DL, DL            { 1d3c:00ae  assume not                           }
+    AND  AX, AX            { 1d3c:00b0  zero means somebody claimed it       }
+    JNZ  @@None            { 1d3c:00b2                                       }
+    CMP  BX, 3F17h         { 1d3c:00b4  and the signature must be OURS       }
+    JNZ  @@None            { 1d3c:00b8                                       }
+    CMP  CX, 1343h         { 1d3c:00ba                                       }
+    JNZ  @@None            { 1d3c:00be                                       }
+    INC  DL                { 1d3c:00c0  a DemoVT is already resident         }
   @@None:
-    MOV  Found, DL         { 1b54:00c2                                       }
-    MOV  WORD PTR Other+2, ES  { 1b54:00c6  where its name is, if anywhere   }
-    MOV  WORD PTR Other, DI    { 1b54:00ca                                   }
+    MOV  Found, DL         { 1d3c:00c2                                       }
+    MOV  WORD PTR Other+2, ES  { 1d3c:00c6  where its name is, if anywhere   }
+    MOV  WORD PTR Other, DI    { 1d3c:00ca                                   }
   end;
 
-  { 1b54:00ce -- a resident that answered 0:0 has no name to show. }
-  if Other = nil then                             { 1b54:00d2 }
-    Other := @NoName;                             { 1b54:00d8  DS:$0c20 }
+  { 1d3c:00ce -- a resident that answered 0:0 has no name to show. }
+  if Other = nil then                             { 1d3c:00d2 }
+    Other := @NoName;                             { 1d3c:00d8  DS:$0c20 }
 
   { [re] ONE WriteLn OF A CONCATENATION, not three Writes and a WriteLn. The
-    original pushes `Output` once, at 1b54:00ec, and then builds the whole line
+    original pushes `Output` once, at 1d3c:00ec, and then builds the whole line
     in the [BP-$206] temporary before writing it:
 
       00ec  MOV DI,4536 / PUSH DS / PUSH DI     Output
@@ -291,43 +292,43 @@ begin
     [re] The two literals are pushed from CS, and that is the reason they are plain
     untyped constants above rather than typed ones: an untyped string constant
     is a literal, and Turbo Pascal lays a literal down in the CODE segment --
-    at 1b54:0061 and 1b54:007b, in the gap between ExitHandler and here. A
+    at 1d3c:0061 and 1d3c:007b, in the gap between ExitHandler and here. A
     typed constant would live in DGROUP and be pushed from DS. `NoName` is the
     exception and has to be typed, because Install takes its address. }
-  if Found then                                   { 1b54:00e5 }
+  if Found then                                   { 1d3c:00e5 }
   begin
-    WriteLn(Already + String(Other^) + Resident); { 1b54:00ec }
-    Halt(1);                                      { 1b54:0122 }
+    WriteLn(Already + String(Other^) + Resident); { 1d3c:00ec }
+    Halt(1);                                      { 1d3c:0122 }
   end;
 
-  CtrlBlock := Block;                             { 1b54:0130 }
-  SelfName  := Name;                              { 1b54:0137 }
-  Stub      := @OldInt2F;                         { 1b54:0150 }
+  CtrlBlock := Block;                             { 1d3c:0130 }
+  SelfName  := Name;                              { 1d3c:0137 }
+  Stub      := @OldInt2F;                         { 1d3c:0150 }
 
-  { 1b54:0157 -- take INT 2Fh, and leave the displaced vector inside the
+  { 1d3c:0157 -- take INT 2Fh, and leave the displaced vector inside the
     JMP FAR so the chain works without a variable to hold it. }
   asm
-    MOV  SI, 0             { 1b54:0157  [re] MOV SI,0000 -- NOT `XOR SI,SI` }
-    MOV  ES, SI            { 1b54:015a  ES := 0, the vector table            }
-    MOV  AX, ES:[0BCh]     { 1b54:015c  read the old INT 2Fh offset          }
-    MOV  SI, 0             { 1b54:0160                                       }
-    MOV  ES, SI            { 1b54:0163                                       }
-    MOV  DX, ES:[0BEh]     { 1b54:0165  and its segment                      }
-    LES  DI, Stub          { 1b54:016a  the JMP FAR that will chain to it    }
-    MOV  ES:[DI+1], AX     { 1b54:016e  patch it INTO the instruction        }
-    MOV  ES:[DI+3], DX     { 1b54:0172                                       }
-    MOV  AX, OFFSET Handler{ 1b54:0176  the binary has 0006h                 }
-    MOV  DX, SEG Handler   { 1b54:0179  and 1B54h                            }
-    MOV  SI, 0             { 1b54:017c                                       }
-    MOV  ES, SI            { 1b54:017f                                       }
-    MOV  ES:[0BCh], AX     { 1b54:0181  and only NOW take the vector         }
-    MOV  SI, 0             { 1b54:0185                                       }
-    MOV  ES, SI            { 1b54:0188                                       }
-    MOV  ES:[0BEh], DX     { 1b54:018a                                       }
+    MOV  SI, 0             { 1d3c:0157  [re] MOV SI,0000 -- NOT `XOR SI,SI` }
+    MOV  ES, SI            { 1d3c:015a  ES := 0, the vector table            }
+    MOV  AX, ES:[0BCh]     { 1d3c:015c  read the old INT 2Fh offset          }
+    MOV  SI, 0             { 1d3c:0160                                       }
+    MOV  ES, SI            { 1d3c:0163                                       }
+    MOV  DX, ES:[0BEh]     { 1d3c:0165  and its segment                      }
+    LES  DI, Stub          { 1d3c:016a  the JMP FAR that will chain to it    }
+    MOV  ES:[DI+1], AX     { 1d3c:016e  patch it INTO the instruction        }
+    MOV  ES:[DI+3], DX     { 1d3c:0172                                       }
+    MOV  AX, OFFSET Handler{ 1d3c:0176  the binary has 0006h                 }
+    MOV  DX, SEG Handler   { 1d3c:0179  and 1B54h                            }
+    MOV  SI, 0             { 1d3c:017c                                       }
+    MOV  ES, SI            { 1d3c:017f                                       }
+    MOV  ES:[0BCh], AX     { 1d3c:0181  and only NOW take the vector         }
+    MOV  SI, 0             { 1d3c:0185                                       }
+    MOV  ES, SI            { 1d3c:0188                                       }
+    MOV  ES:[0BEh], DX     { 1d3c:018a                                       }
   end;
 
-  SavedExit := ExitProc;                          { 1b54:018f, 1b54:0196 }
-  ExitProc  := @ExitHandler;                      { 1b54:019d, 1b54:01a3 }
+  SavedExit := ExitProc;                          { 1d3c:018f, 1d3c:0196 }
+  ExitProc  := @ExitHandler;                      { 1d3c:019d, 1d3c:01a3 }
 end;
 
 end.

@@ -14,7 +14,7 @@
 ;   ladder at the cell for the volume it wants and leaves where it
 ;   was told to. The cells are the table AND the code.
 ;
-;   [re] 1a17:0746..1a17:0b29, decoded from the image not typed.
+;   [re] 1bff:0746..1bff:0b29, decoded from the image not typed.
 ;
 ;   [re]   THE WHOLE REGION IS ONE PROCEDURE, and it has to be. The patcher writes
 ;   into the tables with MOV CS:[...] and the tables hold offsets of the
@@ -26,10 +26,10 @@
 ;   Turbo Pascal 7 rejects an include directive inside an asm block (error
 ;   118), so the
 ;   include has to start outside one. The patcher below is a verbatim hand
-;   transcription of 1a17:0a81, carried here rather than in SOUNDDEV.PAS
+;   transcription of 1bff:0a81, carried here rather than in SOUNDDEV.PAS
 ;   only so that it shares a scope with the labels it patches.
 ;
-;   [re]   THE MIXER AT 1a17:0b2a WILL HAVE TO BE EMITTED FROM HERE TOO, and not
+;   [re]   THE MIXER AT 1bff:0b2a WILL HAVE TO BE EMITTED FROM HERE TOO, and not
 ;   from SOUNDDEV.PAS. It reaches its gain cells through
 ;   CALL WORD PTR CS:[@@Patch+n], and @@Patch is a label in this file --
 ;   labels are procedure-local, so the mixer has to share this procedure.
@@ -756,7 +756,7 @@ SetGains:
 ;  ==================================================================
 ;     THE TWO FILTER CHAINS AND THEIR WRAPPER.
 ;
-;     [re] 1a17:0b2a .. 1a17:0c00.
+;     [re] 1bff:0b2a .. 1bff:0c00.
 ;
 ;     Still inside this procedure: these reach their gain cells through
 ;     @@Patch above, and labels do not cross procedures.
@@ -886,7 +886,7 @@ SetGains:
 
 ;  Run a pair of samples through both filter chains.
 ;
-;  [re] 1a17:0bf2.
+;  [re] 1bff:0bf2.
 ;
 ;     AX carries one sample and BX the other, in and out. All the shuffling
 ;     is because both chains take their input in AX and return it there: BX
@@ -915,7 +915,7 @@ SetGains:
 ;  ==================================================================
 ;     THE KERNEL CONFIGURATOR. Frameless, near, and the reason
 ;
-;     [re] 1a17:0c01.
+;     [re] 1bff:0c01.
 ;     everything else in this run is shaped the way it is: it rewrites nine
 ;     bytes and words of the kernels below so that the inner loops carry no
 ;     configuration at all.
@@ -933,7 +933,7 @@ SetGains:
 ;     the middle of an instruction.
 ;
 ;     [re] THE NOP PAIRS after each JZ are the assembler's jump-sizing padding,
-;     the same as the two at 1a17:1018 in the shared poll -- a near
+;     the same as the two at 1bff:1018 in the shared poll -- a near
 ;     conditional was reserved and the short form used. Transcribed verbatim
 ;     because they are in the byte stream and every displacement here is
 ;     measured past them.
@@ -1014,7 +1014,7 @@ SetGains:
 ;  ==================================================================
 ;     THE 32-WAY UNROLLED DOWNMIX. Frameless; falls into the
 ;
-;     [re] 1a17:0c7e.
+;     [re] 1bff:0c7e.
 ;     filter chain above by a tail JMP.
 ;
 ;     SI walks a row of 32 channel samples, words, and the row is summed
@@ -1110,7 +1110,7 @@ SetGains:
 ;  ==================================================================
 ;     THE OTHER THREE MIXING METHODS.
 ;
-;     [re] 1a17:0cfa, 0d18 and 0d42.
+;     [re] 1bff:0cfa, 0d18 and 0d42.
 ;
 ;     @@MethodJmp above selects between these by displacement: 0 falls
 ;     straight through to the mono path at 0ce8, and 12h, 30h and 5Ah land
@@ -1206,7 +1206,7 @@ SetGains:
 ;  ==================================================================
 ;     THE MONO OUTPUT LOOP. This is what SelectOutput's two entry points
 ;
-;     [re] 1a17:0d7c.
+;     [re] 1bff:0d7c.
 ;     install at DS:$0c00, and what actually turns mixed channels into
 ;     bytes for the card.
 ;
@@ -1296,8 +1296,8 @@ SetGains:
 ;  ==================================================================
 ;     THE STEREO OUTPUT LOOP. The other of the two routines
 ;
-;     [re] 1a17:0dfc.
-;     1a17:1090 selects between; it installs this one when the card reports
+;     [re] 1bff:0dfc.
+;     1bff:1090 selects between; it installs this one when the card reports
 ;     stereo and the mono loop at 0d7c otherwise.
 ;
 ;     Same shape as the mono loop -- primed entry at the bottom, unrolled
@@ -1376,7 +1376,7 @@ SetGains:
 
 ;  ONE BYTE OF STATE, IN THE CODE SEGMENT AGAIN. Written by
 ;
-;  [re] 1a17:0e74.
+;  [re] 1bff:0e74.
 ;     the routine at 0e75 through CS:, and it sits in the gap between that
 ;     RET and the next entry point. The third place this unit keeps a
 ;     variable inside the instruction stream, after the poll's guard at
@@ -1387,7 +1387,7 @@ SetGains:
 ;  ==================================================================
 ;     THE BUFFER-FILL DRIVER. Frameless, near. Configures the
 ;
-;     [re] 1a17:0e75.
+;     [re] 1bff:0e75.
 ;     kernels, then runs the installed output loop over as much of the DMA
 ;     buffer as there is sample data for.
 ;
@@ -1479,7 +1479,7 @@ SetGains:
 ;  ==================================================================
 ;     @@Prepare. What SharedPoll calls before the installed
 ;
-;     [re] 1a17:0edf.
+;     [re] 1bff:0edf.
 ;     callback, and the routine whose absence has had the poll stubbed out
 ;     since this unit was started.
 ;
@@ -1555,8 +1555,8 @@ SetGains:
 ;  ==================================================================
 ;     THE INT 8 HANDLER. Its middle is a CHAIN THROUGH THE
 ;
-;     [re] 1a17:0f53.
-;     DISPATCH TABLE at DS:$0bf8..$0bfe, which 1a17:1087/1090 fill, so the
+;     [re] 1bff:0f53.
+;     DISPATCH TABLE at DS:$0bf8..$0bfe, which 1bff:1087/1090 fill, so the
 ;     same handler serves a direct DAC and a DMA card without a test:
 ;
 ;         0f53  entry, save, set DS   JMP [0bf8] -> 0f64

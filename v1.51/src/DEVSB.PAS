@@ -16,19 +16,19 @@
   THE HARDWARE IS NEXT DOOR. Every port write and every DSP command lives in
   the SoundBlaster unit; this one decides WHEN, and calls in.
 
-  [re] Segment 193a. **COMPLETE: 1,617 of 1,617 bytes**, seventeen blocks, 569
+  [re] Segment 1b22. **COMPLETE: 1,617 of 1,617 bytes**, seventeen blocks, 569
   pending fixups, no real difference anywhere.
 
   [re] BOTH BLOCKING NAMES ARE RESOLVED. They were:
 
-    * `DevInitSbDMA` -- `193a:0352` calls `1a17:1090`, nine bytes past
-      `SelectOutput` at `1a17:1087`. Two entry points into one tail, and the
+    * `DevInitSbDMA` -- `1b22:0352` calls `1bff:1090`, nine bytes past
+      `SelectOutput` at `1bff:1087`. Two entry points into one tail, and the
       release names them `DevInitSbNonDMA` and `DevInitSbDMA`: 1087 forces
       mono and ignores its arguments (a non-DMA device is always mono) while
       1090 picks by its first. SOUNDDEV.ASM now publishes the second label --
       a label emits no bytes, and SOUNDDEV verifying unchanged is the check.
     * `InitTimer` -- **it does not exist.** The release calls it as DMASBInit's
-      last act; 193a:03b7 and 03bc are the two flag stores with nothing between
+      last act; 1b22:03b7 and 03bc are the two flag stores with nothing between
       them and DMASet, so there is no such call. The release also runs DMASet
       FIRST; 1.31 runs it AFTER SbPlaySample. Two measured differences where a
       missing name was assumed.
@@ -41,8 +41,8 @@
   ---------------------------------------------------------------------------
   [re] THE ROUTINE MAP, AND THE INITIALISATION SECTION IS WHAT NAMED IT.
 
-  [re] `193a:048a` onward fills four device records field by field with far
-  addresses, exactly as `1084:0101` does -- and those addresses ARE the routine
+  [re] `1b22:048a` onward fills four device records field by field with far
+  addresses, exactly as `106e:0101` does -- and those addresses ARE the routine
   table. It named eleven of the sixteen routines outright:
 
       [re] 0000  Name (device 1)     0005 000a 000f  the other three
@@ -179,9 +179,9 @@ function  DMASBMix2Name : TDevID; far;  begin end;
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which
   card it is:
 
-    193a:0017  [0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
-    193a:001d  [0b06] -> [0bea]   DSP8AckPort
-    193a:0023  [0afe] -> [0bec]   DSPLifePort
+    1b22:0017  [0b02] -> [0be8]   SoundBlaster.DSPWritePort -> SoundDevices'
+    1b22:001d  [0b06] -> [0bea]   DSP8AckPort
+    1b22:0023  [0afe] -> [0bec]   DSPLifePort
 
   All six addresses were already known from the two units independently, so
   this routine is a six-way cross-check that both are right. }
@@ -321,7 +321,7 @@ begin
   DMASBProGetRealFreq := NHz1
 end;
 
-{ [re] 0206..02c1.  NEAR.  `020f` calls 1a17:037f -- SoundDevices.CalcTimerData --
+{ [re] 0206..02c1.  NEAR.  `020f` calls 1bff:037f -- SoundDevices.CalcTimerData --
   which is the release's first line. Four more LongInt divisions follow. }
 procedure DMASBCalcTimerData(Hz : Word);
 begin
@@ -496,7 +496,7 @@ begin
       asm PUSHF; STI end;                        { 0458 }
       asm POPF end;                              { 045a }
 
-      { [re] 045f -- CALLF 1b24:02f0, which HARDWARE.PAS already names DMAReset.
+      { [re] 045f -- CALLF 1d0c:02f0, which HARDWARE.PAS already names DMAReset.
         The release has this line COMMENTED OUT; 1.31 calls it. }
       DMAReset(SbDMAChan);                       { 045f }
 
@@ -514,14 +514,14 @@ end;
 
   [re] Device 1's, in order:
 
-    +$16 Name             193a:0000
-    +$1a Autodetect       193a:02c2   SbMonoDetect
-    +$1e InitRut          193a:03c5   DMASBMonoInit
-    +$22 ChgHzProc        193a:0435   DMASBChgHz
-    +$26 GetRealFreqProc  193a:007f   DMASBGetRealFreq
-    +$2a TimerHandler     **1a17:1008** -- the CORE's shared handler
-    +$2e PollRut          193a:002b   DevPoll
-    +$32 EndRut           193a:0442   DMASBEnd
+    +$16 Name             1b22:0000
+    +$1a Autodetect       1b22:02c2   SbMonoDetect
+    +$1e InitRut          1b22:03c5   DMASBMonoInit
+    +$22 ChgHzProc        1b22:0435   DMASBChgHz
+    +$26 GetRealFreqProc  1b22:007f   DMASBGetRealFreq
+    +$2a TimerHandler     **1bff:1008** -- the CORE's shared handler
+    +$2e PollRut          1b22:002b   DevPoll
+    +$32 EndRut           1b22:0442   DMASBEnd
 
   THE TIMER HANDLER IS THE CORE'S, NOT THIS UNIT'S, and that is the opposite of
   the GUS. CONTINUATION.md records that "1.39b's GUS driver points its
@@ -530,8 +530,8 @@ end;
   DMA interrupt and only needs the core's periodic tick; the GUS is polled.
 
   [re] THE STEREO DEVICES USE THE OTHER RATE CALCULATOR: device 2's
-  GetRealFreqProc is 193a:013c, DMASBProGetRealFreq, where device 1's is
-  193a:007f.
+  GetRealFreqProc is 1b22:013c, DMASBProGetRealFreq, where device 1's is
+  1b22:007f.
 
   REGISTRATION IS IN REVERSE DECLARATION ORDER -- $0aa2, $0a68, $0a2e, $09f4 --
   and `InitDevice` pushes onto the front of the list while selecting only when
@@ -544,7 +544,7 @@ begin
   DMASBData.InitRut          := @DMASBMonoInit;          { 04a5 }
   DMASBData.ChgHzProc        := @DMASBChgHz;             { 04b2 }
   DMASBData.GetRealFreqProc  := @DMASBGetRealFreq;       { 04bf }
-  DMASBData.TimerHandler     := @SoundDevices.SharedPoll;      { 04cc  1a17:1008 }
+  DMASBData.TimerHandler     := @SoundDevices.SharedPoll;      { 04cc  1bff:1008 }
   DMASBData.PollRut          := @DevPoll;                { 04d9 }
   DMASBData.EndRut           := @DMASBEnd;               { 04e6 }
 

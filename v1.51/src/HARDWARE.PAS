@@ -16,7 +16,7 @@
   unrelated port numbers, in an order that is not the channel order. Most of
   this unit is tables that say where each thing actually is.
 
-  [re] Segment 1b24 -- 768 bytes. Eight framed routines that the prologue
+  [re] Segment 1d0c -- 768 bytes. Eight framed routines that the prologue
   scanner finds, and SIX FRAMELESS ONES that it cannot -- the DMA kernels are
   entered with registers already loaded and end in a near RET, so they only
   turn up by following calls.
@@ -42,7 +42,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 64 bytes unchanged at 1d0c:0000, nine routines inside the segment.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     EnableIRQ       1d0c:0000     DisableIRQ      1d0c:0044
     IRQState        1d0c:007e     SetIRQVector    1d0c:00d7
     DMA16Set        1d0c:0128 *   DMA8Set         1d0c:0172 *
@@ -68,30 +69,30 @@ interface
 uses
   Dos;                 { for GetIntVec and SetIntVec, to swap an IRQ's
                          handler and put the old one back            }
-                       { [re] 1b6f:007b and 1b6f:0093 }
+                       { [re] 1d57:007b and 1d57:0093 }
 
 { ---- the 8259s ---------------------------------------------------------- }
 
-procedure EnableIRQ(IRQ : Word); far;                       { 1b24:0000 }
-procedure DisableIRQ(IRQ : Word); far;                      { 1b24:0044 }
-function  IRQState(IRQ : Word) : Boolean; far;              { 1b24:007e }
+procedure EnableIRQ(IRQ : Word); far;                       { 1d0c:0000 }
+procedure DisableIRQ(IRQ : Word); far;                      { 1d0c:0044 }
+function  IRQState(IRQ : Word) : Boolean; far;              { 1d0c:007e }
 function  SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer; far;
 
 { ---- the 8237s ---------------------------------------------------------- }
 
-{ 1b24:0276 -- the one callers should use. Size is in BYTES and is passed
+{ 1d0c:0276 -- the one callers should use. Size is in BYTES and is passed
   as given; the minus-one the hardware wants is applied here. }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word); far;
 
-{ 1b24:0267 / 1b24:02f0 }
-{ [re] Channel IS A BYTE, and the caller settles it: 1a17:06ea loads it with
+{ 1d0c:0267 / 1d0c:02f0 }
+{ [re] Channel IS A BYTE, and the caller settles it: 1bff:06ea loads it with
   `MOV AL,[DMAChannel] / PUSH AX` and NO zero-extension, which Turbo Pascal
   only emits when the parameter is byte-sized. Declared Word, the caller gains
   a `XOR AH,AH` the original does not have. Nothing changes inside this unit --
   a byte argument still occupies a word on the stack, so `BYTE PTR Channel` at
   [BP+06] and the RETF 2 are unaffected. }
 function  GetDMACount(Channel : Byte) : Word; far;
-{ [re] A Byte, NOT a Word, and 193a is what settles it: 193a:045b is
+{ [re] A Byte, NOT a Word, and 193a is what settles it: 1b22:045b is
   `MOV AL,[0b18] / PUSH AX` -- a byte load -- where a Word parameter gives the
   one-instruction `PUSH [0b18]` that DMASet gets four lines later in the same
   caller. Two calls to two routines in this unit from one routine in another,
@@ -99,7 +100,7 @@ function  GetDMACount(Channel : Byte) : Word; far;
   caller in another segment. }
 procedure DMAReset(Channel : Byte); far;
 
-{ 1b24:024c -- DMASet with the address already split into page and offset. }
+{ 1d0c:024c -- DMASet with the address already split into page and offset. }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); far;
 
 implementation
@@ -124,7 +125,7 @@ const
   Page8  : array[0..3] of Word = ($0087, $0083, $0081, $0082);
 
 { --------------------------------------------------------------------------
-  1b24:0000 -- let an IRQ through.
+  1d0c:0000 -- let an IRQ through.
 
   HAND ASSEMBLER, verbatim: IN and OUT are not expressible in Pascal.
 
@@ -165,17 +166,17 @@ const
   upper eight silent. }
 procedure EnableIRQ(IRQ : Word);
 begin
-  if IRQ < 8 then                                 { 1b24:0003 }
-    Port[$21] := Port[$21] and not (1 shl IRQ)    { 1b24:0009 .. 1b24:001b }
+  if IRQ < 8 then                                 { 1d0c:0003 }
+    Port[$21] := Port[$21] and not (1 shl IRQ)    { 1d0c:0009 .. 1d0c:001b }
   else
   begin
-    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  { 1b24:001f .. 0038 }
-    Port[$21] := Port[$21] and not (1 shl 2)      { 1b24:003a  -> AND AL,0FBh }
+    Port[$A1] := Port[$A1] and not (1 shl (IRQ - 8));  { 1d0c:001f .. 0038 }
+    Port[$21] := Port[$21] and not (1 shl 2)      { 1d0c:003a  -> AND AL,0FBh }
   end
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0044 -- shut an IRQ out.
+  1d0c:0044 -- shut an IRQ out.
 
   HAND ASSEMBLER, verbatim. The mirror of the above, except that it does NOT
   re-mask the cascade when disabling a slave IRQ -- and must not, because
@@ -185,14 +186,14 @@ end;
 { Pascal, for the same reason as EnableIRQ above. }
 procedure DisableIRQ(IRQ : Word);
 begin
-  if IRQ < 8 then                                 { 1b24:0047 }
-    Port[$21] := Port[$21] or (1 shl IRQ)         { 1b24:004d .. 1b24:005d }
+  if IRQ < 8 then                                 { 1d0c:0047 }
+    Port[$21] := Port[$21] or (1 shl IRQ)         { 1d0c:004d .. 1d0c:005d }
   else
-    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))   { 1b24:0061 .. 1b24:0078 }
+    Port[$A1] := Port[$A1] or (1 shl (IRQ - 8))   { 1d0c:0061 .. 1d0c:0078 }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:007e -- is this IRQ currently getting through?
+  1d0c:007e -- is this IRQ currently getting through?
 
   HAND ASSEMBLER, verbatim.
 
@@ -207,18 +208,18 @@ end;
   masked IRQ 2 silences the whole upper eight. }
 function IRQState(IRQ : Word) : Boolean;
 begin
-  if IRQ < 8 then                                 { 1b24:0081 }
+  if IRQ < 8 then                                 { 1d0c:0081 }
     IRQState := (Port[$21] and (1 shl IRQ)) = 0
   else
-    IRQState := ((Port[$21] and 4) = 0) and     { 1b24:00a6  the cascade }
+    IRQState := ((Port[$21] and 4) = 0) and     { 1d0c:00a6  the cascade }
                   ((Port[$A1] and (1 shl (IRQ - 8))) = 0)
 end;
 
 { --------------------------------------------------------------------------
-  1b24:00d7 -- point an IRQ's vector somewhere, and hand back the old one.
+  1d0c:00d7 -- point an IRQ's vector somewhere, and hand back the old one.
 
   [re] Plain Pascal in the binary: `ENTER $0a,0`, locals, and two calls into the
-  Dos unit (1b6f:007b GetIntVec, 1b6f:0093 SetIntVec).
+  Dos unit (1d57:007b GetIntVec, 1d57:0093 SetIntVec).
 
   The vector number is the only arithmetic. IRQ 0..7 are INT $08..$0F and
   IRQ 8..15 are INT $70..$77, so the second controller's offset is $68 rather
@@ -229,7 +230,7 @@ end;
 function SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer;
 var
   { [re] FOUR UNUSED BYTES AGAIN. ENTER $0a,0 reserves ten; `p` is at [BP-8]
-    (1b24:00f8 is LEA DI,[BP-8]) and `j` at [BP-$a], which leaves [BP-1]
+    (1d0c:00f8 is LEA DI,[BP-8]) and `j` at [BP-$a], which leaves [BP-1]
     to [BP-4] referenced by nothing.
 
     Turbo Pascal reserves them by itself here -- a four-byte temporary --
@@ -240,18 +241,18 @@ var
   p : Pointer;           { [BP-8]  }
   j : Word;              { [BP-$a] }
 begin
-  if IRQ < 8 then                                 { 1b24:00db }
-    j := IRQ + 8                                { 1b24:00e4  INT $08..$0F }
+  if IRQ < 8 then                                 { 1d0c:00db }
+    j := IRQ + 8                                { 1d0c:00e4  INT $08..$0F }
   else
-    j := IRQ + $68;                             { 1b24:00ef  INT $70..$77 }
+    j := IRQ + $68;                             { 1d0c:00ef  INT $70..$77 }
 
-  GetIntVec(j, p);                                { 1b24:00fe  1b6f:007b }
-  SetIntVec(j, Vec);                        { 1b24:010d  1b6f:0093 }
-  SetIRQVector := p;                            { 1b24:0112 }
+  GetIntVec(j, p);                                { 1d0c:00fe  1d57:007b }
+  SetIntVec(j, Vec);                        { 1d0c:010d  1d57:0093 }
+  SetIRQVector := p;                            { 1d0c:0112 }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0128 -- program a 16-bit DMA channel. FRAMELESS.
+  1d0c:0128 -- program a 16-bit DMA channel. FRAMELESS.
 
   HAND ASSEMBLER, verbatim, and it could not be anything else: it takes no
   parameters and builds no frame. Everything arrives in registers, put there
@@ -276,49 +277,49 @@ end;
 { @asm 000 1d0c:0128 +74 }
 procedure DMA16Set; assembler;
 asm
-  AND  AH, 3             { 1b24:0128  DMA 4..7 -> 0..3 on this controller   }
-  SHR  CL, 1             { 1b24:012b  CL:BX >> 1 -- 16-bit DMA counts words }
-  RCR  BX, 1             { 1b24:012d                                        }
-  ADD  CL, CL            { 1b24:012f  ... but the page is NOT halved        }
-  MOV  AL, AH            { 1b24:0131                                        }
-  ADD  AL, 4             { 1b24:0133  bit 2 = set mask                      }
-  OUT  0D4h, AL          { 1b24:0135  mask the channel                      }
-  XOR  AL, AL            { 1b24:0137                                        }
-  OUT  0D8h, AL          { 1b24:0139  clear the byte-pointer flip-flop      }
-  MOV  AL, AH            { 1b24:013b                                        }
-  ADD  AL, CH            { 1b24:013d  channel + mode                        }
-  OUT  0D6h, AL          { 1b24:013f  mode register                         }
-  XOR  DH, DH            { 1b24:0141                                        }
-  MOV  DL, AH            { 1b24:0143                                        }
-  ADD  DX, DX            { 1b24:0145                                        }
-  ADD  DX, DX            { 1b24:0147  channel * 4                           }
-  ADD  DX, 00C0h         { 1b24:0149  the address port                      }
-  MOV  AL, BL            { 1b24:014d                                        }
-  OUT  DX, AL            { 1b24:014f  address, low                          }
-  MOV  AL, BH            { 1b24:0150                                        }
-  OUT  DX, AL            { 1b24:0152  address, high                         }
-  PUSH DX                { 1b24:0153                                        }
-  MOV  DL, AH            { 1b24:0154                                        }
-  ADD  DX, DX            { 1b24:0156  channel * 2                           }
-  MOV  BX, OFFSET Page16 { 1b24:0158  was MOV BX,0C10h                      }
-  ADD  BX, DX            { 1b24:015b                                        }
-  MOV  DX, [BX]          { 1b24:015d  this channel's page port              }
-  MOV  AL, CL            { 1b24:015f                                        }
-  OUT  DX, AL            { 1b24:0161                                        }
-  POP  DX                { 1b24:0162                                        }
-  INC  DX                { 1b24:0163                                        }
-  INC  DX                { 1b24:0164  the count port is address + 2         }
-  MOV  BX, SI            { 1b24:0165                                        }
-  MOV  AL, BL            { 1b24:0167                                        }
-  OUT  DX, AL            { 1b24:0169  count, low                            }
-  MOV  AL, BH            { 1b24:016a                                        }
-  OUT  DX, AL            { 1b24:016c  count, high                           }
-  MOV  AL, AH            { 1b24:016d                                        }
-  OUT  0D4h, AL          { 1b24:016f  unmask -- bit 2 clear                 }
+  AND  AH, 3             { 1d0c:0128  DMA 4..7 -> 0..3 on this controller   }
+  SHR  CL, 1             { 1d0c:012b  CL:BX >> 1 -- 16-bit DMA counts words }
+  RCR  BX, 1             { 1d0c:012d                                        }
+  ADD  CL, CL            { 1d0c:012f  ... but the page is NOT halved        }
+  MOV  AL, AH            { 1d0c:0131                                        }
+  ADD  AL, 4             { 1d0c:0133  bit 2 = set mask                      }
+  OUT  0D4h, AL          { 1d0c:0135  mask the channel                      }
+  XOR  AL, AL            { 1d0c:0137                                        }
+  OUT  0D8h, AL          { 1d0c:0139  clear the byte-pointer flip-flop      }
+  MOV  AL, AH            { 1d0c:013b                                        }
+  ADD  AL, CH            { 1d0c:013d  channel + mode                        }
+  OUT  0D6h, AL          { 1d0c:013f  mode register                         }
+  XOR  DH, DH            { 1d0c:0141                                        }
+  MOV  DL, AH            { 1d0c:0143                                        }
+  ADD  DX, DX            { 1d0c:0145                                        }
+  ADD  DX, DX            { 1d0c:0147  channel * 4                           }
+  ADD  DX, 00C0h         { 1d0c:0149  the address port                      }
+  MOV  AL, BL            { 1d0c:014d                                        }
+  OUT  DX, AL            { 1d0c:014f  address, low                          }
+  MOV  AL, BH            { 1d0c:0150                                        }
+  OUT  DX, AL            { 1d0c:0152  address, high                         }
+  PUSH DX                { 1d0c:0153                                        }
+  MOV  DL, AH            { 1d0c:0154                                        }
+  ADD  DX, DX            { 1d0c:0156  channel * 2                           }
+  MOV  BX, OFFSET Page16 { 1d0c:0158  was MOV BX,0C10h                      }
+  ADD  BX, DX            { 1d0c:015b                                        }
+  MOV  DX, [BX]          { 1d0c:015d  this channel's page port              }
+  MOV  AL, CL            { 1d0c:015f                                        }
+  OUT  DX, AL            { 1d0c:0161                                        }
+  POP  DX                { 1d0c:0162                                        }
+  INC  DX                { 1d0c:0163                                        }
+  INC  DX                { 1d0c:0164  the count port is address + 2         }
+  MOV  BX, SI            { 1d0c:0165                                        }
+  MOV  AL, BL            { 1d0c:0167                                        }
+  OUT  DX, AL            { 1d0c:0169  count, low                            }
+  MOV  AL, BH            { 1d0c:016a                                        }
+  OUT  DX, AL            { 1d0c:016c  count, high                           }
+  MOV  AL, AH            { 1d0c:016d                                        }
+  OUT  0D4h, AL          { 1d0c:016f  unmask -- bit 2 clear                 }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:0172 -- program an 8-bit DMA channel. FRAMELESS.
+  1d0c:0172 -- program an 8-bit DMA channel. FRAMELESS.
 
   HAND ASSEMBLER, verbatim. The same sequence against the first controller's
   ports, and WITHOUT the halving -- an 8-bit channel counts bytes, so the
@@ -329,62 +330,62 @@ end;
 { @asm 000 1d0c:0172 +54 }
 procedure DMA8Set; assembler;
 asm
-  MOV  AL, AH            { 1b24:0172                                        }
-  ADD  AL, 4             { 1b24:0174                                        }
-  OUT  0Ah, AL           { 1b24:0176  mask the channel                      }
-  XOR  AL, AL            { 1b24:0178                                        }
-  OUT  0Ch, AL           { 1b24:017a  clear the flip-flop                   }
-  MOV  AL, AH            { 1b24:017c                                        }
-  ADD  AL, CH            { 1b24:017e                                        }
-  OUT  0Bh, AL           { 1b24:0180  mode register                         }
-  XOR  DH, DH            { 1b24:0182                                        }
-  MOV  DL, AH            { 1b24:0184                                        }
-  ADD  DX, DX            { 1b24:0186  channel * 2 = the address port        }
-  MOV  AL, BL            { 1b24:0188                                        }
-  OUT  DX, AL            { 1b24:018a  address, low                          }
-  MOV  AL, BH            { 1b24:018b                                        }
-  OUT  DX, AL            { 1b24:018d  address, high                         }
-  PUSH DX                { 1b24:018e                                        }
-  MOV  BX, OFFSET Page8  { 1b24:018f  was MOV BX,0C18h                      }
-  ADD  BX, DX            { 1b24:0192                                        }
-  MOV  DX, [BX]          { 1b24:0194                                        }
-  MOV  AL, CL            { 1b24:0196                                        }
-  OUT  DX, AL            { 1b24:0198  page                                  }
-  POP  DX                { 1b24:0199                                        }
-  INC  DX                { 1b24:019a  count port = address port + 1         }
-  MOV  BX, SI            { 1b24:019b                                        }
-  MOV  AL, BL            { 1b24:019d                                        }
-  OUT  DX, AL            { 1b24:019f                                        }
-  MOV  AL, BH            { 1b24:01a0                                        }
-  OUT  DX, AL            { 1b24:01a2                                        }
-  MOV  AL, AH            { 1b24:01a3                                        }
-  OUT  0Ah, AL           { 1b24:01a5  unmask                                }
+  MOV  AL, AH            { 1d0c:0172                                        }
+  ADD  AL, 4             { 1d0c:0174                                        }
+  OUT  0Ah, AL           { 1d0c:0176  mask the channel                      }
+  XOR  AL, AL            { 1d0c:0178                                        }
+  OUT  0Ch, AL           { 1d0c:017a  clear the flip-flop                   }
+  MOV  AL, AH            { 1d0c:017c                                        }
+  ADD  AL, CH            { 1d0c:017e                                        }
+  OUT  0Bh, AL           { 1d0c:0180  mode register                         }
+  XOR  DH, DH            { 1d0c:0182                                        }
+  MOV  DL, AH            { 1d0c:0184                                        }
+  ADD  DX, DX            { 1d0c:0186  channel * 2 = the address port        }
+  MOV  AL, BL            { 1d0c:0188                                        }
+  OUT  DX, AL            { 1d0c:018a  address, low                          }
+  MOV  AL, BH            { 1d0c:018b                                        }
+  OUT  DX, AL            { 1d0c:018d  address, high                         }
+  PUSH DX                { 1d0c:018e                                        }
+  MOV  BX, OFFSET Page8  { 1d0c:018f  was MOV BX,0C18h                      }
+  ADD  BX, DX            { 1d0c:0192                                        }
+  MOV  DX, [BX]          { 1d0c:0194                                        }
+  MOV  AL, CL            { 1d0c:0196                                        }
+  OUT  DX, AL            { 1d0c:0198  page                                  }
+  POP  DX                { 1d0c:0199                                        }
+  INC  DX                { 1d0c:019a  count port = address port + 1         }
+  MOV  BX, SI            { 1d0c:019b                                        }
+  MOV  AL, BL            { 1d0c:019d                                        }
+  OUT  DX, AL            { 1d0c:019f                                        }
+  MOV  AL, BH            { 1d0c:01a0                                        }
+  OUT  DX, AL            { 1d0c:01a2                                        }
+  MOV  AL, AH            { 1d0c:01a3                                        }
+  OUT  0Ah, AL           { 1d0c:01a5  unmask                                }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:01a8 and 1b24:01b2 -- mask a channel and leave it masked. FRAMELESS.
+  1d0c:01a8 and 1d0c:01b2 -- mask a channel and leave it masked. FRAMELESS.
   Channel in AH. Two instructions and an OUT; the whole of stopping a
   transfer.
   -------------------------------------------------------------------------- }
 { @asm 000 1d0c:01a8 +10 }
 procedure DMA16Reset; assembler;
 asm
-  AND  AH, 3             { 1b24:01a8                                        }
-  MOV  AL, AH            { 1b24:01ab                                        }
-  ADD  AL, 4             { 1b24:01ad                                        }
-  OUT  0D4h, AL          { 1b24:01af                                        }
+  AND  AH, 3             { 1d0c:01a8                                        }
+  MOV  AL, AH            { 1d0c:01ab                                        }
+  ADD  AL, 4             { 1d0c:01ad                                        }
+  OUT  0D4h, AL          { 1d0c:01af                                        }
 end;
 
 { @asm 000 1d0c:01b2 +7 }
 procedure DMA8Reset; assembler;
 asm
-  MOV  AL, AH            { 1b24:01b2                                        }
-  ADD  AL, 4             { 1b24:01b4                                        }
-  OUT  0Ah, AL           { 1b24:01b6                                        }
+  MOV  AL, AH            { 1d0c:01b2                                        }
+  ADD  AL, 4             { 1d0c:01b4                                        }
+  OUT  0Ah, AL           { 1d0c:01b6                                        }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:01b9 -- how far has a 16-bit transfer got? FRAMELESS, channel in AH,
+  1d0c:01b9 -- how far has a 16-bit transfer got? FRAMELESS, channel in AH,
   answer in AX.
 
   HAND ASSEMBLER, verbatim. Clear the flip-flop, then two reads from the
@@ -393,23 +394,23 @@ end;
 { @asm 000 1d0c:01b9 +28 }
 procedure GetDMA16Count; assembler;
 asm
-  AND  AH, 3             { 1b24:01b9                                        }
-  XOR  AL, AL            { 1b24:01bc                                        }
-  OUT  0D8h, AL          { 1b24:01be  clear the flip-flop                   }
-  XOR  DH, DH            { 1b24:01c0                                        }
-  MOV  DL, AH            { 1b24:01c2                                        }
-  ADD  DX, DX            { 1b24:01c4                                        }
-  ADD  DX, DX            { 1b24:01c6                                        }
-  ADD  DX, 00C2h         { 1b24:01c8  the COUNT port: $C0 + chan*4 + 2      }
-  IN   AL, DX            { 1b24:01cc                                        }
-  MOV  BL, AL            { 1b24:01cd                                        }
-  IN   AL, DX            { 1b24:01cf                                        }
-  MOV  BH, AL            { 1b24:01d0                                        }
-  MOV  AX, BX            { 1b24:01d2                                        }
+  AND  AH, 3             { 1d0c:01b9                                        }
+  XOR  AL, AL            { 1d0c:01bc                                        }
+  OUT  0D8h, AL          { 1d0c:01be  clear the flip-flop                   }
+  XOR  DH, DH            { 1d0c:01c0                                        }
+  MOV  DL, AH            { 1d0c:01c2                                        }
+  ADD  DX, DX            { 1d0c:01c4                                        }
+  ADD  DX, DX            { 1d0c:01c6                                        }
+  ADD  DX, 00C2h         { 1d0c:01c8  the COUNT port: $C0 + chan*4 + 2      }
+  IN   AL, DX            { 1d0c:01cc                                        }
+  MOV  BL, AL            { 1d0c:01cd                                        }
+  IN   AL, DX            { 1d0c:01cf                                        }
+  MOV  BH, AL            { 1d0c:01d0                                        }
+  MOV  AX, BX            { 1d0c:01d2                                        }
 end;
 
 { --------------------------------------------------------------------------
-  1b24:01d5 -- how far has an 8-bit transfer got? FRAMELESS.
+  1d0c:01d5 -- how far has an 8-bit transfer got? FRAMELESS.
 
   HAND ASSEMBLER, verbatim, and the most interesting routine in the unit.
 
@@ -434,38 +435,38 @@ end;
 { @asm 000 1d0c:01d5 +56 }
 procedure GetDMA8Count; assembler;
 asm
-  XOR  AL, AL            { 1b24:01d5                                        }
-  OUT  0Ch, AL           { 1b24:01d7  clear the flip-flop                   }
-  XOR  DH, DH            { 1b24:01d9                                        }
-  MOV  DL, AH            { 1b24:01db                                        }
-  ADD  DX, DX            { 1b24:01dd                                        }
-  INC  DX                { 1b24:01df  count port = chan*2 + 1               }
-  IN   AL, DX            { 1b24:01e0  --- first read                        }
-  MOV  BL, AL            { 1b24:01e1                                        }
-  IN   AL, DX            { 1b24:01e3                                        }
-  MOV  BH, AL            { 1b24:01e4                                        }
-  MOV  CX, BX            { 1b24:01e6  keep it                               }
-  IN   AL, DX            { 1b24:01e8  --- second read                       }
-  MOV  BL, AL            { 1b24:01e9                                        }
-  IN   AL, DX            { 1b24:01eb                                        }
-  MOV  BH, AL            { 1b24:01ec                                        }
-  MOV  AX, BX            { 1b24:01ee  assume the second                     }
-  MOV  SI, CX            { 1b24:01f0                                        }
-  SUB  SI, BX            { 1b24:01f2  how far it moved between reads        }
-  CMP  SI, 5             { 1b24:01f4                                        }
-  JC   @@Out             { 1b24:01f7  barely moved -> the second read       }
-  MOV  AX, CX            { 1b24:01f9                                        }
-  CMP  SI, 0104h         { 1b24:01fb                                        }
-  JC   @@Out             { 1b24:01ff  moved a little -> the FIRST read      }
-  MOV  AX, BX            { 1b24:0201                                        }
-  CMP  SI, 0FF01h        { 1b24:0203                                        }
-  JNC  @@Out             { 1b24:0207  wrapped past zero -> the second       }
-  MOV  AX, 0FFFFh        { 1b24:0209  no idea; say so                       }
+  XOR  AL, AL            { 1d0c:01d5                                        }
+  OUT  0Ch, AL           { 1d0c:01d7  clear the flip-flop                   }
+  XOR  DH, DH            { 1d0c:01d9                                        }
+  MOV  DL, AH            { 1d0c:01db                                        }
+  ADD  DX, DX            { 1d0c:01dd                                        }
+  INC  DX                { 1d0c:01df  count port = chan*2 + 1               }
+  IN   AL, DX            { 1d0c:01e0  --- first read                        }
+  MOV  BL, AL            { 1d0c:01e1                                        }
+  IN   AL, DX            { 1d0c:01e3                                        }
+  MOV  BH, AL            { 1d0c:01e4                                        }
+  MOV  CX, BX            { 1d0c:01e6  keep it                               }
+  IN   AL, DX            { 1d0c:01e8  --- second read                       }
+  MOV  BL, AL            { 1d0c:01e9                                        }
+  IN   AL, DX            { 1d0c:01eb                                        }
+  MOV  BH, AL            { 1d0c:01ec                                        }
+  MOV  AX, BX            { 1d0c:01ee  assume the second                     }
+  MOV  SI, CX            { 1d0c:01f0                                        }
+  SUB  SI, BX            { 1d0c:01f2  how far it moved between reads        }
+  CMP  SI, 5             { 1d0c:01f4                                        }
+  JC   @@Out             { 1d0c:01f7  barely moved -> the second read       }
+  MOV  AX, CX            { 1d0c:01f9                                        }
+  CMP  SI, 0104h         { 1d0c:01fb                                        }
+  JC   @@Out             { 1d0c:01ff  moved a little -> the FIRST read      }
+  MOV  AX, BX            { 1d0c:0201                                        }
+  CMP  SI, 0FF01h        { 1d0c:0203                                        }
+  JNC  @@Out             { 1d0c:0207  wrapped past zero -> the second       }
+  MOV  AX, 0FFFFh        { 1d0c:0209  no idea; say so                       }
 @@Out:
 end;
 
 { --------------------------------------------------------------------------
-  1b24:020d, 1b24:0222, 1b24:0237 -- pick a controller by channel number.
+  1d0c:020d, 1d0c:0222, 1d0c:0237 -- pick a controller by channel number.
 
   HAND ASSEMBLER, verbatim. Three identical shapes, differing only in which
   pair of kernels they call. Channel arrives in AH.
@@ -487,15 +488,15 @@ end;
 { @asm 000 1d0c:020d +21 }
 procedure GetDMACountAsm; far; assembler;
 asm
-  CMP  AH, 2             { 1b24:020d  the floppy                            }
-  JZ   @@Out             { 1b24:0210                                        }
-  CMP  AH, 4             { 1b24:0212  the cascade                           }
-  JZ   @@Out             { 1b24:0215                                        }
-  JC   @@Eight           { 1b24:0217                                        }
-  CALL GetDMA16Count           { 1b24:0219                                        }
-  JMP  @@Out             { 1b24:021c                                        }
+  CMP  AH, 2             { 1d0c:020d  the floppy                            }
+  JZ   @@Out             { 1d0c:0210                                        }
+  CMP  AH, 4             { 1d0c:0212  the cascade                           }
+  JZ   @@Out             { 1d0c:0215                                        }
+  JC   @@Eight           { 1d0c:0217                                        }
+  CALL GetDMA16Count           { 1d0c:0219                                        }
+  JMP  @@Out             { 1d0c:021c                                        }
 @@Eight:
-  CALL GetDMA8Count            { 1b24:021e                                        }
+  CALL GetDMA8Count            { 1d0c:021e                                        }
 @@Out:
 end;
 
@@ -527,15 +528,15 @@ end;
 { @asm 000 1d0c:0222 +21 }
 procedure DMASetAsm; far; assembler;
 asm
-  CMP  AH, 2             { 1b24:0222  the floppy controller's channel        }
-  JZ   @@Out             { 1b24:0225  refuse it                              }
-  CMP  AH, 4             { 1b24:0227  the cascade, not a usable channel      }
-  JZ   @@Out             { 1b24:022a  refuse that too                        }
-  JC   @@Eight           { 1b24:022c  below 4: the 8-bit controller          }
-  CALL DMA16Set           { 1b24:022e                                        }
-  JMP  @@Out             { 1b24:0231                                        }
+  CMP  AH, 2             { 1d0c:0222  the floppy controller's channel        }
+  JZ   @@Out             { 1d0c:0225  refuse it                              }
+  CMP  AH, 4             { 1d0c:0227  the cascade, not a usable channel      }
+  JZ   @@Out             { 1d0c:022a  refuse that too                        }
+  JC   @@Eight           { 1d0c:022c  below 4: the 8-bit controller          }
+  CALL DMA16Set           { 1d0c:022e                                        }
+  JMP  @@Out             { 1d0c:0231                                        }
 @@Eight:
-  CALL DMA8Set            { 1b24:0233                                        }
+  CALL DMA8Set            { 1d0c:0233                                        }
 @@Out:
 end;
 
@@ -543,20 +544,20 @@ end;
 { @asm 000 1d0c:0237 +21 }
 procedure DMAResetAsm; far; assembler;
 asm
-  CMP  AH, 2             { 1b24:0237                                        }
-  JZ   @@Out             { 1b24:023a                                        }
-  CMP  AH, 4             { 1b24:023c                                        }
-  JZ   @@Out             { 1b24:023f                                        }
-  JC   @@Eight           { 1b24:0241                                        }
-  CALL DMA16Reset            { 1b24:0243                                        }
-  JMP  @@Out             { 1b24:0246                                        }
+  CMP  AH, 2             { 1d0c:0237                                        }
+  JZ   @@Out             { 1d0c:023a                                        }
+  CMP  AH, 4             { 1d0c:023c                                        }
+  JZ   @@Out             { 1d0c:023f                                        }
+  JC   @@Eight           { 1d0c:0241                                        }
+  CALL DMA16Reset            { 1d0c:0243                                        }
+  JMP  @@Out             { 1d0c:0246                                        }
 @@Eight:
-  CALL DMA8Reset             { 1b24:0248                                        }
+  CALL DMA8Reset             { 1d0c:0248                                        }
 @@Out:
 end;
 
 { --------------------------------------------------------------------------
-  1b24:024c, 1b24:0267, 1b24:02f0 -- the Pascal-callable faces.
+  1d0c:024c, 1d0c:0267, 1d0c:02f0 -- the Pascal-callable faces.
 
   HAND ASSEMBLER, verbatim: each one is nothing but moving parameters into
   the registers the kernels expect, and a far call.
@@ -564,24 +565,24 @@ end;
 { @asm 000 1d0c:024c +27 }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
-  MOV  AH, BYTE PTR Channel   { 1b24:024f  [BP+0Eh]                         }
-  MOV  CH, BYTE PTR Mode      { 1b24:0252  [BP+0Ch]                         }
-  MOV  CL, BYTE PTR Page      { 1b24:0255  [BP+0Ah]                         }
-  MOV  BX, Offs               { 1b24:0258  [BP+08h]                         }
-  MOV  SI, Size              { 1b24:025b  [BP+06h]                         }
-  CALL DMASetAsm              { 1b24:025e                                   }
+  MOV  AH, BYTE PTR Channel   { 1d0c:024f  [BP+0Eh]                         }
+  MOV  CH, BYTE PTR Mode      { 1d0c:0252  [BP+0Ch]                         }
+  MOV  CL, BYTE PTR Page      { 1d0c:0255  [BP+0Ah]                         }
+  MOV  BX, Offs               { 1d0c:0258  [BP+08h]                         }
+  MOV  SI, Size              { 1d0c:025b  [BP+06h]                         }
+  CALL DMASetAsm              { 1d0c:025e                                   }
 end;
 
 { @asm 000 1d0c:0267 +15 }
 function GetDMACount(Channel : Byte) : Word; assembler;
 asm
-  MOV  AH, BYTE PTR Channel   { 1b24:026a                                   }
-  CALL GetDMACountAsm              { 1b24:026d                                   }
+  MOV  AH, BYTE PTR Channel   { 1d0c:026a                                   }
+  CALL GetDMACountAsm              { 1d0c:026d                                   }
 end;
 
 
 { --------------------------------------------------------------------------
-  1b24:0276 -- take a Pointer and a byte count, do the rest.
+  1d0c:0276 -- take a Pointer and a byte count, do the rest.
 
   Plain Pascal in the binary. Two things happen: the far pointer is split
   into a DMA page and a 16-bit address, and the count is decremented, because
@@ -627,37 +628,37 @@ begin
     The caution recorded on TPtrRec still holds for `Seg(P)` -- that really
     does give the address OF the pointer variable. `Seg(P^)` is the one that
     dereferences, and that is the idiom here. }
-  Segm := Seg(Buf^) and $F000;                    { 1b24:027f }
-  Offs := Seg(Buf^) and $0FFF;                    { 1b24:028a }
+  Segm := Seg(Buf^) and $F000;                    { 1d0c:027f }
+  Offs := Seg(Buf^) and $0FFF;                    { 1d0c:028a }
 
-  if ($FFFF - Ofs(Buf^)) < Offs then              { 1b24:029c  would carry }
+  if ($FFFF - Ofs(Buf^)) < Offs then              { 1d0c:029c  would carry }
   begin
-    Inc(Segm, $1000);                             { 1b24:02a1  next page   }
+    Inc(Segm, $1000);                             { 1d0c:02a1  next page   }
 
-    { [re] THE `- $10000` IS IN THE BINARY AND IT LOOKS POINTLESS. 1b24:02b6 is
+    { [re] THE `- $10000` IS IN THE BINARY AND IT LOOKS POINTLESS. 1d0c:02b6 is
       `SUB AX,0 / SBB DX,1` -- a 32-bit subtraction of 65536 -- and the
-      result is then stored as a WORD at 1b24:02c0, so the borrow is thrown
+      result is then stored as a WORD at 1d0c:02c0, so the borrow is thrown
       away and the answer is the same as a plain 16-bit add.
 
       [re] It is not decoration: writing the constant is what makes the whole
       expression LongInt, and without it Turbo Pascal emits a two-byte
       `ADD AX,[BP-4]` where the original has fourteen bytes of 32-bit
       arithmetic. Transcribed as found. }
-    Offs := Offs - $10000 + Ofs(Buf^);            { 1b24:02ab .. 02c0 }
+    Offs := Offs - $10000 + Ofs(Buf^);            { 1d0c:02ab .. 02c0 }
   end
   else
-    Offs := Ofs(Buf^) + Offs;                     { 1b24:02ca }
+    Offs := Ofs(Buf^) + Offs;                     { 1d0c:02ca }
 
-  Dec(Size);                                      { 1b24:02d0  the 8237 wants N-1 }
+  Dec(Size);                                      { 1d0c:02d0  the 8237 wants N-1 }
 
-  DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);  { 1b24:02e9 }
+  DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);  { 1d0c:02e9 }
 end;
 
 { @asm 000 1d0c:02f0 }
 procedure DMAReset(Channel : Byte); assembler;
 asm
-  MOV  AH, BYTE PTR Channel   { 1b24:02f3                                   }
-  CALL DMAResetAsm               { 1b24:02f6                                   }
+  MOV  AH, BYTE PTR Channel   { 1d0c:02f3                                   }
+  CALL DMAResetAsm               { 1d0c:02f6                                   }
 end;
 
 end.

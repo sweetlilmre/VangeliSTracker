@@ -107,7 +107,7 @@ const
   { The command line handed to the shelled-out program. 127 characters, which
     is DOS's own limit for a command tail.
 
-    [re] DS:$08c8 -- AND THE WIDTH IS MEASURED TWICE OVER. `11bb:0d5c` pushes
+    [re] DS:$08c8 -- AND THE WIDTH IS MEASURED TWICE OVER. `11cf:0d5c` pushes
     `6A 7F`, an immediate 127, as `SizeOf(ShellParam) - 1`; a full `String`
     would push 255 and take a byte more to do it. And $08c8 + 128 lands exactly
     on StringsFName. }
@@ -120,7 +120,7 @@ const
     player also sets it itself after printing once, so the banner appears at
     most once however many times that path is taken.
 
-    [re] 109c:05b2 SETS THIS AND `1000` READS IT, which is how the switch got its name.
+    [re] 1086:05b2 SETS THIS AND `1000` READS IT, which is how the switch got its name.
     `1000:00fb` is `CMP byte [09e8],0 / JNZ +$67`, and the 103 bytes it skips are four
     WriteLns of four 62-byte string constants at `1000:0000`, `003e`, `007c` and
     `00ba` -- a four-line banner. `1000:0164` then sets the same flag itself, so the
@@ -151,7 +151,7 @@ const
   each because its ADDRESS is inside another unit's DGROUP block:
 
     ModOffset  DS:$03c0  is four bytes below SongUnit's `SongLoaders` at $03c4, so it
-               is SONGUNIT's, and 14b9:0242 -- which pushes it into `St.Seek` -- is
+               is SONGUNIT's, and 153a:0242 -- which pushes it into `St.Seek` -- is
                that unit's own `LoadFName`. Now a typed constant there.
     NxOption   DS:$0bc6  is between SoundDevices' `DMAChannel` at $0bc4 and its
                `IsDmaDevice` at $0bc7, so it is SOUNDDEVICES'. 109c sets it from the

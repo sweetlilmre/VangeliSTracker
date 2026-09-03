@@ -17,7 +17,7 @@
   shapes: a nibble pair for anything displaying "octave 4, note 3", and a
   single linear 0..83 for anything that wants to index a table by note.
 
-  [re] Segment 1650 -- 160 bytes, all of it, one routine, no parameters. The
+  [re] Segment 183e -- 160 bytes, all of it, one routine, no parameters. The
   body calls it once at 1000:05d7.
 
   [re] IN     DS:$04bc  the period table: 7 octaves x 12 semitones, words, on a
@@ -45,11 +45,11 @@ unit VTNotes;
 interface
 
 const
-  Octaves  = 7;                   { 1650:0027 stops the octave scan at 6 }
-  Semis    = 12;                  { 1650:0059 stops the note scan at $0B }
+  Octaves  = 7;                   { 183e:0027 stops the octave scan at 6 }
+  Semis    = 12;                  { 183e:0059 stops the note scan at $0B }
   Notes    = Octaves * Semis;     { 84 -- the linear form NoteOf's low byte holds }
-  Periods  = 2048;                { 1650:0089 stops at $7FF }
-  RowBytes = 24;                  { 1650:001b, 1650:0048 -- IMUL by $18 }
+  Periods  = 2048;                { 183e:0089 stops at $7FF }
+  RowBytes = 24;                  { 183e:001b, 183e:0048 -- IMUL by $18 }
 
 type
   TPeriodRow = array[0..Semis - 1] of Word;
@@ -66,8 +66,8 @@ type
   is why it can be a lookup rather than a calculation.
 
   [re] EXPORTED BECAUSE 142f READS IT, and finding that is what turned up the
-  pair below. `142f:005d` is `MOV AX,[DI+0414]` with DI = note * 2. DS:$0414.
-  Transcribed from 1caa:0414 rather than computed, per the standing rule.
+  pair below. `147d:005d` is `MOV AX,[DI+0414]` with DI = note * 2. DS:$0414.
+  Transcribed from 1e92:0414 rather than computed, per the standing rule.
   ------------------------------------------------------------------------- }
 const
   NotePeriods : array[0..Notes - 1] of Word = (
@@ -82,7 +82,7 @@ const
 
 { The answer table this unit exists to build: 2048 words, indexed by period.
 
-  [re] EXPORTED BECAUSE 142f READS IT: 142f:004c is `MOV AX,[DI+25c6]` with DI
+  [re] EXPORTED BECAUSE 142f READS IT: 147d:004c is `MOV AX,[DI+25c6]` with DI
   the period doubled, and it takes the LOW BYTE -- the linear `Oct*12 + Note`
   form -- to index NotePeriods above. The two tables are a matched pair and
   both ends of the pairing are now in the tree. }
@@ -135,17 +135,17 @@ implementation
   between them. Each is indexed the way its own consumer wants -- flat by the
   effects code, by octave row here, which is why this one keeps its 2-D shape.
 
-  [re] Checked across all 83 pairs against the bytes at 1caa:04bc and
-  1caa:0414 -- **83 of 83, no exceptions**; sqrt(1712*1616) is 1663.3 and the
+  [re] Checked across all 83 pairs against the bytes at 1e92:04bc and
+  1e92:0414 -- **83 of 83, no exceptions**; sqrt(1712*1616) is 1663.3 and the
   entry is 1664, sqrt(1616*1525) is 1570.0 and the entry is 1570, and so on to
   the end. They sit next to each other in DGROUP ($0414 then $04bc, 168 bytes
-  each). `1650:0048` is `IMUL DI,Oct,$18` and a flat declaration would lose
+  each). `183e:0048` is `IMUL DI,Oct,$18` and a flat declaration would lose
   that instruction.
 
   [re] ORDINARY DGROUP DATA, not `absolute`. This pair was once declared
   `absolute 0:$04bc`, which is segment ZERO -- the interrupt vector table -- and
   made every access a far one through ES. The original indexes them DS-relative:
-  1650:004e is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
+  183e:004e is `MOV AX,[DI+04BC]`, a plain DGROUP reference with the offset in the
   instruction. The offsets themselves are decided by link order, which is the open
   problem for a byte-exact EXE; inside a .TPU they are pending fixups and compare
   as zero either way.
@@ -180,7 +180,7 @@ const
 
   Called once, from the program's startup.
 
-  [re] 1650:0000. Plain Pascal in the binary -- ENTER $0A,0, no assembler.
+  [re] 183e:0000. Plain Pascal in the binary -- ENTER $0A,0, no assembler.
   -------------------------------------------------------------------------- }
 procedure BuildNoteTable;
 label
@@ -213,30 +213,30 @@ begin
     The searches leave early by jumping OUT of the loop, and both fall-off-
     the-end paths answer octave 0, note 0 rather than indexing off the table.
     Nothing checks; it simply cannot go wrong. }
-  for P := 0 to Periods - 1 do                    { 1650:0004, 0089 }
+  for P := 0 to Periods - 1 do                    { 183e:0004, 0089 }
   begin
-    for Oct := 0 to Octaves - 1 do                { 1650:000e, 0027 }
-      if P > NoteBounds[Oct][Semis - 1] then        { 1650:001f }
-        goto Found;                               { 1650:0025 }
+    for Oct := 0 to Octaves - 1 do                { 183e:000e, 0027 }
+      if P > NoteBounds[Oct][Semis - 1] then        { 183e:001f }
+        goto Found;                               { 183e:0025 }
 
-    Note := 0;                                    { 1650:002d }
-    Oct  := 0;                                    { 1650:0032 }
-    goto Store;                                   { 1650:0037 }
+    Note := 0;                                    { 183e:002d }
+    Oct  := 0;                                    { 183e:0032 }
+    goto Store;                                   { 183e:0037 }
 
   Found:
-    for Note := 0 to Semis - 1 do                 { 1650:0039, 0059 }
-      if NoteBounds[Oct][Note] < P then             { 1650:0052 }
-        goto Store;                               { 1650:0057 }
+    for Note := 0 to Semis - 1 do                 { 183e:0039, 0059 }
+      if NoteBounds[Oct][Note] < P then             { 183e:0052 }
+        goto Store;                               { 183e:0057 }
 
-    Note := 0;                                    { 1650:005f }
-    Oct  := 0;                                    { 1650:0064  falls through }
+    Note := 0;                                    { 183e:005f }
+    Oct  := 0;                                    { 183e:0064  falls through }
 
-    { 1650:0069 -- both forms in one word. The low byte is the linear note
+    { 183e:0069 -- both forms in one word. The low byte is the linear note
       number a sample rate is worked out from; the high byte is the nibble
       pair a pattern display wants. }
   Store:
-    NoteOf[P] := ((Oct shl 4) + Note) shl 8       { 1650:0072 .. 1650:007e }
-                 + (Oct * Semis + Note);          { 1650:0069 }
+    NoteOf[P] := ((Oct shl 4) + Note) shl 8       { 183e:0072 .. 183e:007e }
+                 + (Oct * Semis + Note);          { 183e:0069 }
   end;
 end;
 

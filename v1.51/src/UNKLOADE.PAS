@@ -21,7 +21,7 @@
   will see mffJMPlayer on a file that is nothing of the kind. That is safe
   only because Status is what callers actually test.
 
-  [re] Segment 164b -- 80 bytes, of which 77 are the single routine.
+  [re] Segment 1839 -- 80 bytes, of which 77 are the single routine.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/UNKLOADE.PAS is this unit statement
   for statement -- the same three assignments around the same comparison, and
@@ -38,11 +38,15 @@
   this the same way: no debug information.
 
   [re] ADDRESS MAP
-  [re] SEGMENT UNVERIFIED IN THIS IMAGE. These addresses are v1.31b's,
-  inherited with the file. segpair --pair pairs this unit's segment with
-  1839 here, but 8 bytes matched and nothing longer -- too short to trust, so nothing is asserted.
-  Do not write an @asm marker from this map until it is charted.
-    LoadJMFileFormat  164b:0000     ModJMIdString  DS:$040e, six raw bytes
+  [re] 1839 IN THIS IMAGE, NOT 164b, and DS:$04b6 not DS:$040e. Charted in
+  Ghidra rather than inferred: `ENTER $200,0` (C8 00 02 00) occurs exactly
+  TWICE in this image and one of them is 1839:0000, which is where this
+  unit's single routine sits. The 76 bytes there are this routine statement
+  for statement -- two temporaries at BP-$100 and BP-$200, two helper calls
+  each pushing a literal 6, the string compare, a store of 6 or 0, RETF $0C
+  -- and it carries `MOV DI,04b6`, which is 'JMPLAY' re-based. 'JMPLAY'
+  itself is at 1e92:04b6, so DGROUP is 1e92 here.
+    LoadJMFileFormat  1839:0000     ModJMIdString  DS:$04b6, six raw bytes
   =========================================================================== }
 
 unit UnkLoader;
@@ -65,7 +69,7 @@ type
   declared (Song : PSong; St : Pointer; Header : PModJMIdString) -- three
   pointer VALUE parameters, which occupy the same twelve bytes of frame and
   leave this routine's own code identical either way. It is only visible from
-  the CALLER: 14b9:00dc pushes Self, St and Header as three var parameters, and
+  the CALLER: 153a:00dc pushes Self, St and Header as three var parameters, and
   SongUnit's SongLoaders table types them so. Fourth time in the tree that a
   byte-exact unit had a wrong interface -- see VTDOSRSZ, VTDOSMEM and GUS. }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
@@ -74,7 +78,7 @@ procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
 implementation
 
 const
-  { [re] 1caa:040e }
+  { [re] 1e92:040e }
   ModJMIdString : TModJMIdString = 'JMPLAY';
 
 { --------------------------------------------------------------------------
@@ -90,11 +94,11 @@ const
   the caller, and this routine only looks at what it was handed -- which is why
   a recogniser can be this cheap to try.
 
-  [re] 164b:0000. Plain Pascal in the binary, and the shape of it is worth
+  [re] 1839:0000. Plain Pascal in the binary, and the shape of it is worth
   reading carefully because getting it wrong costs 40 bytes. The frame is
   `ENTER $200,0` and the body pushes a destination, a source and a literal 6
-  into the compiler's array-of-char-to-String helper (1ba1:0c05) TWICE, then
-  calls its string compare (1ba1:0bc8).
+  into the compiler's array-of-char-to-String helper (1d89:0c05) TWICE, then
+  calls its string compare (1d89:0bc8).
 
   [re] THOSE TWO 256-BYTE SLOTS ARE COMPILER TEMPORARIES, NOT VARIABLES. Turbo
   Pascal permits `=` between two char arrays and implements it by converting
@@ -112,14 +116,14 @@ var
     ABSOLUTE alias is a second name for storage that is already there. }
   ModJM : TModJMIdString absolute Header;
 begin
-  Song.FileFormat := mffJMPlayer;                 { 164b:0007  +$5d := 4 }
+  Song.FileFormat := mffJMPlayer;                 { 1839:0007  +$5d := 4 }
 
-  if ModJM = ModJMIdString then                   { 164b:0019..0035      }
-    Song.Status := msFileFormatNotSupported       { 164b:003a  +$59 := 6 }
+  if ModJM = ModJMIdString then                   { 1839:0019..0035      }
+    Song.Status := msFileFormatNotSupported       { 1839:003a  +$59 := 6 }
   else
     { Not a JMPlayer module -- put the status back exactly as it was found, so
       the next recogniser in the chain sees an untouched song. }
-    Song.Status := msNotLoaded;                   { 164b:0044  +$59 := 0 }
+    Song.Status := msNotLoaded;                   { 1839:0044  +$59 := 0 }
 end;
 
 end.

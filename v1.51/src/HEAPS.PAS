@@ -19,7 +19,7 @@
   and thrown away entire; nothing frees one sample and keeps another. That is
   what makes a pool viable where a general allocator would fragment.
 
-  [re] Segment 17cf -- 2,832 bytes, 46 routines. COMPLETE: our code is 2,821
+  [re] Segment 19b7 -- 2,832 bytes, 46 routines. COMPLETE: our code is 2,821
   and the last eleven are padding. This file WAS a declared stub, written when
   12ba needed something to call.
 
@@ -37,7 +37,7 @@
 
   [re] THE PAIRING WITH `LIB/HEAPS.PAS` WAS CONFIRMED FROM THE OTHER SIDE, BEFORE THIS
   SEGMENT WAS TOUCHED AT ALL, and it is the only one in the project that happened
-  that way round. 12ba:1263 is `CALLF [DI+8]` on the object at DS:$39ae and 12ba:1261
+  that way round. 12ce:1263 is `CALLF [DI+8]` on the object at DS:$39ae and 12ce:1261
   is `MOV DI,[DI]`, which between them fixed
 
     * that HGetMem is virtual method number two, so the declaration order below is
@@ -54,14 +54,14 @@
   two unit-level initialisers -- plus the nested closures ForEach and FirstThat need.
   The prologue scanner finds 46 frames.
 
-  [re] IT CALLS `Objects` AT SIX ENTRY POINTS (1891:0000, 0031, 03a7, 04ec, 0520, 055b),
+  [re] IT CALLS `Objects` AT SIX ENTRY POINTS (1a79:0000, 0031, 03a7, 04ec, 0520, 055b),
   which is TCollection and its iterators -- THeapColl keeps its sub-heaps in one. It
   also calls 1880 (DOS $48/$49) and 188f (DOS $4A), both of which are transcribed.
 
   `TObject` IS DECLARED HERE rather than imported, and that is deliberate: it needs to
   be a fieldless object with one virtual method and nothing else, which is all the VMT
   geometry requires, and declaring it locally keeps this unit off whichever Turbo
-  Vision the TP6 install happens to have. Segment 1891 IS Borland's `Objects` and is
+  Vision the TP6 install happens to have. Segment 1a79 IS Borland's `Objects` and is
   not in scope to reconstruct.
   =========================================================================== }
 
@@ -164,7 +164,7 @@ type
 
     [re] So a call site in a routine that has not been transcribed yet confirms the last
     two entries of a different object's method list. That is the same shape of
-    evidence as `12ba:1263` proving the ancestry before this segment was touched. }
+    evidence as `12ce:1263` proving the ancestry before this segment was touched. }
   PHeapColl = ^THeapColl;
   THeapColl = object(THeap)
     HeapColl : TCollection;
@@ -192,7 +192,7 @@ type
 
 var
   { [re] The release's five, in its declaration order. `FullHeap` at DS:$5d08 is the one
-    12ba:125c reaches; it is a THeapColl here rather than the THeap the stub had,
+    12ce:125c reaches; it is a THeapColl here rather than the THeap the stub had,
     which changes no byte at that call site because HGetMem is at +$08 either way. }
   InitialHeapEnd : Pointer;
   Heap           : THeap;
@@ -209,7 +209,7 @@ var
   [re] `InitTempHeap` AND `DoneTempHeap` ARE ABSENT FROM 1.31, and the proof is
   a call count rather than a search. Both of them call `ChangeSystemHeap`, and so does
   `ShrinkSystemHeap` -- so the release's ChangeSystemHeap has THREE callers inside its
-  own segment. 17cf:010c has exactly ONE. Scanning every near call in the segment
+  own segment. 19b7:010c has exactly ONE. Scanning every near call in the segment
   settles it without reading a byte of either routine.
 
   Which makes sense: the temporary heap is what the tracker's swap system carves out
@@ -226,7 +226,7 @@ procedure ShrinkSystemHeap(Size : LongInt);
 implementation
 
 { --------------------------------------------------------------------------
-  17cf:0000, 0052, 0081 -- THE THREE POINTER HELPERS, and all three are one-liners
+  19b7:0000, 0052, 0081 -- THE THREE POINTER HELPERS, and all three are one-liners
   that cost thirty to fifty bytes each because 8086 pointer arithmetic is 32-bit.
 
   A far pointer is a segment and an offset, and the same byte can be addressed many
@@ -239,11 +239,11 @@ implementation
       LinealPtr(P)     P as a single 20-bit linear address
 
   [re] `LinealPtr` IS WHY THE OTHER TWO EXIST: the heap compares and subtracts addresses,
-  and it can only do that on the linear form. 17cf:0081 is called fourteen times from
+  and it can only do that on the linear form. 19b7:0081 is called fourteen times from
   inside this segment, more than any other routine here.
 
-  [re] THE 32-BIT SHIFTS ARE RTL CALLS, not instruction sequences: 17cf:0016 calls
-  1ba1:0a9c for `shr 4` on a LongInt and 17cf:0091 calls 1ba1:0aa8 for `shl 4`. An
+  [re] THE 32-BIT SHIFTS ARE RTL CALLS, not instruction sequences: 19b7:0016 calls
+  1d89:0a9c for `shr 4` on a LongInt and 19b7:0091 calls 1d89:0aa8 for `shl 4`. An
   8086 has no 32-bit shift, so Turbo Pascal calls a helper -- which is why `IncPtr`'s
   one line is fifty bytes and why `NormalizePtr`, whose shift is on a WORD, gets the
   inline `SHR AX,4` instead and is twenty bytes shorter.
@@ -302,7 +302,7 @@ end;
 
 
 { --------------------------------------------------------------------------
-  17cf:00b5 -- InitUmbHeap. Claim every upper-memory block the provider will give
+  19b7:00b5 -- InitUmbHeap. Claim every upper-memory block the provider will give
   and add each one to `UmbHeap`.
 
   THE LOOP TERMINATES ON A FAILED ALLOCATION, not on a count. `New(UMB, Init)` always
@@ -336,7 +336,7 @@ end;
   It is clamped at both ends, and the clamps are the interesting part -- see
   below.
 
-  [re] 17cf:010c.
+  [re] 19b7:010c.
 
   IT IS CLAMPED IN LINEAR SPACE, WHICH IS WHY LinealPtr EXISTS. The floor is however
   much the system heap has already handed out (`HeapPtr - HeapOrg`) -- shrinking past
@@ -360,16 +360,16 @@ begin
 end;
 
 
-{ 17cf:01d3 -- ShrinkSystemHeap. As above, and then hand the memory back to DOS by
+{ 19b7:01d3 -- ShrinkSystemHeap. As above, and then hand the memory back to DOS by
   lowering the program's own memory top. Twenty-nine bytes for two statements, and
   the second is what makes this different from ChangeSystemHeap: `SetMemTop` is
   irreversible in a way that moving HeapEnd is not. }
 { --------------------------------------------------------------------------
-  17cf:01d3 -- ShrinkSystemHeap. Move the boundary and then give the memory back to
+  19b7:01d3 -- ShrinkSystemHeap. Move the boundary and then give the memory back to
   DOS, which is the irreversible half.
 
   [re] IT IS THE RELEASE'S `SetMemTop(HeapEnd)` AFTER ALL, AND FINDING THAT CORRECTED
-  ANOTHER UNIT. The call at 01e8 reaches 188f:0000, which the tree had declared as
+  ANOTHER UNIT. The call at 01e8 reaches 1a77:0000, which the tree had declared as
   `VTDosRsz.SetBlockTop(TopSeg, ExtraBytes : Word)`. Written that way this line gives
   `LES DI,[..] / PUSH ES / LES DI,[..] / PUSH DI`; the original has
   `PUSH [0c4a] / PUSH [0c48]`, which is a POINTER VARIABLE pushed whole. So the callee
@@ -399,7 +399,7 @@ end;
       010c  ChangeSystemHeap  PUSH BP      done
       01d3  ShrinkSystemHeap  PUSH BP      done
       01f1  THeap.Init        PUSH BP      -- NOT InitTempHeap; see above. 01f6
-                                          calls 1891:0000, which is TObject.Init,
+                                          calls 1a79:0000, which is TObject.Init,
                                           and a constructor is what calls that
       ...   the rest of the THeap methods, then TUmbHeap, then THeapColl, then the
             two unit-level initialisers
@@ -409,7 +409,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  17cf:01f1 -- THeap.Init. Build a heap inside a caller-supplied buffer.
+  19b7:01f1 -- THeap.Init. Build a heap inside a caller-supplied buffer.
 
   IT ROUNDS THE BUFFER UP TO A PARAGRAPH AND THE END DOWN TO ONE, which is what makes
   every pointer in the heap normalisable: `HHeapEnd := Ptr(Seg(HHeapEnd^), 0)` throws
@@ -607,7 +607,7 @@ end;
   ========================================================================== }
 
 { --------------------------------------------------------------------------
-  17cf:0698 -- TUmbHeap.Init. Ask for an upper-memory block and build a heap in it.
+  19b7:0698 -- TUmbHeap.Init. Ask for an upper-memory block and build a heap in it.
 
   `UMBAllocate(Buf, 1000000)` ASKS FOR A MEGABYTE AND TAKES WHAT IT GETS. Upper memory
   comes in whatever blocks the provider has left, so the request is deliberately
@@ -645,7 +645,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  17cf:071b -- THeapColl.Init. A heap made of other heaps: no buffer of its own, and
+  19b7:071b -- THeapColl.Init. A heap made of other heaps: no buffer of its own, and
   a TCollection to keep the members in.
 
   `EmptyInit` RATHER THAN `Init`, which is the point of having two constructors. A

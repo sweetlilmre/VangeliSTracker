@@ -20,7 +20,7 @@
   rather than kept in ours. Change is where a sample stops being data and
   becomes something a device can sound.
 
-  [re] Segment 165a -- 3,216 bytes, FIFTEEN routines. COMPLETE: 207 pending
+  [re] Segment 1848 -- 3,216 bytes, FIFTEEN routines. COMPLETE: 207 pending
   fixups, written from the release's bodies verbatim in TWO builds. The first
   came back at 9% and the second was exact -- and the 9% was a jump
   displacement, not a wrong instruction.
@@ -91,17 +91,17 @@
   THIRD, THE FAR CALLS COUNT THE ARITHMETIC. Two System helpers appear five times each
   and nowhere else in the segment:
 
-      [re] 1ba1:0a2e  x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
+      [re] 1d89:0a2e  x5, all inside Desample   -- and Desample has exactly five LongInt DIVs
                                               (Len DIV 2 three times, Reps, Repl)
-      1ba1:0a13  x5, all inside Resample   -- and Resample has exactly five LongInt MULs
+      1d89:0a13  x5, all inside Resample   -- and Resample has exactly five LongInt MULs
                                               (Repl*3, Repl*2, Repl*3, Repl*4, Repl*4)
-      1ba1:0fb2  x3 at 0177, 0a83, 0aaf    -- Move, and the release has exactly three:
+      1d89:0fb2  x3 at 0177, 0a83, 0aaf    -- Move, and the release has exactly three:
                                               one in Change, two in SetFullTrack
-      1ba1:0fd5  x4 at 08f1, 0901, 0ac7, 0c00
+      1d89:0fd5  x4 at 08f1, 0901, 0ac7, 0c00
                                            -- FillChar: two in SetFullTrack, one in
                                               GetNote, one in TPattern.Init
-      1723:0089  x2 at 023b, 02ca          -- DumpToUltrasound, and Change calls it twice
-      1891:0000  x3  /  1891:0031  x3      -- TObject.Init and TObject.Done, three each
+      1911:0089  x2 at 023b, 02ca          -- DumpToUltrasound, and Change calls it twice
+      1a79:0000  x3  /  1a79:0031  x3      -- TObject.Init and TObject.Done, three each
 
   **FIVE DIVS AND FIVE MULS, TERM FOR TERM, IS NOT A COINCIDENCE OF SIZE.** It says
   Desample's and Resample's expressions are the release's without a single one added or
@@ -462,8 +462,8 @@ uses
 const
   GUSAddr : LongInt = 0;
 
-{ [re] 165a:0000 -- and the whole body is one inherited call. The thirty bytes are almost all
-  the constructor's compiler-generated prologue: `1ba1:04f5` at `0005` sets the VMT up and
+{ [re] 1848:0000 -- and the whole body is one inherited call. The thirty bytes are almost all
+  the constructor's compiler-generated prologue: `1d89:04f5` at `0005` sets the VMT up and
   arranges for a failed constructor to return False, which is also why the return is
   `RETF 6` and not `RETF 4`. }
 constructor TInstrument.Init;
@@ -474,7 +474,7 @@ end;
 
 { Release everything the instrument owns, then let TObject finish.
 
-  [re] 165a:0023 -- and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
+  [re] 1848:0023 -- and `SetName('')` where TTrack.Done and TPattern.Done call HDisposeStr
   directly. That asymmetry is the release's and it is measurable: `survey.py` finds the
   three `[DI+34]` sites in SetName, TTrack.Done and TPattern.Done, and none in this
   routine. }
@@ -488,7 +488,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:005d -- FreeContents, and its three `HFreeMem` calls are the segment's first three
+  1848:005d -- FreeContents, and its three `HFreeMem` calls are the segment's first three
   `[DI+0c]` sites, at `00ca`, `010e` and `0123`.
 
   `IF NOT UsingGUS` GUARDS THE SAMPLE BUT NOT THE RECORD. When the Gravis holds the
@@ -521,7 +521,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:012a -- Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
+  1848:012a -- Change. Adopt a caller's instrument record: copy it, sanitise it, halve and
   requadruple the sample if LowQuality is set, and hand it to the Gravis if there is one.
 
   `ENTER $004` IS `l : LONGINT` and it anchors the routine.
@@ -539,7 +539,7 @@ end;
   [re] **THIS SEGMENT IS WHAT FIXED `DumpToUltrasound`'s FIRST PARAMETER.** `GUS.PAS` had it
   as `Src : Pointer` and was byte-exact with it, because inside that routine a Pointer
   and an untyped `var` are the same four bytes and `LDS SI,Src` loads the same address
-  from either. The CALL SITE tells them apart: `165a:02b0` reads
+  from either. The CALL SITE tells them apart: `1848:02b0` reads
   `LES DI,ES:[DI+16] / PUSH ES / PUSH DI`, which is a var parameter, where a Pointer
   argument compiles to two word pushes and costs two bytes more. Changed to `var Src`,
   which is also the release's -- and `GUS` still verifies identical. **The same lesson
@@ -577,7 +577,7 @@ begin
         Instr^.DAdj := $2000;
       end;
       { [re] `IF Instr^.Repl <= 4 THEN Instr^.Repl := 0` IS ABSENT FROM 1.31, and its forty-two
-        bytes were the whole of our overshoot: at `165a:01be` the original goes straight
+        bytes were the whole of our overshoot: at `1848:01be` the original goes straight
         from the NAdj default to the `LowQuality` test, with no LongInt compare of the
         field at +8 in between.
 
@@ -593,7 +593,7 @@ begin
         Resample;
       end;
 
-      { [re] `l := Instr^.Len` SITS OUTSIDE THE TEST, at 165a:01d7, where the release has it
+      { [re] `l := Instr^.Len` SITS OUTSIDE THE TEST, at 1848:01d7, where the release has it
         inside. That is what lets the second free block below reuse `l` when the GUS
         block did not run -- the one restructuring 1.31 made here. }
       l := Instr^.Len;
@@ -621,11 +621,11 @@ begin
         its own copy. Two owners, two conditions, and only one of them can be
         true at a time.
 
-        [re] 165a:02f7..0375 -- EIGHTY-THREE BYTES THE RELEASE DOES NOT HAVE.
+        [re] 1848:02f7..0375 -- EIGHTY-THREE BYTES THE RELEASE DOES NOT HAVE.
 
         [re] It is a second copy of the sample-freeing half of FreeContents, guarded by a
         DIFFERENT global from the block above: `02f7` tests `DS:$0bc7` where `01eb`
-        tests `DS:$0bce`. `1084:007f` -- DEVGUS -- writes 1 to `$0bce`, so **that one
+        tests `DS:$0bce`. `106e:007f` -- DEVGUS -- writes 1 to `$0bce`, so **that one
         is `UsingGUS`** and the release's block above is correctly identified. `$0bc7`
         is the flag `12ba` tests twice at `0b5c` and `0c52`, which is where our name
         `IsDmaDevice` comes from.
@@ -634,9 +634,9 @@ begin
         is OURS, not the release's -- no such identifier exists in 1.39b -- and it was
         guessed from `12ba` alone. Put the three uses together:
 
-            [re] 12ba:0b5c   if NOT <flag> then <do the per-tick software mixing>
-            12ba:0c52   if <flag> and (TickSnapshot = Ticks) then ...
-            165a:02f7   if <flag> and (Instr^.Data <> nil) then <free the sample>
+            [re] 12ce:0b5c   if NOT <flag> then <do the per-tick software mixing>
+            12ce:0c52   if <flag> and (TickSnapshot = Ticks) then ...
+            1848:02f7   if <flag> and (Instr^.Data <> nil) then <free the sample>
 
         A device that needs neither software mixing NOR the sample in main memory is a
         device that plays from its own RAM. **That reads far more like "the hardware
@@ -669,7 +669,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:037a -- Desample. Halve a sample's rate in place, then give the freed half back.
+  1848:037a -- Desample. Halve a sample's rate in place, then give the freed half back.
 
   **THIS IS A DESTRUCTIVE OPTIMISATION AND `LowQuality` IS ITS SWITCH.** Averaging pairs
   of samples halves the memory a module needs and costs an octave of top end, which on a
@@ -695,7 +695,7 @@ end;
 
   [re] **FIVE LONGINT DIVISIONS, AND `survey.py` COUNTS FIVE.** `Len DIV 2 - 1`,
   `Len DIV 2 + 7`, `Len DIV 2`, `Reps DIV 2`, `Repl DIV 2` -- all five calls to
-  `1ba1:0a2e` fall inside this routine and nowhere else in the segment. Term for term.
+  `1d89:0a2e` fall inside this routine and nowhere else in the segment. Term for term.
   --------------------------------------------------------------------------- }
 procedure TInstrument.Desample;
 var
@@ -729,7 +729,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:0583 -- Resample. The opposite trade: spend memory to make a very short looped
+  1848:0583 -- Resample. The opposite trade: spend memory to make a very short looped
   sample cheaper to play.
 
   `Len < 128` AND `Repl > 0` IS THE WHOLE CONDITION, and it is deliberately the mirror of
@@ -751,7 +751,7 @@ end;
   instrument that gets here -- but it is a real overrun and it is not being quietly fixed.
 
   [re] **FIVE LONGINT MULTIPLICATIONS, AND `survey.py` COUNTS FIVE.** `Repl*3`, `Repl*2`,
-  `Repl*3`, `Repl*4`, `Repl*4` -- all five calls to `1ba1:0a13` are in this routine and
+  `Repl*3`, `Repl*4`, `Repl*4` -- all five calls to `1d89:0a13` are in this routine and
   nowhere else. The same term-for-term agreement Desample's divisions give, and between
   them the two routines are pinned before a byte is compared.
   --------------------------------------------------------------------------- }
@@ -785,7 +785,7 @@ begin
 end;
 
 
-{ 165a:07c0 -- SetName, and `ENTER $100` is the 256-byte copy a value `String` parameter
+{ 1848:07c0 -- SetName, and `ENTER $100` is the 256-byte copy a value `String` parameter
   costs. It holds both string sites: `HDisposeStr` at `07f4` and `HNewStr` at `080b`.
 
   NOTE THE ASYMMETRY: the old name is always disposed, the new one only stored if it is
@@ -805,7 +805,7 @@ end;
   TTrack.
   =========================================================================== }
 
-{ 165a:081d and 165a:083f. Unlike TInstrument.Done this one calls `HDisposeStr` directly
+{ 1848:081d and 1848:083f. Unlike TInstrument.Done this one calls `HDisposeStr` directly
   -- site `0852` -- and does not guard against a nil `Name`, because HDisposeStr does. }
 constructor TTrack.Init;
 begin
@@ -821,7 +821,7 @@ begin
 end;
 
 
-{ 165a:0876 -- and the two block lengths are recomputed from `NumNotes` rather than
+{ 1848:0876 -- and the two block lengths are recomputed from `NumNotes` rather than
   remembered, which is the price of the window-onto-a-short-block scheme. `+ 2` is the
   `NoteOffset` and `NumNotes` bytes ahead of each array. }
 procedure TTrack.FreeContents;
@@ -834,7 +834,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:08e2 -- SetFullTrack. Take 256 full notes and compress them into the two short
+  1848:08e2 -- SetFullTrack. Take 256 full notes and compress them into the two short
   arrays, discarding the blank lead-in and anything past the last real note.
 
   `ENTER $606` IS THE ROUTINE'S FINGERPRINT: `MNote` 1026 + `MComm` 514 + `i` 2 = 1542.
@@ -903,7 +903,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  165a:0ab8 -- GetNote. One line of one track, expanded back into a full note.
+  1848:0ab8 -- GetNote. One line of one track, expanded back into a full note.
 
   **THIS IS THE ROUTINE WITH NO FRAME AT ALL** -- `PUSH BP` rather than `ENTER` -- which is
   how it is told apart from `ChangeNote`, whose `Track : TFullTrack` local would cost 1,536
@@ -937,7 +937,7 @@ end;
   TPattern.
   =========================================================================== }
 
-{ 165a:0baa -- the only constructor here that takes a parameter, hence `RETF 8` where the
+{ 1848:0baa -- the only constructor here that takes a parameter, hence `RETF 8` where the
   other two are `RETF 6`. `Chans*2 + 4` is the four header bytes plus one word per
   channel; the declared `array[1..MaxChannels]` is never the size allocated.
 
@@ -964,7 +964,7 @@ begin
 end;
 
 
-{ 165a:0c53 -- and the block's own `NChans` is what sizes the free, so the pattern
+{ 1848:0c53 -- and the block's own `NChans` is what sizes the free, so the pattern
   remembers its width rather than the caller having to. }
 procedure TPattern.FreeContents;
 begin

@@ -33,7 +33,7 @@
   makes that an ordinary case rather than an error path, and it is why the
   driver chain ends with something that always succeeds.
 
-  [re] Segment 1065 -- 496 bytes, eight routines. Register puts 1a17:1008 in
+  [re] Segment 115e -- 496 bytes, eight routines. Register puts 1bff:1008 in
   slot +$2a.
 
   [re] ADDRESS MAP
@@ -41,7 +41,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 1170:000b -- located, code CHANGED.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     DevName      115e:0000     IrqHandler  115e:0005 *
     Probe       115e:0039     Start       115e:0046
     AskRate     115e:00f3     ChgHz      115e:0104
@@ -67,8 +68,8 @@ uses
 
 const
   { [re] $0018..$001d -- `Frac` AND `OldVec` ARE TYPED CONSTANTS, AND THEY OPEN THIS UNIT'S
-    BLOCK. Their addresses are named by this unit's own instructions -- `1065:0018` is
-    `MOV AL,[0018]` and `1065:005e` tests `[001a]` -- and they are in the INITIALISED
+    BLOCK. Their addresses are named by this unit's own instructions -- `115e:0018` is
+    `MOV AL,[0018]` and `115e:005e` tests `[001a]` -- and they are in the INITIALISED
     half of DGROUP, which is what makes them constants rather than vars. Declared as
     `var`s they went to the variable half instead, six bytes that pushed every unit
     after this one down; and the six they should occupy were being counted as the tail
@@ -84,7 +85,7 @@ const
     figure in it was wrong. }
   { [re] NEW IN v1.51, AND THEY OPEN THE BLOCK. v1.31b has these as UNTYPED
     constants -- `ComPort = $3F8; ComIrq = 4;` -- which occupy no DGROUP and
-    compile to immediates: 1065:0013 is `MOV DX,03F8`. v1.51 makes both
+    compile to immediates: 115e:0013 is `MOV DX,03F8`. v1.51 makes both
     configurable (`/port:` and `/irq:` in WHATSNEW.DOC), so they become typed
     constants and 115e:0013 is `MOV DX,[0200]`, four bytes against three.
 
@@ -123,7 +124,7 @@ const
     up, which is what made it visible at all.
 
     [re] It also makes sense of the driver. 1065 is a UART on IRQ 4 driven purely as a
-    CLOCK, and 12ba:0c52 gates the mixer with `IF IsDmaDevice AND (TickSnapshot =
+    CLOCK, and 12ce:0c52 gates the mixer with `IF IsDmaDevice AND (TickSnapshot =
     Ticks)`. A device that produces no output and only paces the tick wants that gate
     active, which is what claiming DMA does. DevGus's own record has DMA FALSE at the
     same offset in both images, so the two are not simply copies of one default. }
@@ -134,11 +135,11 @@ const
   from using this unit, so the counter cannot be declared here. This unit still
   advances it; it just does not own it. }
 
-{ [re] ~~procedure Register; far;~~ -- 1065:0172 IS THE UNIT'S INITIALISATION
+{ [re] ~~procedure Register; far;~~ -- 115e:0172 IS THE UNIT'S INITIALISATION
   SECTION, not an exported procedure, and the LINK is what settled it: nothing
   anywhere calls `Register`, so the smart linker discarded it and everything it
   referenced, leaving VTSILENC at 30 bytes of a 489-byte segment. The original's
-  init chain calls 1065:0172. **This is the same error DEVGUS already had and
+  init chain calls 115e:0172. **This is the same error DEVGUS already had and
   this file already describes** -- see the note there, where fixing it took the
   unit from 402 bytes to 376. }
 
@@ -175,7 +176,7 @@ var
   variables, which pushed every unit after it down the variable half of DGROUP. }
 
 { --------------------------------------------------------------------------
-  1065:0000 -- slot +$16. Empty, and takes nothing.
+  115e:0000 -- slot +$16. Empty, and takes nothing.
 
   1084's version of this slot takes a far pointer and clears a byte through
   it; this one ignores whatever is passed. Both end in a plain RETF rather
@@ -187,7 +188,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0005 -- the serial interrupt. FRAMELESS, ends in IRET.
+  115e:0005 -- the serial interrupt. FRAMELESS, ends in IRET.
 
   HAND ASSEMBLER, verbatim. It cannot be a Pascal `interrupt` procedure: it
   loads DS from a constant and saves a hand-picked subset of registers in a
@@ -219,32 +220,32 @@ end;
 { @asm 000 115e:0005 +52 }
 procedure IrqHandler; assembler;
 asm
-  CLI                    { 1065:0005                                       }
-  PUSH AX                { 1065:0006                                       }
-  PUSH DS                { 1065:0007                                       }
-  PUSH DX                { 1065:0008                                       }
-  MOV  AX, SEG @DATA     { 1065:0009  was MOV AX,1CAAh                     }
-  MOV  DS, AX            { 1065:000c                                       }
-  PUSH ES                { 1065:000e                                       }
-  PUSH BX                { 1065:000f                                       }
-  PUSH CX                { 1065:0010                                       }
-  PUSH DI                { 1065:0011                                       }
-  PUSH SI                { 1065:0012                                       }
-  MOV  DX, ComPort       { 1065:0013  was MOV DX,03F8h                     }
-  XOR  AL, AL            { 1065:0016                                       }
-  OUT  DX, AL            { 1065:0018  keep the interrupts coming           }
-  MOV  AL, Frac          { 1065:0019                                       }
-  ADD  AL, AddPer        { 1065:001c  + 5                                  }
-  CMP  AL, CarryAt       { 1065:001e                                       }
-  JC   @@NoTick          { 1065:0020                                       }
-  SUB  AL, CarryAt       { 1065:0022  carry the remainder, do not drop it  }
-  INC  Ticks             { 1065:0024                                       }
+  CLI                    { 115e:0005                                       }
+  PUSH AX                { 115e:0006                                       }
+  PUSH DS                { 115e:0007                                       }
+  PUSH DX                { 115e:0008                                       }
+  MOV  AX, SEG @DATA     { 115e:0009  was MOV AX,1CAAh                     }
+  MOV  DS, AX            { 115e:000c                                       }
+  PUSH ES                { 115e:000e                                       }
+  PUSH BX                { 115e:000f                                       }
+  PUSH CX                { 115e:0010                                       }
+  PUSH DI                { 115e:0011                                       }
+  PUSH SI                { 115e:0012                                       }
+  MOV  DX, ComPort       { 115e:0013  was MOV DX,03F8h                     }
+  XOR  AL, AL            { 115e:0016                                       }
+  OUT  DX, AL            { 115e:0018  keep the interrupts coming           }
+  MOV  AL, Frac          { 115e:0019                                       }
+  ADD  AL, AddPer        { 115e:001c  + 5                                  }
+  CMP  AL, CarryAt       { 115e:001e                                       }
+  JC   @@NoTick          { 115e:0020                                       }
+  SUB  AL, CarryAt       { 115e:0022  carry the remainder, do not drop it  }
+  INC  Ticks             { 115e:0024                                       }
 @@NoTick:
-  MOV  Frac, AL          { 1065:0028                                       }
-  POP  SI                { 1065:002b                                       }
-  POP  DI                { 1065:002c                                       }
-  POP  CX                { 1065:002d                                       }
-  POP  BX                { 1065:002e                                       }
+  MOV  Frac, AL          { 115e:0028                                       }
+  POP  SI                { 115e:002b                                       }
+  POP  DI                { 115e:002c                                       }
+  POP  CX                { 115e:002d                                       }
+  POP  BX                { 115e:002e                                       }
   POP  ES                { 115e:0030                                       }
   { 115e:0031..003f -- A SECOND EOI FOR THE SLAVE PIC, NEW IN v1.51 AND A
     CONSEQUENCE OF THE IRQ BECOMING CONFIGURABLE. v1.31b is hard-wired to IRQ 4
@@ -259,14 +260,14 @@ asm
 @@Master:
   MOV  AL, 20h           { 115e:003c                                       }
   OUT  20h, AL           { 115e:003e  EOI, late and on purpose             }
-  POP  DX                { 1065:0034                                       }
-  POP  DS                { 1065:0035                                       }
-  POP  AX                { 1065:0036                                       }
-  IRET                   { 1065:0037                                       }
+  POP  DX                { 115e:0034                                       }
+  POP  DS                { 115e:0035                                       }
+  POP  AX                { 115e:0036                                       }
+  IRET                   { 115e:0037                                       }
 end;
 
 { --------------------------------------------------------------------------
-  1065:0039 -- slot +$1a, the probe. Returns 1, unconditionally.
+  115e:0039 -- slot +$1a, the probe. Returns 1, unconditionally.
 
   IT ALWAYS SAYS YES, and there is nothing here to detect. A driver's probe
   answers "is my hardware present?"; this one has no hardware, and a clock
@@ -277,9 +278,9 @@ end;
   looks up the named driver and probes only that one. 'Silence' is reached by
   being the last thing registered, not by passing a test.
 
-  [re] SLOT +$1a: 109c:0021 selects a driver only when the probe returns zero,
+  [re] SLOT +$1a: 1086:0021 selects a driver only when the probe returns zero,
   which would make returning 1 mean "cannot be used". Selection is by name out
-  of the config file (1a17:0248); 109c:0000 looks up the named driver.
+  of the config file (1bff:0248); 1086:0000 looks up the named driver.
 
   [re] There is nothing here to detect in any case. The serial port addresses
   exist on every PC whether or not a UART answers, and a clock that produces
@@ -288,16 +289,16 @@ end;
   [re] THIS ROUTINE MISLED THIS RECONSTRUCTION ONCE. Returning 1 unconditionally
   looks like "always available" if you assume the slot is a boolean, and
   that reading survived two other producers agreeing with it. The consumer
-  at 109c:0021 settles NOTHING -- its JNZ has a zero displacement. The
+  at 1086:0021 settles NOTHING -- its JNZ has a zero displacement. The
   producers settle it, and TRUE means present. See VTDriver.
   -------------------------------------------------------------------------- }
 function Probe : Boolean; far;
 begin
-  Probe := True;                                  { 1065:003d }
+  Probe := True;                                  { 115e:003d }
 end;
 
 { --------------------------------------------------------------------------
-  1065:0046 -- slot +$1e, start the clock.
+  115e:0046 -- slot +$1e, start the clock.
 
   Compiler output with Port[] for the register work.
 
@@ -316,12 +317,12 @@ end;
   -------------------------------------------------------------------------- }
 procedure Start(Rate : Word); far;
 begin
-  IsDmaDevice := True;                            { 1065:0049 }
-  Stereo      := False;                           { 1065:004e }
-  DevBits     := 8;                               { 1065:0053 }
-  MixMethod   := 0;                               { 1065:0058 }
+  IsDmaDevice := True;                            { 115e:0049 }
+  Stereo      := False;                           { 115e:004e }
+  DevBits     := 8;                               { 115e:0053 }
+  MixMethod   := 0;                               { 115e:0058 }
 
-  if OldVec <> nil then Exit;                     { 1065:005d  already running }
+  if OldVec <> nil then Exit;                     { 115e:005d  already running }
 
   { 115e:0075 -- `IRQState(ComIrq)`, WHERE v1.31b READS THE 8259 DIRECTLY.
     v1.31b tests `Port[$21] and $10` with the mask bit for IRQ 4 written in;
@@ -331,14 +332,14 @@ begin
     turning an immediate into a call. }
   WasOn := IRQState(ComIrq);                     { 115e:0079  1d0c:007e }
 
-  OldVec := SetIRQVector(ComIrq, @IrqHandler);    { 1065:0081  1b24:00d7 }
-  EnableIRQ(ComIrq);                              { 1065:008f  1b24:0000 }
+  OldVec := SetIRQVector(ComIrq, @IrqHandler);    { 115e:0081  1d0c:00d7 }
+  EnableIRQ(ComIrq);                              { 115e:008f  1d0c:0000 }
 
-  SavedMCR := Port[ComPort + 4];                  { 1065:009a  $3FC }
-  SavedLCR := Port[ComPort + 3];                  { 1065:00a3  $3FB }
+  SavedMCR := Port[ComPort + 4];                  { 115e:009a  $3FC }
+  SavedLCR := Port[ComPort + 3];                  { 115e:00a3  $3FB }
 
-  Port[ComPort + 4] := 8;                         { 1065:00ab  OUT2 -- gate the IRQ }
-  Port[ComPort + 3] := $83;                       { 1065:00b1  DLAB + 8N1 }
+  Port[ComPort + 4] := 8;                         { 115e:00ab  OUT2 -- gate the IRQ }
+  Port[ComPort + 3] := $83;                       { 115e:00b1  DLAB + 8N1 }
 
   { [re] READ THE ORDER HERE BACKWARDS. The original evaluates the HIGH byte
     first -- IN from $3f9, SHL AX,8, MOV CX,AX, then IN from $3f8 and ADD --
@@ -346,20 +347,20 @@ begin
     the left one in CX. Written the natural way round, `(Port[+1] shl 8) +
     Port[]`, it compiles to the two reads in the wrong order. Written like
     this it is byte-identical. Same value either way; see units.py. }
-  SavedDiv := Port[ComPort]                       { 1065:00c5 }
-              + (Port[ComPort + 1] shl 8);        { 1065:00b8 }
+  SavedDiv := Port[ComPort]                       { 115e:00c5 }
+              + (Port[ComPort + 1] shl 8);        { 115e:00b8 }
 
-  Port[ComPort]     := Lo(Divisor);               { 1065:00cd  $60 }
-  Port[ComPort + 1] := Hi(Divisor);               { 1065:00d3  $00 -> 1200 baud }
-  Port[ComPort + 3] := $03;                       { 1065:00d9  8N1, DLAB off }
+  Port[ComPort]     := Lo(Divisor);               { 115e:00cd  $60 }
+  Port[ComPort + 1] := Hi(Divisor);               { 115e:00d3  $00 -> 1200 baud }
+  Port[ComPort + 3] := $03;                       { 115e:00d9  8N1, DLAB off }
 
-  SavedIER := Port[ComPort + 1];                  { 1065:00e0  $3F9 }
-  Port[ComPort + 1] := 0;                         { 1065:00e8 }
-  Port[ComPort + 1] := 2;                         { 1065:00ee  transmit empty }
+  SavedIER := Port[ComPort + 1];                  { 115e:00e0  $3F9 }
+  Port[ComPort + 1] := 0;                         { 115e:00e8 }
+  Port[ComPort + 1] := 2;                         { 115e:00ee  transmit empty }
 end;
 
 { --------------------------------------------------------------------------
-  1065:00f3 -- slot +$26, "what rate can you manage?"
+  115e:00f3 -- slot +$26, "what rate can you manage?"
 
   Returns what it was given, like the GUS. Nothing is played, so any rate is
   one this driver can honour -- the answer costs nothing and keeps the core
@@ -367,7 +368,7 @@ end;
   -------------------------------------------------------------------------- }
 function AskRate(Want : Word) : Word; far;
 begin
-  AskRate := Want;                                { 1065:00f7 }
+  AskRate := Want;                                { 115e:00f7 }
 end;
 
 { --------------------------------------------------------------------------
@@ -375,7 +376,7 @@ end;
   plays no sound has no rate to change, and its polling is the core's shared
   one rather than anything here. The slots exist because the record has them.
 
-  [re] 1065:0104 and 1065:010b -- slots +$22 and +$2e. Empty, as in 1084.
+  [re] 115e:0104 and 115e:010b -- slots +$22 and +$2e. Empty, as in 1084.
   -------------------------------------------------------------------------- }
 procedure ChgHz(W : Word); far;
 begin
@@ -386,7 +387,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0110 -- slot +$32, stop the clock and hand the port back.
+  115e:0110 -- slot +$32, stop the clock and hand the port back.
 
   Compiler output. Everything Start saved is restored, in the order the chip
   needs: modem control, then DLAB up to reach the divisor, the divisor, then
@@ -399,22 +400,22 @@ end;
 procedure Stop; far;
 begin
   { A WRAPPED IF, NOT AN EARLY EXIT. The original tests the vector at
-    1065:0113 and jumps over the whole body with a single `JZ +54`. An
+    115e:0113 and jumps over the whole body with a single `JZ +54`. An
     `if OldVec = nil then Exit` compiles instead to `JNZ +2 / JMP +54` --
     a conditional jump around an unconditional one, two bytes longer and
     the wrong shape. Same behaviour; only this form reproduces the bytes. }
-  if OldVec <> nil then                           { 1065:0113  never started }
+  if OldVec <> nil then                           { 115e:0113  never started }
   begin
-    Port[ComPort + 4] := Lo(SavedMCR);            { 1065:0122 }
-    Port[ComPort + 3] := $80;                     { 1065:0128  DLAB, to reach the divisor }
-    Port[ComPort]     := Lo(SavedDiv);            { 1065:012f }
-    Port[ComPort + 1] := Hi(SavedDiv);            { 1065:0136 }
-    Port[ComPort + 3] := Lo(SavedLCR);            { 1065:013d  drops DLAB }
-    Port[ComPort + 1] := 0;                       { 1065:0143 }
-    Port[ComPort + 1] := Lo(SavedIER);            { 1065:014a }
+    Port[ComPort + 4] := Lo(SavedMCR);            { 115e:0122 }
+    Port[ComPort + 3] := $80;                     { 115e:0128  DLAB, to reach the divisor }
+    Port[ComPort]     := Lo(SavedDiv);            { 115e:012f }
+    Port[ComPort + 1] := Hi(SavedDiv);            { 115e:0136 }
+    Port[ComPort + 3] := Lo(SavedLCR);            { 115e:013d  drops DLAB }
+    Port[ComPort + 1] := 0;                       { 115e:0143 }
+    Port[ComPort + 1] := Lo(SavedIER);            { 115e:014a }
 
-    SetIRQVector(ComIrq, OldVec);                 { 1065:0155  1b24:00d7 }
-    OldVec := nil;                                { 1065:015c }
+    SetIRQVector(ComIrq, OldVec);                 { 115e:0155  1d0c:00d7 }
+    OldVec := nil;                                { 115e:015c }
 
     { [re] `not WasOn`, AND THE SENSE FLIPPED WITH THE SOURCE OF THE VALUE.
       v1.31b tested the 8259 mask bit directly, so its flag meant "was
@@ -428,31 +429,31 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1065:0172 -- fill in the record and hand it to the player core.
+  115e:0172 -- fill in the record and hand it to the player core.
 
-  [re] The same shape as 1084:0101, eight far addresses into DS:$0034..DS:$0053,
+  [re] The same shape as 106e:0101, eight far addresses into DS:$0034..DS:$0053,
   which is DS:$001e + $16 .. + $35. That is the second independent
   confirmation of the driver layout.
 
-  [re] SLOT +$2A IS THE ONE TO NOTICE. It is set to 1a17:1008 -- the CORE's shared
+  [re] SLOT +$2A IS THE ONE TO NOTICE. It is set to 1bff:1008 -- the CORE's shared
   poll -- rather than to anything here. The GUS supplies its own because the
   card plays by itself; this driver has no hardware to feed, so the core's
   general implementation does the work and the output goes nowhere.
 
-  [re] REGISTRATION ORDER DECIDES THE DEFAULT. 1a17:02ba pushes onto the front of
+  [re] REGISTRATION ORDER DECIDES THE DEFAULT. 1bff:02ba pushes onto the front of
   the list but only selects when nothing is selected, so the FIRST driver to
   register wins -- and 1084 registers before this one. 'Silence' is therefore
   the last resort, which is exactly what it should be.
   -------------------------------------------------------------------------- }
 begin
-  Driver.Name            := @DevName;               { 1065:017b  DS:$0034 }
-  Driver.Autodetect      := @Probe;                 { 1065:0188  DS:$0038 }
-  Driver.InitRut         := @Start;                 { 1065:0195  DS:$003c }
-  Driver.ChgHzProc       := @ChgHz;                 { 1065:01a2  DS:$0040 }
-  Driver.GetRealFreqProc := @AskRate;               { 1065:01af  DS:$0044 }
-  Driver.TimerHandler    := @SoundDevices.SharedPoll;   { 1065:01bc  DS:$0048 }
-  Driver.PollRut         := @DevPoll;               { 1065:01c9  DS:$004c }
-  Driver.EndRut          := @Stop;                  { 1065:01d6  DS:$0050 }
+  Driver.Name            := @DevName;               { 115e:017b  DS:$0034 }
+  Driver.Autodetect      := @Probe;                 { 115e:0188  DS:$0038 }
+  Driver.InitRut         := @Start;                 { 115e:0195  DS:$003c }
+  Driver.ChgHzProc       := @ChgHz;                 { 115e:01a2  DS:$0040 }
+  Driver.GetRealFreqProc := @AskRate;               { 115e:01af  DS:$0044 }
+  Driver.TimerHandler    := @SoundDevices.SharedPoll;   { 115e:01bc  DS:$0048 }
+  Driver.PollRut         := @DevPoll;               { 115e:01c9  DS:$004c }
+  Driver.EndRut          := @Stop;                  { 115e:01d6  DS:$0050 }
 
-  SoundDevices.InitDevice(@Driver)                         { 1065:01e2 }
+  SoundDevices.InitDevice(@Driver)                         { 115e:01e2 }
 end.

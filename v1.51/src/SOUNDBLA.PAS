@@ -23,7 +23,7 @@
   WHAT IT DOES NOT DO is decide when to play anything. That is the device unit
   next door, which stands to this exactly as DevGus stands to the GUS layer.
 
-  [re] Segment 19a0. **COMPLETE: 1,898 of 1,898 bytes** (1,905 in the segment
+  [re] Segment 1b88. **COMPLETE: 1,898 of 1,898 bytes** (1,905 in the segment
   map; the last 7 are padding). Twenty-three routines, 475 pending fixups, no
   real difference anywhere. It pairs with the release's `LIB/SOUNDBLA.PAS`, and
   that structural pairing was recorded in CONTINUATION.md long before either
@@ -177,7 +177,7 @@ const
   Sb16Force    : Boolean = False;  { DS:$0bc8  pad at $0b21 }
 
 { [re] Card information. DS:$0b22 is a WORD LAID OVER TWO BYTES -- the release's
-  `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 19a0:026f is what fixes the
+  `SbVersion : WORD ABSOLUTE SbVersionMin` -- and 1b88:026f is what fixes the
   overlay: it compares $0b22 against $0200 as a Word, where the two halves are
   written separately as bytes. }
 const
@@ -229,12 +229,12 @@ const
   TimeConst          : Byte    = 0;     { DS:$0c36 }
 
   { [re] The four 193a's DMA interrupt handler touches, and its stores are what
-    place them: 193a:0045 clears $0b92, 0048 reads $0b90, 004f writes $0b91.
+    place them: 1b22:0045 clears $0b92, 0048 reads $0b90, 004f writes $0b91.
     With TimeConst at $0b8e the release's order lands them exactly. }
   DMAStart           : Boolean = False; { DS:$0c37 }
-  DMAStop            : Boolean = False; { DS:$0c38  193a:0048 }
-  DMAStopped         : Boolean = False; { DS:$0c39  193a:004f }
-  DMAIrqWatch        : Byte    = 0;     { DS:$0c3a  193a:0045 }
+  DMAStop            : Boolean = False; { DS:$0c38  1b22:0048 }
+  DMAStopped         : Boolean = False; { DS:$0c39  1b22:004f }
+  DMAIrqWatch        : Byte    = 0;     { DS:$0c3a  1b22:0045 }
 
 { DSP commands and the one mixer register 1.31 touches. }
 const
@@ -424,7 +424,7 @@ end;
   between the `JNZ @@ya` and the `@@ya:` label (a second SbReadLoop retry after
   poking DSPLifePort), and 1.31 has the same dead branch with the same comment.
   **A conditional jump with a zero displacement is a deleted block**, which is
-  the same reading as 109c:0021's `75 00` recorded in CONTINUATION.md. }
+  the same reading as 1086:0021's `75 00` recorded in CONTINUATION.md. }
 function SbReadByte(t : Word) : Byte; assembler;
 asm
                 MOV     AX,t                    { 00be }

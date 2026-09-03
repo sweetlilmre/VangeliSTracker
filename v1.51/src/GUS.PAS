@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1723 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
+  Segment 1911 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
   routines and six frameless ones the prologue scanner cannot see.
 
   Every port write to the card happens here. 1084 is the DRIVER -- the record
@@ -24,7 +24,7 @@
   `MOV DX,[X] / OUT DX,AL` only when X is a bare variable or a constant. With
   a computed index -- `GUSPort + $103` -- Turbo Pascal evaluates an address
   expression through AX and the bytes differ, so the register interface at
-  1723:0000..0079 is hand assembler and the routines that poke a fixed port
+  1911:0000..0079 is hand assembler and the routines that poke a fixed port
   are Pascal. Writing `Port[GUSPort + $00]` counts as computed; the `+ 0`
   costs three bytes and reorders the instructions.
 
@@ -36,7 +36,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 64 bytes of a mapped routine unchanged at 1956:000a.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     SetGusVoice        1911:0000 *   GetGusRegister8    1911:0013 *
     SetGusRegister8    1911:0030 *   GetGusRegister16   1911:004a *
     SetGusRegister16   1911:0065 *   GusDelay           1911:007d *
@@ -128,7 +129,7 @@ const
   the module's -- `MaxVoice` is 31 below for the same reason -- and it is 12ba's
   `MaxChannels` that is 8. Two different numbers that a reader will want to conflate. }
 const
-  { [re] DS:$0582 -- $FFFF means "not configured, go and look". 109c:047c writes
+  { [re] DS:$0582 -- $FFFF means "not configured, go and look". 1086:047c writes
     the config file's value here, which is what ties VT.CFG to the card. }
   GUSPort         : Word    = $FFFF;
 
@@ -141,7 +142,7 @@ const
 { [re] `VAR Src` UNTYPED, AND `165a` IS WHAT SETTLED IT. Inside this routine a Pointer
   parameter and an untyped var parameter are the same four bytes and `LDS SI,Src`
   loads the same address either way, so nothing here could tell them apart. The CALL
-  SITE can: `165a:02b0` is `LES DI,ES:[DI+16] / PUSH ES / PUSH DI`, which is how a
+  SITE can: `1848:02b0` is `LES DI,ES:[DI+16] / PUSH ES / PUSH DI`, which is how a
   var parameter is passed, where a Pointer argument would be two word pushes. Two
   bytes shorter, and it is the release's declaration too. }
 procedure DumpToUltrasound(var Src; Count : Word;
@@ -198,7 +199,7 @@ const
 
 var
   { [re] The per-voice tables StartUltrasound clears and TriggerVoice fills in.
-    Their sizes come straight from the FillChar calls at 1723:0357: $80 bytes
+    Their sizes come straight from the FillChar calls at 1911:0357: $80 bytes
     for the LongInt ones and $20 for the Byte ones, so 32 voices throughout.
 
     VoicesChanged is the release's name and the release's is a BOOLEAN. It is
@@ -243,7 +244,7 @@ var
   named the release's shape -- `buf : ARRAY[1..64] OF BYTE`, a local typed constant --
   as the likely answer. It was.
 
-  [re] WHAT SETTLED IT: `1723:08c8` is `MOV SI,06C2h`, and $06c2 is the first byte after this
+  [re] WHAT SETTLED IT: `1911:08c8` is `MOV SI,06C2h`, and $06c2 is the first byte after this
   unit's `VolumeTable`, which ends at $06c1. The next thing in DGROUP is HEAPS' first
   virtual method table at $0702 -- so the array is bounded at 64 bytes, which is two per
   voice for 32 voices exactly. It is in the INITIALISED region, so it is a typed
@@ -259,7 +260,7 @@ var
   RestartChannels. }
 
 { --------------------------------------------------------------------------
-  1723:0000 .. 1723:0065 -- the GF1 register interface.
+  1911:0000 .. 1911:0065 -- the GF1 register interface.
 
   Hand assembler -- see the note on the five routines below.
 
@@ -331,70 +332,70 @@ var
 { @asm 000 1911:0000 +19 }
 procedure SetGusVoice(N : Byte); assembler;
 asm
-        MOV     DX,GUSPort  { 1723:0003 }
-        ADD     DX,$102     { 1723:0007  the voice-select register }
-        MOV     AL,N        { 1723:000b }
-        OUT     DX,AL       { 1723:000e }
+        MOV     DX,GUSPort  { 1911:0003 }
+        ADD     DX,$102     { 1911:0007  the voice-select register }
+        MOV     AL,N        { 1911:000b }
+        OUT     DX,AL       { 1911:000e }
 end;
 
 { The read alias: registers below $40 are read at register+$80. }
 { @asm 000 1911:0013 +29 }
 function GetGusRegister8(Reg : Byte) : Byte; assembler;
 asm
-        MOV     DX,GUSPort  { 1723:0016 }
-        ADD     DX,$103     { 1723:001a  the register-select port }
-        MOV     AL,Reg      { 1723:001e }
-        CMP     AL,$40      { 1723:0021 }
-        JNB     @@Hi        { 1723:0023  already an alias }
-        ADD     AL,$80      { 1723:0025 }
+        MOV     DX,GUSPort  { 1911:0016 }
+        ADD     DX,$103     { 1911:001a  the register-select port }
+        MOV     AL,Reg      { 1911:001e }
+        CMP     AL,$40      { 1911:0021 }
+        JNB     @@Hi        { 1911:0023  already an alias }
+        ADD     AL,$80      { 1911:0025 }
 @@Hi:
-        OUT     DX,AL  { 1723:0027 }
-        ADD     DX,2   { 1723:0028  -> the data port, $105 }
-        IN      AL,DX  { 1723:002b }
+        OUT     DX,AL  { 1911:0027 }
+        ADD     DX,2   { 1911:0028  -> the data port, $105 }
+        IN      AL,DX  { 1911:002b }
 end;
 
 { No alias on the write path -- writes use the register number as given. }
 { @asm 000 1911:0030 +26 }
 procedure SetGusRegister8(Reg, Val : Byte); assembler;
 asm
-        MOV     DX,GUSPort  { 1723:0033 }
-        ADD     DX,$103     { 1723:0037 }
-        MOV     AL,Reg      { 1723:003b  [BP+6], the FIRST parameter }
-        OUT     DX,AL       { 1723:003e }
-        ADD     DX,2        { 1723:003f }
-        MOV     AL,Val      { 1723:0042  [BP+4] }
-        OUT     DX,AL       { 1723:0045 }
+        MOV     DX,GUSPort  { 1911:0033 }
+        ADD     DX,$103     { 1911:0037 }
+        MOV     AL,Reg      { 1911:003b  [BP+6], the FIRST parameter }
+        OUT     DX,AL       { 1911:003e }
+        ADD     DX,2        { 1911:003f }
+        MOV     AL,Val      { 1911:0042  [BP+4] }
+        OUT     DX,AL       { 1911:0045 }
 end;
 
 { @asm 000 1911:004a +27 }
 function GetGusRegister16(Reg : Byte) : Word; assembler;
 asm
-        MOV     DX,GUSPort  { 1723:004d }
-        ADD     DX,$103     { 1723:0051 }
-        MOV     AL,Reg      { 1723:0055 }
-        CMP     AL,$40      { 1723:0058 }
-        JNB     @@Hi        { 1723:005a }
-        ADD     AL,$80      { 1723:005c }
+        MOV     DX,GUSPort  { 1911:004d }
+        ADD     DX,$103     { 1911:0051 }
+        MOV     AL,Reg      { 1911:0055 }
+        CMP     AL,$40      { 1911:0058 }
+        JNB     @@Hi        { 1911:005a }
+        ADD     AL,$80      { 1911:005c }
 @@Hi:
-        OUT     DX,AL  { 1723:005e }
-        INC     DX     { 1723:005f  -> $104, the 16-bit port }
-        IN      AX,DX  { 1723:0060  a WORD read }
+        OUT     DX,AL  { 1911:005e }
+        INC     DX     { 1911:005f  -> $104, the 16-bit port }
+        IN      AX,DX  { 1911:0060  a WORD read }
 end;
 
 { @asm 000 1911:0065 +24 }
 procedure SetGusRegister16(Reg : Byte; Val : Word); assembler;
 asm
-        MOV     DX,GUSPort  { 1723:0068 }
-        ADD     DX,$103     { 1723:006c }
-        MOV     AL,Reg      { 1723:0070  [BP+6] }
-        OUT     DX,AL       { 1723:0073 }
-        INC     DX          { 1723:0074 }
-        MOV     AX,Val      { 1723:0075  [BP+4] }
-        OUT     DX,AX       { 1723:0078 }
+        MOV     DX,GUSPort  { 1911:0068 }
+        ADD     DX,$103     { 1911:006c }
+        MOV     AL,Reg      { 1911:0070  [BP+6] }
+        OUT     DX,AL       { 1911:0073 }
+        INC     DX          { 1911:0074 }
+        MOV     AX,Val      { 1911:0075  [BP+4] }
+        OUT     DX,AX       { 1911:0078 }
 end;
 
 { --------------------------------------------------------------------------
-  1723:007d -- settling delay. FRAMELESS: no parameters, no frame, a bare RET.
+  1911:007d -- settling delay. FRAMELESS: no parameters, no frame, a bare RET.
 
   HAND ASSEMBLER, verbatim. Seven reads of the base port with every result
   thrown away. The GF1 needs time between register accesses and this is how
@@ -406,18 +407,18 @@ end;
 { @asm 000 1911:007d +12 }
 procedure GusDelay; assembler;
 asm
-  MOV  DX, GUSPort  { 1723:007d                                       }
-  IN   AL, DX       { 1723:0081                                       }
-  IN   AL, DX       { 1723:0082                                       }
-  IN   AL, DX       { 1723:0083                                       }
-  IN   AL, DX       { 1723:0084                                       }
-  IN   AL, DX       { 1723:0085                                       }
-  IN   AL, DX       { 1723:0086                                       }
-  IN   AL, DX       { 1723:0087                                       }
+  MOV  DX, GUSPort  { 1911:007d                                       }
+  IN   AL, DX       { 1911:0081                                       }
+  IN   AL, DX       { 1911:0082                                       }
+  IN   AL, DX       { 1911:0083                                       }
+  IN   AL, DX       { 1911:0084                                       }
+  IN   AL, DX       { 1911:0085                                       }
+  IN   AL, DX       { 1911:0086                                       }
+  IN   AL, DX       { 1911:0087                                       }
 end;
 
 { --------------------------------------------------------------------------
-  1723:0089 -- copy a sample into the card's own DRAM.
+  1911:0089 -- copy a sample into the card's own DRAM.
 
   HAND ASSEMBLER, verbatim, and it has to be: it walks the source with LODSB
   through a reloaded DS, which Pascal cannot express.
@@ -448,13 +449,13 @@ end;
       end
   -------------------------------------------------------------------------- }
 { PASCAL FIRST, THEN ASSEMBLER. The routine opens with two ordinary calls --
-  1723:008c..00b2 is compiler output, including a runtime helper at
-  1ba1:0a9c for the 32-bit shift -- and only the transfer loop is hand
+  1911:008c..00b2 is compiler output, including a runtime helper at
+  1d89:0a9c for the 32-bit shift -- and only the transfer loop is hand
   written. Declared `assembler`, the whole prologue vanishes and the unit
   diverges at the first byte after the frame.
 
   [re] THE DRAM ADDRESS IS LOADED WITH LES. `LES DI,DramAt` puts the low word of
-  the LongInt in DI and the high word in ES, which is why 1723:00bc reads
+  the LongInt in DI and the high word in ES, which is why 1911:00bc reads
   the page byte back out of ES rather than from the frame. It looks like a
   pointer load and it is not one; the source pointer is the separate
   LDS SI,Src further down. }
@@ -462,49 +463,49 @@ end;
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
-  SetGusRegister8(grDRAMHighIO, DramAt shr 16);      { 1723:008c .. 1723:009f }
-  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);  { 1723:00a2 .. 1723:00b2 }
+  SetGusRegister8(grDRAMHighIO, DramAt shr 16);      { 1911:008c .. 1911:009f }
+  SetGusRegister16(grDRAMLowIO, DramAt and $FFFF);  { 1911:00a2 .. 1911:00b2 }
   asm
-  PUSH DS          { 1723:00b5  LODSB will take DS away              }
-  MOV  CX, Count   { 1723:00b6  [BP+0Ch]                             }
-  LES  DI, DramAt  { 1723:00b9  the DRAM address, low word in DI     }
-  MOV  BX, ES      { 1723:00bc  ... high half in BL                  }
-  MOV  BH, BYTE PTR Signed { 1723:00be  [BP+06h]                           }
-  CMP  BH, 1        { 1723:00c1  carry when the caller said 0         }
-  SBB  BH, BH       { 1723:00c4  $FF when signed, else $00            }
-  SHL  BH, 7        { 1723:00c6  ... becomes the $80 XOR mask         }
-  MOV  DX, GUSPort  { 1723:00c9                                       }
-  LDS  SI, Src      { 1723:00cd  [BP+0Eh]                             }
-  ADD  DX, 0103h    { 1723:00d0  the register select port             }
+  PUSH DS          { 1911:00b5  LODSB will take DS away              }
+  MOV  CX, Count   { 1911:00b6  [BP+0Ch]                             }
+  LES  DI, DramAt  { 1911:00b9  the DRAM address, low word in DI     }
+  MOV  BX, ES      { 1911:00bc  ... high half in BL                  }
+  MOV  BH, BYTE PTR Signed { 1911:00be  [BP+06h]                           }
+  CMP  BH, 1        { 1911:00c1  carry when the caller said 0         }
+  SBB  BH, BH       { 1911:00c4  $FF when signed, else $00            }
+  SHL  BH, 7        { 1911:00c6  ... becomes the $80 XOR mask         }
+  MOV  DX, GUSPort  { 1911:00c9                                       }
+  LDS  SI, Src      { 1911:00cd  [BP+0Eh]                             }
+  ADD  DX, 0103h    { 1911:00d0  the register select port             }
 @@Byte:
-  MOV  AL, 43h  { 1723:00d4  DRAM address, low word               }
-  OUT  DX, AL   { 1723:00d6                                       }
-  INC  DX       { 1723:00d7  base+$104                            }
-  MOV  AX, DI   { 1723:00d8                                       }
-  OUT  DX, AX   { 1723:00da                                       }
-  ADD  DX, 3    { 1723:00db  base+$107, the DRAM data port        }
-  LODSB         { 1723:00de                                       }
-  XOR  AL, BH   { 1723:00df  signed -> unsigned, or nothing       }
-  OUT  DX, AL   { 1723:00e1                                       }
-  INC  DI       { 1723:00e2                                       }
-  JNZ  @@Same   { 1723:00e3  the low word did not wrap            }
-  INC  BL       { 1723:00e5                                       }
-  SUB  DX, 4    { 1723:00e7  back to base+$103                    }
-  MOV  AL, 44h  { 1723:00ea  DRAM address, high byte              }
-  OUT  DX, AL   { 1723:00ec                                       }
-  ADD  DX, 2    { 1723:00ed  base+$105                            }
-  MOV  AL, BL   { 1723:00f0                                       }
-  OUT  DX, AL   { 1723:00f2                                       }
-  ADD  DX, 2    { 1723:00f3                                       }
+  MOV  AL, 43h  { 1911:00d4  DRAM address, low word               }
+  OUT  DX, AL   { 1911:00d6                                       }
+  INC  DX       { 1911:00d7  base+$104                            }
+  MOV  AX, DI   { 1911:00d8                                       }
+  OUT  DX, AX   { 1911:00da                                       }
+  ADD  DX, 3    { 1911:00db  base+$107, the DRAM data port        }
+  LODSB         { 1911:00de                                       }
+  XOR  AL, BH   { 1911:00df  signed -> unsigned, or nothing       }
+  OUT  DX, AL   { 1911:00e1                                       }
+  INC  DI       { 1911:00e2                                       }
+  JNZ  @@Same   { 1911:00e3  the low word did not wrap            }
+  INC  BL       { 1911:00e5                                       }
+  SUB  DX, 4    { 1911:00e7  back to base+$103                    }
+  MOV  AL, 44h  { 1911:00ea  DRAM address, high byte              }
+  OUT  DX, AL   { 1911:00ec                                       }
+  ADD  DX, 2    { 1911:00ed  base+$105                            }
+  MOV  AL, BL   { 1911:00f0                                       }
+  OUT  DX, AL   { 1911:00f2                                       }
+  ADD  DX, 2    { 1911:00f3                                       }
 @@Same:
-  SUB  DX, 4   { 1723:00f6  base+$103, ready for the next        }
-  LOOP @@Byte  { 1723:00f9                                       }
-  POP  DS      { 1723:00fb                                       }
-  end          { 1723:00fc  LEAVE / RETF 0Ch, from Pascal        }
+  SUB  DX, 4   { 1911:00f6  base+$103, ready for the next        }
+  LOOP @@Byte  { 1911:00f9                                       }
+  POP  DS      { 1911:00fb                                       }
+  end          { 1911:00fc  LEAVE / RETF 0Ch, from Pascal        }
 end;
 
 { --------------------------------------------------------------------------
-  1723:0100 / 1723:0140 / 1723:0180 -- the two GF1 timers.
+  1911:0100 / 1911:0140 / 1911:0180 -- the two GF1 timers.
 
   Compiler output. Registers $46 and $47 hold the counts, $45 is the timer
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
@@ -534,36 +535,36 @@ end;
   the timers need both. }
 procedure GUSInitTimer1(Count : Byte);
 begin
-  SetGusRegister8(grTimer1Count, Count);          { 1723:0109 }
-  TimerControl := TimerControl or $04;  { 1723:010f }
-  SetGusRegister8(grTimerControl, TimerControl);   { 1723:011a }
-  TimerMask := TimerMask or $01;        { 1723:0120  timer 1's mask bit }
-  Port[GUSPort + 8] := 4;               { 1723:012f  select register 4 in the
+  SetGusRegister8(grTimer1Count, Count);          { 1911:0109 }
+  TimerControl := TimerControl or $04;  { 1911:010f }
+  SetGusRegister8(grTimerControl, TimerControl);   { 1911:011a }
+  TimerMask := TimerMask or $01;        { 1911:0120  timer 1's mask bit }
+  Port[GUSPort + 8] := 4;               { 1911:012f  select register 4 in the
                                           interrupt window -- see above }
-  Port[GUSPort + 9] := TimerMask;       { 1723:013b  and write it }
+  Port[GUSPort + 9] := TimerMask;       { 1911:013b  and write it }
 end;
 
 procedure GUSInitTimer2(Count : Byte);
 begin
-  SetGusRegister8(grTimer2Count, Count);          { 1723:0149 }
-  TimerControl := TimerControl or $08;  { 1723:014f }
-  SetGusRegister8(grTimerControl, TimerControl);   { 1723:015a }
-  TimerMask := TimerMask or $02;        { 1723:0160 }
-  Port[GUSPort + 8] := 4;               { 1723:016f }
-  Port[GUSPort + 9] := TimerMask;       { 1723:017b }
+  SetGusRegister8(grTimer2Count, Count);          { 1911:0149 }
+  TimerControl := TimerControl or $08;  { 1911:014f }
+  SetGusRegister8(grTimerControl, TimerControl);   { 1911:015a }
+  TimerMask := TimerMask or $02;        { 1911:0160 }
+  Port[GUSPort + 8] := 4;               { 1911:016f }
+  Port[GUSPort + 9] := TimerMask;       { 1911:017b }
 end;
 
 procedure GUSStopTimer1;
 begin
-  TimerControl := TimerControl and $FB;  { 1723:0186 }
-  SetGusRegister8(grTimerControl, TimerControl);    { 1723:0191 }
-  TimerMask := TimerMask and $FE;        { 1723:0197 }
-  Port[GUSPort + 8] := 4;                { 1723:01a6 }
-  Port[GUSPort + 9] := TimerMask;        { 1723:01b2 }
+  TimerControl := TimerControl and $FB;  { 1911:0186 }
+  SetGusRegister8(grTimerControl, TimerControl);    { 1911:0191 }
+  TimerMask := TimerMask and $FE;        { 1911:0197 }
+  Port[GUSPort + 8] := 4;                { 1911:01a6 }
+  Port[GUSPort + 9] := TimerMask;        { 1911:01b2 }
 end;
 
 { --------------------------------------------------------------------------
-  1723:01b5 and 1723:01db -- a timer expired.
+  1911:01b5 and 1911:01db -- a timer expired.
 
   Compiler output, near, private. Clearing the enable bit and setting it
   straight back is what acknowledges the timer to the GF1; the shadow is not
@@ -574,17 +575,17 @@ end;
   on BOTH halves -- a segment of zero with a non-zero offset would still be
   called. That is deliberate enough to preserve.
 
-  [re] DS:$058e is the one that matters to the rest of the program: 1084:008a puts
+  [re] DS:$058e is the one that matters to the rest of the program: 106e:008a puts
   the GUS driver's own handler there, so timer 2 is what drives the music.
   -------------------------------------------------------------------------- }
 { @asm 000 1911:01b5 +38 }
 procedure ServiceTimer1;
 begin
-  SetGusRegister8(grTimerControl, TimerControl and $FB);  { 1723:01c0 }
-  SetGusRegister8(grTimerControl, TimerControl);          { 1723:01c9 }
-  if GUSTimer1RutPtr <> nil then               { 1723:01cc }
+  SetGusRegister8(grTimerControl, TimerControl and $FB);  { 1911:01c0 }
+  SetGusRegister8(grTimerControl, TimerControl);          { 1911:01c9 }
+  if GUSTimer1RutPtr <> nil then               { 1911:01cc }
     asm
-      CALL DWORD PTR GUSTimer1RutPtr  { 1723:01d5                              }
+      CALL DWORD PTR GUSTimer1RutPtr  { 1911:01d5                              }
     end;
 end;
 
@@ -599,16 +600,16 @@ end;
 { @asm 000 1911:01db +38 }
 procedure ServiceTimer2;
 begin
-  SetGusRegister8(grTimerControl, TimerControl and $F7);  { 1723:01e6  drop it }
-  SetGusRegister8(grTimerControl, TimerControl);          { 1723:01ef  re-arm }
-  if GUSTimer2RutPtr <> nil then               { 1723:01f2 }
+  SetGusRegister8(grTimerControl, TimerControl and $F7);  { 1911:01e6  drop it }
+  SetGusRegister8(grTimerControl, TimerControl);          { 1911:01ef  re-arm }
+  if GUSTimer2RutPtr <> nil then               { 1911:01f2 }
     asm
-      CALL DWORD PTR GUSTimer2RutPtr  { 1723:01fb                              }
+      CALL DWORD PTR GUSTimer2RutPtr  { 1911:01fb                              }
     end;
 end;
 
 { --------------------------------------------------------------------------
-  1723:0201 -- the card's interrupt handler. FRAMELESS, ends in IRET.
+  1911:0201 -- the card's interrupt handler. FRAMELESS, ends in IRET.
 
   HAND ASSEMBLER, verbatim. It cannot be a Pascal `interrupt` procedure: it
   masks its own line at the 8259, re-enables interrupts in the middle, and
@@ -636,59 +637,59 @@ end;
 { @asm 000 1911:0201 +89 }
 procedure GUSIrqHandler; assembler;
 asm
-  CLI                       { 1723:0201                                       }
-  PUSHA                     { 1723:0202                                       }
-  PUSH ES                   { 1723:0203                                       }
-  PUSH DS                   { 1723:0204                                       }
-  MOV  AX, SEG @DATA        { 1723:0205  was MOV AX,1CAAh                     }
-  MOV  DS, AX               { 1723:0208                                       }
-  MOV  AL, 20h              { 1723:020a  non-specific EOI                     }
-  OUT  20h, AL              { 1723:020c  release the master straight away     }
-  MOV  AH, BYTE PTR GUSIrq  { 1723:020e                                       }
-  CMP  AH, 8                { 1723:0212                                       }
-  JC   @@Master             { 1723:0215                                       }
-  OUT  0A0h, AL             { 1723:0217  the slave as well                    }
+  CLI                       { 1911:0201                                       }
+  PUSHA                     { 1911:0202                                       }
+  PUSH ES                   { 1911:0203                                       }
+  PUSH DS                   { 1911:0204                                       }
+  MOV  AX, SEG @DATA        { 1911:0205  was MOV AX,1CAAh                     }
+  MOV  DS, AX               { 1911:0208                                       }
+  MOV  AL, 20h              { 1911:020a  non-specific EOI                     }
+  OUT  20h, AL              { 1911:020c  release the master straight away     }
+  MOV  AH, BYTE PTR GUSIrq  { 1911:020e                                       }
+  CMP  AH, 8                { 1911:0212                                       }
+  JC   @@Master             { 1911:0215                                       }
+  OUT  0A0h, AL             { 1911:0217  the slave as well                    }
 @@Master:
-  MOV  AL, AH      { 1723:0219                                       }
-  XOR  AH, AH      { 1723:021b                                       }
-  PUSH AX          { 1723:021d                                       }
-  CALL DisableIRQ  { 1723:021e  1b24:0044 -- keep ourselves out      }
+  MOV  AL, AH      { 1911:0219                                       }
+  XOR  AH, AH      { 1911:021b                                       }
+  PUSH AX          { 1911:021d                                       }
+  CALL DisableIRQ  { 1911:021e  1d0c:0044 -- keep ourselves out      }
 @@Again:
-  CLI                 { 1723:0223                                       }
-  MOV  DX, GUSPort    { 1723:0224                                       }
-  ADD  DX, 6          { 1723:0228  the IRQ status register              }
-  IN   AL, DX         { 1723:022b                                       }
-  TEST AL, 0Ch        { 1723:022c  either timer?                        }
-  JZ   @@Done         { 1723:022e                                       }
-  STI                 { 1723:0230  callbacks run with interrupts on     }
-  TEST AL, 4          { 1723:0231                                       }
-  JZ   @@NotOne       { 1723:0233                                       }
-  PUSH AX             { 1723:0235                                       }
-  CALL ServiceTimer1  { 1723:0236                                       }
-  POP  AX             { 1723:0239                                       }
+  CLI                 { 1911:0223                                       }
+  MOV  DX, GUSPort    { 1911:0224                                       }
+  ADD  DX, 6          { 1911:0228  the IRQ status register              }
+  IN   AL, DX         { 1911:022b                                       }
+  TEST AL, 0Ch        { 1911:022c  either timer?                        }
+  JZ   @@Done         { 1911:022e                                       }
+  STI                 { 1911:0230  callbacks run with interrupts on     }
+  TEST AL, 4          { 1911:0231                                       }
+  JZ   @@NotOne       { 1911:0233                                       }
+  PUSH AX             { 1911:0235                                       }
+  CALL ServiceTimer1  { 1911:0236                                       }
+  POP  AX             { 1911:0239                                       }
 @@NotOne:
-  TEST AL, 8          { 1723:023a                                       }
-  JZ   @@NotTwo       { 1723:023c                                       }
-  PUSH AX             { 1723:023e                                       }
-  CALL ServiceTimer2  { 1723:023f                                       }
-  POP  AX             { 1723:0242                                       }
+  TEST AL, 8          { 1911:023a                                       }
+  JZ   @@NotTwo       { 1911:023c                                       }
+  PUSH AX             { 1911:023e                                       }
+  CALL ServiceTimer2  { 1911:023f                                       }
+  POP  AX             { 1911:0242                                       }
 @@NotTwo:
-  JMP  @@Again  { 1723:0243  until the card is quiet              }
+  JMP  @@Again  { 1911:0243  until the card is quiet              }
 @@Done:
-  MOV  AL, BYTE PTR GUSIrq  { 1723:0245                                       }
-  XOR  AH, AH               { 1723:0248                                       }
-  PUSH AX                   { 1723:024a                                       }
-  CALL EnableIRQ             { 1723:024b  1b24:0000                            }
-  PUSH 000Fh                { 1723:0250                                       }
-  CALL GetGusRegister8      { 1723:0252  clear anything latched               }
-  POP  DS                   { 1723:0255                                       }
-  POP  ES                   { 1723:0256                                       }
-  POPA                      { 1723:0257                                       }
-  IRET                      { 1723:0258                                       }
+  MOV  AL, BYTE PTR GUSIrq  { 1911:0245                                       }
+  XOR  AH, AH               { 1911:0248                                       }
+  PUSH AX                   { 1911:024a                                       }
+  CALL EnableIRQ             { 1911:024b  1d0c:0000                            }
+  PUSH 000Fh                { 1911:0250                                       }
+  CALL GetGusRegister8      { 1911:0252  clear anything latched               }
+  POP  DS                   { 1911:0255                                       }
+  POP  ES                   { 1911:0256                                       }
+  POPA                      { 1911:0257                                       }
+  IRET                      { 1911:0258                                       }
 end;
 
 { --------------------------------------------------------------------------
-  1723:025a / 1723:029f -- take the interrupt line, and give it back.
+  1911:025a / 1911:029f -- take the interrupt line, and give it back.
 
   [re] Compiler output. Both are guarded by DS:$0599 so a second InitGusIRQ does
   nothing and a second DoneGusIRQ does nothing.
@@ -700,24 +701,24 @@ end;
   -------------------------------------------------------------------------- }
 procedure InitGusIRQ;
 begin
-  if GusIRQInited then Exit;                              { 1723:025d }
-  GusIRQInited := True;                                   { 1723:0266 }
-  OldIrqState  := IRQState(GUSIrq);                     { 1723:026f  1b24:007e }
-  OldIrqHandler := SetIRQVector(GUSIrq, @GUSIrqHandler);  { 1723:0283  1b24:00d7 }
-  EnableIRQ(GUSIrq);                                      { 1723:0293  1b24:0000 }
-  GetGusRegister8(grVoiceIRQ);                                   { 1723:029a  clear status }
+  if GusIRQInited then Exit;                              { 1911:025d }
+  GusIRQInited := True;                                   { 1911:0266 }
+  OldIrqState  := IRQState(GUSIrq);                     { 1911:026f  1d0c:007e }
+  OldIrqHandler := SetIRQVector(GUSIrq, @GUSIrqHandler);  { 1911:0283  1d0c:00d7 }
+  EnableIRQ(GUSIrq);                                      { 1911:0293  1d0c:0000 }
+  GetGusRegister8(grVoiceIRQ);                                   { 1911:029a  clear status }
 end;
 
 procedure DoneGusIRQ;
 begin
-  if not GusIRQInited then Exit;               { 1723:02a2 }
-  GusIRQInited := False;                       { 1723:02ab }
-  if not OldIrqState then DisableIRQ(GUSIrq);  { 1723:02b0  only if we turned it on }
-  SetIRQVector(GUSIrq, OldIrqHandler);         { 1723:02cc }
+  if not GusIRQInited then Exit;               { 1911:02a2 }
+  GusIRQInited := False;                       { 1911:02ab }
+  if not OldIrqState then DisableIRQ(GUSIrq);  { 1911:02b0  only if we turned it on }
+  SetIRQVector(GUSIrq, OldIrqHandler);         { 1911:02cc }
 end;
 
 { --------------------------------------------------------------------------
-  1723:02d3 -- mix control and the IRQ latch. Near, private.
+  1911:02d3 -- mix control and the IRQ latch. Near, private.
 
   Compiler output, held under CLI with the flags saved and restored rather
   than blindly re-enabled -- so it is safe to call from inside a handler.
@@ -741,29 +742,29 @@ procedure SetMixControl;
 var
   V : Byte;
 begin
-  V := IrqCode[GUSIrq] + $40;  { 1723:02db }
+  V := IrqCode[GUSIrq] + $40;  { 1911:02db }
   asm
-    PUSHF  { 1723:02e7  keep the caller's interrupt state    }
-    CLI    { 1723:02e8                                       }
+    PUSHF  { 1911:02e7  keep the caller's interrupt state    }
+    CLI    { 1911:02e8                                       }
   end;
-  Port[GUSPort + $0F] := 5;   { 1723:02f3 }
-  Port[GUSPort] := $0B;       { 1723:02fa }
-  Port[GUSPort + $0B] := 0;   { 1723:0305 }
-  Port[GUSPort + $0F] := 0;   { 1723:0310 }
-  Port[GUSPort] := $4B;       { 1723:0317 }
-  Port[GUSPort + $0B] := V;   { 1723:0323  arm         }
-  Port[GUSPort] := $4B;       { 1723:032a }
-  Port[GUSPort + $0B] := V;   { 1723:0336  commit      }
-  Port[GUSPort + $102] := 0;  { 1723:0341 }
-  Port[GUSPort] := $0C;       { 1723:0348 }
-  Port[GUSPort + $102] := 0;  { 1723:0353 }
+  Port[GUSPort + $0F] := 5;   { 1911:02f3 }
+  Port[GUSPort] := $0B;       { 1911:02fa }
+  Port[GUSPort + $0B] := 0;   { 1911:0305 }
+  Port[GUSPort + $0F] := 0;   { 1911:0310 }
+  Port[GUSPort] := $4B;       { 1911:0317 }
+  Port[GUSPort + $0B] := V;   { 1911:0323  arm         }
+  Port[GUSPort] := $4B;       { 1911:032a }
+  Port[GUSPort + $0B] := V;   { 1911:0336  commit      }
+  Port[GUSPort + $102] := 0;  { 1911:0341 }
+  Port[GUSPort] := $0C;       { 1911:0348 }
+  Port[GUSPort + $102] := 0;  { 1911:0353 }
   asm
-    POPF  { 1723:0354                                       }
+    POPF  { 1911:0354                                       }
   end;
 end;
 
 { --------------------------------------------------------------------------
-  1723:0357 -- reset the card and every voice.
+  1911:0357 -- reset the card and every voice.
 
   Compiler output. The seven FillChar calls are what fix the table sizes: two
   of $20 bytes and five of $80, over 32 voices.
@@ -784,74 +785,74 @@ procedure StartUltrasound;
 var
   V : Word;
 begin
-  FillChar(LastVoiceStart,  $80, $FF);  { 1723:0365 }
-  FillChar(LastLoopStart, $80, $FE);    { 1723:0374 }
-  FillChar(LastVoiceEnd,  $80, $FF);    { 1723:0383 }
-  FillChar(LastVolumes,    $20, $FF);   { 1723:0391 }
-  FillChar(LastFreqs,    $80, $FF);     { 1723:03a0 }
-  FillChar(LastPans,     $20, $7F);     { 1723:03ae  dead centre }
-  FillChar(VoicesChanged,   $20, $00);  { 1723:03bc }
+  FillChar(LastVoiceStart,  $80, $FF);  { 1911:0365 }
+  FillChar(LastLoopStart, $80, $FE);    { 1911:0374 }
+  FillChar(LastVoiceEnd,  $80, $FF);    { 1911:0383 }
+  FillChar(LastVolumes,    $20, $FF);   { 1911:0391 }
+  FillChar(LastFreqs,    $80, $FF);     { 1911:03a0 }
+  FillChar(LastPans,     $20, $7F);     { 1911:03ae  dead centre }
+  FillChar(VoicesChanged,   $20, $00);  { 1911:03bc }
 
-  SetMixControl;  { 1723:03c1 }
+  SetMixControl;  { 1911:03c1 }
 
   { [re] HAND ASSEMBLER, and the ORDER is why. The identical Pascal statement
-    compiles to MOV AL / MOV DX / OUT at 1723:02f4, but here the original has
+    compiles to MOV AL / MOV DX / OUT at 1911:02f4, but here the original has
     MOV DX / MOV AL / OUT -- same three instructions, same seven bytes,
     opposite order. Turbo Pascal will not emit the second form for a port
     assignment, and BASM emits exactly what it is told. }
   asm
-    MOV  DX, GUSPort  { 1723:03c4                                       }
-    MOV  AL, 0Bh      { 1723:03c8  [1.39b] "Turn off output, to avoid   }
+    MOV  DX, GUSPort  { 1911:03c4                                       }
+    MOV  AL, 0Bh      { 1911:03c8  [1.39b] "Turn off output, to avoid   }
                       {             clicks." -- the reason for the whole }
                       {             port write, and not in the bytes     }
-    OUT  DX, AL       { 1723:03ca                                       }
+    OUT  DX, AL       { 1911:03ca                                       }
   end;
-  SetGusRegister8(grReset, 0);    { 1723:03cf  [1.39b] "Reset the GUS card." }
-  GusDelay;                   { 1723:03d2 }
-  SetGusRegister8(grReset, 1);    { 1723:03d9  [1.39b] "DAC turned off."     }
-  SetGusRegister8(grActiveVoices, $DF);  { 1723:03e0  32 voices     }
-  SetGusRegister16(grDRAMLowIO, 0);   { 1723:03e7 }
-  SetGusRegister8(grDRAMHighIO, 0);    { 1723:03ee }
+  SetGusRegister8(grReset, 0);    { 1911:03cf  [1.39b] "Reset the GUS card." }
+  GusDelay;                   { 1911:03d2 }
+  SetGusRegister8(grReset, 1);    { 1911:03d9  [1.39b] "DAC turned off."     }
+  SetGusRegister8(grActiveVoices, $DF);  { 1911:03e0  32 voices     }
+  SetGusRegister16(grDRAMLowIO, 0);   { 1911:03e7 }
+  SetGusRegister8(grDRAMHighIO, 0);    { 1911:03ee }
 
-  { 1723:03f1 -- silence every voice before anything else can start one.
+  { 1911:03f1 -- silence every voice before anything else can start one.
 
-    [re] A FOR LOOP, AND IT STARTS AT ZERO. 1723:03f6 is `JMP` past the increment,
+    [re] A FOR LOOP, AND IT STARTS AT ZERO. 1911:03f6 is `JMP` past the increment,
     which is Borland's FOR head; written as `repeat Inc(V) ... until` the
     increment happens BEFORE the first body and voice 0 is never silenced. }
-  for V := 0 to MaxVoice do  { 1723:03f1, 1723:043c }
+  for V := 0 to MaxVoice do  { 1911:03f1, 1911:043c }
   begin
-    SetGusVoice(V);           { 1723:03ff }
-    SetGusRegister8(grVoiceControl, 3);  { 1723:0406  stopped      }
-    SetGusRegister8(grVolumeControl, 3);  { 1723:040d  volume idle  }
-    { [re] ALL FOUR ARE INSIDE THE `if`. The JBE at 1723:0418 jumps to 1723:043c,
+    SetGusVoice(V);           { 1911:03ff }
+    SetGusRegister8(grVoiceControl, 3);  { 1911:0406  stopped      }
+    SetGusRegister8(grVolumeControl, 3);  { 1911:040d  volume idle  }
+    { [re] ALL FOUR ARE INSIDE THE `if`. The JBE at 1911:0418 jumps to 1911:043c,
       which is the loop test -- so it skips the ramp settings too, not just
       the two volume writes. Written with the last two outside, a voice whose
       current volume is already low never gets its ramp rate set. }
-    if GetGusRegister16(grCurrentVol) > $1800 then  { 1723:0412 }
+    if GetGusRegister16(grCurrentVol) > $1800 then  { 1911:0412 }
     begin
-      SetGusRegister8(grRampStart, $18);                        { 1723:041e }
-      SetGusRegister8(grRampEnd, Hi(GetGusRegister16(grCurrentVol)));  { 1723:042b }
-      SetGusRegister8(grRampRate, $1F);                        { 1723:0432  fastest ramp }
-      SetGusRegister8(grVolumeControl, $40);                        { 1723:0439 }
+      SetGusRegister8(grRampStart, $18);                        { 1911:041e }
+      SetGusRegister8(grRampEnd, Hi(GetGusRegister16(grCurrentVol)));  { 1911:042b }
+      SetGusRegister8(grRampRate, $1F);                        { 1911:0432  fastest ramp }
+      SetGusRegister8(grVolumeControl, $40);                        { 1911:0439 }
     end;
-  end;  { 1723:043c  CMP V,$1F }
+  end;  { 1911:043c  CMP V,$1F }
 
   { **AND THE PORT WRITE THAT FOLLOWS IS THE OTHER HALF OF THE CLICK GUARD.**
     The release pairs them explicitly: 0Bh at the top is "[1.39b] Turn off
     output, to avoid clicks" and 0Ch at the bottom is "[1.39b] Turn on output".
     The card is silenced before the reset and unsilenced after it, so the
     transition itself is never audible. }
-  SetGusRegister8(grReset, 7);  { 1723:0446  [1.39b] "DAC turned on."  }
+  SetGusRegister8(grReset, 7);  { 1911:0446  [1.39b] "DAC turned on."  }
   asm                       { hand assembler, same as the $0B poke above:      }
-    MOV  DX, GUSPort        { 1723:044f  port first, then the value            }
-    MOV  AL, 0Ch            { 1723:0453                                       }
-    OUT  DX, AL             { 1723:0455                                       }
+    MOV  DX, GUSPort        { 1911:044f  port first, then the value            }
+    MOV  AL, 0Ch            { 1911:0453                                       }
+    OUT  DX, AL             { 1911:0455                                       }
   end;
-  SetGusChannels(GUSChannels);  { 1723:0455 }
+  SetGusChannels(GUSChannels);  { 1911:0455 }
 end;
 
 { --------------------------------------------------------------------------
-  1723:045a -- is there really a card at GUSPort? Near, private.
+  1911:045a -- is there really a card at GUSPort? Near, private.
 
   Compiler output, under CLI throughout.
 
@@ -880,38 +881,38 @@ label
 var
   Save0, Save1 : Word;
 begin
-  ProbeUltrasound := False;  { 1723:045e }
-  asm CLI end;               { 1723:0462 }
+  ProbeUltrasound := False;  { 1911:045e }
+  asm CLI end;               { 1911:0462 }
 
-  SetGusRegister8(grReset, 0);    { 1723:0467  hold in reset }
-  GusDelay;                   { 1723:046a }
-  SetGusRegister8(grReset, 7);    { 1723:0471 }
-  SetGusRegister8(grActiveVoices, $DF);  { 1723:0478 }
+  SetGusRegister8(grReset, 0);    { 1911:0467  hold in reset }
+  GusDelay;                   { 1911:046a }
+  SetGusRegister8(grReset, 7);    { 1911:0471 }
+  SetGusRegister8(grActiveVoices, $DF);  { 1911:0478 }
 
-  SetGusVoice(0);                  { 1723:047d }
-  Save0 := GetGusRegister16(grStartAddrHigh);  { 1723:0482 }
-  SetGusRegister16(grStartAddrHigh, $16D8);    { 1723:048d }
+  SetGusVoice(0);                  { 1911:047d }
+  Save0 := GetGusRegister16(grStartAddrHigh);  { 1911:0482 }
+  SetGusRegister16(grStartAddrHigh, $16D8);    { 1911:048d }
 
-  SetGusVoice(1);                  { 1723:0492 }
-  Save1 := GetGusRegister16(grStartAddrHigh);  { 1723:0497 }
-  SetGusRegister16(grStartAddrHigh, $0F83);    { 1723:04a2 }
+  SetGusVoice(1);                  { 1911:0492 }
+  Save1 := GetGusRegister16(grStartAddrHigh);  { 1911:0497 }
+  SetGusRegister16(grStartAddrHigh, $0F83);    { 1911:04a2 }
 
-  SetGusVoice(0);                                              { 1723:04a7 }
-  if (GetGusRegister16(grStartAddrHigh) and $1FFF) <> $16D8 then goto Fin; { 1723:04b2 }
-  SetGusVoice(1);                                              { 1723:04bb }
-  if (GetGusRegister16(grStartAddrHigh) and $1FFF) <> $0F83 then goto Fin; { 1723:04c6 }
-  ProbeUltrasound := True;                                     { 1723:04cd }
+  SetGusVoice(0);                                              { 1911:04a7 }
+  if (GetGusRegister16(grStartAddrHigh) and $1FFF) <> $16D8 then goto Fin; { 1911:04b2 }
+  SetGusVoice(1);                                              { 1911:04bb }
+  if (GetGusRegister16(grStartAddrHigh) and $1FFF) <> $0F83 then goto Fin; { 1911:04c6 }
+  ProbeUltrasound := True;                                     { 1911:04cd }
 Fin:
 
-  SetGusVoice(0);                { 1723:04d3 }
-  SetGusRegister16(grStartAddrHigh, Save0);  { 1723:04db }
-  SetGusVoice(1);                { 1723:04e0 }
-  SetGusRegister16(grStartAddrHigh, Save1);  { 1723:04e8 }
-  asm STI end;                   { 1723:04eb }
+  SetGusVoice(0);                { 1911:04d3 }
+  SetGusRegister16(grStartAddrHigh, Save0);  { 1911:04db }
+  SetGusVoice(1);                { 1911:04e0 }
+  SetGusRegister16(grStartAddrHigh, Save1);  { 1911:04e8 }
+  asm STI end;                   { 1911:04eb }
 end;
 
 { --------------------------------------------------------------------------
-  1723:04f1 -- find a card.
+  1911:04f1 -- find a card.
 
   Compiler output. If GUSPort was configured, probe that and nothing else;
   otherwise walk the twelve jumper positions and take the first that answers.
@@ -919,13 +920,13 @@ end;
   tried before $0200, presumably because they were the common settings.
 
   [re] MIND THE SENSE OF THE RESULT -- IT IS INVERTED FROM WHAT IT LOOKS LIKE.
-  This returns 1 when a card ANSWERED and 0 when none did, and 1084:0061
+  This returns 1 when a card ANSWERED and 0 when none did, and 106e:0061
   passes that straight into driver slot +$1a. But the slot is an ERROR CODE:
-  109c:0021 selects a driver only when the probe returns ZERO.
+  1086:0021 selects a driver only when the probe returns ZERO.
 
   [re] So the value that means "I found a GUS" is the value that means "do not
   use this driver". That is not a bug -- there is no path in this program
-  where a GUS probe result reaches 109c:0021, because the config file names
+  where a GUS probe result reaches 1086:0021, because the config file names
   the driver and the GUS registers first regardless. But it is a trap for
   anyone reading this routine on its own, and it caught this reconstruction
   once already: three separate producers were read, all agreed, and all were
@@ -939,25 +940,25 @@ function DetectUltrasound : Boolean;
 var
   I : Word;
 begin
-  DetectUltrasound := True;  { 1723:04f5 }
+  DetectUltrasound := True;  { 1911:04f5 }
 
-  if GUSPort = $FFFF then  { 1723:04f9  not configured }
+  if GUSPort = $FFFF then  { 1911:04f9  not configured }
   begin
-    for I := 1 to 12 do  { 1723:0500, 1723:051f }
+    for I := 1 to 12 do  { 1911:0500, 1911:051f }
     begin
-      GUSPort := GUSPorts[I];        { 1723:050f }
-      if ProbeUltrasound then Exit;  { 1723:0519 }
+      GUSPort := GUSPorts[I];        { 1911:050f }
+      if ProbeUltrasound then Exit;  { 1911:0519 }
     end
   end
   else
-    if ProbeUltrasound then Exit;  { 1723:052a }
+    if ProbeUltrasound then Exit;  { 1911:052a }
 
-  DetectUltrasound := False;  { 1723:0530  nothing answered }
+  DetectUltrasound := False;  { 1911:0530  nothing answered }
 
 end;
 
 { --------------------------------------------------------------------------
-  1723:0539 -- a byte address into the GF1's split form. Near, private.
+  1911:0539 -- a byte address into the GF1's split form. Near, private.
 
   Compiler output.
 
@@ -975,11 +976,11 @@ begin
   { ONE STATEMENT. The release's SwapGusAddress is
     `Addr := (Addr SHL 9) AND $1FFFFE00;` -- a single shift and a single
     32-bit mask, not a shift followed by a rebuild from two halves. }
-  A := (A shl 9) and $1FFFFE00;  { 1723:054b .. 1723:0553 }
+  A := (A shl 9) and $1FFFFE00;  { 1911:054b .. 1911:0553 }
 end;
 
 { --------------------------------------------------------------------------
-  1723:0565 -- set a voice's pan. Near, private.
+  1911:0565 -- set a voice's pan. Near, private.
 
   Compiler output. $FF means "leave it alone" and anything above $7F is
   clamped to $7F, so the caller can pass a don't-care without a separate
@@ -1024,7 +1025,7 @@ const
   );
 
 { --------------------------------------------------------------------------
-  1723:0565 -- set a voice's volume, ramping to it rather than jumping.
+  1911:0565 -- set a voice's volume, ramping to it rather than jumping.
 
   [re] THIS WAS TRANSCRIBED AS `SetPan` AND IT IS NOTHING OF THE KIND. The old
   version was seven lines against the original's 253 bytes, took its
@@ -1043,42 +1044,42 @@ procedure ChangeVol(Channel, Vol, Ramp : Byte);
 var
   Oldv : Byte;  { [BP-1] }
 begin
-  if (Vol > 127) and (Vol <> $FF) then  { 1723:0569, 1723:056f }
-    Vol := 127;                         { 1723:0575 }
+  if (Vol > 127) and (Vol <> $FF) then  { 1911:0569, 1911:056f }
+    Vol := 127;                         { 1911:0575 }
 
-  if (Vol <> $FF) and (LastVolumes[Channel] <> Vol) then  { 1723:0579, 058d }
+  if (Vol <> $FF) and (LastVolumes[Channel] <> Vol) then  { 1911:0579, 058d }
   begin
-    LastVolumes[Channel] := Vol;  { 1723:059f }
+    LastVolumes[Channel] := Vol;  { 1911:059f }
 
-    SetGusRegister8(grVolumeControl, 3);            { 1723:05a7  ramp stopped }
-    Oldv := Hi(GetGusRegister16(grCurrentVol));  { 1723:05ac  where it is  }
+    SetGusRegister8(grVolumeControl, 3);            { 1911:05a7  ramp stopped }
+    Oldv := Hi(GetGusRegister16(grCurrentVol));  { 1911:05ac  where it is  }
 
-    if Oldv <> Hi(VolumeTable[Vol]) then  { 1723:05bd }
+    if Oldv <> Hi(VolumeTable[Vol]) then  { 1911:05bd }
     begin
-      if Oldv > Hi(VolumeTable[Vol]) then  { 1723:05d2  going down   }
+      if Oldv > Hi(VolumeTable[Vol]) then  { 1911:05d2  going down   }
       begin
-        SetGusRegister8(grRampEnd, Oldv);                  { 1723:05e1  ramp end     }
-        SetGusRegister8(grRampStart, Hi(VolumeTable[Vol]));  { 1723:05f4  ramp start   }
+        SetGusRegister8(grRampEnd, Oldv);                  { 1911:05e1  ramp end     }
+        SetGusRegister8(grRampStart, Hi(VolumeTable[Vol]));  { 1911:05f4  ramp start   }
       end
       else
       begin
-        SetGusRegister8(grRampStart, Oldv);                  { 1723:05ff }
-        SetGusRegister8(grRampEnd, Hi(VolumeTable[Vol]));  { 1723:0612 }
+        SetGusRegister8(grRampStart, Oldv);                  { 1911:05ff }
+        SetGusRegister8(grRampEnd, Hi(VolumeTable[Vol]));  { 1911:0612 }
       end;
 
-      SetGusRegister16(grCurrentVol, Word(Oldv) shl 8);  { 1723:0620 }
-      SetGusRegister8(grRampRate, Ramp);               { 1723:0629  ramp rate    }
+      SetGusRegister16(grCurrentVol, Word(Oldv) shl 8);  { 1911:0620 }
+      SetGusRegister8(grRampRate, Ramp);               { 1911:0629  ramp rate    }
 
-      if Oldv > Hi(VolumeTable[Vol]) then                            { 1723:0635 }
-        SetGusRegister8(grVolumeControl, GetGusRegister8(grVolumeControl) and not 3 or $40)  { 1723:064a }
+      if Oldv > Hi(VolumeTable[Vol]) then                            { 1911:0635 }
+        SetGusRegister8(grVolumeControl, GetGusRegister8(grVolumeControl) and not 3 or $40)  { 1911:064a }
       else
-        SetGusRegister8(grVolumeControl, GetGusRegister8(grVolumeControl) and not 3 and not $40) { 1723:065b }
+        SetGusRegister8(grVolumeControl, GetGusRegister8(grVolumeControl) and not 3 and not $40) { 1911:065b }
     end
   end
 end;
 
 { --------------------------------------------------------------------------
-  1723:0662 -- push one voice's stored addresses at the card. Near, private.
+  1911:0662 -- push one voice's stored addresses at the card. Near, private.
 
   Compiler output. Reads the three tables, converts each to the GF1's split
   form, and writes the register pairs: $0A/$0B current, $04/$05 end,
@@ -1094,33 +1095,33 @@ procedure ChangeSample(Voice : Byte);
 var
   Cur, Loop, Fin : LongInt;
 begin
-  Cur  := LastVoiceStart[Voice];  { 1723:0670 }
-  Loop := LastLoopStart[Voice];   { 1723:0688 }
-  Fin  := LastVoiceEnd[Voice];    { 1723:06a0 }
+  Cur  := LastVoiceStart[Voice];  { 1911:0670 }
+  Loop := LastLoopStart[Voice];   { 1911:0688 }
+  Fin  := LastVoiceEnd[Voice];    { 1911:06a0 }
 
-  SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $03);  { 1723:06b2  stop it first }
+  SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $03);  { 1911:06b2  stop it first }
 
-  SwapGusAddress(Cur);                   { 1723:06c0 }
-  SetGusRegister16(grCurrentAddrLow, Cur and $FFFF);  { 1723:06d3 }
-  SetGusRegister16(grCurrentAddrHigh, Cur shr 16);     { 1723:06e9 }
+  SwapGusAddress(Cur);                   { 1911:06c0 }
+  SetGusRegister16(grCurrentAddrLow, Cur and $FFFF);  { 1911:06d3 }
+  SetGusRegister16(grCurrentAddrHigh, Cur shr 16);     { 1911:06e9 }
 
-  SwapGusAddress(Fin);                   { 1723:06f1 }
-  SetGusRegister16(grEndAddrLow, Fin and $FFFF);  { 1723:0704 }
-  SetGusRegister16(grEndAddrHigh, Fin shr 16);     { 1723:071a }
+  SwapGusAddress(Fin);                   { 1911:06f1 }
+  SetGusRegister16(grEndAddrLow, Fin and $FFFF);  { 1911:0704 }
+  SetGusRegister16(grEndAddrHigh, Fin shr 16);     { 1911:071a }
 
-  if Loop = -1 then                                     { 1723:071d  no loop }
-    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) and $F7)  { 1723:0733 }
+  if Loop = -1 then                                     { 1911:071d  no loop }
+    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) and $F7)  { 1911:0733 }
   else
   begin
-    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $08);  { 1723:0742  looping }
-    SwapGusAddress(Loop);                               { 1723:074a }
-    SetGusRegister16(grStartAddrLow, Loop and $FFFF);              { 1723:075d }
-    SetGusRegister16(grStartAddrHigh, Loop shr 16);                 { 1723:0773 }
+    SetGusRegister8(grVoiceControl, GetGusRegister8(grVoiceControl) or $08);  { 1911:0742  looping }
+    SwapGusAddress(Loop);                               { 1911:074a }
+    SetGusRegister16(grStartAddrLow, Loop and $FFFF);              { 1911:075d }
+    SetGusRegister16(grStartAddrHigh, Loop shr 16);                 { 1911:0773 }
   end;
 end;
 
 { --------------------------------------------------------------------------
-  1723:077a -- THE DEFERRED SWEEP. Installed as the timer 1 callback by
+  1911:077a -- THE DEFERRED SWEEP. Installed as the timer 1 callback by
   TriggerVoice, and where every voice change actually reaches the card.
 
   Two passes over the active flags, and the split matters.
@@ -1136,7 +1137,7 @@ end;
   meant to begin on the same tick actually do, instead of drifting apart by
   however long the register writes took.
 
-  [re] THE POSITION READ-BACK at 1723:08a2 reads a voice's current address twice
+  [re] THE POSITION READ-BACK at 1911:08a2 reads a voice's current address twice
   and only accepts it when two consecutive reads agree -- the same distrust
   of a live counter as 1b24's Count8, solved by retry rather than by
   judging the difference.
@@ -1156,7 +1157,7 @@ const
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0);
 var
   { [re] DECLARATION ORDER SETS THE FRAME, and this one is settled byte by byte
-    against 1723:077a..08c2. `ENTER 8,0` reserves eight bytes and the original
+    against 1911:077a..08c2. `ENTER 8,0` reserves eight bytes and the original
     touches five of them:
 
       [re] [BP-1]  i        the FOR variable -- AND the kicked voice, see below
@@ -1169,7 +1170,7 @@ var
       [BP-8]  padding to the eight ENTER reserves
 
     [re] THREE BYTES, NOT FOUR. This declared a separate `KickVoice` and the frame
-    says there is no such variable: 1723:0856 writes the kicked voice into
+    says there is no such variable: 1911:0856 writes the kicked voice into
     [BP-1], which is i's slot. Turbo Pascal does not reuse a dead local's slot,
     so the same slot means the same variable -- the original reuses the loop
     counter, which it has finished with by then, rather than declaring another
@@ -1197,31 +1198,31 @@ var
     anything measured here. }
   First     : Boolean;
 begin
-  GUSStopTimer1;  { 1723:077f }
+  GUSStopTimer1;  { 1911:077f }
 
   { --- pass one: program everything that is flagged ------------------ }
   { [re] A REAL `for`, not a repeat emulating one. The release has
     `FOR i := 0 TO GUSChannels-1 DO IF VoicesChanged[i] THEN ...` and Turbo
-    Pascal evaluates the limit into a temporary, which is what 1723:0787
+    Pascal evaluates the limit into a temporary, which is what 1911:0787
     stores -- no `Last` variable is involved. }
-  for i := 0 to GUSChannels - 1 do  { 1723:0787, 1723:07e0 }
-    if VoicesChanged[i] <> 0 then   { 1723:07a1 }
+  for i := 0 to GUSChannels - 1 do  { 1911:0787, 1911:07e0 }
+    if VoicesChanged[i] <> 0 then   { 1911:07a1 }
     begin
-      SetGusVoice(i);          { 1723:07ac }
-      ChangeSample(i);         { 1723:07b3 }
-      Vol := LastVolumes[i];   { 1723:07bd }
-      LastVolumes[i] := 0;     { 1723:07cb }
-      ChangeVol(i, Vol, $1F);  { 1723:07d0 .. 07da }
+      SetGusVoice(i);          { 1911:07ac }
+      ChangeSample(i);         { 1911:07b3 }
+      Vol := LastVolumes[i];   { 1911:07bd }
+      LastVolumes[i] := 0;     { 1911:07cb }
+      ChangeVol(i, Vol, $1F);  { 1911:07d0 .. 07da }
     end;
 
   { --- pass two: collect the ready voices, then start them together -- }
-  j := 0;                           { 1723:07e7 }
-  for i := 0 to GUSChannels - 1 do  { 1723:07f0, 1723:083e }
-    if VoicesChanged[i] <> 0 then   { 1723:0809 }
+  j := 0;                           { 1911:07e7 }
+  for i := 0 to GUSChannels - 1 do  { 1911:07f0, 1911:083e }
+    if VoicesChanged[i] <> 0 then   { 1911:0809 }
     begin
-      Inc(j, 2);                                   { 1723:0810 }
-      CmdList[j - 1] := i;                         { 1723:081d }
-      CmdList[j] := GetGusRegister8(grVoiceControl) and $FC;  { 1723:082b  clear the stop bits }
+      Inc(j, 2);                                   { 1911:0810 }
+      CmdList[j - 1] := i;                         { 1911:081d }
+      CmdList[j] := GetGusRegister8(grVoiceControl) and $FC;  { 1911:082b  clear the stop bits }
       { v1.51 DOES NOT CLEAR IT HERE. The clear moved into the third pass
         below, which is the pass that actually starts the voice. }
     end;
@@ -1257,7 +1258,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1723:08e6 -- start a voice with a loop. THE ENTRY 12ba's ring flushes to.
+  1911:08e6 -- start a voice with a loop. THE ENTRY 12ba's ring flushes to.
 
   Compiler output, and it programs NOTHING. It stores the three addresses,
   raises the active flag, records the pan, and points the timer 1 callback at
@@ -1279,7 +1280,7 @@ end;
   `TriggerVoice(Channel, Vol, Freq, Panning, VoiceStart, LoopStart, VoiceEnd)`
   exactly.
 
-  [re] AND THE VOLUME IS RECORDED, NOT THE PAN. 1723:095c reads [BP+18], which is
+  [re] AND THE VOLUME IS RECORDED, NOT THE PAN. 1911:095c reads [BP+18], which is
   Vol -- the pan has already gone to the card through ChangeVoiceParams. The
   backwards list made this look like `LastVolumes[Voice] := Pan` because [BP+08]
   was where Pan sat.
@@ -1317,30 +1318,30 @@ end;
 procedure TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan : Byte;
                          StartA, LoopA, EndA : LongInt);
 begin
-  SetGusVoice(Voice);                      { 1723:08ed  all register writes
+  SetGusVoice(Voice);                      { 1911:08ed  all register writes
                                              below apply to this voice }
-  ChangeVoiceParams(Voice, 0, Freq, Pan);  { 1723:0901  volume 0: silent until
+  ChangeVoiceParams(Voice, 0, Freq, Pan);  { 1911:0901  volume 0: silent until
                                              the restart ramps it up }
 
-  asm PUSHF; CLI end;                { 1723:0904  the five updates are one
+  asm PUSHF; CLI end;                { 1911:0904  the five updates are one
                                        transaction -- see above }
-  LastVoiceStart[Voice]  := StartA;  { 1723:0916  DS:$371a }
-  LastLoopStart[Voice] := LoopA;     { 1723:092e  DS:$379a }
-  LastVoiceEnd[Voice]  := EndA;      { 1723:0946  DS:$381a }
-  VoicesChanged[Voice]   := 1;       { 1723:0955  DS:$395a }
-  LastVolumes[Voice] := Vol;         { 1723:0964  DS:$389a }
-  asm POPF end;                      { 1723:0968 }
+  LastVoiceStart[Voice]  := StartA;  { 1911:0916  DS:$371a }
+  LastLoopStart[Voice] := LoopA;     { 1911:092e  DS:$379a }
+  LastVoiceEnd[Voice]  := EndA;      { 1911:0946  DS:$381a }
+  VoicesChanged[Voice]   := 1;       { 1911:0955  DS:$395a }
+  LastVolumes[Voice] := Vol;         { 1911:0964  DS:$389a }
+  asm POPF end;                      { 1911:0968 }
 
   { Arm the timer that will do the actual restart. The routine pointer is
     installed each time rather than once, so whatever the timer last ran does
     not decide what happens now. }
-  GUSTimer1RutPtr := @RestartChannels;  { 1723:096f  DS:$058a }
-  GUSInitTimer1($F6);                   { 1723:0979  $F6 is the countdown, not
+  GUSTimer1RutPtr := @RestartChannels;  { 1911:096f  DS:$058a }
+  GUSInitTimer1($F6);                   { 1911:0979  $F6 is the countdown, not
                                           a register number }
 end;
 
 { --------------------------------------------------------------------------
-  1723:0980 -- set a live voice's frequency and pan, without restarting it.
+  1911:0980 -- set a live voice's frequency and pan, without restarting it.
 
   Compiler output. Does nothing at all if the voice is not already active,
   which is what lets the mixer send pitch changes for voices that may have
@@ -1355,7 +1356,7 @@ end;
   in a table and the write skipped when it has not moved.
   -------------------------------------------------------------------------- }
 { --------------------------------------------------------------------------
-  1723:0980 -- set a running voice's volume, pitch and pan.
+  1911:0980 -- set a running voice's volume, pitch and pan.
 
   [re] FOUR PARAMETERS, NOT THREE. This was transcribed as
   `StartVoice(Freq, Pan, Voice)` with the volume and the pan sharing one
@@ -1363,7 +1364,7 @@ end;
   Vol at [BP+0c], Freq at [BP+08] and Panning at [BP+06] -- and the release
   has it as ChangeVoiceParams(Channel, Vol, Freq, Panning).
 
-  [re] THE FIRST TEST IS NOT AN EXIT. 1723:0996 branches on VoicesChanged and both
+  [re] THE FIRST TEST IS NOT AN EXIT. 1911:0996 branches on VoicesChanged and both
   arms do work: a voice already queued for restart just has its volume
   recorded, because RestartChannels will apply it; a voice that is not queued
   gets the ramp applied immediately.
@@ -1371,35 +1372,35 @@ end;
 procedure ChangeVoiceParams(Channel, Vol : Byte; Freq : LongInt;
                             Panning : Byte);
 begin
-  SetGusVoice(Channel);  { 1723:0987 }
+  SetGusVoice(Channel);  { 1911:0987 }
 
-  if VoicesChanged[Channel] <> 0 then  { 1723:0991 }
+  if VoicesChanged[Channel] <> 0 then  { 1911:0991 }
   begin
-    if Vol <> $FF then  { 1723:0998 }
+    if Vol <> $FF then  { 1911:0998 }
     begin
-      if Vol > $7F then Vol := $7F;  { 1723:09a4 }
-      LastVolumes[Channel] := Vol;   { 1723:09b2 }
+      if Vol > $7F then Vol := $7F;  { 1911:09a4 }
+      LastVolumes[Channel] := Vol;   { 1911:09b2 }
     end
   end
   else
-    ChangeVol(Channel, Vol, $1F);  { 1723:09b8 .. 09c2 }
+    ChangeVol(Channel, Vol, $1F);  { 1911:09b8 .. 09c2 }
 
-  if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then  { 1723:09c5, 09e3 }
+  if (Freq <> -1) and (LastFreqs[Channel] <> Freq) then  { 1911:09c5, 09e3 }
   begin
-    LastFreqs[Channel] := Freq;  { 1723:09fd  DS:$38ba }
+    LastFreqs[Channel] := Freq;  { 1911:09fd  DS:$38ba }
     SetGusRegister16(grFreqControl, ((Freq shl 9) + LongInt(GUSDivisor shr 1))
-                    div LongInt(GUSDivisor shr 1));  { 1723:0a1b .. 0a31 }
+                    div LongInt(GUSDivisor shr 1));  { 1911:0a1b .. 0a31 }
   end;
 
-  if LastPans[Channel] <> Panning then  { 1723:0a45 }
+  if LastPans[Channel] <> Panning then  { 1911:0a45 }
   begin
-    LastPans[Channel] := Panning;         { 1723:0a54  DS:$393a }
-    SetGusRegister8(grPanPosition, Panning shr 4);  { 1723:0a63 }
+    LastPans[Channel] := Panning;         { 1911:0a54  DS:$393a }
+    SetGusRegister8(grPanPosition, Panning shr 4);  { 1911:0a63 }
   end;
 end;
 
 { --------------------------------------------------------------------------
-  1723:0a6a -- how many voices, and what that costs in sample rate.
+  1911:0a6a -- how many voices, and what that costs in sample rate.
 
   Compiler output. The GF1 divides one fixed clock between however many
   voices are enabled, so asking for fewer voices buys a higher rate:
@@ -1412,12 +1413,12 @@ end;
   -------------------------------------------------------------------------- }
 procedure SetGusChannels(N : Byte);
 begin
-  if N > $20 then N := $20        { 1723:0a6d  at most 32 }
-  else if N < $14 then N := $14;  { 1723:0a79  at least 14 }
+  if N > $20 then N := $20        { 1911:0a6d  at most 32 }
+  else if N < $14 then N := $14;  { 1911:0a79  at least 14 }
 
-  SetGusRegister8(grActiveVoices, $C0 + N - 1);  { 1723:0a8f }
-  GUSDivisor    := 617400 div N;      { 1723:0aa3  1ba1:0a2e }
-  GUSChannels := N;                   { 1723:0aae }
+  SetGusRegister8(grActiveVoices, $C0 + N - 1);  { 1911:0a8f }
+  GUSDivisor    := 617400 div N;      { 1911:0aa3  1d89:0a2e }
+  GUSChannels := N;                   { 1911:0aae }
 end;
 
 end.

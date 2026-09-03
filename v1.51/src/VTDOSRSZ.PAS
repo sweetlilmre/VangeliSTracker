@@ -19,7 +19,7 @@
   the caller passes the end of its own heap and the arithmetic here turns that
   into a length.
 
-  [re] Segment 188f -- 32 bytes, of which 29 are the one routine.
+  [re] Segment 1a77 -- 32 bytes, of which 29 are the one routine.
 
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
@@ -28,7 +28,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 16-byte PREFIX only, at 1a77:0000 -- located, code CHANGED.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     SetMemTop  1a77:0000
   =========================================================================== }
 
@@ -93,7 +94,7 @@ implementation
   SEGMENT IS WHAT SETTLED IT. This was declared `SetBlockTop(TopSeg,
   ExtraBytes : Word)` for as long as it existed, and it verified IDENTICAL the
   whole time -- because both spellings put the same four bytes on the stack, so
-  nothing inside these 29 bytes can tell them apart. 17cf:01e0 can: it is
+  nothing inside these 29 bytes can tell them apart. 19b7:01e0 can: it is
   `PUSH [0c4a] / PUSH [0c48]`, a pointer variable pushed whole, where two
   `Word` arguments taken from a pointer compile to `LES DI,[..] / PUSH ES /
   LES DI,[..] / PUSH DI` -- four instructions instead of two.
@@ -105,7 +106,7 @@ implementation
   arithmetic is `(Ofs(P) + 15) shr 4 + Seg(P) - PrefixSeg` -- the paragraph
   count needed to reach P -- which is what Turbo Vision's `Memory.SetMemTop`
   does, and the release's `HEAPS.PAS` calls `SetMemTop(HeapEnd)` at exactly the
-  point 17cf:01d3 calls this. So **segment 188f is probably Borland's `Memory`
+  point 19b7:01d3 calls this. So **segment 188f is probably Borland's `Memory`
   UNIT rather than DemoVT's own**, smart-linked down to the one routine
   anything references. THE FILENAME AND UNIT NAME ARE STILL THE INVENTED ONES,
   deliberately: renaming a unit touches the build order, the unit table, every
@@ -115,16 +116,16 @@ implementation
 { @asm 000 1a77:0000 }
 procedure SetMemTop(P : Pointer); assembler;
 asm
-  MOV  BX, WORD PTR P    { 188f:0003  [BP+06h] -- Ofs(P)                    }
-  ADD  BX, 000Fh         { 188f:0006  round up to a whole paragraph         }
-  MOV  CL, 4             { 188f:0009  8086: no shift by immediate > 1       }
-  SHR  BX, CL            { 188f:000b  bytes -> paragraphs                   }
-  ADD  BX, WORD PTR P+2  { 188f:000d  [BP+08h] -- Seg(P), giving the top    }
-  MOV  AX, PrefixSeg     { 188f:0010  the program's own PSP segment         }
-  SUB  BX, AX            { 188f:0013  absolute top -> a length in paragraphs}
-  MOV  ES, AX            { 188f:0015  $4A wants the block's own segment     }
-  MOV  AH, 4Ah           { 188f:0017  DOS: resize memory block              }
-  INT  21h               { 188f:0019  carry ignored -- see above            }
+  MOV  BX, WORD PTR P    { 1a77:0003  [BP+06h] -- Ofs(P)                    }
+  ADD  BX, 000Fh         { 1a77:0006  round up to a whole paragraph         }
+  MOV  CL, 4             { 1a77:0009  8086: no shift by immediate > 1       }
+  SHR  BX, CL            { 1a77:000b  bytes -> paragraphs                   }
+  ADD  BX, WORD PTR P+2  { 1a77:000d  [BP+08h] -- Seg(P), giving the top    }
+  MOV  AX, PrefixSeg     { 1a77:0010  the program's own PSP segment         }
+  SUB  BX, AX            { 1a77:0013  absolute top -> a length in paragraphs}
+  MOV  ES, AX            { 1a77:0015  $4A wants the block's own segment     }
+  MOV  AH, 4Ah           { 1a77:0017  DOS: resize memory block              }
+  INT  21h               { 1a77:0019  carry ignored -- see above            }
 end;
 
 end.

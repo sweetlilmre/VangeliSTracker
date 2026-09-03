@@ -23,7 +23,7 @@
   root, which is where a bare file name would have been looked for anyway --
   but a caller passing '' and expecting '' back will not get it.
 
-  [re] Segment 116a -- 64 bytes, of which 59 are the one routine and the rest
+  [re] Segment 115a -- 64 bytes, of which 59 are the one routine and the rest
   is padding.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/FILEUTIL.PAS's AddBar2Path is this
@@ -42,7 +42,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: 64 bytes of AddBar2Path unchanged at 115a:0000.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     AddBar2Path  115a:0000
   =========================================================================== }
 
@@ -68,7 +69,7 @@ implementation
   and from the command line, both of which are shorter -- but it is not
   defended against.
 
-  [re] 116a:0000. BYTE-IDENTICAL, all 59 of them. Plain Pascal in the binary --
+  [re] 115a:0000. BYTE-IDENTICAL, all 59 of them. Plain Pascal in the binary --
   the compiler's own `PUSH BP / MOV BP,SP` and `LEAVE`, and every access is an
   LES/MOV pair of the kind TP emits for a `var` String parameter. There is no
   assembler here to preserve.
@@ -95,20 +96,20 @@ implementation
 procedure AddBar2Path(var Path : PathStr);
 begin
   { [re] IT IS A CASE, NOT AN IF-CHAIN. The binary loads the character into AL
-    once at 116a:0010 and compares AL three times. An `and` chain over three
+    once at 115a:0010 and compares AL three times. An `and` chain over three
     separate `Path[Length(Path)] <> c` tests would reload it each time, and
     declaring a local to hold it -- which this file used to do -- makes the
     compiler spill it to [BP-1] and compare against memory (`88 46 ff`,
     `80 7e ff 3a`). A case selector is evaluated once and stays in AL.
 
     The labels are in SOURCE order, not sorted: $3a, $5c, $2f. }
-  case Path[Length(Path)] of                      { 116a:0006 .. 116a:0010 }
-    ':', '\', '/' : ;                             { 116a:0013, 0017, 001b   }
+  case Path[Length(Path)] of                      { 115a:0006 .. 115a:0010 }
+    ':', '\', '/' : ;                             { 115a:0013, 0017, 001b   }
   else
     { Two statements, and the order matters: the character is written one past
       the current end FIRST, then the length byte is bumped to take it in. }
-    Path[Length(Path) + 1] := '\';                { 116a:0024 .. 116a:002f }
-    Inc(Path[0]);                                 { 116a:0036  the length   }
+    Path[Length(Path) + 1] := '\';                { 115a:0024 .. 115a:002f }
+    Inc(Path[0]);                                 { 115a:0036  the length   }
   end;
 end;
 

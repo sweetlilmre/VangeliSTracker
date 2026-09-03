@@ -21,7 +21,7 @@
   THE OTHER WRITER OF THE GLOBALS IS VTCfg. Neither owns them; a setting given
   on the command line and in the config file is decided by whichever runs last.
 
-  [re] Segment 109c -- 3,296 bytes, twenty-two routines. COMPLETE: all 3,296
+  [re] Segment 1086 -- 3,296 bytes, twenty-two routines. COMPLETE: all 3,296
   bytes, 484 pending fixups, from the release's bodies in five builds.
 
   [re] FIVE THINGS HAD TO BE MEASURED, and every one was a jump displacement first:
@@ -38,7 +38,7 @@
   explained `116e`'s missing two routines.
 
   [re] **`survey.py` MAPPED ALL TWENTY-TWO ROUTINES AND ALL TWENTY-ONE SWITCH BRANCHES, and
-  the switch table did most of the work.** `109c:0844..088f` is a solid run of
+  the switch table did most of the work.** `1086:0844..088f` is a solid run of
   length-prefixed Pascal strings and it is the whole switch vocabulary:
 
       0844 'nobf'  0849 'bfil'  084e 'nolp'  0853 'loop'  0858 'nofl'  085d 'port'
@@ -64,7 +64,7 @@
       'nx' -> 06d3  PUSH BP, near RET, no parameters   NEW
       'nb' -> 05b2  PUSH BP, near RET, no parameters   NEW
 
-  [re] **`109c:0b7c` IS WHAT RESOLVED `116e`'s OPEN QUESTION.** It is a `CALLF [DI+2c]`, and
+  [re] **`1086:0b7c` IS WHAT RESOLVED `116e`'s OPEN QUESTION.** It is a `CALLF [DI+2c]`, and
   +$2c is the first virtual `TVTCmdSwitch` ADDS to what it inherits. A new virtual at
   +$2c means the inherited ones stop at +$28 -- so `TCmdLineInterpreter` really does
   declare nine virtuals, and `116e`'s eight bodies really are one short of two. The
@@ -75,15 +75,15 @@
 
   THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM:
 
-      [re] 116a:0000  AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
-      1b6f:0178  FExpand      x4   Dir, ModPath, DefaultPath, Path
-      1b6f:0241  FSplit       x2
-      1b6f:0000  FindFirst    x1   and 1b6f:003e FindNext x1
-      1a17:0248  LocateDevice x1   from SetVTDevice at 0000
-      1a17:018c  SetDevice    x1   also SetVTDevice
-      12ba:132f  ChangeSamplingRate x1  from SetVTFreq at 0038
+      [re] 115a:0000  AddBar2Path  x3   Dirs[0], Dirs[3] and DefaultPath -- exactly three
+      1d57:0178  FExpand      x4   Dir, ModPath, DefaultPath, Path
+      1d57:0241  FSplit       x2
+      1d57:0000  FindFirst    x1   and 1d57:003e FindNext x1
+      1bff:0248  LocateDevice x1   from SetVTDevice at 0000
+      1bff:018c  SetDevice    x1   also SetVTDevice
+      12ce:132f  ChangeSamplingRate x1  from SetVTFreq at 0038
 
-  [re] AND `1ba1:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
+  [re] AND `1d89:0f81` -- `Val` -- IS CALLED NINE TIMES FOR NINE ROUTINES. The release's
   `CmdInitFreq` has `VAL(s, i, r);` written TWICE in a row, plainly by accident; 1.31 has
   it once. One Val per routine, and the count is what says so.
   =========================================================================== }
@@ -151,7 +151,7 @@ var
 
   { [re] A PLAIN `TCollection`, AND THE CONSTRUCTOR IS WHAT SETTLES IT. This was
     declared a `TStringCollection` on the strength of holding strings, and
-    `1000:05cd` far-calls `1891:03a7`, which this tree has established as
+    `1000:05cd` far-calls `1a79:03a7`, which this tree has established as
     `TCollection.Init` (it is the target of `InitValues`'s three `Init(n,n)`
     calls in 14b9). A TStringCollection's `Init` is TSortedCollection's and is a
     different routine at a different address, so the object cannot be one.
@@ -163,7 +163,7 @@ var
   { A `TStringCollection`, AND THE LINKED IMAGE IS WHAT SETTLED IT -- after this file
     had argued the opposite and been WRONG.
 
-    [re] THE EARLIER ARGUMENT, now withdrawn: `1000:05cd` far-calls `1891:03a7`, which this
+    [re] THE EARLIER ARGUMENT, now withdrawn: `1000:05cd` far-calls `1a79:03a7`, which this
     tree established as `TCollection.Init` (it is the target of `InitValues`'s three
     `Init(n,n)` calls in 14b9), and a TStringCollection's constructor was assumed to be
     TSortedCollection's own. It is not. **TP6's `Objects` gives TSortedCollection no
@@ -215,24 +215,24 @@ uses
   from two directions -- the command line and the config file -- and both have
   to end up doing the same thing.
 
-  [re] 109c:0000 and 109c:0038. Both are in the INTERFACE, so both are FAR, and
+  [re] 1086:0000 and 1086:0038. Both are in the INTERFACE, so both are FAR, and
   both take no parameters -- which is exactly the two `RETF` with no count that
   `survey.py` finds at `0037` and `0045`, the only two in the segment.
   =========================================================================== }
 
 { --------------------------------------------------------------------------
-  109c:0000 -- SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
+  1086:0000 -- SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
   bytes, and every one of them accounted for:
 
       [re] 0003  MOV DI,0882 / PUSH DS / PUSH DI     DevID -- DS:$0882, agreeing with 11bb
-      0008  CALLF 1a17:0248                     LocateDevice
+      0008  CALLF 1bff:0248                     LocateDevice
       000d  MOV [087e],AX / MOV [0880],DX       DevPtr := ...  -- DS:$087e, NEW
       0014  MOV AX,[087e] / OR AX,[0880]        DevPtr = nil ?
       001b  JZ  0029                            ... then skip to SetDevice
       001d  LES DI,[087e] / CALLF ES:[DI+1a]    DevPtr^.Autodetect
       0025  OR AL,AL / JNZ 0029                 ... then skip to SetDevice
       0029  PUSH [0880] / PUSH [087e]
-      0031  CALLF 1a17:018c                     SetDevice(DevPtr)
+      0031  CALLF 1bff:018c                     SetDevice(DevPtr)
 
   **`if DeviceSet then Exit` IS GONE, `UsingGUS := FALSE` IS GONE, AND SO IS THE GUS
   FALLBACK.** The release, failing to find the configured device, tries the Gravis anyway;
@@ -260,7 +260,7 @@ begin
 end;
 
 
-{ [re] 109c:0038 -- fourteen bytes: `PUSH [0bae] / CALLF 12ba:132f`, and `DS:$0bae` is
+{ [re] 1086:0038 -- fourteen bytes: `PUSH [0bae] / CALLF 12ce:132f`, and `DS:$0bae` is
   `DesiredHz` exactly where SOUNDDEV.PAS already documents it. }
 procedure SetVTFreq;
 begin
@@ -269,7 +269,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0048 -- DoAllMODs. Find every module matching a pattern, across a list of
+  1086:0048 -- DoAllMODs. Find every module matching a pattern, across a list of
   directories and a list of extensions, and hand each to a caller-supplied procedure.
 
   IT IS NEAR, not far -- it is not in the interface -- and `RET 12` is its signature:
@@ -307,7 +307,7 @@ const
     makes the ORDER below part of the behaviour.
 
     [re] EIGHT EXTENSIONS, NOT THE RELEASE'S SEVEN, and the array is READ OUT OF THE IMAGE
-    rather than guessed. `109c:02e0` is `MOV word [BP-0150],0007` where ours had 0006 --
+    rather than guessed. `1086:02e0` is `MOV word [BP-0150],0007` where ours had 0006 --
     that is `ExtL := NumExts` -- and the initialised data sits at file offset $00d7b5 in
     the unpacked EXE, immediately before the four empty `Dirs` strings:
 
@@ -445,7 +445,7 @@ end;
 
 
 { ===========================================================================
-  109c:03fb .. 109c:0720 -- SIXTEEN NEAR PROCEDURES, one per switch action.
+  1086:03fb .. 1086:0720 -- SIXTEEN NEAR PROCEDURES, one per switch action.
 
   THE ORDER IS THE ORIGINAL'S, NOT THE RELEASE'S, and it was read off the near-call
   targets rather than guessed: each CmpSwitch branch in `InterpretSwitch` calls exactly
@@ -482,7 +482,7 @@ end;
   convention; each one repeats it rather than sharing a helper.
   =========================================================================== }
 
-{ 109c:03fb -- ENTER $100, so no locals at all, and it is the only one. }
+{ 1086:03fb -- ENTER $100, so no locals at all, and it is the only one. }
 procedure CmdInitDevice(s : String);
 begin
   if s = '' then Exit;
@@ -493,8 +493,8 @@ begin
 end;
 
 
-{ [re] 109c:0435 -- ONE `Val`, WHERE THE RELEASE HAS `VAL(s, i, r);` TWICE IN A ROW. The
-  duplicate is plainly accidental in 1.39b and 1.31 does not have it: `1ba1:0f81` is
+{ [re] 1086:0435 -- ONE `Val`, WHERE THE RELEASE HAS `VAL(s, i, r);` TWICE IN A ROW. The
+  duplicate is plainly accidental in 1.39b and 1.31 does not have it: `1d89:0f81` is
   called nine times in this segment for nine routines that parse a number, so exactly
   one apiece. **The count is the whole argument.** }
 procedure CmdInitFreq(s : String);
@@ -509,7 +509,7 @@ begin
 end;
 
 
-{ 109c:047c and 109c:04ca -- one port and one IRQ for both cards, because only one of
+{ 1086:047c and 1086:04ca -- one port and one IRQ for both cards, because only one of
   them can be present. `off` at 0518's neighbour is the odd one out; see CmdModOffset. }
 procedure CmdSetPort(s : String);
 var
@@ -563,7 +563,7 @@ begin
 end;
 
 
-{ 109c:055f -- `ENTER $106`, the only one, and `l : LONGINT` is why: a module offset can
+{ 1086:055f -- `ENTER $106`, the only one, and `l : LONGINT` is why: a module offset can
   exceed 64K because it is a byte position inside an archive or a bundled file. }
 procedure CmdModOffset(s : String);
 var
@@ -578,7 +578,7 @@ begin
 end;
 
 
-{ 109c:05b2 -- THREE INSTRUCTIONS, and the release has nothing like it:
+{ 1086:05b2 -- THREE INSTRUCTIONS, and the release has nothing like it:
 
       55 89 e5           PUSH BP / MOV BP,SP
       c6 06 e8 09 01     MOV byte [09e8],1
@@ -592,7 +592,7 @@ begin
 end;
 
 
-{ 109c:05bc -- and the clamp is to 255 because `VtVolume` is a BYTE, so an unchecked
+{ 1086:05bc -- and the clamp is to 255 because `VtVolume` is a BYTE, so an unchecked
   `Val` result would wrap. }
 procedure CmdInitVolume(s : String);
 var
@@ -610,7 +610,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0611 .. 109c:0641 -- THE FOUR BOOLEAN SWITCHES, and `RET 2` is their signature:
+  1086:0611 .. 1086:0641 -- THE FOUR BOOLEAN SWITCHES, and `RET 2` is their signature:
   one Byte-sized parameter in a word of stack, no frame beyond `PUSH BP`.
 
   EACH IS CALLED FROM TWO BRANCHES, once with False and once with True, which is what
@@ -642,7 +642,7 @@ begin
 end;
 
 
-{ 109c:0645, 068c and 06dd -- the three song-position switches: which pattern to start
+{ 1086:0645, 068c and 06dd -- the three song-position switches: which pattern to start
   at, how long to play, and where to restart. `ss`, `sl` and `sr`. }
 procedure CmdInit1stPattern(s : String);
 var
@@ -668,7 +668,7 @@ begin
 end;
 
 
-{ 109c:06d3 -- the `nx` switch, and the same three instructions as CmdNoBanner but
+{ 1086:06d3 -- the `nx` switch, and the same three instructions as CmdNoBanner but
   writing `[0bc6]`. **Nothing in any segment reads that byte**, so there is no behaviour
   to name the routine after; a switch that was wired up and left unfinished. Named for
   the switch, like every other handler in this file -- which is the honest answer when
@@ -692,7 +692,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0724 -- DoSongColl. Play everything the command line collected.
+  1086:0724 -- DoSongColl. Play everything the command line collected.
 
   FAR, because it is in the interface, and `ENTER $056` is 80 bytes of `Path` copy plus
   six of locals. `SongColl` is filled by `TVTCmd.InterpretNoSwitch`, one entry per bare
@@ -781,12 +781,12 @@ end;
 
 
 { ===========================================================================
-  109c:07ae onwards -- THE FIVE METHODS, in the release's own implementation order:
+  1086:07ae onwards -- THE FIVE METHODS, in the release's own implementation order:
   `TVTCmd`'s override first, then `TVTCmdSwitch`'s four. That order is odd -- the
   descendant before its parent -- and it is the release's, and the original agrees.
   =========================================================================== }
 
-{ 109c:07ae -- `ENTER $080`, which is `TCmdLine` = `String[127]` = 128 bytes, and that
+{ 1086:07ae -- `ENTER $080`, which is `TCmdLine` = `String[127]` = 128 bytes, and that
   frame size is what tells this method's parameter apart from the `String` of
   CmdInitShell below.
 
@@ -800,7 +800,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:07e1 -- CmdInitShell. `sh` names a program to run, and everything after it on the
+  1086:07e1 -- CmdInitShell. `sh` names a program to run, and everything after it on the
   line is that program's arguments.
 
   **`Copy(Line, Idx, 255)` IS THE POINT OF THE WHOLE THING.** `Line` and `Idx` are
@@ -808,7 +808,7 @@ end;
   takes the untokenised remainder verbatim, quotes and switches and all. It is the only
   place in either segment that reaches past `GetToken` into the cursor itself.
 
-  [re] **AND THE LAST STATEMENT IS WHY `116e` HAS AN EXTRA VIRTUAL.** `109c:0835` is
+  [re] **AND THE LAST STATEMENT IS WHY `116e` HAS AN EXTRA VIRTUAL.** `1086:0835` is
   `CALLF [DI+10]`, the ninth slot, whose whole body is `Idx := 255` -- and this is its only
   caller anywhere. Having swallowed the rest of the line into `ShellParam`, the interpreter
   must not then read the same text back as its own switches, so it winds the tokeniser past
@@ -845,7 +845,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-  109c:0890 -- InterpretSwitch, the switch table itself. `ENTER $180` is the 128-byte
+  1086:0890 -- InterpretSwitch, the switch table itself. `ENTER $180` is the 128-byte
   `Token` copy plus a 256-byte temporary for the `TokenParam` results.
 
   TWENTY-ONE BRANCHES IN ONE `ELSE IF` CHAIN, in the order the constants appear at
@@ -898,7 +898,7 @@ begin
 end;
 
 
-{ 109c:0c5e and 109c:0c9d -- save and restore the four settings a shelled-to program
+{ 1086:0c5e and 1086:0c9d -- save and restore the four settings a shelled-to program
   might change. `PUSH BP` with no frame, because a `var` parameter needs no copy, and
   `RETF 8` for Self plus the pointer.
 

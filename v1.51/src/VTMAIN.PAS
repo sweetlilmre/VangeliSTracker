@@ -61,22 +61,22 @@ program DemoVT;
   program reaches are transcribed and byte-exact, so the seventeen calls that
   were written as addresses are now written as names:
 
-    [re] 109c:0000 SetVTDevice     109c:0038 SetVTFreq    109c:0724 DoSongColl
-    116e:04b2 GetDOSCmdLine   12ba:10a1 PlayStart    12ba:13d7 PlayStop
-    14b9:0000 TSong.Init      14b9:0106 LoadFName    14b9:02f5 SetInsidePath
-    17cf:00b5 InitUmbHeap     17cf:01d3 ShrinkSystemHeap
-    17cf:0a63 InitHeapVariables
-    1891:0000 TObject.Init    1891:03a7 TCollection.Init
-    1b6f:00a6 SwapVectors     (twice, around the Exec)
+    [re] 1086:0000 SetVTDevice     1086:0038 SetVTFreq    1086:0724 DoSongColl
+    1182:04b2 GetDOSCmdLine   12ce:10a1 PlayStart    12ce:13d7 PlayStop
+    153a:0000 TSong.Init      153a:0106 LoadFName    153a:02f5 SetInsidePath
+    19b7:00b5 InitUmbHeap     19b7:01d3 ShrinkSystemHeap
+    19b7:0a63 InitHeapVariables
+    1a79:0000 TObject.Init    1a79:03a7 TCollection.Init
+    1d57:00a6 SwapVectors     (twice, around the Exec)
 
   [re] THE INIT CHAIN AT 1000:04b3 IS THE CONSTRAINT ON THIS `uses` CLAUSE, and it
   is not a free choice. Turbo Pascal emits one call per unit that HAS an
   initialisation section, in dependency-resolved order, and the original's is
 
-      1ba1:0000  RTL        193a:0488  DevSB      1931:0029  VTShell
-      17cf:0a93  Heaps      14b7:0000  VTCtrl     12ba:141e  PlayMod
-      11bb:0f2e  VTCfg      1084:0101  DevGus     1065:0172  VTSilenc
-      1ba1:1038  RTL exit
+      1d89:0000  RTL        1b22:0488  DevSB      1b19:0029  VTShell
+      19b7:0a93  Heaps      1538:0000  VTCtrl     12ce:141e  PlayMod
+      11cf:0f2e  VTCfg      106e:0101  DevGus     115e:0172  VTSilenc
+      1d89:1038  RTL exit
 
   so the clause below has to produce exactly that order. Units with no
   initialisation section never appear in the chain however they are listed.
@@ -239,7 +239,7 @@ const
     Only an aligned byte diff of the segment shows a literal changing. }
   NoSong   = 'Can''t find a song.';
 
-  { [re] 1caa:0004 -- the name Install publishes over INT 2Fh. A TYPED constant, so it
+  { [re] 1e92:0004 -- the name Install publishes over INT 2Fh. A TYPED constant, so it
     lives in DGROUP rather than in the code segment, and TWO measurements say so:
     1000:0599 is `MOV DI,0004 / PUSH DS / PUSH DI`, and PUSH DS against PUSH CS is
     this project's standing test for where a constant lives -- an untyped one is a
@@ -249,7 +249,7 @@ const
     length was read as String[25] on the strength of VTSilenc's `Driver` starting at
     $001e -- and that was wrong, because the six bytes between are not this string's.
     **THEY ARE VTSILENC'S `Frac` AND `OldVec`**, two typed constants at $0018 and $001a
-    which its own code names outright: `1065:0018` is `MOV AL,[0018]` and `1065:005e`
+    which its own code names outright: `115e:0018` is `MOV AL,[0018]` and `115e:005e`
     tests `[001a]`. So this is `String[19]`, exactly as long as its text.
 
     [re] **AND `dgroup.py` REPORTING THE INITIALISED HALF IDENTICAL DID NOT CATCH IT.** Every
@@ -273,7 +273,7 @@ var
     absolute OneModPtr` laid over it, which is how 1993 Pascal gives a procedural
     variable an initial value. `1000:05e2` installs this program's `PlayModule` into it
     and `DoSongColl` calls it for every entry it collected -- and clears it again at
-    109c:079f, which this project had already read as "the caller's hook cannot outlive
+    1086:079f, which this project had already read as "the caller's hook cannot outlive
     the collection". The two ends of the same mechanism, finally joined up.
 
     `AltMode` IS PLAYMOD'S, at $02d1, between `DontExecute` and `Playing` in its
@@ -700,7 +700,7 @@ end;
 
   [re] SO `N := Name` AND `P := Params` WERE NEVER SOURCE STATEMENTS. `1000:02b9` is
   `LES DI,[BP+0a] / PUSH ES / PUSH DI / LEA DI,[BP-52] / PUSH SS / PUSH DI / PUSH 4Fh /
-  CALLF 1ba1:0add` -- push the source, push the destination slot, push the length, call
+  CALLF 1d89:0add` -- push the source, push the destination slot, push the length, call
   the string-copy helper. That IS how Turbo Pascal copies a value String parameter into
   the frame on entry, and reading it as an assignment produced two extra locals and two
   extra copies. Same class as the invented `String` locals in `1b54` and `164b`: **a
@@ -804,8 +804,8 @@ begin
   SetVTFreq;                                       { 1000:0306 }
   MaxOutputFreq := DesiredHz;                      { 1000:030b  $02ce := $0bae }
   { [re] 1000:0311..0320 -- a FillChar, NOT the Str this file used to read here.
-    survey.py puts 1ba1:0fd5 at both 031c and 03da, and 14b9 already
-    established 1ba1:0fd5 as FillChar. The pushes are dest, count, VALUE:
+    survey.py puts 1d89:0fd5 at both 031c and 03da, and 14b9 already
+    established 1d89:0fd5 as FillChar. The pushes are dest, count, VALUE:
     DS:$1208 for eight bytes of whatever $08ba holds. }
   { [re] **THE FOURTH LITERAL EIGHT.** 1000:0372 pushes $10, not 8 -- `UserVols` is
     `TVolumes`, which follows the channel count, and this is the only site that wrote
@@ -817,7 +817,7 @@ begin
 
   if VT1stPattern <> 0 then Song.SongStart := VT1stPattern;  { 1000:033f }
   if VTSongLen <> 0 then Song.SongLen := VTSongLen;          { 1000:034c }
-  StartSampling;                                  { 1000:0359  1a17:00a9 }
+  StartSampling;                                  { 1000:0359  1bff:00a9 }
   Song.LoadFName(Name);                         { 1000:0368 }
 
   SongOpen := True;                               { 1000:03c8 }
@@ -881,7 +881,7 @@ begin
     end;
     ShrinkSystemHeap(0);                         { 1000:039b }
     SwapVectors;                                  { 1000:03a0 }
-    Exec(ProgName, ShellParam);                        { 1000:03af  1b6f:00df }
+    Exec(ProgName, ShellParam);                        { 1000:03af  1d57:00df }
     { [re] ~~UnhookTimer, PlayStop, THE FillChar AND THE THREE Req COPIES STOOD HERE~~ --
       **ALL FIVE MOVED INTO `StopModule` IN v1.51.** 1.31b runs the whole
       unhook-silence-restore sequence inline in the middle of the shell-out; 1.51's
@@ -911,12 +911,12 @@ end;
 
   [re] 1000:04e0. The init chain that precedes it is at 1000:04b3:
 
-      [re] 1ba1:0000  the RTL      193a:0488   1931:0029   17cf:0a93
-      14b7:0000  12ba:141e    11bb:0f2e   1084:0101   1065:0172
+      [re] 1d89:0000  the RTL      1b22:0488   1b19:0029   19b7:0a93
+      1538:0000  12ce:141e    11cf:0f2e   106e:0101   115e:0172
   -------------------------------------------------------------------------- }
 { [re] ~~Self : String at [BP-$100]~~ -- NOT A VARIABLE. `[BP-$100]` is the COMPILER'S
   256-byte temporary for `ParamStr`'s result: 1000:0542 is `LEA DI,[BP-0100] / PUSH SS /
-  PUSH DI / PUSH 0 / CALLF 1ba1:0fe9`, and a String function is handed the address of a
+  PUSH DI / PUSH 0 / CALLF 1d89:0fe9`, and a String function is handed the address of a
   temporary to build its result in. Declared as a variable it became a GLOBAL -- a
   program's `var` section is global in Pascal -- and the temporary got COPIED into it,
   which is the thirteen bytes this segment was over: five to push the destination, three
@@ -925,7 +925,7 @@ end;
   [re] AND THE STATEMENT IS ONE CALL, NOT TWO. `FSplit`'s first argument is ParamStr's result
   POINTER, still on the stack because a String function does not pop it -- the original
   pushes only the three VAR parameters after the call and then goes straight into
-  `1b6f:0241`. **Third instance of that rule in this file**, after `Cmd.ParseLine(
+  `1d57:0241`. **Third instance of that rule in this file**, after `Cmd.ParseLine(
   GetDOSCmdLine)` and the two in 14b9's `LoadFName`. }
 var
   { [re] FSplit at 1000:0556 needs all three, and Dos supplies the widths:
@@ -950,7 +950,7 @@ begin
     Halt(1);                                      { 1000:0535 }
   end;
 
-  FSplit(ParamStr(0), Dir, Name, Ext);            { 1000:0542..055a  1b6f:0241 }
+  FSplit(ParamStr(0), Dir, Name, Ext);            { 1000:0542..055a  1d57:0241 }
 
   { [re] 1000:0565 -- renaming the executable to INCONEXI.EXE turns something on.
     Nothing in this segment reads DS:$02d1. }
@@ -977,18 +977,18 @@ begin
   CtrlBlock.CtrlEntryPoint := @Dispatch;              { 1000:05f4  -> CB+$121   }
   CtrlBlock.RegEntryPoint := @DispatchEntry;         { 1000:0601  -> CB+$129   }
 
-  Install(SelfName, @CtrlBlock);                  { 1000:05a3  1b54:0088 }
+  Install(SelfName, @CtrlBlock);                  { 1000:05a3  1d3c:0088 }
 
   InitHeapVariables;                                 { 1000:05a8 }
   InitUmbHeap;                                    { 1000:05ad }
-  { [re] 1000:05b2 pushes a VMT offset of $009e and far-calls 1891:0000, TObject.Init,
+  { [re] 1000:05b2 pushes a VMT offset of $009e and far-calls 1a79:0000, TObject.Init,
     so `Cmd` inherits its constructor rather than declaring one -- which is
-    exactly what TVTCmd does. 05c4 pushes $07fe and calls 1891:03a7,
+    exactly what TVTCmd does. 05c4 pushes $07fe and calls 1a79:03a7,
     TCollection.Init, NOT TSortedCollection's: see the note on SongColl's type. }
-  Cmd.Init;                                       { 1000:05bb  1891:0000 }
-  SongColl.Init(1, 1);                            { 1000:05cd  1891:03a7 }
-  InitSoundDevices;                               { 1000:05d2  1a17:053c }
-  BuildNoteTable;                                 { 1000:05d7  1650:0000 }
+  Cmd.Init;                                       { 1000:05bb  1a79:0000 }
+  SongColl.Init(1, 1);                            { 1000:05cd  1a79:03a7 }
+  InitSoundDevices;                               { 1000:05d2  1bff:053c }
+  BuildNoteTable;                                 { 1000:05d7  183e:0000 }
   DesiredHz := ShellHz;                               { 1000:05dc }
   OneModPtr := @PlayModule;                       { the playlist calls through here }
   Complain := True;                               { 1000:05ef }
@@ -1037,7 +1037,7 @@ begin
 
   { [re] NO EXPLICIT `Halt(0)`, AND THE ORDER OF THE LAST THREE INSTRUCTIONS IS WHY.
     The original ends `e8 bc fa / c9 / 31 c0 / 9a e9 00 a1 0b` -- the near CALL to
-    ShowBanner, then LEAVE, then `XOR AX,AX / CALLF 1ba1:00e9`. The LEAVE comes BEFORE
+    ShowBanner, then LEAVE, then `XOR AX,AX / CALLF 1d89:00e9`. The LEAVE comes BEFORE
     the Halt, which no statement can produce: a written `Halt(0)` sits inside the block
     and is emitted before the epilogue, not after it. So those seven bytes are Turbo
     Pascal's own end-of-program sequence, and writing the call as well emitted it twice.

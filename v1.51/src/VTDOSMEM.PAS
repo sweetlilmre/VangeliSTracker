@@ -8,13 +8,13 @@
   routines in two layers -- a plain pair that calls DOS directly, and a pair
   that wraps them in the upper-memory dance.
 
-  [re] Segment 1880 -- 240 bytes, five routines.
+  [re] Segment 1a68 -- 240 bytes, five routines.
 
-      DOSAllocate  1880:0000   INT 21h $48, with a fallback
-      DOSFree   1880:005a   INT 21h $49
-      UMBLink 1880:0077  INT 21h $5802 / $5803, returns the old state
-      UMBAllocate     1880:0097   UMBLink(1), DOSAllocate, put it back
-      UMBFree      1880:00cb   UMBLink(1), DOSFree, put it back
+      DOSAllocate  1a68:0000   INT 21h $48, with a fallback
+      DOSFree   1a68:005a   INT 21h $49
+      UMBLink 1a68:0077  INT 21h $5802 / $5803, returns the old state
+      UMBAllocate     1a68:0097   UMBLink(1), DOSAllocate, put it back
+      UMBFree      1a68:00cb   UMBLink(1), DOSFree, put it back
 
   THE FALLBACK IS THE INTERESTING PART. When $48 fails it returns, in BX, the
   size of the largest block that WOULD have succeeded -- and DOSAllocate
@@ -48,14 +48,14 @@ interface
   `LIB/UMBUNIT.PAS` at 65.5%, with nothing else above 7% -- and the unit's four
   routines line up one for one, signature for signature:
 
-      1880:0000  AllocRaw   -> DOSAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
-      1880:005a  FreeRaw    -> DOSFree     (VAR Buf: POINTER)
-      1880:0077  SetUMBLink -> UMBLink
-      1880:0097  Alloc      -> UMBAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
-      1880:00cb  Free       -> UMBFree     (VAR Buf: POINTER)
+      1a68:0000  AllocRaw   -> DOSAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
+      1a68:005a  FreeRaw    -> DOSFree     (VAR Buf: POINTER)
+      1a68:0077  SetUMBLink -> UMBLink
+      1a68:0097  Alloc      -> UMBAllocate (VAR Buf: POINTER; Size: LONGINT) : LONGINT
+      1a68:00cb  Free       -> UMBFree     (VAR Buf: POINTER)
 
-  [re] AND 17cf CONFIRMS TWO OF THEM FROM OUTSIDE. It calls 1880:0097 exactly once and
-  1880:00cb exactly once, which is `TUmbHeap.Init` calling UMBAllocate and
+  [re] AND 17cf CONFIRMS TWO OF THEM FROM OUTSIDE. It calls 1a68:0097 exactly once and
+  1a68:00cb exactly once, which is `TUmbHeap.Init` calling UMBAllocate and
   `TUmbHeap.Done` calling UMBFree -- the release's HEAPS.PAS says so in those words.
 
   [re] ONE TYPE IS NOT ADOPTED. The release's `UMBLink` takes and returns a `BOOLEAN`; ours
@@ -68,21 +68,21 @@ interface
   these five routines yet.
   -------------------------------------------------------------------------- }
 
-{ 1880:0097 / 1880:00cb -- what everything else should call. }
+{ 1a68:0097 / 1a68:00cb -- what everything else should call. }
 function  UMBAllocate(var P : Pointer; Size : LongInt) : LongInt; far;
 procedure UMBFree(var P : Pointer); far;
 
-{ 1880:0000 / 1880:005a -- the same without the UMB dance. }
+{ 1a68:0000 / 1a68:005a -- the same without the UMB dance. }
 function  DOSAllocate(var P : Pointer; Size : LongInt) : LongInt; far;
 procedure DOSFree(var P : Pointer); far;
 
-{ 1880:0077. Returns the PREVIOUS state, so it can be handed straight back. }
+{ 1a68:0077. Returns the PREVIOUS state, so it can be handed straight back. }
 function  UMBLink(State : Byte) : Byte; far;
 
 implementation
 
 { --------------------------------------------------------------------------
-  1880:0000 -- ask DOS for Size bytes, settle for less rather than fail.
+  1a68:0000 -- ask DOS for Size bytes, settle for less rather than fail.
 
   THE FALLBACK IS THE WHOLE POINT OF THE ROUTINE. When $48 fails it returns,
   in BX, the size of the largest block that WOULD have succeeded -- so instead
@@ -109,40 +109,40 @@ implementation
   calls to the runtime's 32-bit shift helpers, and only the DOS calls
   themselves are hand-written.
 
-  [re] 1ba1:0a9c and 1ba1:0aa8 are taken to be 32-bit shift right and shift
+  [re] 1d89:0a9c and 1d89:0aa8 are taken to be 32-bit shift right and shift
   left by CL. The evidence is that they are used here as EXACT INVERSES across
   one allocation -- bytes go in through 0a9c to become paragraphs, paragraphs
   come back out through 0aa8 to become bytes -- and no other reading makes the
   return value mean anything. They are not the multiply and divide helpers at
-  1ba1:0a13 and 1ba1:0a2e, which take a full 32-bit operand in BX:CX.
+  1d89:0a13 and 1d89:0a2e, which take a full 32-bit operand in BX:CX.
   -------------------------------------------------------------------------- }
 function DOSAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
   Paras : Word;          { [BP-6] }
 begin
-  Paras := Word(Size shr 4);                      { 1880:000f  1ba1:0a9c }
+  Paras := Word(Size shr 4);                      { 1a68:000f  1d89:0a9c }
   asm
-    MOV  BX, Paras         { 1880:0017                                     }
-    MOV  AH, 48h           { 1880:001a  DOS: allocate memory               }
-    INT  21h               { 1880:001c                                     }
-    JNC  @@Got             { 1880:001e                                     }
-    MOV  Paras, BX         { 1880:0020  BX now holds the largest available }
-    MOV  AH, 48h           { 1880:0023  ... so ask for exactly that        }
-    INT  21h               { 1880:0025                                     }
-    JNC  @@Got             { 1880:0027                                     }
-    MOV  AX, 0             { 1880:0029  give up                            }
-    MOV  Paras, AX         { 1880:002c                                     }
+    MOV  BX, Paras         { 1a68:0017                                     }
+    MOV  AH, 48h           { 1a68:001a  DOS: allocate memory               }
+    INT  21h               { 1a68:001c                                     }
+    JNC  @@Got             { 1a68:001e                                     }
+    MOV  Paras, BX         { 1a68:0020  BX now holds the largest available }
+    MOV  AH, 48h           { 1a68:0023  ... so ask for exactly that        }
+    INT  21h               { 1a68:0025                                     }
+    JNC  @@Got             { 1a68:0027                                     }
+    MOV  AX, 0             { 1a68:0029  give up                            }
+    MOV  Paras, AX         { 1a68:002c                                     }
   @@Got:
-    LES  DI, P             { 1880:002f  the ADDRESS of the caller's ptr    }
-    MOV  ES:[DI+2], AX     { 1880:0032  the segment, or 0                  }
-    XOR  AX, AX            { 1880:0036                                     }
-    MOV  ES:[DI], AX       { 1880:0038  the offset is always zero          }
+    LES  DI, P             { 1a68:002f  the ADDRESS of the caller's ptr    }
+    MOV  ES:[DI+2], AX     { 1a68:0032  the segment, or 0                  }
+    XOR  AX, AX            { 1a68:0036                                     }
+    MOV  ES:[DI], AX       { 1a68:0038  the offset is always zero          }
   end;
-  DOSAllocate := LongInt(Paras) shl 4;               { 1880:0045  1ba1:0aa8 }
+  DOSAllocate := LongInt(Paras) shl 4;               { 1a68:0045  1d89:0aa8 }
 end;
 
 { --------------------------------------------------------------------------
-  1880:005a -- give a block back.
+  1a68:005a -- give a block back.
 
   IT IS ASSEMBLER BECAUSE INT 21h $49 WANTS THE BLOCK'S SEGMENT IN ES, and
   Pascal has no way to load a segment register.
@@ -160,18 +160,18 @@ end;
   -------------------------------------------------------------------------- }
 procedure DOSFree(var P : Pointer); assembler;
 asm
-  LES  DI, P             { 1880:005d  the ADDRESS of the caller's pointer  }
-  MOV  AX, ES:[DI+2]     { 1880:0060  keep the segment                     }
-  XOR  BX, BX            { 1880:0064                                       }
-  MOV  ES:[DI+2], BX     { 1880:0066  P := nil, before the call            }
-  MOV  ES:[DI], BX       { 1880:006a                                       }
-  MOV  ES, AX            { 1880:006d  $49 wants it here                    }
-  MOV  AH, 49h           { 1880:006f  DOS: free memory                     }
-  INT  21h               { 1880:0071  carry ignored                        }
+  LES  DI, P             { 1a68:005d  the ADDRESS of the caller's pointer  }
+  MOV  AX, ES:[DI+2]     { 1a68:0060  keep the segment                     }
+  XOR  BX, BX            { 1a68:0064                                       }
+  MOV  ES:[DI+2], BX     { 1a68:0066  P := nil, before the call            }
+  MOV  ES:[DI], BX       { 1a68:006a                                       }
+  MOV  ES, AX            { 1a68:006d  $49 wants it here                    }
+  MOV  AH, 49h           { 1a68:006f  DOS: free memory                     }
+  INT  21h               { 1a68:0071  carry ignored                        }
 end;
 
 { --------------------------------------------------------------------------
-  1880:0077 -- read the UMB link state, set a new one, return the old.
+  1a68:0077 -- read the UMB link state, set a new one, return the old.
 
   Two DOS calls, with the first one's answer carried across the second on the
   stack. Assembler because the answer has to survive a second INT 21h that
@@ -185,19 +185,19 @@ end;
   -------------------------------------------------------------------------- }
 function UMBLink(State : Byte) : Byte; assembler;
 asm
-  MOV  AX, 5802h         { 1880:007a  DOS: get UMB link state              }
-  INT  21h               { 1880:007d                                       }
-  MOV  AH, 0             { 1880:007f  the answer if it failed              }
-  JC   @@Out             { 1880:0081                                       }
-  MOV  AH, AL            { 1880:0083  keep the old state                   }
-  PUSH AX                { 1880:0085  ... across the second call           }
-  MOV  AX, 5803h         { 1880:0086  DOS: set UMB link state              }
-  XOR  BH, BH            { 1880:0089                                       }
-  MOV  BL, State         { 1880:008b                                       }
-  INT  21h               { 1880:008e                                       }
-  POP  AX                { 1880:0090                                       }
+  MOV  AX, 5802h         { 1a68:007a  DOS: get UMB link state              }
+  INT  21h               { 1a68:007d                                       }
+  MOV  AH, 0             { 1a68:007f  the answer if it failed              }
+  JC   @@Out             { 1a68:0081                                       }
+  MOV  AH, AL            { 1a68:0083  keep the old state                   }
+  PUSH AX                { 1a68:0085  ... across the second call           }
+  MOV  AX, 5803h         { 1a68:0086  DOS: set UMB link state              }
+  XOR  BH, BH            { 1a68:0089                                       }
+  MOV  BL, State         { 1a68:008b                                       }
+  INT  21h               { 1a68:008e                                       }
+  POP  AX                { 1a68:0090                                       }
 @@Out:
-  MOV  AL, AH            { 1880:0091  the result                           }
+  MOV  AL, AH            { 1a68:0091  the result                           }
 end;
 
 { --------------------------------------------------------------------------
@@ -216,7 +216,7 @@ end;
   The result is saved before the link state is put back, so the restore cannot
   disturb it.
 
-  [re] 1880:0097. Plain Pascal in the binary: `ENTER`, a byte local for the old
+  [re] 1a68:0097. Plain Pascal in the binary: `ENTER`, a byte local for the old
   state, and three near calls with `PUSH CS` in front of them, which is how
   Borland Pascal reaches a far routine in its own segment.
   -------------------------------------------------------------------------- }
@@ -224,9 +224,9 @@ function UMBAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
   Old : Byte;            { [BP-5] }
 begin
-  Old := UMBLink(1);                           { 1880:009b }
-  UMBAllocate := DOSAllocate(P, Size);                     { 1880:00b0 }
-  UMBLink(Old);                                { 1880:00be }
+  Old := UMBLink(1);                           { 1a68:009b }
+  UMBAllocate := DOSAllocate(P, Size);                     { 1a68:00b0 }
+  UMBLink(Old);                                { 1a68:00be }
 end;
 
 { --------------------------------------------------------------------------
@@ -236,15 +236,15 @@ end;
   freeing needs the same dance as allocating rather than being a bare $49: a
   UMB freed with the chain unlinked is not returned to the pool it came from.
 
-  [re] 1880:00cb. Same shape as UMBAllocate above.
+  [re] 1a68:00cb. Same shape as UMBAllocate above.
   -------------------------------------------------------------------------- }
 procedure UMBFree(var P : Pointer);
 var
   Old : Byte;            { [BP-1] }
 begin
-  Old := UMBLink(1);                           { 1880:00cf }
-  DOSFree(P);                                     { 1880:00de }
-  UMBLink(Old);                                { 1880:00e6 }
+  Old := UMBLink(1);                           { 1a68:00cf }
+  DOSFree(P);                                     { 1a68:00de }
+  UMBLink(Old);                                { 1a68:00e6 }
 end;
 
 end.

@@ -23,7 +23,7 @@
   This unit holds the block and the routine that clears it, and almost nothing
   else. The code is incidental; the layout is the point.
 
-  [re] Segment 14b7 -- 32 bytes, of which 25 are the one routine and the rest
+  [re] Segment 1538 -- 32 bytes, of which 25 are the one routine and the rest
   is padding. DS:$22c6 is the structure; ES:[DI-4] in the handshake points at
   it. `01-int2f.md` documents the server side.
 
@@ -57,7 +57,7 @@
   [re] NAMES ARE PROVISIONAL: Borland Pascal 6, no debug information.
 
   [re] ADDRESS MAP
-    CtrlBlock  DS:$22c6        Reset  14b7:0000
+    CtrlBlock  DS:$22c6        Reset  1538:0000
   =========================================================================== }
 
 unit VTCtrl;
@@ -65,7 +65,7 @@ unit VTCtrl;
 interface
 
 const
-  CtrlBlockSize = $300;      { 14b7:0008 -- what Reset clears }
+  CtrlBlockSize = $300;      { 1538:0008 -- what Reset clears }
 
 type
   { [re] **DECLARED HERE AND NOT IN PLAYMOD, BECAUSE THE COPY HAS TO BE AN
@@ -127,7 +127,7 @@ type
       [re] EVERY PART OF THAT WAS ALREADY IN THIS RECONSTRUCTION, TRANSCRIBED
       AND UNRECOGNISED. `ModCommands.StartRingEvent` is command 8's handler -- the one
       routine in its segment with no counterpart in the release -- and it stores
-      the parameter. 12ba:0187 increments this array by that parameter. 1000:03e4
+      the parameter. 12ce:0187 increments this array by that parameter. 1000:03e4
       clears all 256 bytes when a module starts. Three sites, correct to the
       byte, none of them able to say WHY, because the reason is on the client
       side. }
@@ -158,7 +158,7 @@ type
       in time with the music reads this rather than keeping its own clock,
       which is what stops the two drifting apart over a long tune.
 
-      [re] CB+$125, incremented by 12ba:0c9a. Nothing in this unit touches it. }
+      [re] CB+$125, incremented by 12ce:0c9a. Nothing in this unit touches it. }
     TickCounter : LongInt;   { CB+$125  50 Hz, the module's own timebase   }
     { **A SECOND ENTRY POINT BESIDE THE FIRST**, taking its command in AX
       rather than on the stack. The one above takes a Pascal parameter; this one
@@ -221,7 +221,7 @@ type
       [1.39b] The bindings call it `SoundVolume`, 0-255: "Put your favourite
       volume here. You can perform fades and the like."
 
-      [re] CB+$206, and 12ba:0e66 is what says so. This unit only knows that
+      [re] CB+$206, and 12ce:0e66 is what says so. This unit only knows that
       Reset sets it to $FF, which is why it was called `Mark`. }
     SoundVolume : Byte;      { CB+$206                                      }
     { HOW A CLIENT ASKS THE PLAYER TO STOP. Set it, and the player returns
@@ -265,7 +265,7 @@ var
 implementation
 
 { --------------------------------------------------------------------------
-  14b7:0000 -- wipe the block and stamp it.
+  1538:0000 -- wipe the block and stamp it.
 
   Plain Pascal in the binary. The whole body is a FillChar and a byte store,
   and the prologue is the compiler's own (`PUSH BP / MOV BP,SP` ... `LEAVE`)
@@ -282,7 +282,7 @@ implementation
   what settled that. It used to be declared `procedure Reset; far;` in the
   interface, and nothing anywhere calls it -- so Turbo Pascal's smart linker
   discarded the whole unit and our image had VTCTRL at ZERO bytes where the
-  original has 25. The original's init chain calls `14b7:0000`, which is this
+  original has 25. The original's init chain calls `1538:0000`, which is this
   code, and a unit's initialisation section is emitted at offset 0 and far-called
   from that chain. Written as `begin ... end.` the linker keeps it, because an
   initialisation section is never discardable.
@@ -292,6 +292,6 @@ implementation
   wrong was the KIND of thing they are, and only linking exposes it.
   -------------------------------------------------------------------------- }
 begin
-  FillChar(CtrlBlock, CtrlBlockSize, 0);          { 14b7:0008 .. 14b7:000d }
-  CtrlBlock.SoundVolume := $FF;                     { 14b7:0012  DS:$24cc    }
+  FillChar(CtrlBlock, CtrlBlockSize, 0);          { 1538:0008 .. 1538:000d }
+  CtrlBlock.SoundVolume := $FF;                     { 1538:0012  DS:$24cc    }
 end.

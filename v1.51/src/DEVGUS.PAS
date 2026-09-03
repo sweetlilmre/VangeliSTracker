@@ -14,7 +14,7 @@
   the poll only has to count. Compare the Sound Blaster driver in 193a, where
   the same slot has to move data.
 
-  [re] Segment 1084 -- 384 bytes, ten routines. It calls into 1723 (the GUS
+  [re] Segment 106e -- 384 bytes, ten routines. It calls into 1723 (the GUS
   hardware) and 1a17 (the player core).
 
   [re] NAMES ARE THE 1.39b RELEASE'S. LIB/DEVGUS.PAS is the counterpart and it
@@ -29,7 +29,8 @@
   segment in v1.31b; these addresses were inherited when the file was and
   never re-based. Measured two ways -- segpair --pair over the two
   reference images, and a byte search bounded by the paired extent: a 32-byte PREFIX only, at 107c:0008 -- located, code CHANGED.
-  NOTE the per-line addresses through this file are still v1.31b's.
+  The per-line addresses through this file are re-based to this image too;
+  the OFFSETS are inherited and are verified only where an @asm marker sits.
     NullTimerHandler  106e:0000   Poll             106e:004c
     DevName           106e:0055   DevDetect        106e:0061
     DevInit           106e:0072   DevEnd           106e:00d5
@@ -55,7 +56,7 @@ uses
 
 const
   { [re] The release keeps the ID as a named constant and initialises the record
-    from it. 1caa:0060 holds `03 'G' 'U' 'S'`. }
+    from it. 1e92:0060 holds `03 'G' 'U' 'S'`. }
   GUSDevID = 'GUS';
 
 type
@@ -168,8 +169,8 @@ implementation
 
     DS:$4302/$4304   SavedSS/SavedSP, owned by SoundDevices, which switches
                      to the same private stack in its own shared poll
-    DS:$4312         SoundDevices.PeriodicProc -- what 1084:003a CALLs
-    DS:$058e         GUS.GUSTimer2RutPtr -- what 1084:008a STORES to
+    DS:$4312         SoundDevices.PeriodicProc -- what 106e:003a CALLs
+    DS:$058e         GUS.GUSTimer2RutPtr -- what 106e:008a STORES to
 
   The store and the call went through one `Callback : Pointer` whose comment
   claimed $4312, while the assignment's own comment said it reached $058e. The
@@ -178,7 +179,7 @@ implementation
   different units, and both are now referenced where they live. }
 
 { --------------------------------------------------------------------------
-  1084:0000 -- the timer callback. Runs on somebody else's stack, with DS
+  106e:0000 -- the timer callback. Runs on somebody else's stack, with DS
   unknown.
 
   HAND ASSEMBLER, verbatim, and it could not be Pascal: it loads DS from a
@@ -200,7 +201,7 @@ implementation
   grows downwards from just below the two words holding the caller's. The
   interrupted program's stack may be tiny, and a mixing routine's frame is
   not; borrowing it would corrupt whatever was interrupted. The same trick
-  is in 1a17:1008, the core's shared poll.
+  is in 1bff:1008, the core's shared poll.
 
   THE WORK ITSELF is one indirect far call, and it is SKIPPED when the driver
   is started and the tick counter has not moved since last time -- there is
@@ -209,8 +210,8 @@ implementation
 { [re] NOT AN `assembler` PROCEDURE -- an ordinary one with an asm block inside.
   The distinction is visible in the bytes. An `assembler` procedure that
   names no parameter gets NO frame at all, so it would begin straight at
-  MOV AX,SEG @DATA. The original begins PUSH BP / MOV BP,SP at 1084:0000 and
-  ends LEAVE / RETF at 1084:004a, which is the standard prologue and epilogue
+  MOV AX,SEG @DATA. The original begins PUSH BP / MOV BP,SP at 106e:0000 and
+  ends LEAVE / RETF at 106e:004a, which is the standard prologue and epilogue
   wrapped around a hand-written body. }
 { @asm 000 106e:0000 +76 }
 procedure NullTimerHandler; far;
@@ -234,7 +235,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:004c -- THE POLL, slot +$2a.
+  106e:004c -- THE POLL, slot +$2a.
 
   One increment. The whole of what a GUS driver has to do per tick, because
   the card is playing from its own memory and needs nothing from the host.
@@ -310,7 +311,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0055 -- slot +$16, the device name. It returns an EMPTY STRING.
+  106e:0055 -- slot +$16, the device name. It returns an EMPTY STRING.
 
   This looked for a long time like "clears one byte through a far pointer",
   because that is literally what the four instructions do:
@@ -329,11 +330,11 @@ end;
   -------------------------------------------------------------------------- }
 function DevName : TDevID; far;
 begin
-  DevName := '';  { 1084:005b }
+  DevName := '';  { 106e:005b }
 end;
 
 { --------------------------------------------------------------------------
-  1084:0061 -- slot +$1a, the probe. Hands the question to the hardware layer
+  106e:0061 -- slot +$1a, the probe. Hands the question to the hardware layer
   and passes the answer straight back.
 
   TRUE means the card answered. No caller in the program tests the result --
@@ -341,11 +342,11 @@ end;
   -------------------------------------------------------------------------- }
 function DevDetect : Boolean; far;
 begin
-  DevDetect := GUS.DetectUltrasound;  { 1084:0065 }
+  DevDetect := GUS.DetectUltrasound;  { 106e:0065 }
 end;
 
 { --------------------------------------------------------------------------
-  1084:0072 -- slot +$1e, start.
+  106e:0072 -- slot +$1e, start.
 
   Reset the card, install this unit's timer entry as the driver's callback,
   and program the GF1's own timer from the sample rate.
@@ -373,11 +374,11 @@ end;
   compiles to a plain RETF and every caller's stack is two bytes out. }
 procedure DevInit(Hz : Word); far;
 begin
-  GUS.StartUltrasound;  { 1084:0075 }
-  GUS.InitGusIRQ;       { 1084:007a }
-  UsingGUS := True;      { 1084:007f }
+  GUS.StartUltrasound;  { 106e:0075 }
+  GUS.InitGusIRQ;       { 106e:007a }
+  UsingGUS := True;      { 106e:007f }
 
-  GUS.GUSTimer2RutPtr := @NullTimerHandler;  { 1084:008a  DS:$058e }
+  GUS.GUSTimer2RutPtr := @NullTimerHandler;  { 106e:008a  DS:$058e }
 
   { THE MULTIPLY IS 16-BIT. The original is `IMUL AX,[Rate],$140` -- one 286
     instruction with an immediate -- followed by XOR DX,DX to widen the WORD
@@ -387,24 +388,24 @@ begin
     That also settles what it is: a 16-bit product only stays in range for a
     tick rate of around 50, not a sample rate, which is why it carries the
     release's name TicksPerSecond. }
-  GUS.GUSInitTimer2($100 -                                      { 1084:00c6 }
+  GUS.GUSInitTimer2($100 -                                      { 106e:00c6 }
     ((2000000 div LongInt(TicksPerSecond * $140) + 1) shr 1));  { 0091, 00a8 }
 
-  LastTick := DriverTicks;  { 1084:00cb }
+  LastTick := DriverTicks;  { 106e:00cb }
 end;
 
 { --------------------------------------------------------------------------
-  1084:00d5 -- slot +$32, stop. Two calls into the hardware layer, in the
+  106e:00d5 -- slot +$32, stop. Two calls into the hardware layer, in the
   reverse order to Start's.
   -------------------------------------------------------------------------- }
 procedure DevEnd; far;
 begin
-  GUS.DoneGusIRQ;       { 1084:00d8 }
-  GUS.StartUltrasound;  { 1084:00dd }
+  GUS.DoneGusIRQ;       { 106e:00d8 }
+  GUS.StartUltrasound;  { 106e:00dd }
 end;
 
 { --------------------------------------------------------------------------
-  1084:00e4 -- slot +$26, "what rate can you actually manage?"
+  106e:00e4 -- slot +$26, "what rate can you actually manage?"
 
   Returns what it was given. The GUS resamples every voice in hardware, so
   any rate the caller names is one it can play. A driver that could not would
@@ -412,7 +413,7 @@ end;
   -------------------------------------------------------------------------- }
 function DevGetRealFreq(Hz : Word) : Word; far;
 begin
-  DevGetRealFreq := Hz;  { 1084:00e8 }
+  DevGetRealFreq := Hz;  { 106e:00e8 }
 end;
 
 { --------------------------------------------------------------------------
@@ -421,7 +422,7 @@ end;
   mid-stream and nothing for a poll to move. The slots exist because the
   driver record has them.
 
-  [re] 1084:00f5 and 1084:00fc -- slots +$22 and +$2e. Empty.
+  [re] 106e:00f5 and 106e:00fc -- slots +$22 and +$2e. Empty.
 
   The first takes a word and the second takes nothing, and neither does
   anything with it. Whatever these mean, the GUS has no use for them.
@@ -435,7 +436,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  1084:0101 -- fill in the record and hand it to the player core.
+  106e:0101 -- fill in the record and hand it to the player core.
 
   [re] Eight far addresses written straight into DS:$0076..DS:$0095. That range is
   DS:$0060 + $16 through + $35, which is what fixes the driver layout -- see
@@ -445,20 +446,20 @@ end;
   initialised data, so the reconstruction gives it as a typed constant in the
   initialisation below rather than assigning it.
 
-  [re] REGISTRATION ORDER DECIDES THE DEFAULT DEVICE. 1a17:02ba pushes onto the
+  [re] REGISTRATION ORDER DECIDES THE DEFAULT DEVICE. 1bff:02ba pushes onto the
   front of the list but only SELECTS when nothing is selected yet, so the
   first driver to register wins -- and this unit registers before 1065. That
   is why a machine with both ends up on the GUS.
   -------------------------------------------------------------------------- }
 begin
-  DevData.Name            := @DevName;         { 1084:010a  DS:$0076 }
-  DevData.Autodetect      := @DevDetect;       { 1084:0117  DS:$007a }
-  DevData.InitRut         := @DevInit;         { 1084:0124  DS:$007e }
-  DevData.ChgHzProc       := @DevChgHz;        { 1084:0131  DS:$0082 }
-  DevData.GetRealFreqProc := @DevGetRealFreq;  { 1084:013e  DS:$0086 }
-  DevData.TimerHandler    := @Poll;            { 1084:014b  DS:$008a }
-  DevData.PollRut         := @DevPoll;         { 1084:0158  DS:$008e }
-  DevData.EndRut          := @DevEnd;          { 1084:0165  DS:$0092 }
+  DevData.Name            := @DevName;         { 106e:010a  DS:$0076 }
+  DevData.Autodetect      := @DevDetect;       { 106e:0117  DS:$007a }
+  DevData.InitRut         := @DevInit;         { 106e:0124  DS:$007e }
+  DevData.ChgHzProc       := @DevChgHz;        { 106e:0131  DS:$0082 }
+  DevData.GetRealFreqProc := @DevGetRealFreq;  { 106e:013e  DS:$0086 }
+  DevData.TimerHandler    := @Poll;            { 106e:014b  DS:$008a }
+  DevData.PollRut         := @DevPoll;         { 106e:0158  DS:$008e }
+  DevData.EndRut          := @DevEnd;          { 106e:0165  DS:$0092 }
 
-  SoundDevices.InitDevice(@DevData);  { 1084:0171 }
+  SoundDevices.InitDevice(@DevData);  { 106e:0171 }
 end.

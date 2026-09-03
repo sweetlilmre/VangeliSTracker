@@ -27,7 +27,7 @@
   EXTENSION -- so the loader looks at the name it was given. A format that can
   only be identified from outside its own contents is unusual and it is real.
 
-  [re] Segment 154d. **COMPLETE: 3,920 of 3,920 bytes.** Five routines, 302
+  [re] Segment 173d. **COMPLETE: 3,920 of 3,920 bytes.** Five routines, 302
   pending fixups, no real difference anywhere. It went in in one pass: the
   release's five bodies transferred essentially verbatim and THREE measured
   differences had to be found -- a ninety-two-byte delta-decoding block the
@@ -36,14 +36,14 @@
 
   [re] IT EXISTS AS A FILE ALREADY because 14b9's `SongLoaders` table names it. That
   declaration -- `LoadModFileFormat` with the release's three var parameters --
-  is confirmed by the call site at 14b9:00dc and is the one thing in this file
+  is confirmed by the call site at 153a:00dc and is the one thing in this file
   that is measured rather than scouted.
 
   [re] THE PAIRING WITH `LIB/MODLOADE.PAS` IS CONFIRMED THREE WAYS, all recorded in
   docs/CONTINUATION.md: TModFile31 is 1,084 bytes with Magic at offset 1080 and
-  154d:0c27 reads Header+$438, which is 1080 exactly; 154d:0bf7 loads through
+  173d:0c27 reads Header+$438, which is 1080 exactly; 173d:0bf7 loads through
   Objects.TStream as the release does; and '.WOW' is a literal in both, compared
-  at 154d:0c4d against TSong+$1f, which 14b9 has now independently confirmed is
+  at 173d:0c4d against TSong+$1f, which 14b9 has now independently confirmed is
   `FileExt`.
 
   [re] WHAT THE SCOUTING NOTE USED TO SAY IS NOW MOSTLY OBSOLETE. It listed four
@@ -87,11 +87,11 @@
 
   [re] WHAT IT CALLS OUTSIDE ITSELF, from survey.py, and every one now exists:
 
-      [re] 14b9:04b6  GetPattern      from 0030
-      14b9:0404  GetTrack        from 0476
-      14b9:0352  GetInstrument   from 051d
-      165a:08e2, 165a:07c0, 165a:012a
-      1642:0000  AsciiZ
+      [re] 153a:04b6  GetPattern      from 0030
+      153a:0404  GetTrack        from 0476
+      153a:0352  GetInstrument   from 051d
+      1848:08e2, 1848:07c0, 1848:012a
+      1830:0000  AsciiZ
       1ba1:*     System -- the string helpers at 0c05 (x16) and 0bc8 (x10) are
                  the char-array-to-String conversion and compare pair, which is
                  how the magics are tested; 0a2e/0a13 (x4 each) are LongInt
@@ -138,7 +138,7 @@ uses
     Magic at             20 + 930 + 1 + 1 + 128                    = 1080
     TModFile15           20 + 15*30 + 1 + 1 + 128                  =  600
 
-  [re] and 1080 is what 154d:0c27 reads as `Header + 0438`. That is the measurement
+  [re] and 1080 is what 173d:0c27 reads as `Header + 0438`. That is the measurement
   the pairing rests on, so the record is confirmed from the binary at the one
   offset that matters most.
   --------------------------------------------------------------------------- }
@@ -263,12 +263,12 @@ type
                                             four magic comparisons, two char-array
                                             conversions each
 
-  [re] AND survey.py's CALL COUNTS AGREE WITH THAT LAST ONE EXACTLY: 1ba1:0c05
-  (char array -> String) is called eight times inside 0bf7's range and 1ba1:0bc8
+  [re] AND survey.py's CALL COUNTS AGREE WITH THAT LAST ONE EXACTLY: 1d89:0c05
+  (char array -> String) is called eight times inside 0bf7's range and 1d89:0bc8
   (string compare) five times -- four magics plus the '.WOW' test on FileExt.
   --------------------------------------------------------------------------- }
 
-{ 154d:0000..04e1.  Near -- nothing outside the segment calls it. }
+{ 173d:0000..04e1.  Near -- nothing outside the segment calls it. }
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TModFilePattern;
@@ -383,7 +383,7 @@ begin
     end
 end;
 
-{ 154d:04e2..09d6.  `Mod31` is a VALUE parameter -- 1,084 bytes copied into the
+{ 173d:04e2..09d6.  `Mod31` is a VALUE parameter -- 1,084 bytes copied into the
   frame on entry, which is most of the ENTER. }
 procedure ProcessInstruments(var Song : TSong; var St : TStream;
                              Mod31 : TModFile31);
@@ -470,7 +470,7 @@ begin
                   whether the file being read is delta-encoded, and the whole
                   block is skipped when it is not.
 
-                  [re] 154d:0778..07d3 -- NINETY-TWO BYTES THE RELEASE HAS NOT
+                  [re] 173d:0778..07d3 -- NINETY-TWO BYTES THE RELEASE HAS NOT
                   GOT, and the whole of ProcessInstruments' length difference.
 
                   It is a RUNNING SUM over the sample, in place:
@@ -549,7 +549,7 @@ begin
       end
 end;
 
-{ 154d:09d7..0b71.  The $10c frame is 12 bytes of locals plus the 256-byte
+{ 173d:09d7..0b71.  The $10c frame is 12 bytes of locals plus the 256-byte
   temporary StrASCIIZ's String result needs. }
 procedure LoadMod(var Song : TSong; var St : TStream; var Mod31 : TModFile31);
 var
@@ -568,7 +568,7 @@ begin
         for i := 0 to 127 do
           if Mod31.PatternList[i] > 63 then Exit;
 
-    [re] -- 35 bytes at 154d:09e3, and `verdiff.py 154d -> 173d` reports it as the
+    [re] -- 35 bytes at 173d:09e3, and `verdiff.py 154d -> 173d` reports it as the
     single non-shift difference between the two versions of a 3,920-byte unit.
     The removal is deliberate rather than incidental: v1.51's WHATSNEW.DOC lists
     "Now it can play MODs with more than 64 different patterns" under v1.50,
@@ -618,7 +618,7 @@ begin
   if Song.Status > msFileTooShort then Exit
 end;
 
-{ 154d:0b72..0bf6.  ENTER 0002 -- one Word. Both ABSOLUTE aliases cost nothing,
+{ 173d:0b72..0bf6.  ENTER 0002 -- one Word. Both ABSOLUTE aliases cost nothing,
   which is what makes the frame that small and identifies the routine. }
 procedure LoadMod15(var Song : TSong; var St : TStream; var Header : TSongHeader);
 var
@@ -635,7 +635,7 @@ begin
   LoadMod(Song, St, Mod31)
 end;
 
-{ 154d:0bf7..0f4f.  RETF 12 -- the ONLY far return in 3,920 bytes, and the only
+{ 173d:0bf7..0f4f.  RETF 12 -- the ONLY far return in 3,920 bytes, and the only
   routine anything outside the segment can reach. The '.WOW' literal at 0bf3
   sits immediately before it, which is where Turbo Pascal puts a routine's
   literals. }

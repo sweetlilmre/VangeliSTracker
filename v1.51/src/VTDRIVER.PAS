@@ -31,7 +31,7 @@
     * 1000:024c dispatches function 2 with `LES DI,[0b96h]` then
       `CALL DWORD PTR [DI+2Ah]` -- ONE indirection. A Turbo Pascal object
       would need two, through a VMT.
-    * 1084:0101 fills the slots by writing eight far addresses straight into
+    * 106e:0101 fills the slots by writing eight far addresses straight into
       DS:$0076..DS:$0095, which is DS:$0060 + $16 .. + $35. No VMT is built
       and none is referenced.
 
@@ -78,7 +78,7 @@ type
       for one.
 
       [re] +$16. IT IS A FUNCTION RETURNING A STRING, which is why its
-      implementation looks so strange: 1084:0055 clears one byte through a far
+      implementation looks so strange: 106e:0055 clears one byte through a far
       pointer and ends in a plain RETF rather than RETF 4. Turbo Pascal passes
       a hidden pointer to the result buffer, and the CALLER pops it. Writing 0
       to the first byte sets the length to zero. }
@@ -96,19 +96,19 @@ type
       [re] A byte-pattern search for `FF 5D 1A` finds only those two:
 
         1000:0302   CALLF [DI+1a] then immediately CALLF something else.
-        109c:0021   CALLF [DI+1a] / OR AL,AL / JNZ ...
+        1086:0021   CALLF [DI+1a] / OR AL,AL / JNZ ...
 
       [re] The second one LOOKS like a test and is not. Its bytes are `75 00` -- a
       JNZ with a displacement of ZERO, which falls through to the very next
-      instruction. The JZ above it, at 109c:001b, targets that same address.
+      instruction. The JZ above it, at 1086:001b, targets that same address.
       Both paths reach the SetDevice call. The source it came from must have
       had an empty statement after the `if`.
 
       [re] MISREADING THAT ZERO DISPLACEMENT IS WHY AN EARLIER VERSION OF THIS
       FILE CLAIMED THE SENSE WAS INVERTED -- that the result was an error code
       and zero meant success. ~~It is not~~, and the note is withdrawn. The
-      sense is settled by the producers, which agree: 1723:04f1 returns 1 when
-      its DRAM test passes, and 1065:0039 returns 1 unconditionally -- exactly
+      sense is settled by the producers, which agree: 1911:04f1 returns 1 when
+      its DRAM test passes, and 115e:0039 returns 1 unconditionally -- exactly
       what a fallback that is always available should say. The 1.39b release
       corroborates (`Autodetect : FUNCTION : BOOLEAN`, returning TRUE on
       detection) but is not what settles it. }
@@ -124,7 +124,7 @@ type
       Silence driver points it straight at the core's own shared handler,
       while the GUS, playing from its own DRAM, only counts ticks.
 
-      [re] +$2a. The Silence driver's target is 1a17:1008. }
+      [re] +$2a. The Silence driver's target is 1bff:1008. }
     TimerHandler : Pointer;
 
     PollRut : Pointer;          { +$2e  hand-made polling; GUS's is empty   }

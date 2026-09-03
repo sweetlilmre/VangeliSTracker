@@ -23,7 +23,7 @@
 ; silent channel does not need a branch in the caller; DumpInstrument is the
 ; Pascal-callable entry that sets the registers up and picks one.
 ;
-; [re] 12ba:148f .. 12ba:1745. THE WHOLE OF THE SEGMENT THAT IS NOT PASCAL.
+; [re] 12ce:148f .. 12ce:1745. THE WHOLE OF THE SEGMENT THAT IS NOT PASCAL.
 ;
 ; [re] WHY THIS IS AN ASSEMBLER MODULE. Turbo Pascal lays a unit's initialisation
 ; block down as the last PASCAL code in the segment, and that block is at
@@ -40,8 +40,8 @@
 ; reason. The disputed direction bits all fall the assembler's way, and the
 ; contrast with the Pascal above is visible in one pair of instructions:
 ;
-; [re]  12ba:1320   31 C0    XOR AX,AX     <- compiled Pascal, in PlayStart
-;       12ba:169d   33 C0    XOR AX,AX     <- this module
+; [re]  12ce:1320   31 C0    XOR AX,AX     <- compiled Pascal, in PlayStart
+;       12ce:169d   33 C0    XOR AX,AX     <- this module
 ;
 ; Same instruction, same segment, two different encodings, because two different
 ; tools emitted them. Likewise AND CH,CH is 22 ED here and SUB AX,CX is 2B C1,
@@ -422,7 +422,7 @@ EmptyLoop:                                      ; 15a3
 ; DumpInstrument -- the only entry Pascal calls: set the registers up from the
 ; stack frame, pick a kernel, run it.
 ;
-; [re] 12ba:1600. See the header for the frame.
+; [re] 12ce:1600. See the header for the frame.
 ;
 ;   FUNCTION DumpInstrument(VAR Src; VAR Dest; Volume : Byte; Step : LongInt;
 ;                           SrcLimit, Max, ChanAdd : Word;

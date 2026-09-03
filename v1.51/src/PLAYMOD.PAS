@@ -37,15 +37,15 @@
   cues, the display -- reads from a ring of published rows rather than from the
   sequencer directly.
 
-  [re] Segment 12ba -- 5,968 bytes, the largest thing in the program after the
+  [re] Segment 12ce -- 5,968 bytes, the largest thing in the program after the
   program itself.
 
   [re] NAMES ARE THE 1.39b RELEASE'S. `LIB/PLAYMOD.PAS` is the later version of
   this unit and the pairing is confirmed rather than assumed:
 
-    12ba:0007  UnCanal          the release's routine, statement for statement
-    12ba:0664  MyMove           a hand-written Move, ASSEMBLER in both
-    12ba:1600  DumpInstrument   the resampling kernel, EXTERNAL from PLAYMOD.ASM
+    12ce:0007  UnCanal          the release's routine, statement for statement
+    12ce:0664  MyMove           a hand-written Move, ASSEMBLER in both
+    12ce:1600  DumpInstrument   the resampling kernel, EXTERNAL from PLAYMOD.ASM
 
   and `TModRawChan`'s FIELD LAYOUT lands on every offset the reading pass had
   already recorded -- `+$0b` the non-looping limit, `+$19` and `+$1b` the 16.16
@@ -55,8 +55,8 @@
   did not fit.
 
   [re] `+$1d` IS THE VOLUME, which the reading had left open as "step or volume,
-  the kernel at 12ba:1600 would say". The release passes `Raw.Volume` in that
-  argument position, and the DumpEmpty call at `12ba:012c` passes a literal 0
+  the kernel at 12ce:1600 would say". The release passes `Raw.Volume` in that
+  argument position, and the DumpEmpty call at `12ce:012c` passes a literal 0
   there, which only makes sense for a volume.
 
   [re] `+$19`/`+$1b` ARE THE STEP, NOT THE POSITION. The reading called them
@@ -66,7 +66,7 @@
   way, which is why reading alone could not separate them.
 
   [re] AND ONE THING THE DISASSEMBLY SETTLED AGAINST THE RELEASE. 1.39b has two
-  kernels, `DumpInstrument` and `DumpEmpty`. 1.31 has ONE, at `12ba:1600`, with
+  kernels, `DumpInstrument` and `DumpEmpty`. 1.31 has ONE, at `12ce:1600`, with
   a final Boolean argument -- `6a 00` at `009b` and `0111`, `6a 01` at `016f`.
   The release split it in two later. The release settles shapes and names; the
   disassembly settles what is actually there.
@@ -174,8 +174,8 @@ type
   THAT DELAY IS THE WHOLE REASON THE RING EXISTS. Without it a demo would cut
   its visuals a buffer early, which at these buffer sizes is plainly visible.
 
-  [re] DS:$14b6, 400 bytes, 25 rows of 8 entries; `12ba:0202` posts and
-  `12ba:0187` consumes. Two bytes per entry and both are read: `+$01` is the
+  [re] DS:$14b6, 400 bytes, 25 rows of 8 entries; `12ce:0202` posts and
+  `12ce:0187` consumes. Two bytes per entry and both are read: `+$01` is the
   marker the consumer tests and `+$00` an index into the published control
   block. No counterpart in the 1.39b release, so these names are ours.
   -------------------------------------------------------------------------- }
@@ -206,7 +206,7 @@ type
     set of channel volumes in one statement. Declared anonymously they would
     have to be `Move` calls instead.
 
-    [re] 12ba:075e and 12ba:119e are those assignments -- see the note at each.
+    [re] 12ce:075e and 12ce:119e are those assignments -- see the note at each.
     Reading them as `Move` was what the anonymous declaration forced. }
   TVolumes = array[1..MaxChannels] of Byte;
 
@@ -214,7 +214,7 @@ type
   { **THE TWO FIELDS ARE A SEMAPHORE NUMBER AND A PENDING FLAG**, and they were
     `Chan`/`Note` until DEMOVT.DOC named what they feed. Command 8's parameter
     selects one of 256 semaphores; this carries it from the pattern row to
-    12ba:0187, which increments `CtrlBlock.Semaphores[Sem]`. Nothing here is a
+    12ce:0187, which increments `CtrlBlock.Semaphores[Sem]`. Nothing here is a
     channel -- `Chan` indexing a 256-entry array should have been the tell. }
   TRingEntry = record
     Sem     : Byte;             { +$00  which semaphore command 8 asked for  }
@@ -227,20 +227,20 @@ type
     `SoundDevices.TSampleBuffer`, already declared in SOUNDDEV with these exact
     offsets -- InUse, NSamples, RateHz, Channels, DataType, IData, eleven bytes.
     It was transcribed here first as an invented `TModEntry` with the offsets
-    right and every name wrong, and 12ba:1049 is what exposed that: a far
+    right and every name wrong, and 12ce:1049 is what exposed that: a far
     function returning a pointer to one of these with no arguments is
     `SoundDevices.TAskBufferProc`, the driver's buffer callback.
 
     [re] The release confirms the rest: `Buffers : ARRAY[1..NumBuffers] OF
     TSampleBuffer` with `NumBuffers = 3`, and `BuffIdx, BuffGive : WORD` --
     "Tail of the buffer" and "Head of the buffer" -- which are DS:$1390 and
-    DS:$1392. AND `InUse` SETTLES THE FLAG SENSE INDEPENDENTLY: 12ba:0b57 exits
+    DS:$1392. AND `InUse` SETTLES THE FLAG SENSE INDEPENDENTLY: 12ce:0b57 exits
     when it is non-zero, which the reading notes had backwards. }
 
   { The buffer's data is declared as an untyped Pointer and used as an array of
     16-bit samples; this is the type that makes the second view legal.
 
-    [re] 12ba:0b98 dereferences it and adds `(MixChan-1)*2`. }
+    [re] 12ce:0b98 dereferences it and adds `(MixChan-1)*2`. }
   PWordArray = ^TWordArray;
   TWordArray = array[0..0] of Word;
 
@@ -254,7 +254,7 @@ type
     snapshot, complete and consistent, tied to a moment that will arrive. }
   PPlayingNote = ^TPlayingNote;
   { [re] Every field is confirmed against the binary. The last one to fall was
-    `Note`: 12ba:094b computes `ChanIdx*6 + 6` and adds it to the record's
+    `Note`: 12ce:094b computes `ChanIdx*6 + 6` and adds it to the record's
     address, which is Turbo Pascal's base-1 indexing of an `array[1..8] of
     TFullNote` starting at +$0c. That fixes the whole layout, and the total is
     exactly 63 bytes in 1.31b. IT IS THE RELEASE'S FIELD LIST IN THE RELEASE'S
@@ -272,8 +272,8 @@ type
     NMuestras   : Word;         { the release's name; unused so far        }
     Fill        : Byte;
 
-    { [re] +$02 and +$03 are written from NextNote and NextSeq at 12ba:074a and
-      12ba:0754; Volume at +$04 is assigned from UserVols; Note is +$14 in
+    { [re] +$02 and +$03 are written from NextNote and NextSeq at 12ce:074a and
+      12ce:0754; Volume at +$04 is assigned from UserVols; Note is +$14 in
       v1.51, +$0c in 1.31b; NMuestras +$3c, Fill +$3e. }
   end;
 
@@ -290,7 +290,7 @@ type
   reading the fields back out in order and calling. No decisions at flush time.
 
   [re] DS:$1646, 3,200 bytes, 25 rows of 8. THE FIELDS ARE `1723.TriggerVoice`'s
-  PARAMETER LIST, which is what identified them. `12ba:02ea` flushes a slot by
+  PARAMETER LIST, which is what identified them. `12ce:02ea` flushes a slot by
   passing `+$0c`, `+$08`, `+$06`, `+$04`, `+$03`, `+$01`, `+$00` and the voice
   number straight into `TriggerVoice(Voice, Vol : Byte; Freq : LongInt; Pan :
   Byte; StartA, LoopA, EndA : LongInt)`, and every size lines up. Names are
@@ -337,7 +337,7 @@ type
   TGusEventRow = array[0..GusVoices - 1] of TGusEvent;   { 288 bytes            }
 
 { [re] THE CHANNEL STATE, DS:$1260. `TCanal` and `TFullNote` ARE the release's,
-    head for head, and 12ba:0820 proves it: the four stores in that loop land on
+    head for head, and 12ce:0820 proves it: the four stores in that loop land on
     `Note.Period`, `Note.Instrument`, `Note.Command` and `Period`, at +$01, +$00,
     +$04 and +$0b, which is exactly where `TFullNote` (Instrument, Period,
     Volume, Command, Parameter -- six bytes) followed by `Instrument :
@@ -368,7 +368,7 @@ const
     well as audible. One buffer is the tightest the hardware allows.
 
     [re] The release's name. `NumBuffers` is 1 against the release's 3 -- see
-    the note beside Buffers. `MaxChannels` is used as a MULTIPLIER at 12ba:1224,
+    the note beside Buffers. `MaxChannels` is used as a MULTIPLIER at 12ce:1224,
     where `MaxSplPerTick * MaxChannels * 2` folds to a pair of shifts, so the
     byte confirms its value. }
   NumBuffers  = 1;
@@ -440,7 +440,7 @@ const
   FilterOn         : TFilterMethod = fmNone;
   FilterOff        : TFilterMethod = fmNone;
 
-  { [re] DS:$02ca, $02ce, $02cf, $02d0, $02d1, $02d2. 12ba:1325 reads
+  { [re] DS:$02ca, $02ce, $02cf, $02d0, $02d1, $02d2. 12ce:1325 reads
     CanFallBack; the ForceLoopMod, FilterOn and FilterOff keys write three of
     the others. }
 
@@ -642,7 +642,7 @@ const
 
 { [re] NOTES ON INDIVIDUAL DECLARATIONS IN THE BLOCK ABOVE, kept for their
   content. DS:$02ca is the release's `CanFallBack`, "TRUE if fall-back is
-  allowed", and a TYPED constant there as it must be here: 12ba:1325 reads it
+  allowed", and a TYPED constant there as it must be here: 12ce:1325 reads it
   with `MOV AL,[02ca]` and an untyped constant would have folded to an
   immediate. It is the client's standing permission; `MyCanFallBack` at $121e is
   the working copy PlayStart clears while it is setting up and restores on the
@@ -652,7 +652,7 @@ const
   forever", the client's half of the pair whose working copy is `MyLoopMod` at
   $0334. Its address proves the release's declaration order again: `LoopMod`
   then `ForceLoopMod` is $02c8 then $02c9, two adjacent bytes. NOTHING IN 1.31
-  READS IT -- the initialisation section clears it at 12ba:1426 and no other
+  READS IT -- the initialisation section clears it at 12ce:1426 and no other
   instruction in the segment touches $02c8, because the operand that would have
   read it is COMMENTED OUT in the expression at 1121, which is where the stray
   `True and` comes from. The release still carries it the same way.
@@ -661,7 +661,7 @@ const
   were in the implementation section until segment 11bb -- the configuration
   file reader -- turned out to set every one from a key in VT.CFG:
 
-      ForceLoopMod   $02c9   the `ForceLoopMod` key      11bb:0b0e
+      ForceLoopMod   $02c9   the `ForceLoopMod` key      11cf:0b0e
       FilterOn       $02cb   the `FilterOn` key
       FilterOff      $02cc   the `FilterOff` key
       MaxOutputFreq  $02d4   the `MaxFreq` key
@@ -749,7 +749,7 @@ var
   programmed. It can also be called again mid-song, which is why it exists as a
   routine rather than as part of starting playback.
 
-  [re] 12ba:132f. Declared here because 12ba:0d4e calls it and it lives 1,500
+  [re] 12ce:132f. Declared here because 12ce:0d4e calls it and it lives 1,500
   bytes further down the segment; the release exports it too, as
   `PROCEDURE ChangeSamplingRate(Hz: WORD)`. }
 procedure ChangeSamplingRate(Hz : Word); far;
@@ -779,15 +779,15 @@ procedure ProcessTickEntry; far;
   own failure path, which is why it has to work on a player that never fully
   started.
 
-  [re] 12ba:13d7, called from 12ba:127c 1,300 bytes above it; the release
+  [re] 12ce:13d7, called from 12ce:127c 1,300 bytes above it; the release
   exports it too. }
 procedure PlayStop; far;
 
 { Start playing a module: take the requested range, set up the channels, size
   and claim the buffers, and hand the first of them to the card.
 
-  [re] 12ba:10a1. EXPORTED BECAUSE 1000 CALLS IT: 1000:0381 is
-  `CALLF 12ba:10a1` from inside PlayModule, and until segment 1000 was read
+  [re] 12ce:10a1. EXPORTED BECAUSE 1000 CALLS IT: 1000:0381 is
+  `CALLF 12ce:10a1` from inside PlayModule, and until segment 1000 was read
   nothing outside this unit was known to reach it. SEVENTH INTERFACE CORRECTED
   BY A CALLER IN ANOTHER SEGMENT -- see VTDOSRSZ, VTDOSMEM, GUS, UNKLOADE,
   TSong.Status and HARDWARE.DMAReset. Exporting an already-far routine cannot
@@ -834,7 +834,7 @@ implementation
     its own". That was true of 1.31b and is the thing 1.51 changed. }
 
   { [re] DS:$02f4 -- `Raw.Flags` UNDER CONSTRUCTION, and the bit values are what say
-    so: 12ba:03cc starts it at 2 and then adds $01, $04, $10 and $20, which are
+    so: 12ce:03cc starts it at 2 and then adds $01, $04, $10 and $20, which are
     exactly rcfActiveChannel, rcfLongSample, rcfDoesLoop, rcfLongLoopLen and
     rcfLongLoopEnd. It was read as "a GUS voice control byte" until the last two
     turned up. Whatever stores it into the record is further down the routine.
@@ -845,7 +845,7 @@ implementation
 
   { [re] DS:$0bce -- THE SECOND DUPLICATED GLOBAL IN THIS UNIT, and the same shape as
     AltMode above. DevGUS declares it as `Started` in its IMPLEMENTATION section,
-    so it is private there and invisible here, yet 12ba:05a8 plainly reads it: the
+    so it is private there and invisible here, yet 12ce:05a8 plainly reads it: the
     routine below posts nothing unless the GUS driver has started. One of the two
     declarations has to go when DGROUP ownership is settled, and the release gives
     no guidance because 1.39b rebuilt its GUS support elsewhere. Flagged, not
@@ -856,7 +856,7 @@ implementation
   { [re] --- the sequencer's state, DS:$02d6 upward -----------------------------
     The 63-byte record at DS:$1220 is the release's `TPlayingNote` -- ITS FIRST
     FIELD IS CONFIRMED and nothing else is. 1.39b describes `EoMod` as "TRUE if
-    it is the note following the last", and 12ba:06fe sets exactly that from a
+    it is the note following the last", and 12ce:06fe sets exactly that from a
     row number of $FFFF. The release's record is 32 bytes and this one is 63, so
     the rest of the layout does not carry over and is left as filler.
 
@@ -864,7 +864,7 @@ implementation
     matches; they are provisional. }
   { [re] DS:$13a6, AND $1384 IS THE BASE-1 BASE RATHER THAN THE ARRAY. Every access
     is `IMUL DI,i,$22 / ADD DI,$1384`, which for i=1 lands on $13a6 -- one 34-byte
-    element above $1384, exactly as the base-1 rule says. 12ba:12ba settles it
+    element above $1384, exactly as the base-1 rule says. 12ce:12ba settles it
     outright: `FillChar(RawChannels, SIZEOF(RawChannels), 0)` passes $13a6 and
     $0110, and $0110 is 272, which is 8 x 34. The earlier comment here gave $1384
     as the array's own address and it was the base. }
@@ -879,8 +879,8 @@ implementation
     which is far stronger than any single name matching.
 
     BUT `NumBuffers` IS 1 HERE, NOT THE RELEASE'S 3, and that is measured rather
-    than inferred. 12ba:1232 passes SIZEOF(Buffers) to FillChar as an immediate
-    $0b -- one 11-byte TSampleBuffer, not three -- and 12ba:1299 closes the
+    than inferred. 12ce:1232 passes SIZEOF(Buffers) to FillChar as an immediate
+    $0b -- one 11-byte TSampleBuffer, not three -- and 12ce:1299 closes the
     allocation loop with `CMP [BP-2],1`. The addresses agree independently: three
     buffers would run $1394..$13b6 and swallow SizeOfABuffer, ModFlag and
     MuestrasPerTick, which are at $13a0, $13a2 and $13a4.
@@ -897,14 +897,14 @@ implementation
     addresses SplBuf from $11ee, one element below its real start. }
 
   { [re] All four the release's names, and each confirmed by its use here: the pair of
-    methods and the switch between them at 12ba:0f15, and the per-channel
-    permission at 12ba:0f2a -- "permissions for playing the channels", which is
+    methods and the switch between them at 12ce:0f15, and the per-channel
+    permission at 12ce:0f2a -- "permissions for playing the channels", which is
     exactly what it gates. Base-1 again for the array. }
 { [re] The declaration this note describes now lives in the ordered const
   block at the top of this file; it is NOT the declaration below. }
   { [re] DS:$02cd -- AND THIS IS NOT ModCommands' `FilterIsOn`, which is at DS:$0348.
-    142f:04da writes that one from the E0x command and nothing reads it; this one is
-    read by the initialisation section at 12ba:1430 to choose between FilterOn and
+    147d:04da writes that one from the E0x command and nothing reads it; this one is
+    read by the initialisation section at 12ce:1430 to choose between FilterOn and
     FilterOff. Two variables where the release has one. ModCommands keeps its copy in
     its IMPLEMENTATION section precisely so that this name cannot be shadowed here --
     if both were exported, every reference in this unit would silently bind to this
@@ -912,7 +912,7 @@ implementation
 
   { [re] DS:$02d4 -- the release's `MaxOutputFreq`, whose comment is "Maximum frequency
     of the output sound. Less means less memory for buffers." Divided by the tick
-    rate at 12ba:1174 it gives exactly MaxSplPerTick, which is that sentence. }
+    rate at 12ce:1174 it gives exactly MaxSplPerTick, which is that sentence. }
 
   { [re] DS:$0bca -- THE FOURTH DUPLICATED GLOBAL. VTMAIN owns it as `Snapshot` and
     12ba compares it against `VTSilenc.Ticks` at DS:$0bc8, which IS exported and
@@ -920,16 +920,16 @@ implementation
     does not, in the same comparison. Risk 1 again. }
 
   { [re] DS:$034e IS A TICK COUNTER WITHIN THE ROW, not the row number, and
-    docs/04-units.md has it as "the current row". 12ba:0cdf compares it against
+    docs/04-units.md has it as "the current row". 12ce:0cdf compares it against
     `NoteProcessed^.Tempo` -- the release's "number of ticks the note will last"
-    -- and 12ba:0cf7 resets it to zero when the pattern advances. A row number
+    -- and 12ce:0cf7 resets it to zero when the pattern advances. A row number
     would be compared against a pattern length and would not reset. }
 
   { [re] DS:$121e -- the release's `MyCanFallBack`, "actual permission to fall back",
     and the use fits exactly: with permission withheld, SoundDevices' request to
     fall back to a lower rate is simply cleared. }
-  { [re] DS:$0328 -- ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ba:0d14 it
-    holds a candidate sample rate while the driver is negotiated; from 12ba:0da1
+  { [re] DS:$0328 -- ONE GLOBAL, TWO JOBS, like DS:$02f6 before it. At 12ce:0d14 it
+    holds a candidate sample rate while the driver is negotiated; from 12ce:0da1
     it is the control variable of a loop over the channels. The name is neutral
     because neither role owns it. }
 
@@ -941,7 +941,7 @@ type
     answer, which is why this is a call into the driver rather than a table.
 
     [re] The driver record's +$26, reached through its Pointer field the way
-    SOUNDDEV does with `TInitDevProc`; 12ba:0d44 stores the result.
+    SOUNDDEV does with `TInitDevProc`; 12ce:0d44 stores the result.
     `TChanData` and `TChansData` were declared here once and are VTCtrl's now,
     because the published row and the wide ring have to be one type for the
     copies below to be ASSIGNMENTS rather than Move calls. }
@@ -951,7 +951,7 @@ type
     once per tick with the song and a flag saying whether this tick begins a new
     row, which is the distinction almost every caller cares about.
 
-    [re] The release's own type, and 12ba:1032 confirms both arguments: the song
+    [re] The release's own type, and 12ce:1032 confirms both arguments: the song
     by reference and a Boolean computed there as `TickInRow = 0`. }
   TTickProc = procedure(var Song : TSong; Note : Boolean);
 
@@ -997,7 +997,7 @@ var
 
 { [re] MORE NOTES WITHOUT DECLARATIONS. Same as the run above: these described
   variables that are now in the ordered block at $11f0..$1745, a few lines up. }
-  { [re] The release's name, confirmed by 12ba:1008 along with the guard it returns on,
+  { [re] The release's name, confirmed by 12ce:1008 along with the guard it returns on,
     the song it plays and the flag that says the procedure has been set up -- the
     other four of that group are typed constants and are in the ordered block at the
     top of this file. }
@@ -1024,7 +1024,7 @@ var
     The client-facing `LoopMod` it was named after is a DIFFERENT variable, at
     $02c8; see its declaration in the interface. }
   { [re] MOVED TO ModCommands as well: `CurSpeed` ($0349) and `CurTempo` ($0338), which
-    142f:04a6 and 142f:04bc write from the F-command. Names unchanged; the release
+    147d:04a6 and 147d:04bc write from the F-command. Names unchanged; the release
     calls them Tempo and BPMIncrement and the rename is declined there for reasons
     given at the declaration. }
 
@@ -1033,12 +1033,12 @@ var
     three from its effect routines, and PlayMod uses ModCommands rather than the
     other way round, so ModCommands has to own them. See the note at their
     declaration; the release splits them the same way. }
-  { [re] The range a caller ASKS for, copied into the working three at 12ba:10b4.
+  { [re] The range a caller ASKS for, copied into the working three at 12ce:10b4.
     Provisional names: nothing outside 12ba has been seen to set them. }
 { [re] The declaration this note describes now lives in the ordered const
   block at the top of this file; it is NOT the declaration below. }
   { [re] DS:$02cf -- the release's `ForceLoopMod`, "TRUE if music must be played
-    forever", and 12ba:112e uses it exactly that way: it forces LoopMod on. }
+    forever", and 12ce:112e uses it exactly that way: it forces LoopMod on. }
 
 
 { --------------------------------------------------------------------------
@@ -1064,7 +1064,7 @@ var
   and still has to leave the output untouched, so rather than a second routine
   there is a `Silent` flag. The release later split it in two.
 
-  [re] 12ba:1600. `PUSH BP / MOV BP,SP` is not what starts it; the prologue
+  [re] 12ce:1600. `PUSH BP / MOV BP,SP` is not what starts it; the prologue
   scanner found `ENTER $000`, the hand-written frame of an assembler routine,
   and 1.39b builds its equivalent from `LIB/PLAYMOD.ASM` under a $L. The
   signature is read off the call sites at 009b, 0111 and 016f -- eight
@@ -1092,7 +1092,7 @@ function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         Silent : Boolean) : Word; external;
 
 { --------------------------------------------------------------------------
-  12ba:0000 -- takes six bytes of arguments and does nothing with them.
+  12ce:0000 -- takes six bytes of arguments and does nothing with them.
 
   `PUSH BP / MOV BP,SP / LEAVE / RET 6`, and the RET is NEAR, so this is not a
   procedural-type slot: a `TTickProc` is far. It is the same do-nothing shape as
@@ -1100,7 +1100,7 @@ function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
   same idea rather than the same routine -- the pairing is by ROLE only.
 
   THREE WORDS, NOT A POINTER AND A WORD, and the only call site says so:
-  12ba:0697 pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
+  12ce:0697 pushes `6a ff / 6a 00 / 6a 00`, three immediates. A Pointer argument
   would be built and pushed differently. The six bytes are the same either way
   in THIS routine -- `RET 6` regardless -- but the caller's bytes are not, which
   is why the declaration matters. Names are placeholders: nothing reads them.
@@ -1131,7 +1131,7 @@ end;
   untouched. That is cheaper than a special case, and it keeps every channel's
   position honest whether it is sounding or not.
 
-  [re] 12ba:0007. `Rest` doubles as the argument and the result -- how many
+  [re] 12ce:0007. `Rest` doubles as the argument and the result -- how many
   samples are owed going in, how many still owed coming out, so "did anything
   happen" and "how much is left" are one value. It is a typed constant at
   DS:$02ea in the release and the disassembly agrees, `a3 ea 02`.
@@ -1186,7 +1186,7 @@ end;
   self-maintaining: a slot is empty by the time the producer comes round to it
   again, so nothing has to track which slots are stale.
 
-  [re] 12ba:0187, a NEAR procedure taking nothing, with one Pointer local at
+  [re] 12ce:0187, a NEAR procedure taking nothing, with one Pointer local at
   [BP-4]. The counters live in `VTCtrl.CtrlBlock`, the 768-byte structure
   published over INT 2Fh.
 
@@ -1337,7 +1337,7 @@ end;
   an unqualified name binds to the record's field first, so `Vol := Vol` would
   quietly assign a field to itself.
 
-  [re] 12ba:0202, near, `RET 16h` in v1.51 against 1.31b's `RET 14h` -- the two
+  [re] 12ce:0202, near, `RET 16h` in v1.51 against 1.31b's `RET 14h` -- the two
   bytes are AFreq going from Word to LongInt, the same change the record made.
   The seven arguments are `TriggerVoice`'s own list minus its `Voice`, which
   indexes the row here rather than being stored. Another `with`: `ENTER 4,0`,
@@ -1375,7 +1375,7 @@ end;
   THE PAN IS THE EXCEPTION: it is written unconditionally on the merge path,
   with no sentinel test at all, so a caller cannot decline to set it.
 
-  [re] 12ba:0275, near, `RET 8`, the same `with` on the same slot as 12ba:0202
+  [re] 12ce:0275, near, `RET 8`, the same `with` on the same slot as 12ce:0202
   but only the first four fields. The pan's lack of a guard was read the other
   way at first -- recorded as `if B <> $FFFF then begin E^[1] := B; E^[3] := C
   end` -- and the byte comparison says otherwise: the `JZ` at 02d0 jumps ten
@@ -1419,7 +1419,7 @@ end;
   scratch, one without it only changes the pitch, volume and pan of a voice
   already running. Two different driver calls, chosen per slot.
 
-  [re] 12ba:02ea, near, no arguments. THE TWO GUS ENTRY POINTS ARE CHOSEN BY
+  [re] 12ce:02ea, near, no arguments. THE TWO GUS ENTRY POINTS ARE CHOSEN BY
   `EndA > 0` on the 32-bit value: the `CMP [DI+$0e],0 / JG / JL / CMP
   [DI+$0c],0 / JBE` at 0330 is Turbo Pascal's LongInt comparison, high word
   first. With loop information it is the full `TriggerVoice`; without, it is
@@ -1469,14 +1469,14 @@ end;
   memory, so what it needs is a command in the ring rather than a pointer in a
   record. Same decision, two entirely different outputs.
 
-  [re] 12ba:03cc, 664 bytes, `RET 0Ch` in v1.51 against 1.31b's `RET 0Ah` -- the
+  [re] 12ce:03cc, 664 bytes, `RET 0Ch` in v1.51 against 1.31b's `RET 0Ah` -- the
   two extra bytes are `Offs`, and everything the routine already did moved up
   two: Desc from [BP+4] to [BP+6], Raw from [BP+8] to [BP+0a]. [BP+4] is read
   twice, at 12ce:06cd and 073c, as `MOV AX,[BP+4] / XOR DX,DX / ADD
   AX,ES:[DI+12] / ADC DX,ES:[DI+14]` -- a Word widened and added to the
   sample's start address.
 
-  [re] THE SIGNATURE WAS READ OFF THE CALL SITE at 12ba:09e3 rather than the
+  [re] THE SIGNATURE WAS READ OFF THE CALL SITE at 12ce:09e3 rather than the
   callee, per the standing rule. It pushes `MOV AL,[02f8] / PUSH AX` (a Byte),
   then `IMUL DI,[02f8],$22 / ADD DI,$1384 / PUSH DS / PUSH DI` (the address of a
   34-byte record), then a four-byte value read out of `[0300]^` at `+6`/`+8`.
@@ -1501,7 +1501,7 @@ end;
   only the far form for a `var` parameter. The tell that settles it is `21 C0`
   at 03f7: `AND AX,AX` in the `r/m,reg` direction, which the INLINE ASSEMBLER
   emits and the code generator does not (it tests with `OR`, as `08 C0` at
-  12ba:0018 and `0B 46 06` at 03d2 both show). In TP's asm a `var` parameter
+  12ce:0018 and `0B 46 06` at 03d2 both show). In TP's asm a `var` parameter
   names the POINTER, so loading its low word gives the offset. Same shape as
   `1a17`'s GetPlayPos: a compiled routine with hand-written asm inside it, and
   the encodings are what separate the two halves.
@@ -1744,7 +1744,7 @@ begin
     module that specifies its own channel positions gets them.
 
     [re] 05a8..065f, compiled. `DS:$0bce` is `DevGUS.Started`, so nothing is
-    posted unless the GUS driver is running. Both arms call 12ba:0202; a
+    posted unless the GUS driver is running. Both arms call 12ce:0202; a
     looping sample gets LoopA and EndA measured from the loop, a one-shot gets
     LoopA = -1 and EndA at the end of the sample.
 
@@ -1764,7 +1764,7 @@ begin
                { [re] **`Data` IS A POINTER IN SongElements AND THIS IS A GUS DRAM ADDRESS**, so
         every use of it here is cast. The SongUnit copy declared the field a
         LongInt outright, which made the arithmetic read naturally and was the one
-        thing that copy got MORE right than the release -- 12ba:05e0 adds a loop
+        thing that copy got MORE right than the release -- 12ce:05e0 adds a loop
         offset to it, and you cannot add to a `^TSample`. The cast reinterprets
         and emits nothing; the byte count is the check. }
       Offs + LongInt(Desc^.Data),
@@ -1784,7 +1784,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0664 -- MyMove. A hand-written Move, and the 1.39b release has it
+  12ce:0664 -- MyMove. A hand-written Move, and the 1.39b release has it
   INSTRUCTION FOR INSTRUCTION: `LIB/PLAYMOD.PAS` line 701 declares
   `PROCEDURE MyMove(VAR Src, Dest; Bytes: WORD); ASSEMBLER` with exactly this
   body, down to the label names. The closest pairing found in this segment, and
@@ -1846,7 +1846,7 @@ end;
   THE END OF THE SONG IS ALSO DECIDED HERE -- whether to stop, or to go back to
   the loop point and keep playing.
 
-  [re] 12ba:0693. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
+  [re] 12ce:0693. `DS:$24c9`, `$24ca` and `$24cb` are `CtrlBlock + $203`,
   `+$204` and `+$205` -- inside the 768-byte structure published over INT 2Fh --
   and `VTCtrl` names them `JumpNewPos`, `JumpPosSeq` and `JumpPosNote`, the
   client bindings' own names. They are not the only fields a client writes: the
@@ -1931,8 +1931,8 @@ begin
     SeqPlaying  := NextSeq;                          { 0754..075d            }
     { [re] AN ARRAY ASSIGNMENT, NOT A `Move`, AND THE RTL ROUTINE IS WHAT SAYS SO. There are
       TWO copy helpers in Turbo Pascal's SYSTEM with identical signatures, and they are
-      eleven bytes apart in behaviour: `1ba1:0fb2` is `Move`, which compares the pointers
-      and copies BACKWARDS when the regions overlap, and `1ba1:09f7` is the same loop with
+      eleven bytes apart in behaviour: `1d89:0fb2` is `Move`, which compares the pointers
+      and copies BACKWARDS when the regions overlap, and `1d89:09f7` is the same loop with
       no overlap check at all -- the helper the compiler uses for a whole-array or
       whole-record assignment, where it knows the operands are distinct. The original calls
       `09f7`; a written `Move` gets `0fb2`.
@@ -2163,7 +2163,7 @@ begin
       { Publish this channel's cue into the ring, to be released a buffer later
         when the sound it belongs to is actually heard.
 
-        [re] 0a58..0a72; 12ba:0187 increments the semaphore it names. The ring
+        [re] 0a58..0a72; 12ce:0187 increments the semaphore it names. The ring
         is indexed by the CONSUMER's slot, DS:$02ec, not the event ring's. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
         CurCanal^.RingPending;                       { 0a58..0a72            }
@@ -2193,12 +2193,12 @@ begin
     if NoteHz = 0 then                                { 0ad7..0add            }
       NoteHz := 1;                                    { 0ade..0ae3            }
 
-    { [re] 0ae4..0b07 -- A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1ba1:0a2e` is the
-      32-bit divide and `1ba1:0aa8` is the 32-bit SHIFT LEFT -- `AND CX,1Fh / SHL AX,1 /
+    { [re] 0ae4..0b07 -- A DIVISION AND THEN A SHIFT, NOT TWO DIVISIONS. `1d89:0a2e` is the
+      32-bit divide and `1d89:0aa8` is the 32-bit SHIFT LEFT -- `AND CX,1Fh / SHL AX,1 /
       RCL DX,1 / LOOP` -- with `MOV CX,4` in front of it, so the second operation
-      multiplies by sixteen where this read `div 4`. `1ba1:0a9c`, twelve bytes earlier, is
+      multiplies by sixteen where this read `div 4`. `1d89:0a9c`, twelve bytes earlier, is
       the shift RIGHT; the two are easy to confuse and this file already cites 0aa8 as
-      `shl` from 17cf:0091.
+      `shl` from 19b7:0091.
 
       **AND THE RELEASE HAS THIS LINE COMMENTED OUT, WHICH IS WHERE THE CONSTANT COMES
       FROM.** `LIB/PLAYMOD.PAS` line 938 holds a commented-out
@@ -2224,7 +2224,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:0b29 -- the software mixing path, once per tick. IN PROGRESS.
+  12ce:0b29 -- the software mixing path, once per tick. IN PROGRESS.
 
   This is what drives `UnCanal` and the filters, per channel, and it is the
   other half of the unit: 12ba holds two independent output paths and the driver
@@ -2267,7 +2267,7 @@ begin
   { 0c30..0c40 -- AND THE SECOND DISABLED ROTATION IN THIS UNIT. `Inc(ModIdx)`
     followed by a clamp to 1 means the index is 1 from the first call onward, so
     only one entry of the module table is ever used -- exactly like the `and 0` at
-    12ba:06c0 pinning the note buffer to slot zero. Two independent pieces of
+    12ce:06c0 pinning the note buffer to slot zero. Two independent pieces of
     machinery for handling more than one of something, both switched off by their
     own next instruction. Transcribed as found. }
   Inc(BuffIdx);                                       { 0c30..0c33            }
@@ -2296,8 +2296,8 @@ end;
   whenever it overflows. That is how a tempo that is not a whole number of
   timer ticks still keeps time over a bar.
 
-  [re] 12ba:0c4e. THE HANDSHAKE: `ModFlag` non-zero means the module buffer
-  still holds samples, and 12ba:0b57 is the same protocol seen from the other
+  [re] 12ce:0c4e. THE HANDSHAKE: `ModFlag` non-zero means the module buffer
+  still holds samples, and 12ce:0b57 is the same protocol seen from the other
   side. On a DMA device the tick is also gated on the timer -- `VTSilenc.Ticks`
   is what the interrupt increments and DS:$0bca is this side's snapshot, so
   equal counters mean nothing new has happened.
@@ -2358,7 +2358,7 @@ begin
 
   { [re] 0c9a..0ca3 -- a 32-bit counter INSIDE the published control block, at
     CtrlBlock + $125, immediately after the dispatch pointer. Together with the
-    per-channel counters 12ba:0187 bumps, that is live state any INT 2Fh client
+    per-channel counters 12ce:0187 bumps, that is live state any INT 2Fh client
     can read. Psycho Neurosis never does. }
   Inc(CtrlBlock.TickCounter);                            { 0ede..0ee7            }
 
@@ -2734,7 +2734,7 @@ begin
       one gets volume zero and the "leave the pitch alone" sentinel, so muting
       does not disturb where the note is.
 
-      [re] 0f57..0fb3; $FFFF is 12ba:0275's sentinel. Same constant family as
+      [re] 0f57..0fb3; $FFFF is 12ce:0275's sentinel. Same constant family as
       NoteCalcVal's $364C0000. }
     if UsingGUS then                               { 0f57..0f5d            }
       if Permisos[TmpVal] then                       { 0f5e..0f68            }
@@ -2770,7 +2770,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:1008 -- ProcessTickEntry. FAR, and the release exports it under that name.
+  12ce:1008 -- ProcessTickEntry. FAR, and the release exports it under that name.
 
   The whole tick, from the outside: unless execution is suppressed, either run the
   sequencer or -- if nothing is playing -- park the tick counter at 1, and then
@@ -2811,11 +2811,11 @@ end;
   is done, and it is the only handshake between them -- no locks, and none
   needed, because each side only ever moves the flag one way.
 
-  [re] 12ba:1049 and 12ba:105d, FAR functions of no arguments returning a
+  [re] 12ce:1049 and 12ce:105d, FAR functions of no arguments returning a
   PSampleBuffer, which is `SoundDevices.TAskBufferProc`. Both are the release's:
   it declares `FUNCTION IdleGiver : PSampleBuffer; FAR` and `FUNCTION
   BufferGiver : PSampleBuffer; FAR` in its implementation section, exactly here.
-  `InUse` reads as "filled and owned by the device": the mixer at 12ba:0bfa SETS
+  `InUse` reads as "filled and owned by the device": the mixer at 12ce:0bfa SETS
   it when it finishes filling and refuses to refill while it is set.
 
   [re] AND THE HEAD IS CLAMPED TO 1, so at most two of the three buffers are
@@ -2860,7 +2860,7 @@ end;
   beginning. A start beyond the end is the one case that cannot be rescued, and
   it gives up.
 
-  [re] 12ba:10a1, `CLI`-guarded from its first instruction to each of its exits.
+  [re] 12ce:10a1, `CLI`-guarded from its first instruction to each of its exits.
   The release exports the equivalent as `PROCEDURE PlayStart(VAR Song: TSong)`
   and 1.31 TAKES THE SAME ONE ARGUMENT -- an earlier reading gave it a second
   Word, which the exit disproves: 132c is `RETF 4`, four bytes of parameters,
@@ -2954,7 +2954,7 @@ begin
   { [re] 118a..11d5 -- prime the first row and the queue that hands it on. The stores
     land on $1220, $1221, $1222, $1223 and then an 8-byte Move to $1224, which is
     NoteBuff[0]'s EoMod, Tempo, NotePlaying, SeqPlaying and Volume -- the layout
-    fixed at 12ba:094b, confirming itself from a different routine. `$125c` is its
+    fixed at 12ce:094b, confirming itself from a different routine. `$125c` is its
     NMuestras at +$3c. Tempo starts at 6, ProTracker's default. }
   NoteBuff[0].EoMod       := False;                { 118a..118e              }
   NoteBuff[0].Tempo       := 6;                    { 118f..1193              }
@@ -3080,7 +3080,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:132f -- ask the device for a rate it can really manage, and if what comes
+  12ce:132f -- ask the device for a rate it can really manage, and if what comes
   back is unusable, ask again for a different one.
 
   THE `goto` IS THE ORIGINAL'S AND SO IS THE LABEL'S POSITION. 1357 and 1364 both
@@ -3168,7 +3168,7 @@ Otra:
 end;
 
 { --------------------------------------------------------------------------
-  12ba:13d7 -- stop playing and give the mixing buffers back.
+  12ce:13d7 -- stop playing and give the mixing buffers back.
 
   PlayStart's mirror image, and shorter than the release's by one statement and
   one local. 1.39b saves `UsingGUS` into a Boolean, calls `EndSampling`, and then
@@ -3208,7 +3208,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-  12ba:141e -- THE UNIT'S INITIALISATION SECTION, not a procedure.
+  12ce:141e -- THE UNIT'S INITIALISATION SECTION, not a procedure.
 
   `PUSH BP / MOV BP,SP` rather than `ENTER`, no parameters, `RETF` with no count,
   and Turbo Pascal emits a unit's `BEGIN ... END.` block as the last Pascal code
