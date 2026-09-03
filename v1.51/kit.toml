@@ -56,11 +56,25 @@ first_para = 0x1000
 # The measurement target: DEMOVT.EXE from demovt15.zip, unpacked by
 # kit/tools/substrate/unlzexe.py. 66,448 bytes -- 3,408 of header and a
 # 63,040-byte load image. See ref/README.md.
-image = "ref/vt1.51.bin"
 
 # The PACKED original, which is what actually shipped. lzpack.py needs it both
 # as the comparison target and as the source of LZEXE's decompressor stub.
 packed = "../DEMOVT15/DEMOVT.EXE"
+
+[target.original]
+# WHICH file each part's routines were read out of, keyed by the three-digit
+# part an @asm marker carries. This reconstruction has ONE original, so the
+# table holds one row -- and the TABLE is the general form, not `image`. A
+# marker carries a part whether or not a project has one original, so the map
+# covers both shapes; an image cannot be turned into a map, because the part is
+# exactly what an image does not carry. The one multi-part consumer answers
+# this and cannot answer `image` at all.
+#
+# `target.image` is DERIVED from this row by project.py, announced like any
+# other answer, so the eight instruments that ask for an image still get one
+# and the path is stated ONCE. See re-kit: retiring `target.image` outright is
+# a separate change to those eight.
+"000" = "ref/vt1.51.bin"
 
 [encaudit]
 dirs = ["src"]

@@ -64,7 +64,21 @@ first_para = 0x1000
 # kit/tools/substrate/unlzexe.py. 58,176 bytes. It is TRACKED deliberately -- a
 # checkout that cannot measure itself is not much use -- and refpath.py says
 # what the unpacking cannot tell you about it.
-image = "ref/vt1.31b.bin"
+
+[target.original]
+# WHICH file each part's routines were read out of, keyed by the three-digit
+# part an @asm marker carries. This reconstruction has ONE original, so the
+# table holds one row -- and the TABLE is the general form, not `image`. A
+# marker carries a part whether or not a project has one original, so the map
+# covers both shapes; an image cannot be turned into a map, because the part is
+# exactly what an image does not carry. The one multi-part consumer answers
+# this and cannot answer `image` at all.
+#
+# `target.image` is DERIVED from this row by project.py, announced like any
+# other answer, so the eight instruments that ask for an image still get one
+# and the path is stated ONCE. See re-kit: retiring `target.image` outright is
+# a separate change to those eight.
+"000" = "ref/vt1.31b.bin"
 
 [encaudit]
 # Where to look for text I/O that leaves the encoding to the locale. The kit's
