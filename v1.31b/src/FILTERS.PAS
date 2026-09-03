@@ -98,6 +98,7 @@ implementation
       end
 
   -------------------------------------------------------------------------- }
+{ @asm 000 1544:0000 +16 }
 procedure Filter1_2Word; assembler;   { 1544:0000 -- y := (prev + x) / 2 }
 asm
 @@Next:
@@ -113,6 +114,7 @@ asm
                          { so writing RET here emits a SECOND one.       }
 end;
 
+{ @asm 000 1544:0010 +30 }
 procedure Filter3_4Word; assembler;   { 1544:0010 }
 asm
 @@Next:
@@ -132,6 +134,7 @@ asm
                          { 1544:002d  RET, supplied by Pascal                }
 end;
 
+{ @asm 000 1544:002e +30 }
 procedure Filter7_8Word; assembler;   { 1544:002e -- the steepest }
 asm
 @@Next:
@@ -163,6 +166,7 @@ end;
   A Method of fmNone falls through with the buffer untouched, and so does a
   Len of zero -- JCXZ before anything is loaded.
   -------------------------------------------------------------------------- }
+{ @asm 000 1544:004c }
 function FilterChunkWord(var Buf; Len, Offs : Word; Method : TFilterMethod;
                          OldSpl : Word) : Word; assembler;
 asm

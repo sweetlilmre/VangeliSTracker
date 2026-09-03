@@ -51,9 +51,12 @@
   use it. Nothing proves 1.31 spelled any of this the same way: the binary has
   no debug information.
 
-  [re] ADDRESS MAP
-    Filter1_2Word  1544:0000    Filter3_4Word    1544:0010
-    Filter7_8Word  1544:002e    FilterChunkWord  1544:004c
+  [re] ADDRESS MAP -- 15c7, NOT 1544. This said 1544, which is where these
+  four sit in v1.31b; at 1544:0000 in THIS image is unrelated code. All four
+  are byte-identical here at 15c7 with their internal offsets unchanged,
+  found by searching this image for the bytes read out of the older one.
+    Filter1_2Word  15c7:0000    Filter3_4Word    15c7:0010
+    Filter7_8Word  15c7:002e    FilterChunkWord  15c7:004c
   =========================================================================== }
 
 {$G+}   { SAR with an immediate count other than 1 is a 186 instruction }
@@ -119,6 +122,7 @@ implementation
   frame, and leaves the running state in BX for its caller. Pascal has no way
   to say any of that.
   -------------------------------------------------------------------------- }
+{ @asm 000 15c7:0000 +16 }
 procedure Filter1_2Word; assembler;
 asm
 @@Next:
@@ -152,6 +156,7 @@ end;
         Inc(K, Stride)
       end
   -------------------------------------------------------------------------- }
+{ @asm 000 15c7:0010 +30 }
 procedure Filter3_4Word; assembler;
 asm
 @@Next:
@@ -188,6 +193,7 @@ end;
         Inc(K, Stride)
       end
   -------------------------------------------------------------------------- }
+{ @asm 000 15c7:002e +30 }
 procedure Filter7_8Word; assembler;
 asm
 @@Next:
@@ -228,6 +234,7 @@ end;
 
   The tests run gentlest-first, which is the order the kernels sit in memory.
   -------------------------------------------------------------------------- }
+{ @asm 000 15c7:004c }
 function FilterChunkWord(var Buf; Len, Offs : Word; Method : TFilterMethod;
                          OldSpl : Word) : Word; assembler;
 asm

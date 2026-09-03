@@ -5,6 +5,18 @@
 # hand-edit them. To accept a regression, lower `target` with a `reason`.
 # [plan] is DECIDED: investigation order is the priority order.
 
+[routine."FILTERS.Filter1_2Word"]
+matched = 16
+
+[routine."FILTERS.Filter3_4Word"]
+matched = 30
+
+[routine."FILTERS.Filter7_8Word"]
+matched = 30
+
+[routine."FILTERS.FilterChunkWord"]
+matched = 53
+
 [artefact."VTMAIN"]
 ours = "build/VTMAIN.EXE"
 original = "ref/vt1.31b.bin"
