@@ -78,6 +78,3 @@ packed = "../DEMOVT15/DEMOVT.EXE"
 
 [encaudit]
 dirs = ["src"]
-
-[census]
-roots = ["."]

@@ -1,7 +1,7 @@
 # This is a byte-exact reconstruction project. Git must not rewrite anything.
 #
 # The sources are 1990s DOS files staged into a DOSBox build, and the release
-# in v1.39b/ is someone else's shipped archive. In both cases the bytes on disk
+# in DEMOVT15/ is someone else's shipped archive. In both cases the bytes on disk
 # ARE the artefact, so line-ending and encoding conversion is disabled outright
 # rather than negotiated. `-text` means: never convert on checkin or checkout.
 

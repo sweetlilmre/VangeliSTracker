@@ -89,8 +89,3 @@ first_para = 0x1000
 # coverage lives here.
 dirs = ["src", ".", "../kit/tools", "../kit/tools/substrate",
         "../kit/tools/pascal", "../kit/tools/wikitools"]
-
-[census]
-# Directories holding scripts, for the retirement census. The psycho checkout's
-# path is machine-specific and belongs in kit.local.toml, not here.
-roots = [".", "../kit/tools"]
