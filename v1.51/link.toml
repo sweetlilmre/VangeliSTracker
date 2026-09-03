@@ -23,20 +23,51 @@
 # inside linkorder.py naming this target's main program, and the only caller
 # never passed it -- so the default was not a fallback, it was the answer, and
 # the tool answered its documented question wrongly in any other project.
-main_unit = "DEMOVT"
-
-map_file = "build/VTMAIN.MAP"
 layout   = "docs/00-map.md"
-program_blocks = "blocks/1000.toml"
 # Where the last segment ends. A boundary, not a unit.
-end_at   = 0x1e92
-
 # Segments holding constants and no code.
+
+# THE ORIGINAL'S ORDER AND ADDRESSES. The order of this list IS the link order.
+
+# Our filename stem -> the unit name Turbo Pascal writes into the map. Only the
+# ones that differ, plus the program, which the original calls DEMOVT.
+[unitname]
+"MODCOMMA"     = "MODCOMMANDS"
+"MODLOADE"     = "MODLOADER"
+"SONGELEM"     = "SONGELEMENTS"
+"SOUNDBLA"     = "SOUNDBLASTER"
+"SOUNDDEV"     = "SOUNDDEVICES"
+"UNKLOADE"     = "UNKLOADER"
+"VTMAIN"       = "DEMOVT"
+
+[lists]
+# No segment of their own in EITHER image: declarations only.
+noseg = ["VTDRIVER", "VTGLOBAL"]
+# Never in scope: the runtime's own units, which we do not rebuild.
+rtl = ["DOS", "OBJECTS", "SYSTEM"]
+
+# THE LAYOUT OF ONE PART. A project with one target is a table with one
+# row rather than a set of top-level keys -- the instruments read [part.*]
+# now, so one tool serves this and a nine-part target.
+#
+# `segments` is ascending and complete, because each segment's extent is the
+# NEXT entry's base; `end_at` is the bound that makes the LAST one
+# computable. That is why neither becomes a length table beside an address
+# table -- two tables of one measurement drift.
+#
+# `end_at` is named for what every reader does with it, the final bound, and
+# not for what sits at that address: here the runtime library, and in
+# dgroup.py's reading of the same number, where DGROUP starts.
+[part."000"]
+program_seg    = 0x1000
+program_blocks = "blocks/1000.toml"
 data = [
   { segment = 0x1e92, why = "constants only, no code" },
 ]
-
-# THE ORIGINAL'S ORDER AND ADDRESSES. The order of this list IS the link order.
+main_unit = "DEMOVT"
+map      = "build/VTMAIN.MAP"
+end_at   = 0x1e92
+dgroup_at = 0x1e92
 segments = [
   { segment = 0x1000, name = "DEMOVT" },
   { segment = 0x106e, name = "DEVGUS" },
@@ -71,20 +102,3 @@ segments = [
   { segment = 0x1d57, name = "DOS" },
   { segment = 0x1d89, name = "SYSTEM" },
 ]
-
-# Our filename stem -> the unit name Turbo Pascal writes into the map. Only the
-# ones that differ, plus the program, which the original calls DEMOVT.
-[unitname]
-"MODCOMMA"     = "MODCOMMANDS"
-"MODLOADE"     = "MODLOADER"
-"SONGELEM"     = "SONGELEMENTS"
-"SOUNDBLA"     = "SOUNDBLASTER"
-"SOUNDDEV"     = "SOUNDDEVICES"
-"UNKLOADE"     = "UNKLOADER"
-"VTMAIN"       = "DEMOVT"
-
-[lists]
-# No segment of their own in EITHER image: declarations only.
-noseg = ["VTDRIVER", "VTGLOBAL"]
-# Never in scope: the runtime's own units, which we do not rebuild.
-rtl = ["DOS", "OBJECTS", "SYSTEM"]
