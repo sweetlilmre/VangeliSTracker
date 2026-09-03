@@ -258,6 +258,7 @@ matched = 98
 ours = "build/VTMAIN.EXE"
 original = "ref/vt1.31b.bin"
 compare = "image"
+note = "Both of `image`'s live blind spots are known-different here, and both are the unpacker's invention rather than this rebuild's. Measured: 2709 differing bytes, every one inside the 3120-byte MZ header. Two are maxalloc (ffff against a884). The other 2707 are the relocation table, which carries the SAME 772 linear addresses on both sides -- verified as sets -- written in a different segment:offset normalisation. The packer discarded both fields, so the unpacker had to invent them; see the wiki on an unpacked binary being the unpacker's reconstruction. The honest stronger test is a re-pack with the original stub, which LZEXE blocks."
 sha256 = "7b5816e9377b592053bc99516576dec10c17ed7aefa46b7ad3aaaa9ae4f0a03c"
 achieved = "R7"
 target = "R7"
