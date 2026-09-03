@@ -36,7 +36,7 @@
   order -- which is how 165a's fifteen were confirmed all at once. **Do not
   assume the two extra routines are extra; 1.31 may split one of the release's
   differently.** Establish that before writing, because a misplaced routine
-  displaces everything below it.}
+  displaces everything below it. }
 
 unit ModLoader;
 
@@ -64,7 +64,7 @@ uses
     TModFileInstrument   22 + 2 + 1 + 1 + 2 + 2                    =   30
     TModFile31           20 + 31*30 + 1 + 1 + 128 + 4              = 1084
     Magic at             20 + 930 + 1 + 1 + 128                    = 1080
-    TModFile15           20 + 15*30 + 1 + 1 + 128                  =  600}
+    TModFile15           20 + 15*30 + 1 + 1 + 128                  =  600 }
 
 const
   { A TYPED CONSTANT, AND THE LAYOUT IS WHY. $03cc is the FIRST two bytes of this
@@ -184,9 +184,9 @@ type
                                             ABSOLUTE and cost nothing
     0bf7  ENTER $1000  LoadModFileFormat    EIGHT 256-byte String temporaries --
                                             four magic comparisons, two char-array
-                                            conversions each}
+                                            conversions each }
 
-{ Near -- nothing outside the segment calls it. }
+{ Near -- nothing outside the SEGMENT calls it. }
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TModFilePattern;
@@ -390,7 +390,7 @@ begin
                   loop commented out at exactly this point in the source (a
                   -128 to -127 clamp), so the AUTHOR was editing this region
                   between the two versions; what 1.31 does here is not what the
-                  comment says, and the comment must not be used to guess it.}
+                  comment says, and the comment must not be used to guess it. }
                 if DeltaSamples <> 0 then
                   begin
                     Acc := 0;
@@ -523,7 +523,7 @@ begin
 end;
 
 { RETF 12 -- the ONLY far return in 3,920 bytes, and the only
-  routine anything outside the segment can reach. The '.WOW' literal at 0bf3
+  routine anything outside the SEGMENT can reach. The '.WOW' literal at 0bf3
   sits immediately before it, which is where Turbo Pascal puts a routine's
   literals. }
 procedure LoadModFileFormat(var Song : TSong; var St : TStream;

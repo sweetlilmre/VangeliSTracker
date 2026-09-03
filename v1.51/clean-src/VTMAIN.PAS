@@ -24,8 +24,8 @@
   for what it does, and every name is followed by the address it was read
   from.
 
-  DGROUP (segment 1caa)
-    $0002  the poll re-entrancy guard     $0004  'DemoVT v1.31 (beta)'
+  DGROUP (SEGMENT 1e92)
+    $0002  the poll re-entrancy guard     $0006  'DemoVT v1.51'
     $009a  PlayModule, as a far pointer   $02d1  set when run as INCONEXI.EXE
     $09e8  "the banner has been shown"    $0b96  the sound driver object
     $0c6e  -> TimerChain                  $0c72  "say if no song was found"
@@ -60,7 +60,7 @@ program DemoVT;
   and that note concluded "a machine with both ends up on the GUS" while
   comparing DevGus against VTSilenc alone. With 193a in the chain the SB
   registers first. Whether that changes the conclusion is not settled here;
-  it is flagged because the note was written without this segment. }
+  it is flagged because the note was written without this SEGMENT. }
 uses
   Dos, VTResid, DevSB, VTGlobal, VTShell, Objects, Heaps, PlayMod, VTCfg,
   VTCmd, DevGus,
@@ -104,9 +104,9 @@ const
     what identifies it: $1d against $12, and the text follows immediately.
 
     THE STRING GOT SHORTER, WHICH IS WHY IT WAS NOT FOUND EARLIER. Everything after it
-    in the code segment moves ELEVEN BYTES down, and a routine-size check that is
-    already reporting the segment short by more than that has nothing to catch it on.
-    Only an aligned byte diff of the segment shows a literal changing. }
+    in the code SEGMENT moves ELEVEN BYTES down, and a routine-size check that is
+    already reporting the SEGMENT short by more than that has nothing to catch it on.
+    Only an aligned byte diff of the SEGMENT shows a literal changing. }
   NoSong   = 'Can''t find a song.';
 
   { **String[13] AND 'DemoVT v1.51'.** The declared width is measured, not chosen:
@@ -138,7 +138,7 @@ var
   eight addresses agreeing is a cross-check rather than an assumption.
 
   THE REST ARE STILL DECLARED HERE AND STILL WRONG TO BE. Every one below is a
-  DGROUP address this segment reads or writes whose OWNER has not been
+  DGROUP address this SEGMENT reads or writes whose OWNER has not been
   established -- some almost certainly belong to VTCmd or VTCfg. A DGROUP
   reference is a linker fixup, so the byte comparison cannot tell a right home
   from a wrong one; that is risk 1, and declaring them here is that risk taken
@@ -165,14 +165,14 @@ var
   Fill0E9E  : LongInt;
 
 { THE CONTROL BLOCK, is NOT declared here. It lives in VTCtrl,
-  the unit for segment 14b7, which is the code that clears it. There must be
+  the unit for SEGMENT 1538, which is the code that clears it. There must be
   exactly one of it: INT 2Fh publishes its address to every client, so a
   second copy would mean the demo talked to a block nothing was updating.
   See docs/06-transcription.md, "one DGROUP, many units". }
 
 { --------------------------------------------------------------------------
   Print the four-line startup banner -- ONCE. The flag that suppresses it is
-  also SET here, so the second caller prints nothing.}
+  also SET here, so the second caller prints nothing. }
 procedure ShowBanner;
 begin
   if not NoBanner then
@@ -200,12 +200,12 @@ procedure TimerChain; far; assembler;
 asm
   DB   0EAh              { JMP FAR seg:ofs -- the operand is data }
   DW   OFFSET TimerChain { patched with the old INT 1Ch offset    }
-  DW   SEG TimerChain    { patched with the old INT 1Ch segment   }
+  DW   SEG TimerChain    { patched with the old INT 1Ch SEGMENT   }
                          { the epilogue's RETF, never reached     }
 end;
 
 { --------------------------------------------------------------------------
-poll the sound driver four times, non-reentrant.}
+poll the sound driver four times, non-reentrant. }
 procedure PollDriver;
 type
   TPoll = procedure;
@@ -247,7 +247,7 @@ asm
   PUSH DS
   PUSH ES
   MOV  AX, SEG @DATA     { the binary has MOV AX,1CAAh -- an
-                                      absolute segment, and copying it would
+                                      absolute SEGMENT, and copying it would
                                       point us at somebody else's data       }
   MOV  DS, AX
   CLD
@@ -282,7 +282,7 @@ begin
   @@NotHooked:
     { **`MOV SI,0000` AND NOT `XOR SI,SI`**, six times over in this file. Same value,
       three bytes against two, and the original has the long form -- `be 00 00`, not
-      `31 f6`. It is the segment of the interrupt vector table being formed, and a
+      `31 f6`. It is the SEGMENT of the interrupt vector table being formed, and a
       1993 hand-assembler writes it out. This file already records the identical fix in
       VTRESID, where four of them cost four bytes; here it cost six. **The verbatim rule
       exists for exactly this.** }
@@ -291,7 +291,7 @@ begin
     MOV  AX, ES:[70h]      { INT 1Ch offset                       }
     MOV  SI, 0000h
     MOV  ES, SI
-    MOV  DX, ES:[72h]      { INT 1Ch segment                      }
+    MOV  DX, ES:[72h]      { INT 1Ch SEGMENT                      }
     LES  DI, ChainPtr
     MOV  ES:[DI+1], AX     { patch the chain stub                 }
     MOV  ES:[DI+3], DX
@@ -343,7 +343,7 @@ end;
 THE DISPATCHER.
 
   The PUSHA / PUSH DS / MOV DS pair is not decoration: the caller is a
-  different program with a different data segment, so nothing may be assumed
+  different program with a different data SEGMENT, so nothing may be assumed
   about any register on entry.
 
   The result is set to zero and never changed, so the demo is right to ignore
@@ -386,7 +386,6 @@ begin
             ANDs and emits both halves whatever they hold. So the source is a LongInt
             AND over the whole pointer, aligning it down to a multiple of four. }
           LongInt(DMABufferPtr) := LongInt(GetPlayPos) and $FFFFFFFC;
-                                                       { -> $4306 }
           TickSnapshot := Ticks;                    { $0bca := $0bc8 }
           LastTick := 0;                          { $0058 := 0     }
           DriverTicks := 0;                         { $0c78 := 0     }
@@ -414,14 +413,14 @@ end;
   COPIES OF THEM -- not locals, and not statements. `ENTER 00a2,0` is 162 bytes, which
   is 80 + 80 + `Ok` + one pad and nothing else; declared `String` the two value
   parameters get 256-byte copies each and the frame is 676. And `PathStr` is
-  `String[79]`, so the `PUSH 4Fh` in each copy is `SizeOf - 1` exactly.}
+  `String[79]`, so the `PUSH 4Fh` in each copy is `SizeOf - 1` exactly. }
 { --------------------------------------------------------------------------
   THE REGISTER-CONVENTION ENTRY POINT: take the command in AX rather than on
   the stack, and hand it to Dispatch.
 
   IT EXISTS TO MOVE THE FUNCTION NUMBER FROM A REGISTER TO THE STACK, which is
   what lets a client written in assembler and one written in Pascal both call
-  this program without either having to know the other's convention.}
+  this program without either having to know the other's convention. }
 procedure DispatchEntry; far; assembler;
 asm
   PUSH    AX
@@ -434,7 +433,7 @@ end;
 
   Called between playlist entries and again on the way out, so it has to be
   safe to call when nothing is playing -- which is what the SongOpen guard is
-  for.}
+  for. }
 procedure StopModule;
 begin
   if PlayerStarted then
@@ -557,7 +556,7 @@ end;
 
   Everything the units set up for themselves has already happened by the time
   the first statement here runs -- the drivers are registered and the resident
-  handler is installed by their initialisation sections, in link order.}
+  handler is installed by their initialisation sections, in link order. }
 var
   Dir  : DirStr;
   Name : NameStr;

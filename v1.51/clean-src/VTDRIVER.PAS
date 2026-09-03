@@ -21,7 +21,7 @@
   objects here will misread every call site.
 
   This unit holds no code at all. The layout is shared by every driver and by
-  the core that walks them, and Pascal needs one owner for a type.}
+  the core that walks them, and Pascal needs one owner for a type. }
 
 unit VTDriver;
 
@@ -34,7 +34,7 @@ type
   TSoundDevice = record
     { The driver's name, as it identifies itself -- 'DMA-SB-Mono' for the
       Sound Blaster, 'GUS' for the Gravis. This is what VT.CFG matches against
-      when a particular card is asked for by name.}
+      when a particular card is asked for by name. }
     DevID : TDevID;
 
     { TRUE if the device plays through the ISA DMA controller. The mixer needs
@@ -43,12 +43,12 @@ type
 
       The GUS sets this FALSE even though it is perfectly capable of playing:
       it has its own on-card DRAM, and the player uploads samples into it
-      rather than streaming over DMA.}
+      rather than streaming over DMA. }
     DMA : Boolean;
 
     { Returns the device's display name -- a longer, friendlier string than
       DevID. The GUS driver returns an empty string, so a caller must be ready
-      for one.}
+      for one. }
     Name : Pointer;
 
     { "Is this hardware present?" TRUE when it is. The core calls this on each
@@ -58,7 +58,7 @@ type
       it, which means the selection is really "the first driver in the list"
       and the Silence driver's position at the end is what makes it the
       fallback. A reader tracing why a particular card was chosen should look
-      at the registration order, not at this result.}
+      at the registration order, not at this result. }
     Autodetect : Pointer;
 
     InitRut         : Pointer;  { +$1e  open the device at a given rate     }
@@ -69,7 +69,7 @@ type
       four times a tick, and INT 2Fh function 2 calls it once. What a driver
       does here is the difference between the two playback models -- the
       Silence driver points it straight at the core's own shared handler,
-      while the GUS, playing from its own DRAM, only counts ticks.}
+      while the GUS, playing from its own DRAM, only counts ticks. }
     TimerHandler : Pointer;
 
     PollRut : Pointer;          { +$2e  hand-made polling; GUS's is empty   }

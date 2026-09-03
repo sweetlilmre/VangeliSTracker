@@ -25,7 +25,7 @@ type
     THE RELEASE MAKES THIS A VARIANT RECORD, `CASE DataType : TDataType OF
     dtInteger: (IData : PIntBuff); dtShortInt: (SData : PShortBuff)`, and both
     arms are a far pointer at the same offset. Flattened to one field here
-    because the layout is identical and nothing in this segment reads it as
+    because the layout is identical and nothing in this SEGMENT reads it as
     anything but an address.
 
     DataType IS SIGNED, and that is from the bytes rather than a choice:
@@ -185,7 +185,7 @@ const
     TicksPerSecond and the filter coefficients. DevGus's timer handler advances it and
  clears it, so it was declared in BOTH of those units -- DevGus called it
     `Ticks` and VTMAIN called it `WordAtBD0`. It is neither unit's: this block is
-    contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099.}
+    contiguous from $0b94 to $0c0b and DevGus's own data is at $0058..$0099. }
   DriverTicks       : Word         = 0;      { the polled driver's   }
 
   { $0bd2..$0be1 -- SIXTEEN BYTES THIS TREE HAS READ TWO DIFFERENT WAYS, AND THE
@@ -199,7 +199,7 @@ const
     DMAChannel and PeriodicHz, both of which are independently confirmed; its defaults
     are 6, 3, 13 and 0; and 1.31's sixteen bytes are those four values TWICE, which is
     what a stereo pair of filters looks like and is a strange thing for eight
-    independent channel volumes to hold at startup.}
+    independent channel volumes to hold at startup. }
   TrebleFilterVal_Left   : Word = 6;
   TrebleFilterMult_Left  : Word = 3;
   BassFilterVal_Left     : Word = 13;
@@ -283,7 +283,7 @@ var
     THAT MAKES THE RELEASE RIGHT ABOUT THE SIZE. `LIB/SOUNDDEV.PAS` has
     `DevStkSize = 1000` and 1.31b's note overruled it from a span that only
     bounded the distance between two ends. The span is 2000 because there are two
-    blocks of a thousand, not because the stack is 2000.}
+    blocks of a thousand, not because the stack is 2000. }
   DevStack          : array[1..DevStkSize] of Byte;
 
   {    THE SIZE IS THE SAME `DevStkSize`, and the arithmetic closes with nothing
@@ -329,7 +329,7 @@ var
   points are bare `PUBLIC` labels with no prologue or epilogue.
 
   And the ENCODINGS settle it, because the two assemblers disagree and each
-  matches a different part of this segment:
+  matches a different part of this SEGMENT:
 
     instruction     original      TASM 4.1   TP6 inline asm
     AND AL,AL       22 C0 @1014   22 C0      20 C0
@@ -367,7 +367,7 @@ var
 implementation
 
 { ==========================================================================
- -- the two null callbacks.}
+ -- the two null callbacks. }
 procedure NullProcedure; far; assembler;
 asm
 end;                                          { 0000  a bare RETF, one byte }
@@ -415,7 +415,7 @@ SetPeriodicProc
   rather than a Pascal assignment because it has to be ATOMIC against the
   interrupt that is about to call through it -- PUSHF/CLI around a two-word
   write, restoring the caller's flag state rather than blindly re-enabling.
-  The release has the same asm block for the same reason.}
+  The release has the same asm block for the same reason. }
 procedure SetPeriodicProc(Proc : TProc; PerSecond : Word);
 begin
   asm
@@ -521,7 +521,7 @@ begin
 end;
 
 { ==========================================================================
-EndSampling. Far.}
+EndSampling. Far. }
 procedure EndSampling;
 begin
   if (ActiveDevice <> nil) and DeviceInitialized then
@@ -560,7 +560,7 @@ SetDevice
   or when the driver is already the current one, it is a bare store.
 
   The `PUSH CS / CALL near` at 01b0 and 01c1 is the same-segment far call
-  idiom: Stop and Start both end in RETF, so the return segment has to be
+  idiom: Stop and Start both end in RETF, so the return SEGMENT has to be
   pushed by hand. Transcribed as ordinary Pascal calls, which is what the
   original source must have had.
   ========================================================================== }
@@ -598,7 +598,7 @@ end;
   IT IS A PREFIX TEST, NOT AN EQUALITY TEST. Only Length(ss) characters are
   compared, so 'GUS' matches a record whose ID is 'GUS16' -- the shorter of the
   two decides. The length guard rejects only the case where the pattern is
-  LONGER than the candidate.}
+  LONGER than the candidate. }
 function LocateDevice(ID : String) : PSoundDevice;
 
   function NotInStr(var s, ss : String) : Boolean;
@@ -683,7 +683,7 @@ end;
 CalcTimerData
 
   A rate of zero gives $FFFF, the slowest the counter can go, rather than
-  dividing by zero.}
+  dividing by zero. }
 procedure CalcTimerData(Hz : Word);
 begin
   Hz := GetRealFreq(Hz);                      { PUSH CS / CALL  }
@@ -778,7 +778,7 @@ end;
 
 { ==========================================================================
 InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
-  invasive thing in the segment.
+  invasive thing in the SEGMENT.
 
   It installs the two null callbacks and then CARVES THE DMA BUFFER OUT OF
   TURBO PASCAL'S HEAP BY HAND, reaching into System's own HeapPtr and FreeList
@@ -790,7 +790,7 @@ InitSoundDevices. THE UNIT'S OWN INITIALISATION, and the most
   straddling the boundary wraps to the start of its own page mid-transfer and
   plays the wrong memory. GetMem gives no such guarantee, so this computes the
   buffer's LINEAR address, and if the buffer would cross a boundary it moves
-  the base up to the next one and remembers the gap in OffsFree.}
+  the base up to the next one and remembers the gap in OffsFree. }
 procedure InitSoundDevices;
 type
   { Turbo Pascal's own free-list node, as System lays it out: the next free
@@ -860,7 +860,7 @@ GetDMACount. Near and private.
   answer back. The release writes it as
   `GetDMACount := Hardware.GetDMACount(DMAChannel)`, with the unit
   qualification there for the same reason it is needed here -- the inner and
-  outer routines share a name.}
+  outer routines share a name. }
 function GetDMACount : Word;
 begin
   GetDMACount := Hardware.GetDMACount(DMAChannel)

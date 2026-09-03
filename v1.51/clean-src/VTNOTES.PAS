@@ -15,7 +15,7 @@
 
   EACH ANSWER IS PACKED TWICE OVER, because its two consumers want different
   shapes: a nibble pair for anything displaying "octave 4, note 3", and a
-  single linear 0..83 for anything that wants to index a table by note.}
+  single linear 0..83 for anything that wants to index a table by note. }
 
 unit VTNotes;
 
@@ -40,7 +40,7 @@ type
   the shape of it is the equal-tempered scale: each semitone is the one below
   divided by the twelfth root of two, so each octave is the one above doubled.
   Any module written for an Amiga tracker holds periods from this table, which
-  is why it can be a lookup rather than a calculation.}
+  is why it can be a lookup rather than a calculation. }
 const
   NotePeriods : array[0..Notes - 1] of Word = (
     1712, 1616, 1525, 1440, 1359, 1283, 1211, 1143, 1078, 1018,  961,  907,
@@ -52,12 +52,12 @@ const
       27,   25,   24,   22,   21,   20,   19,   18,   17,   16,   15,   14
   );
 
-{ The answer table this unit exists to build: 2048 words, indexed by period.}
+{ The answer table this unit exists to build: 2048 words, indexed by period. }
 var
   NoteOf    : array[0..Periods - 1] of Word;         { 4,096 bytes }
 
   { The printed name of each note -- 'A#2' and the like -- for anything that
-    displays a pattern rather than plays it.}
+    displays a pattern rather than plays it. }
   NoteStr   : array[0..84] of String[3];             { 340 bytes  }
 
 procedure BuildNoteTable; far;
@@ -87,7 +87,7 @@ implementation
 
   Two tables, then: one holds the notes' values, the other holds the walls
   between them. Each is indexed the way its own consumer wants -- flat by the
-  effects code, by octave row here, which is why this one keeps its 2-D shape.}
+  effects code, by octave row here, which is why this one keeps its 2-D shape. }
 const
   NoteBounds : array[0..Octaves - 1] of TPeriodRow = (
     (1664, 1570, 1482, 1399, 1321, 1247, 1177, 1110, 1048,  989,  934,  881),
@@ -116,7 +116,7 @@ const
   nothing needs to -- there is no input for which the answer is undefined, only
   inputs for which it is arbitrary.
 
-  Called once, from the program's startup.}
+  Called once, from the program's startup. }
 procedure BuildNoteTable;
 label
   Found, Store;

@@ -17,7 +17,7 @@
   been typed on the command line -- which is what makes `DEMOVT @PLAY.CFG`
   work, and what makes a playlist possible at all. It nests: an included file
   may include another, because the parse state is saved and restored around
-  the recursion rather than kept in locals.}
+  the recursion rather than kept in locals. }
 unit CmdLine;
 
 interface
@@ -37,7 +37,7 @@ type
       { The line being parsed and how far along it the tokeniser has reached.
         They are FIELDS RATHER THAN LOCALS so that `@file` can nest: ParseFile
         saves and restores them around each included line, which a local
-        could not survive.}
+        could not survive. }
       Line     : String;          { +$002                                     }
       FileDir  : DirStr;          { +$102  the directory an @file came from,
                                      so a relative name inside it resolves    }
@@ -50,7 +50,7 @@ type
       { Abandon the rest of the line without tokenising it. A switch whose
         parameter IS the remainder -- a shell command, say -- reads it out of
         `Line` directly and then calls this, so the tokeniser does not hand
-        the same text back as more switches.}
+        the same text back as more switches. }
       procedure SkipRest;                                             virtual;
 
       function  GetToken : TCmdLine;                                  virtual;
@@ -175,7 +175,7 @@ end;
   GetToken's `for I := Idx to Length(Line)` run zero times for ever after, so the rest of
   the line is skipped without touching `Aborting` -- which `ParseLine` tests and would use
   to leave the loop and every enclosing `@file` with it. **Two ways to stop, and this is
-  the gentler one.**}
+  the gentler one.** }
 procedure TCmdLineInterpreter.SkipRest;
 begin
   Idx := 255
@@ -273,7 +273,7 @@ end;
 
 { THE DOS COMMAND LINE IS AT PSP:$80, length byte first -- which is a Pascal string
   already, so the whole routine is one cast. `PrefixSeg` is Turbo Pascal's own copy of
-  the PSP segment. `TCmdLine` is `String[127]` because $80 is where DOS puts it and 127
+  the PSP SEGMENT. `TCmdLine` is `String[127]` because $80 is where DOS puts it and 127
   is all the room there is. }
 function GetDOSCmdLine : TCmdLine;
 begin
@@ -290,7 +290,7 @@ end;
   docs/CONTINUATION.md.)
 
   `ParseLine` calls VMT slots +$24 and +$28, so `TCmdLineInterpreter` must declare nine
-  virtual methods. **But segment 116e contains only EIGHT routine bodies.** Counting
+  virtual methods. **But SEGMENT 1182 contains only EIGHT routine bodies.** Counting
   far returns finds exactly eight, and every one is accounted for:
 
       01b4 RETF 8    ParseLine        02b9 RETF 4    Rut_0110
@@ -300,7 +300,7 @@ end;
 
   `04a2..04b1` is Abort -- `MOV byte ES:[DI+0148],1`, which is `Aborting := True` and
   confirms the field layout a second time -- and `04b2..04cf` is GetDOSCmdLine, whose
-  thirty bytes end exactly at the segment's last byte. **There is no room for the two
+  thirty bytes end exactly at the SEGMENT's last byte. **There is no room for the two
   empty overrides and no trace of them.**
 
   **TURBO PASCAL SMART-LINKS AT THE ROUTINE LEVEL WHEN IT BUILDS THE EXE**, and these two

@@ -32,7 +32,7 @@
   and after the order table come InsNum paragraph pointers, then PatNum of
   them, each a word to be multiplied by 16 and added to the module's base.
 
-  TWO UNIT VARIABLES, both in the uninitialised half of DGROUP:}
+  TWO UNIT VARIABLES, both in the uninitialised half of DGROUP: }
 
 unit S3MLoader;
 
@@ -163,7 +163,7 @@ var
   NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
 
 { ---------------------------------------------------------------------------
- No ENTER, RET $06.}
+ No ENTER, RET $06. }
 procedure SeekPara(var St : TStream; Para : Word);
 begin
   St.Seek(ModBase + LongInt(Para) * 16)
@@ -174,7 +174,7 @@ end;
 
   PLACEHOLDER holding its position. Turbo Pascal lays routines out in source
   order, so this has to exist and be in the right place or everything below it
-  moves; it is the wrong length, so measure this segment per routine and not
+  moves; it is the wrong length, so measure this SEGMENT per routine and not
   by a prefix.
 
   Seven parameters, 22 bytes, in this order -- read off the recogniser's call
@@ -345,7 +345,7 @@ begin
                                 `CMP ...,F0 / JB` -- so the conditions are `> $F0` and `>= $F0`,
                                 with the coarse slide as the final `else`. The draft had each of
                                 the three inverted: the same values, and the two blocks the other
-                                way round in the segment. }
+                                way round in the SEGMENT. }
                               4  : if Note.Parameter > $F0 then
                                      begin
                                        Note.Command := mcVolFineDown;
@@ -556,7 +556,7 @@ begin
           { `> 0` WITH THE WORK FIRST, as in STMLOADE's ProcessInstruments.
             The original's three-branch LongInt compare -- high word signed,
             low word unsigned -- is the shape of `> 0`; `<= 0` inverts it and
-            swaps the two blocks in the segment. }
+            swaps the two blocks in the SEGMENT. }
           if Instrument.Len > 0 then
             begin
               { THE WORK COMES FIRST. 07f7 is `JE` to the zeroing block, and

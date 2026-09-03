@@ -14,11 +14,6 @@
 ;   ladder at the cell for the volume it wants and leaves where it
 ;   was told to. The cells are the table AND the code.
 ;
-;
-;
-;
-;
-;
 
 
 PUBLIC  SetGains
@@ -211,22 +206,22 @@ SetGains:
 
 ; the family's pointer table -- SetGains indexes it by volume
 @@G1Table:
-    DW OFFSET @@G1_00                      ; 083e
-    DW OFFSET @@G1_01                      ; 0840
-    DW OFFSET @@G1_02                      ; 0842
-    DW OFFSET @@G1_03                      ; 0844
-    DW OFFSET @@G1_04                      ; 0846
-    DW OFFSET @@G1_05                      ; 0848
-    DW OFFSET @@G1_06                      ; 084a
-    DW OFFSET @@G1_07                      ; 084c
-    DW OFFSET @@G1_08                      ; 084e
-    DW OFFSET @@G1_09                      ; 0850
-    DW OFFSET @@G1_10                      ; 0852
-    DW OFFSET @@G1_11                      ; 0854
-    DW OFFSET @@G1_12                      ; 0856
-    DW OFFSET @@G1_13                      ; 0858
-    DW OFFSET @@G1_14                      ; 085a
-    DW OFFSET @@G1_15                      ; 085c
+    DW OFFSET @@G1_00
+    DW OFFSET @@G1_01
+    DW OFFSET @@G1_02
+    DW OFFSET @@G1_03
+    DW OFFSET @@G1_04
+    DW OFFSET @@G1_05
+    DW OFFSET @@G1_06
+    DW OFFSET @@G1_07
+    DW OFFSET @@G1_08
+    DW OFFSET @@G1_09
+    DW OFFSET @@G1_10
+    DW OFFSET @@G1_11
+    DW OFFSET @@G1_12
+    DW OFFSET @@G1_13
+    DW OFFSET @@G1_14
+    DW OFFSET @@G1_15
 
 ; ---- G2: 16 cells --------------------------------------------
 
@@ -416,22 +411,22 @@ SetGains:
 
 ; the family's pointer table -- SetGains indexes it by volume
 @@G2Table:
-    DW OFFSET @@G2_00                      ; 0956
-    DW OFFSET @@G2_01                      ; 0958
-    DW OFFSET @@G2_02                      ; 095a
-    DW OFFSET @@G2_03                      ; 095c
-    DW OFFSET @@G2_04                      ; 095e
-    DW OFFSET @@G2_05                      ; 0960
-    DW OFFSET @@G2_06                      ; 0962
-    DW OFFSET @@G2_07                      ; 0964
-    DW OFFSET @@G2_08                      ; 0966
-    DW OFFSET @@G2_09                      ; 0968
-    DW OFFSET @@G2_10                      ; 096a
-    DW OFFSET @@G2_11                      ; 096c
-    DW OFFSET @@G2_12                      ; 096e
-    DW OFFSET @@G2_13                      ; 0970
-    DW OFFSET @@G2_14                      ; 0972
-    DW OFFSET @@G2_15                      ; 0974
+    DW OFFSET @@G2_00
+    DW OFFSET @@G2_01
+    DW OFFSET @@G2_02
+    DW OFFSET @@G2_03
+    DW OFFSET @@G2_04
+    DW OFFSET @@G2_05
+    DW OFFSET @@G2_06
+    DW OFFSET @@G2_07
+    DW OFFSET @@G2_08
+    DW OFFSET @@G2_09
+    DW OFFSET @@G2_10
+    DW OFFSET @@G2_11
+    DW OFFSET @@G2_12
+    DW OFFSET @@G2_13
+    DW OFFSET @@G2_14
+    DW OFFSET @@G2_15
 
 ; ---- G3: 16 cells --------------------------------------------
 
@@ -591,22 +586,22 @@ SetGains:
 
 ; the family's pointer table -- SetGains indexes it by volume
 @@G3Table:
-    DW OFFSET @@G3_00                      ; 0a41
-    DW OFFSET @@G3_01                      ; 0a43
-    DW OFFSET @@G3_02                      ; 0a45
-    DW OFFSET @@G3_03                      ; 0a47
-    DW OFFSET @@G3_04                      ; 0a49
-    DW OFFSET @@G3_05                      ; 0a4b
-    DW OFFSET @@G3_06                      ; 0a4d
-    DW OFFSET @@G3_07                      ; 0a4f
-    DW OFFSET @@G3_08                      ; 0a51
-    DW OFFSET @@G3_09                      ; 0a53
-    DW OFFSET @@G3_10                      ; 0a55
-    DW OFFSET @@G3_11                      ; 0a57
-    DW OFFSET @@G3_12                      ; 0a59
-    DW OFFSET @@G3_13                      ; 0a5b
-    DW OFFSET @@G3_14                      ; 0a5d
-    DW OFFSET @@G3_15                      ; 0a5f
+    DW OFFSET @@G3_00
+    DW OFFSET @@G3_01
+    DW OFFSET @@G3_02
+    DW OFFSET @@G3_03
+    DW OFFSET @@G3_04
+    DW OFFSET @@G3_05
+    DW OFFSET @@G3_06
+    DW OFFSET @@G3_07
+    DW OFFSET @@G3_08
+    DW OFFSET @@G3_09
+    DW OFFSET @@G3_10
+    DW OFFSET @@G3_11
+    DW OFFSET @@G3_12
+    DW OFFSET @@G3_13
+    DW OFFSET @@G3_14
+    DW OFFSET @@G3_15
 
 ; ---- the patch area ----------------------------------------------
 ; Eight slots, one per channel. SetGains overwrites each with the
@@ -639,18 +634,18 @@ SetGains:
 ; channel 0 -- attenuate
         MOV     AX,WORD PTR Volumes[0]     ; 0a81  the channel's volume
         DB 03h, 0C0h                       ; 0a84  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G1Table        ; 0a86
+        MOV     BX,OFFSET @@G1Table
         DB 03h, 0D8h                       ; 0a89  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0a8b  the cell's address
         MOV     WORD PTR CS:[@@Patch],AX   ; 0a8e  patch slot 0
 
 ; channel 1 -- permuted integer ladder
         MOV     AX,WORD PTR Volumes[2]     ; 0a92  the channel's volume
-        MOV     BX,OFFSET @@BitRev         ; 0a95
+        MOV     BX,OFFSET @@BitRev
         DB 03h, 0D8h                       ; 0a98  ADD BX,AX -- see the encoding note
         MOV     AL,CS:[BX]                 ; 0a9a  permute the index
         DB 03h, 0C0h                       ; 0a9d  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G3Table        ; 0a9f
+        MOV     BX,OFFSET @@G3Table
         DB 03h, 0D8h                       ; 0aa2  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0aa4  the cell's address
         MOV     WORD PTR CS:[@@Patch+2],AX ; 0aa7  patch slot 1
@@ -658,18 +653,18 @@ SetGains:
 ; channel 2 -- boost
         MOV     AX,WORD PTR Volumes[4]     ; 0aab  the channel's volume
         DB 03h, 0C0h                       ; 0aae  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G2Table        ; 0ab0
+        MOV     BX,OFFSET @@G2Table
         DB 03h, 0D8h                       ; 0ab3  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0ab5  the cell's address
         MOV     WORD PTR CS:[@@Patch+4],AX ; 0ab8  patch slot 2
 
 ; channel 3 -- permuted integer ladder
         MOV     AX,WORD PTR Volumes[6]     ; 0abc  the channel's volume
-        MOV     BX,OFFSET @@BitRev         ; 0abf
+        MOV     BX,OFFSET @@BitRev
         DB 03h, 0D8h                       ; 0ac2  ADD BX,AX -- see the encoding note
         MOV     AL,CS:[BX]                 ; 0ac4  permute the index
         DB 03h, 0C0h                       ; 0ac7  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G3Table        ; 0ac9
+        MOV     BX,OFFSET @@G3Table
         DB 03h, 0D8h                       ; 0acc  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0ace  the cell's address
         MOV     WORD PTR CS:[@@Patch+6],AX ; 0ad1  patch slot 3
@@ -677,18 +672,18 @@ SetGains:
 ; channel 4 -- attenuate
         MOV     AX,WORD PTR Volumes[8]     ; 0ad5  the channel's volume
         DB 03h, 0C0h                       ; 0ad8  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G1Table        ; 0ada
+        MOV     BX,OFFSET @@G1Table
         DB 03h, 0D8h                       ; 0add  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0adf  the cell's address
         MOV     WORD PTR CS:[@@Patch+8],AX ; 0ae2  patch slot 4
 
 ; channel 5 -- permuted integer ladder
         MOV     AX,WORD PTR Volumes[10]    ; 0ae6  the channel's volume
-        MOV     BX,OFFSET @@BitRev         ; 0ae9
+        MOV     BX,OFFSET @@BitRev
         DB 03h, 0D8h                       ; 0aec  ADD BX,AX -- see the encoding note
         MOV     AL,CS:[BX]                 ; 0aee  permute the index
         DB 03h, 0C0h                       ; 0af1  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G3Table        ; 0af3
+        MOV     BX,OFFSET @@G3Table
         DB 03h, 0D8h                       ; 0af6  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0af8  the cell's address
         MOV     WORD PTR CS:[@@Patch+10],AX ; 0afb  patch slot 5
@@ -696,18 +691,18 @@ SetGains:
 ; channel 6 -- boost
         MOV     AX,WORD PTR Volumes[12]    ; 0aff  the channel's volume
         DB 03h, 0C0h                       ; 0b02  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G2Table        ; 0b04
+        MOV     BX,OFFSET @@G2Table
         DB 03h, 0D8h                       ; 0b07  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0b09  the cell's address
         MOV     WORD PTR CS:[@@Patch+12],AX ; 0b0c  patch slot 6
 
 ; channel 7 -- permuted integer ladder
         MOV     AX,WORD PTR Volumes[14]    ; 0b10  the channel's volume
-        MOV     BX,OFFSET @@BitRev         ; 0b13
+        MOV     BX,OFFSET @@BitRev
         DB 03h, 0D8h                       ; 0b16  ADD BX,AX -- see the encoding note
         MOV     AL,CS:[BX]                 ; 0b18  permute the index
         DB 03h, 0C0h                       ; 0b1b  ADD AX,AX -- word index
-        MOV     BX,OFFSET @@G3Table        ; 0b1d
+        MOV     BX,OFFSET @@G3Table
         DB 03h, 0D8h                       ; 0b20  ADD BX,AX -- see the encoding note
         MOV     AX,CS:[BX]                 ; 0b22  the cell's address
         MOV     WORD PTR CS:[@@Patch+14],AX ; 0b25  patch slot 7
@@ -718,7 +713,6 @@ SetGains:
 
 ;  ==================================================================
 ;     THE TWO FILTER CHAINS AND THEIR WRAPPER.
-;
 ;
 ;     Still inside this procedure: these reach their gain cells through
 ;     @@Patch above, and labels do not cross procedures.
@@ -791,14 +785,14 @@ SetGains:
     DD 0FFFF8000h
     JNB     @@DoneA                        ; 0b77  negative but in range after all
     DB 66h, 23h, 0C0h                      ; 0b79  AND  EAX,EAX -- test the sign
-    JS      @@LowA                         ; 0b7c
+    JS      @@LowA
     DB 66h, 0B8h                           ; 0b7e  MOV  EAX,00007FFFh
     DD 7FFFh
-    JMP     @@DoneA                        ; 0b84
+    JMP     @@DoneA
 @@LowA:
     DB 66h, 0B8h                           ; 0b86  MOV  EAX,FFFF8000h
     DD 0FFFF8000h
-    JMP     @@DoneA                        ; 0b8c
+    JMP     @@DoneA
 
 ; ---- chain B, slots 4..7 -- the same again -----------------------
 @@FilterB:
@@ -806,7 +800,7 @@ SetGains:
     DB 66h, 8Bh, 0C8h                      ; 0b90  MOV  ECX,EAX
     DB 66h, 0BBh                           ; 0b93  MOV  EBX,imm32 ...
 @@PrevB1:
-    DD -1                                  ; 0b95
+    DD -1
     DB 2Eh, 0FFh, 16h                      ; 0b99  CALL WORD PTR CS:[@@Patch+8]
     DW OFFSET @@Patch+8
     DB 66h, 2Eh, 0A3h                      ; 0b9e  MOV  CS:[@@PrevB1],EAX
@@ -817,7 +811,7 @@ SetGains:
     DB 66h, 91h                            ; 0bab  XCHG EAX,ECX
     DB 66h, 0BBh                           ; 0bad  MOV  EBX,imm32 ...
 @@PrevB2:
-    DD -1                                  ; 0baf
+    DD -1
     DB 2Eh, 0FFh, 16h                      ; 0bb3  CALL WORD PTR CS:[@@Patch+12]
     DW OFFSET @@Patch+12
     DB 66h, 2Eh, 0A3h                      ; 0bb8  MOV  CS:[@@PrevB2],EAX
@@ -829,25 +823,24 @@ SetGains:
     DB 66h, 0C1h, 0F8h, 02h                ; 0bc8  SAR  EAX,2
     DB 66h, 3Dh                            ; 0bcc  CMP  EAX,00008000h
     DD 8000h
-    JNB     @@ClampB                       ; 0bd2
+    JNB     @@ClampB
 @@DoneB:
     DB 0C3h                                ; 0bd4  RET -- NEAR
 @@ClampB:
     DB 66h, 3Dh                            ; 0bd5  CMP  EAX,FFFF8000h
     DD 0FFFF8000h
-    JNB     @@DoneB                        ; 0bdb
+    JNB     @@DoneB
     DB 66h, 23h, 0C0h                      ; 0bdd  AND  EAX,EAX
-    JS      @@LowB                         ; 0be0
+    JS      @@LowB
     DB 66h, 0B8h                           ; 0be2  MOV  EAX,00007FFFh
     DD 7FFFh
-    JMP     @@DoneB                        ; 0be8
+    JMP     @@DoneB
 @@LowB:
     DB 66h, 0B8h                           ; 0bea  MOV  EAX,FFFF8000h
     DD 0FFFF8000h
-    JMP     @@DoneB                        ; 0bf0
+    JMP     @@DoneB
 
 ;  Run a pair of samples through both filter chains.
-;
 ;
 ;     AX carries one sample and BX the other, in and out. All the shuffling
 ;     is because both chains take their input in AX and return it there: BX
@@ -860,11 +853,11 @@ SetGains:
 ;     this procedure is far: it is the procedure's own return.
 @@FilterPair:
     DB 53h                                 ; 0bf2  PUSH BX -- park the second sample
-    CALL    @@FilterA                      ; 0bf3
+    CALL    @@FilterA
     DB 5Bh                                 ; 0bf6  POP  BX
     DB 50h                                 ; 0bf7  PUSH AX -- park the first result
     DB 8Bh, 0C3h                           ; 0bf8  MOV  AX,BX
-    CALL    @@FilterB                      ; 0bfa
+    CALL    @@FilterB
     DB 8Bh, 0D8h                           ; 0bfd  MOV  BX,AX
     DB 58h                                 ; 0bff  POP  AX
     DB 0C3h                                ; 0c00  RET -- NEAR, and explicit now that the
@@ -875,7 +868,6 @@ SetGains:
 
 ;  ==================================================================
 ;     THE KERNEL CONFIGURATOR. Frameless, near, and the reason
-;
 ;
 ;     From NumChannels it derives two numbers -- 3 * (32 - Channels), the
 ;     length of the unrolled ADDs to skip, and Channels * 2, the row stride
@@ -888,7 +880,6 @@ SetGains:
 ;     same "jump back into the unrolled run" needs a different constant. Get
 ;     them the same way round and one of the two loops reads four bytes into
 ;     the middle of an instruction.
-;
 ;
 ;     It ends by calling the gain patcher at 0a81, so one call configures
 ;     both the kernels and the volumes.
@@ -925,20 +916,20 @@ SetGains:
     DW OFFSET @@Stride3
 
 ; The mixing method, as a JMP displacement: 0, 12h, 30h or 5Ah.
-    MOV     DL,MixMethod                   ; 0c3c
+    MOV     DL,MixMethod
     DB 0BBh, 00h, 00h                      ; 0c40  MOV  BX,0
     DB 22h, 0D2h                           ; 0c43  AND  DL,DL
-    JZ      @@GotMethod                    ; 0c45
+    JZ      @@GotMethod
     DB 90h                                 ; 0c47  NOP
     DB 90h                                 ; 0c48  NOP
     DB 0BBh, 12h, 00h                      ; 0c49  MOV  BX,12h
     DB 0FEh, 0CAh                          ; 0c4c  DEC  DL
-    JZ      @@GotMethod                    ; 0c4e
+    JZ      @@GotMethod
     DB 90h                                 ; 0c50  NOP
     DB 90h                                 ; 0c51  NOP
     DB 0BBh, 30h, 00h                      ; 0c52  MOV  BX,30h
     DB 0FEh, 0CAh                          ; 0c55  DEC  DL
-    JZ      @@GotMethod                    ; 0c57
+    JZ      @@GotMethod
     DB 90h                                 ; 0c59  NOP
     DB 90h                                 ; 0c5a  NOP
     DB 0BBh, 5Ah, 00h                      ; 0c5b  MOV  BX,5Ah
@@ -948,9 +939,9 @@ SetGains:
 
 ; The filter switch: C3h returns, 90h falls through into the chain.
     DB 0B4h, 0C3h                          ; 0c63  MOV  AH,0C3h -- RET, filters off
-    MOV     AL,DoBassPower                 ; 0c65
+    MOV     AL,DoBassPower
     DB 22h, 0C0h                           ; 0c68  AND  AL,AL
-    JZ      @@GotSwitch                    ; 0c6a
+    JZ      @@GotSwitch
     DB 90h                                 ; 0c6c  NOP
     DB 90h                                 ; 0c6d  NOP
     DB 0B4h, 90h                           ; 0c6e  MOV  AH,90h -- NOP, filters on
@@ -965,7 +956,6 @@ SetGains:
 
 ;  ==================================================================
 ;     THE 32-WAY UNROLLED DOWNMIX. Frameless; falls into the
-;
 ;
 ;     SI walks a row of 32 channel samples, words, and the row is summed
 ;     into two accumulators. Which accumulator a channel goes to follows
@@ -1049,7 +1039,7 @@ SetGains:
     JNO     @@Saturated                    ; 0cea  the common path
     JS      @@TooHigh                      ; 0cec  sign INVERTED by the overflow
     DB 0B8h, 01h, 80h                      ; 0cee  MOV  AX,8001h -- see the note
-    JMP     @@Saturated                    ; 0cf1
+    JMP     @@Saturated
 @@TooHigh:
     DB 0B8h, 0FFh, 7Fh                     ; 0cf3  MOV  AX,7FFFh
 @@Saturated:
@@ -1060,12 +1050,10 @@ SetGains:
 ;  ==================================================================
 ;     THE OTHER THREE MIXING METHODS.
 ;
-;
 ;     @@MethodJmp above selects between these by displacement: 0 falls
 ;     straight through to the mono path at 0ce8, and 12h, 30h and 5Ah land
 ;     here. All three end at @@StereoTail, which tail-calls the filter PAIR
 ;     rather than the single chain the mono path uses.
-;
 ;
 ;     METHOD 1, 0cfa -- double each side independently. The cheapest way to
 ;     make up the headroom the accumulators were summed with.
@@ -1098,7 +1086,7 @@ SetGains:
     DB 0B8h, 01h, 80h                      ; 0d0e  MOV  AX,8001h
     DB 0EBh, 03h                           ; 0d11  JMP  past the other arm
     DB 0B8h, 0FFh, 7Fh                     ; 0d13  MOV  AX,7FFFh
-    JMP     @@FilterSwitch2                ; 0d16
+    JMP     @@FilterSwitch2
 @@Method2:
     DB 8Bh, 0D0h                           ; 0d18  MOV  DX,AX
     DB 03h, 0D3h                           ; 0d1a  ADD  DX,BX -- 17 bits
@@ -1118,7 +1106,7 @@ SetGains:
     DB 0BBh, 01h, 80h                      ; 0d38  MOV  BX,8001h
     DB 0EBh, 03h                           ; 0d3b  JMP  past the other arm
     DB 0BBh, 0FFh, 7Fh                     ; 0d3d  MOV  BX,7FFFh
-    JMP     @@FilterSwitch2                ; 0d40
+    JMP     @@FilterSwitch2
 @@Method3:
     DB 0D1h, 0F8h                          ; 0d42  SAR  AX,1
     DB 0D1h, 0FBh                          ; 0d44  SAR  BX,1
@@ -1151,7 +1139,6 @@ SetGains:
 
 ;  ==================================================================
 ;     THE MONO OUTPUT LOOP. This is what SelectOutput's two entry points
-;
 ;
 ;     Per sample: sum the 32 channels into two accumulators, add them,
 ;     saturate, convert to unsigned, store one byte, advance. CX is the
@@ -1214,7 +1201,7 @@ SetGains:
 @@Stride2:
     DW 1234h                               ; 0ddb  ... the row stride, patched
     DB 03h, 0C3h                           ; 0ddd  ADD  AX,BX
-    JO      @@MonoClamp                    ; 0ddf
+    JO      @@MonoClamp
 @@MonoStore:
     DB 80h, 0F4h, 80h                      ; 0de1  XOR  AH,80h -- signed to unsigned,
 ; and the high byte IS the downshift
@@ -1231,14 +1218,13 @@ SetGains:
     JNS     @@MonoLow                      ; 0df0  sign NOT inverted here: this tests
 ; the accumulated sign, not the sum's
     DB 0B8h, 0FFh, 7Fh                     ; 0df2  MOV  AX,7FFFh
-    JMP     @@MonoStore                    ; 0df5
+    JMP     @@MonoStore
 @@MonoLow:
     DB 0B8h, 01h, 80h                      ; 0df7  MOV  AX,8001h
-    JMP     @@MonoStore                    ; 0dfa
+    JMP     @@MonoStore
 
 ;  ==================================================================
 ;     THE STEREO OUTPUT LOOP. The other of the two routines
-;
 ;
 ;     Same shape as the mono loop -- primed entry at the bottom, unrolled
 ;     ADDs for channels 31 down to 2, LOOP driven by CX -- with the last
@@ -1317,20 +1303,19 @@ SetGains:
 ;  ONE BYTE OF STATE, IN THE CODE SEGMENT AGAIN. Written by
 ;
 @@Flag0e74:
-    DB 0                                   ; 0e74
+    DB 0
 
 ;  ==================================================================
 ;     THE BUFFER-FILL DRIVER. Frameless, near. Configures the
-;
 ;
 ;     IT REPURPOSES DS, AND THAT IS WHY THE SS: OVERRIDES ARE THERE.
 ;     `LDS SI,Sounding` at 0e97 points DS at the SAMPLE DATA so the output
 ;     loops can walk it with plain [SI] addressing -- which costs nothing in
 ;     the inner loop and is the whole point. But DGROUP is then unreachable
 ;     through DS, so every global touched after that line is read through
-;     SS: instead. SS and DS are the same segment in a Pascal program, so
+;     SS: instead. SS and DS are the same SEGMENT in a Pascal program, so
 ;     the override is free. Miss one and it reads the sample buffer as if it
-;     were the data segment.
+;     were the data SEGMENT.
 ;
 ;     THE WRAP IS HANDLED AS TWO CALLS, NOT A MODULO. The buffer is
 ;     circular; if this batch would run past the end, the first call writes
@@ -1357,7 +1342,7 @@ SetGains:
     CALL    @@Configure                    ; 0e7b  the kernels and the gains
 
     MOV     CX,SoundLeft                   ; 0e7e  how many samples are available
-    MOV     AL,BytesPerSample              ; 0e82
+    MOV     AL,BytesPerSample
     DB 8Bh, 0D1h                           ; 0e85  MOV  DX,CX
     DB 32h, 0E4h                           ; 0e87  XOR  AH,AH
     DB 0F7h, 0E2h                          ; 0e89  MUL  DX -- bytes, not samples
@@ -1403,7 +1388,7 @@ SetGains:
     MOV     WORD PTR DMABufferPtr,DI
 ; 0ed2  remember where we got to -- the OFFSET
 ; half only, which is what 89 3E stores
-    LES     DI,ActualBuffer                ; 0ed6
+    LES     DI,ActualBuffer
     DB 26h, 0C6h, 05h, 00h                 ; 0eda  MOV  BYTE PTR ES:[DI],0 -- InUse
 ; := FALSE; see the note above
     DB 0C3h                                ; 0ede  RET -- NEAR
@@ -1411,38 +1396,36 @@ SetGains:
 ;  ==================================================================
 ;     @@Prepare. What SharedPoll calls before the installed
 ;
-;
-;
 ;     THE IDLE COUNTER AT 0f32 IS A GIVING-UP RULE, not a timer: the flag at
 ;     @@Flag0e74 is incremented each time there is nothing to do, and once it
 ;     reaches 20 the increment stops and DeviceIdling is set from it. So
 ;     "idle" means twenty consecutive polls with no work, not a duration.
 ;     ==================================================================
 @@Prepare:
-    MOV     AL,IsDmaDevice                 ; 0edf
+    MOV     AL,IsDmaDevice
     DB 22h, 0C0h                           ; 0ee2  AND  AL,AL
     JNZ     @@PrepFetch                    ; 0ee4  the DMA path is much shorter
     DB 90h                                 ; 0ee6  NOP -- jump-sizing padding
     DB 90h                                 ; 0ee7  NOP
-    MOV     AX,SoundLeft                   ; 0ee8
-    MOV     BL,DMABufferYet                ; 0eeb
+    MOV     AX,SoundLeft
+    MOV     BL,DMABufferYet
     DB 22h, 0DBh                           ; 0eef  AND  BL,BL
-    JZ      @@PrepMark                     ; 0ef1
+    JZ      @@PrepMark
     DB 0Eh                                 ; 0ef3  PUSH CS -- the same-segment far call
-    CALL    NEAR PTR DoGetBuffer           ; 0ef4
+    CALL    NEAR PTR DoGetBuffer
     DB 90h                                 ; 0ef7  NOP
 @@PrepMark:
     DB 0B3h, 01h                           ; 0ef8  MOV  BL,1
-    MOV     DMABufferYet,BL                ; 0efa
+    MOV     DMABufferYet,BL
 
     DB 3Dh, 0Ah, 00h                       ; 0efe  CMP  AX,10 -- fewer than ten samples
     JC      @@PrepIdle                     ; 0f01  ... is not worth mixing for
-    MOV     DL,BytesPerSample              ; 0f03
+    MOV     DL,BytesPerSample
     DB 32h, 0F6h                           ; 0f07  XOR  DH,DH
     DB 0F7h, 0E2h                          ; 0f09  MUL  DX -- samples to bytes
     DB 50h                                 ; 0f0b  PUSH AX
     CALL    GetDMACount                    ; 0f0c  where the card has drained to
-    MOV     BX,DMABufferSize               ; 0f0f
+    MOV     BX,DMABufferSize
     DB 2Bh, 0D8h                           ; 0f13  SUB  BX,AX -- bytes already played
     ADD     BX,WORD PTR DMABuffer          ; 0f15  ... as an offset
     DB 8Bh, 0CBh                           ; 0f19  MOV  CX,BX
@@ -1456,7 +1439,7 @@ SetGains:
 ; displacement is self-relative and both
 ; ends are in this run, so it is a literal
     DB 32h, 0DBh                           ; 0f2c  XOR  BL,BL
-    MOV     DMABufferYet,BL                ; 0f2e
+    MOV     DMABufferYet,BL
 @@PrepIdle:
     DB 2Eh, 0A0h                           ; 0f32  MOV  AL,CS:[@@Flag0e74]
     DW OFFSET @@Flag0e74
@@ -1467,19 +1450,18 @@ SetGains:
     DB 2Eh, 0FEh, 06h                      ; 0f3c  INC  BYTE PTR CS:[@@Flag0e74]
     DW OFFSET @@Flag0e74
 @@PrepDone:
-    MOV     DeviceIdling,AL                ; 0f41
+    MOV     DeviceIdling,AL
     DB 0C3h                                ; 0f44  RET -- NEAR
 @@PrepFetch:
     DB 0Eh                                 ; 0f45  PUSH CS
-    CALL    NEAR PTR DoGetBuffer           ; 0f46
+    CALL    NEAR PTR DoGetBuffer
     DB 90h                                 ; 0f49  NOP
-    LES     DI,ActualBuffer                ; 0f4a
+    LES     DI,ActualBuffer
     DB 26h, 0C6h, 05h, 00h                 ; 0f4e  MOV  BYTE PTR ES:[DI],0 -- InUse
     DB 0C3h                                ; 0f52  RET -- NEAR
 
 ;  ==================================================================
 ;     THE INT 8 HANDLER. Its middle is a CHAIN THROUGH THE
-;
 ;
 ;         0f53  entry, save, set DS   JMP [0bf8] -> 0f64
 ;         0f64  one sample left?      JMP [0bfa] -> 104d
@@ -1506,11 +1488,11 @@ SetGains:
     DB 0FFh, 26h                           ; 0f60  JMP  WORD PTR [OutSlot0]
     DW OFFSET OutSlot0
 @@Prim0:
-    MOV     AX,SoundLeft                   ; 0f64
+    MOV     AX,SoundLeft
     DB 23h, 0C0h                           ; 0f67  AND  AX,AX
     JZ      @@TimerTail                    ; 0f69  nothing to play
     DB 48h                                 ; 0f6b  DEC  AX
-    MOV     SoundLeft,AX                   ; 0f6c
+    MOV     SoundLeft,AX
     DB 0FFh, 26h                           ; 0f6f  JMP  WORD PTR [OutSlot1]
     DW OFFSET OutSlot1
 @@Prim2:
@@ -1518,7 +1500,7 @@ SetGains:
     MOV     DeviceIdling,BH                ; 0f75  we are doing work
     LDS     SI,Sounding                    ; 0f79  DS to the samples, as in the filler
     CALL    @@DownMix                      ; 0f7d  ONE sample through the kernel
-    MOV     DX,SEG @DATA                   ; 0f80
+    MOV     DX,SEG @DATA
     DB 8Eh, 0DAh                           ; 0f83  MOV  DS,DX -- DGROUP back
     MOV     WORD PTR Sounding,SI           ; 0f85  remember the read position
     DB 0FFh, 26h                           ; 0f89  JMP  WORD PTR [OutSlot2]
@@ -1527,18 +1509,18 @@ SetGains:
 ; The tail. Reached from 1063, and the only path that returns.
 @@TimerTail:
     DB 0FBh                                ; 0f8d  STI
-    MOV     AX,SystemClockIncr             ; 0f8e
+    MOV     AX,SystemClockIncr
     ADD     ClockAccum,AX                  ; 0f91  accumulate towards 18.2 Hz
     JC      @@ChainOld                     ; 0f95  a whole BIOS tick has passed
     DB 0B0h, 20h                           ; 0f97  MOV  AL,20h
     DB 0E6h, 20h                           ; 0f99  OUT  20h,AL -- EOI
 @@AfterEoi:
-    MOV     CX,PeriodicCount               ; 0f9b
+    MOV     CX,PeriodicCount
     DB 0E3h, 1Dh                           ; 0f9f  JCXZ @@Periodic
     DB 49h                                 ; 0fa1  DEC  CX
-    MOV     PeriodicCount,CX               ; 0fa2
+    MOV     PeriodicCount,CX
     JZ      @@Periodic                     ; 0fa6  it fired
-    MOV     AX,SoundLeft                   ; 0fa8
+    MOV     AX,SoundLeft
     DB 23h, 0C0h                           ; 0fab  AND  AX,AX
     JZ      @@Periodic                     ; 0fad  out of samples -- go and get some
 @@Iret:
@@ -1581,20 +1563,20 @@ SetGains:
     DB 2Eh, 0A2h                           ; 0fc6  MOV  CS:[@@Guard0fbf],AL -- take it
     DW OFFSET @@Guard0fbf
 
-    MOV     AX,SoundLeft                   ; 0fca
+    MOV     AX,SoundLeft
     DB 23h, 0C0h                           ; 0fcd  AND  AX,AX
     JNZ     @@Release                      ; 0fcf  there is data -- nothing to fetch
-    CALL    @@Configure                    ; 0fd1
+    CALL    @@Configure
     DB 06h                                 ; 0fd4  PUSH ES
     DB 0Eh                                 ; 0fd5  PUSH CS
-    CALL    NEAR PTR DoGetBuffer           ; 0fd6
+    CALL    NEAR PTR DoGetBuffer
     DB 90h                                 ; 0fd9  NOP
     DB 07h                                 ; 0fda  POP  ES
     CALL    @@Configure                    ; 0fdb  again: DoGetBuffer may have changed
 ; the rate, and the kernels encode it
-    MOV     AX,SoundLeft                   ; 0fde
+    MOV     AX,SoundLeft
     DB 23h, 0C0h                           ; 0fe1  AND  AX,AX
-    JNZ     @@Release                      ; 0fe3
+    JNZ     @@Release
     DB 0FEh, 0C4h                          ; 0fe5  INC  AH
     MOV     DeviceIdling,AH                ; 0fe7  still nothing: idle
 @@Release:
@@ -1602,10 +1584,10 @@ SetGains:
     DW OFFSET @@Guard0fbf
     DB 00h
 
-    MOV     AX,PeriodicCount               ; 0ff1
+    MOV     AX,PeriodicCount
     DB 23h, 0C0h                           ; 0ff4  AND  AX,AX
     JNZ     @@Done                         ; 0ff6  not due yet
-    MOV     AX,PeriodicStart               ; 0ff8
+    MOV     AX,PeriodicStart
     MOV     PeriodicCount,AX               ; 0ffb  reload the countdown
     DB 06h                                 ; 0ffe  PUSH ES
     DB 0FBh                                ; 0fff  STI -- the callback may take a while
@@ -1613,7 +1595,7 @@ SetGains:
     DW OFFSET PeriodicProc
     DB 07h                                 ; 1004  POP  ES
 @@Done:
-    JMP     @@Iret                         ; 1005
+    JMP     @@Iret
 
 ;  1007 -- one byte of padding in the original, and the ONE byte of this
 ;     whole run that does not match. The run ends on an unconditional JMP and

@@ -113,7 +113,7 @@ implementation
   `uses` clause and this header, and the identification is strong rather than
   certain.
   -------------------------------------------------------------------------- }
-{ @asm 000 1a77:0000 }
+{ [re] @asm 000 1a77:0000 }
 procedure SetMemTop(P : Pointer); assembler;
 asm
   MOV  BX, WORD PTR P    { 1a77:0003  [BP+06h] -- Ofs(P)                    }

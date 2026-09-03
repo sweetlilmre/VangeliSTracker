@@ -516,24 +516,24 @@ take a Pointer and a byte count, do the rest.
   READ THE ADDRESS ARITHMETIC CAREFULLY -- it is not the obvious formula, and
   the transcription keeps what is there rather than correcting it.
 
-  The page comes out as the top nibble of the segment, which is right: for a
+  The page comes out as the top nibble of the SEGMENT, which is right: for a
   linear address of Seg*16 + Ofs, bits 16..19 are exactly `Seg shr 12`.
 
   The 16-bit part, though, is computed as `(Seg and $0FFF) + Ofs`, with NO
-  shift left by four on the segment term. The exact answer would be
+  shift left by four on the SEGMENT term. The exact answer would be
   `((Seg and $0FFF) shl 4) + Ofs`. Treating a paragraph count as a byte count
   is only correct when `Seg and $0FFF` is ZERO -- that is, when the buffer's
-  segment is a multiple of $1000, so the buffer starts on a 64 KB boundary.
+  SEGMENT is a multiple of $1000, so the buffer starts on a 64 KB boundary.
 
   So the routine carries an unwritten CONTRACT: hand it a pointer whose
-  segment is 64 KB aligned. That is not an unreasonable thing to require of a
+  SEGMENT is 64 KB aligned. That is not an unreasonable thing to require of a
   DMA buffer -- a transfer may not cross a 64 KB boundary anyway, so a caller
   has to think about alignment regardless, and 17cf's pool is where the
   buffer comes from.
 
   The overflow test just above it is consistent with that reading: it checks
   whether `Ofs + (Seg and $0FFF)` would carry out of sixteen bits and bumps
-  the page if so. That is a correction for a SLIGHTLY misaligned segment, and
+  the page if so. That is a correction for a SLIGHTLY misaligned SEGMENT, and
   it is exact only in the same case the main formula is.
 
   Flagged rather than fixed. Resolving it properly needs the callers in 12ba

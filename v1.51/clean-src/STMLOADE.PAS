@@ -32,7 +32,7 @@
   for the pattern, because a MOD may have eight channels and an STM has four.
 
   WHAT THE FILE FORMAT IS. Scream Tracker 2, and the offsets are read off the
-  code rather than taken from a specification:}
+  code rather than taken from a specification: }
 
 unit StmLoader;
 
@@ -59,7 +59,7 @@ var
     probe/IDXPROBE.PAS settles it: five candidate forms compiled with TP6, and
     only the two-subscript one reproduces the original's bytes. The other four
     -- both operand orders, an explicit *1 on the note term, and the index
-    built in a variable first -- all emit the scale-the-sum shape.}
+    built in a variable first -- all emit the scale-the-sum shape. }
   NoteGrid : array[0..Octaves - 1, 0..Semis - 1] of Word absolute NotePeriods;
 
 { ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ var
 
     TStmFileInstrument   14 + 2 + 2 + 2 + 2 + 1 + 1 + 2 + 4 + 2   =  32
     instrument i at      $10 + i * $20, so instrument 1 at $30
-    the order table at   $410 = $30 + 31*32 + 16}
+    the order table at   $410 = $30 + 31*32 + 16 }
 
 type
   TStmFileInstrument = record
@@ -162,7 +162,7 @@ type
   command in every row has to be mapped into the player's own vocabulary on
   the way in. A command with no counterpart becomes "no command" rather than
   an error -- a file using an effect this player does not have still plays,
-  just without that effect.}
+  just without that effect. }
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TStmFilePattern;
@@ -379,7 +379,7 @@ begin
           INVERTED. The values are identical either way; the code is not,
           because Turbo Pascal emits the `then` branch as the fall-through and
           jumps to the `else`. Put the trivial arm first and the two blocks
-          swap places in the segment.
+          swap places in the SEGMENT.
 
           045c is a signed LongInt `> 0`:
 
@@ -535,7 +535,7 @@ begin
 
       { Halve the sample rate of everything, if the user asked for it. Trades
         fidelity for the mixer's time, which on a slow machine is the
-        difference between playing and stuttering.}
+        difference between playing and stuttering. }
       if LowQuality then
         Instr^.Desample
     end
@@ -546,7 +546,7 @@ end;
 
   The recogniser. `FileFormat` is written BEFORE the comparison and stays
   written even when the routine declines -- safe only because callers test
-  `Status`, which is the same contract every loader here keeps.}
+  `Status`, which is the same contract every loader here keeps. }
 procedure LoadSTMFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const

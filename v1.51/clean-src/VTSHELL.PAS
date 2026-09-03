@@ -21,7 +21,7 @@
   THE PROGRAM NAME IS A DEFAULT, NOT A DECISION. What this unit puts in
   ProgName is the command interpreter; the playlist reader overwrites it per
   entry, and the player hands whatever is there to Dos.Exec. So an entry that
-  names no program of its own falls back to the shell.}
+  names no program of its own falls back to the shell. }
 
 unit VTShell;
 
@@ -33,7 +33,7 @@ uses
 var
   { The console, opened as an ordinary file. Everything the player prints goes
     through here rather than through Output, which is what makes it immune to
-    redirection.}
+    redirection. }
   ConFile   : Text;      { 256 bytes }
 
   { The program to run when a playlist entry does not name one. Set here to the
@@ -55,7 +55,7 @@ var
   each handler puts back the pointer it displaced and then does its own work;
   the runtime walks on to whatever ExitProc holds when the handler returns. If
   Close faulted with the restore still pending, the chain would be broken and
-  every handler below this one would be skipped -- including the runtime's own.}
+  every handler below this one would be skipped -- including the runtime's own. }
 procedure AtExit; far;
 begin
   ExitProc := SavedExit;
@@ -78,7 +78,7 @@ end;
   pushed by the CALLER and left for it to clear, so a nested call reuses the
   outer one's stack slot rather than copying. The same shape turns up in the
   main project's part 007, where FSplit reuses ParamStr's pushed result
-  pointer. It reads like a missing push until you know to expect it.}
+  pointer. It reads like a missing push until you know to expect it. }
 begin
   Assign(ConFile, 'CON');
   Rewrite(ConFile);

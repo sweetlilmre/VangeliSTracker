@@ -21,7 +21,7 @@
   below: they are how a tune tells a demo when to change what it is drawing.
 
   This unit holds the block and the routine that clears it, and almost nothing
-  else. The code is incidental; the layout is the point.}
+  else. The code is incidental; the layout is the point. }
 
 unit VTCtrl;
 
@@ -38,7 +38,7 @@ type
     Period is the pitch -- LOWER MEANS HIGHER, since a period counts ticks
     between samples. Instrument runs 1..31 with 0 meaning "none"; volume runs
     0..63, already scaled by the user's per-channel setting, so it is what is
-    actually being heard rather than what the pattern asked for.}
+    actually being heard rather than what the pattern asked for. }
   TChanData  = record
     Period     : Word;          { +$0  the channel's RealPeriod              }
     Instrument : Byte;          { +$2  1..31                                 }
@@ -61,24 +61,24 @@ type
       module when the semaphore it wants has not arrived yet. Both directions,
       through one array of counters.
 
-      All 256 are set to zero when a module starts.}
+      All 256 are set to zero when a module starts. }
     Semaphores : array[0..255] of Byte;   { CB+$000                          }
 
     { One byte per channel, set when that channel starts a new note. A demo
       watching these gets a per-channel trigger it can flash or bounce on,
-      without having to compare periods from one tick to the next.}
+      without having to compare periods from one tick to the next. }
     ChansTrig : array[1..32] of Byte;  { CB+$100  1 = channel retriggered    }
 
     { How many of the thirty-two flags above mean anything. Without it a client
       cannot tell an idle channel from one the module does not have -- one byte
-      that makes the array before it interpretable.}
+      that makes the array before it interpretable. }
     NumChannels : Byte;      { CB+$120                                      }
     { The bindings' `CtrlEntryPoint`: `void (_pascal _far *)(word command)`, the
       far entry that takes its selector on the stack. }
     CtrlEntryPoint : Pointer;   { CB+$121                                   }
     { Ticks since playback started, at the module's own 50 Hz. A demo animating
       in time with the music reads this rather than keeping its own clock,
-      which is what stops the two drifting apart over a long tune.}
+      which is what stops the two drifting apart over a long tune. }
     TickCounter : LongInt;   { CB+$125  50 Hz, the module's own timebase   }
     { **A SECOND ENTRY POINT BESIDE THE FIRST**, taking its command in AX
       rather than on the stack. The one above takes a Pascal parameter; this one
@@ -92,12 +92,12 @@ type
 
     { What every channel is doing right now, four bytes each. This is the
       richest thing the block publishes and the reason a demo can draw a real
-      VU meter rather than a beat flash.}
+      VU meter rather than a beat flash. }
     ChansData : TChansData;  { CB+$12D                                      }
 
     { Where in the module playback has reached: which row of the pattern, and
       which entry of the order list. Together they are the module's playing
-      position, and a demo can use them to know how far through a tune it is.}
+      position, and a demo can use them to know how far through a tune it is. }
     Pos : Byte;              { CB+$1AD  the row inside the pattern           }
     Seq : Byte;              { CB+$1AE  the position in the order list       }
 
@@ -122,7 +122,7 @@ type
       a scene change without touching the module.
 
       [1.39b] The bindings call it `SoundVolume`, 0-255: "Put your favourite
-      volume here. You can perform fades and the like."}
+      volume here. You can perform fades and the like." }
     SoundVolume : Byte;      { CB+$206                                      }
     { HOW A CLIENT ASKS THE PLAYER TO STOP. Set it, and the player returns
       from its playlist without playing anything further, abandons the loop
@@ -130,7 +130,7 @@ type
       the way out; the player notices at the next opportunity.
 
       [1.39b] The bindings: "Set to 1 to force DVT to exit after your program
-      exits".}
+      exits". }
     Abort : Boolean;         { CB+$207  a client asks the player to stop      }
 
     { Reserved in all five bindings, to the byte. This one really is empty. }

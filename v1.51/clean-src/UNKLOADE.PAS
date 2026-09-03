@@ -19,7 +19,7 @@
   FileFormat IS WRITTEN BEFORE THE COMPARISON and stays written even when the
   routine declines. A caller that reads FileFormat without checking Status
   will see mffJMPlayer on a file that is nothing of the kind. That is safe
-  only because Status is what callers actually test.}
+  only because Status is what callers actually test. }
 
 unit UnkLoader;
 
@@ -35,7 +35,7 @@ type
   TModJMIdString = array[1..6] of Char;
 
 { Decide whether `Header` is a JMPlayer module and record the answer in
-  `Song.Status`. Never loads anything.}
+  `Song.Status`. Never loads anything. }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
                            var Header : TSongHeader); far;
 
@@ -55,7 +55,7 @@ const
 
   Nothing here reads the file. The header has already been read into memory by
   the caller, and this routine only looks at what it was handed -- which is why
-  a recogniser can be this cheap to try.}
+  a recogniser can be this cheap to try. }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
                            var Header : TSongHeader);
 var

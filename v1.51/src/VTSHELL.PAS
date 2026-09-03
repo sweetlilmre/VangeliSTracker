@@ -32,9 +32,9 @@
 
   [re] 1b19 IN THIS IMAGE, NOT 1931. Charted in Ghidra by its two string
   constants, which pin the SEGMENT AND show the layout did not move: the
+  String[3] 'CON' is at 1b19:001d and the String[7] 'COMSPEC' at 1b19:0021,
   the same offsets they hold in v1.31b. Init is confirmed separately -- one
   of only two `ENTER $200,0` in the image is at 1b19:0029, its v1.31b
-  String[3] 'CON' is at 1b19:001d and the String[7] 'COMSPEC' at 1b19:0021,
   offset. The CS:$ offsets below are therefore unchanged.
   [re] ADDRESS MAP
     AtExit  1b19:0000     'CON'      CS:$001d, a String[3]
@@ -107,7 +107,7 @@ var
 
   [re] 1b19:0000. Plain Pascal.
   -------------------------------------------------------------------------- }
-{ @asm 000 1b19:0000 +41 }
+{ [re] @asm 000 1b19:0000 +41 }
 procedure AtExit; far;
 begin
   ExitProc := SavedExit;                          { 1b19:0003 .. 1b19:000d }
@@ -152,7 +152,7 @@ end;
   0029 rather than 0000 because an initialisation section is the LAST code in a
   unit, and AtExit occupies 0000..0028 ahead of it.
   -------------------------------------------------------------------------- }
-{ @asm 000 1b19:0029 Init }
+{ [re] @asm 000 1b19:0029 Init }
 begin
   Assign(ConFile, 'CON');                         { 1b19:0037  1d89:05a9 }
   Rewrite(ConFile);                               { 1b19:0041  1d89:061e }

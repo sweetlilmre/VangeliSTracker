@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 1723 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
+  SEGMENT 1911 -- the Gravis UltraSound hardware layer. 2752 bytes, 24 framed
   routines and six frameless ones the prologue scanner cannot see.
 
   Every port write to the card happens here. 1084 is the DRIVER -- the record
@@ -10,7 +10,7 @@
 
   THE THING WORTH KNOWING BEFORE READING ANY OF IT. Starting a voice does not
   program the card. `TriggerVoice` writes the voice's addresses into tables in
-  the data segment, raises an active flag, and installs `RestartChannels` as
+  the data SEGMENT, raises an active flag, and installs `RestartChannels` as
   the TIMER 1 callback. The next timer tick sweeps those flags, builds a
   command list, and blasts it at the GF1 in one loop.
 
@@ -367,7 +367,7 @@ copy a sample into the card's own DRAM.
  is compiler output, including a runtime helper at
  for the 32-bit shift -- and only the transfer loop is hand
   written. Declared `assembler`, the whole prologue vanishes and the unit
-  diverges at the first byte after the frame.}
+  diverges at the first byte after the frame. }
 procedure DumpToUltrasound(var Src; Count : Word;
                      DramAt : LongInt; Signed : Word);
 begin
@@ -417,7 +417,7 @@ the two GF1 timers.
 
   Compiler output. Registers $46 and $47 hold the counts, $45 is the timer
   control, and base+8 / base+9 are the AdLib-compatible pair that gates the
-  interrupt.}
+  interrupt. }
 { **THE TWO TIMERS DO DIFFERENT JOBS AND THE ROUTINES ARE OTHERWISE IDENTICAL.**
   Timer 1 is the one TriggerVoice arms: it fires once, shortly after a note is
   set up, and RestartChannels starts the voices on it. Timer 2 drives whatever
@@ -474,8 +474,8 @@ end;
   `TimerControl`.
 
   The callback is only called if the far pointer is non-nil, and the test is
-  on BOTH halves -- a segment of zero with a non-zero offset would still be
-  called. That is deliberate enough to preserve.}
+  on BOTH halves -- a SEGMENT of zero with a non-zero offset would still be
+  called. That is deliberate enough to preserve. }
 procedure ServiceTimer1;
 begin
   SetGusRegister8(grTimerControl, TimerControl and $FB);
@@ -699,7 +699,7 @@ begin
   SetGusRegister16(grDRAMLowIO, 0);
   SetGusRegister8(grDRAMHighIO, 0);
 
-  { silence every voice before anything else can start one.}
+  { silence every voice before anything else can start one. }
   for V := 0 to MaxVoice do
   begin
     SetGusVoice(V);
@@ -788,7 +788,7 @@ find a card.
   Compiler output. If GUSPort was configured, probe that and nothing else;
   otherwise walk the twelve jumper positions and take the first that answers.
   The candidate order is the table's, not numerical -- $0220 and $0240 are
-  tried before $0200, presumably because they were the common settings.}
+  tried before $0200, presumably because they were the common settings. }
 { The 1.39b release has this as DetectUltrasound. It sets the result TRUE
   first and leaves by `Exit` the moment a port answers; only falling out of
   the search clears it. A `Found` local and a `repeat` were both wrong -- the
@@ -965,7 +965,7 @@ THE DEFERRED SWEEP. Installed as the timer 1 callback by
   is a dozen register writes with the voice stopped; starting it is two. Doing
   all the slow work first and all the starts together means voices that were
   meant to begin on the same tick actually do, instead of drifting apart by
-  however long the register writes took.}
+  however long the register writes took. }
 procedure RestartChannels;
 const
   { $06c2..$0701 -- TWO BYTES PER VOICE, thirty-two voices, and the release declares
@@ -1051,7 +1051,7 @@ start a voice with a loop. THE ENTRY 12ba's ring flushes to.
   written table.
 
   ChangeVoiceParams is called first, for the frequency and pan, and this adds
-  the addresses on top.}
+  the addresses on top. }
 { **TriggerVoice DOES NOT START THE VOICE**, and that is the whole design of
   GUS playback here. It writes the frequency and pan, records what the voice
   SHOULD be doing in five parallel arrays, sets a flag, and arms a timer. The
@@ -1116,9 +1116,9 @@ set a live voice's frequency and pan, without restarting it.
 
   THE FREQUENCY IS RATE-RELATIVE. The value written is
 
-      (Freq * (GUSDivisor div 2)) div (GUSDivisor div 2 + Freq')}
+      (Freq * (GUSDivisor div 2)) div (GUSDivisor div 2 + Freq') }
 { --------------------------------------------------------------------------
-set a running voice's volume, pitch and pan.}
+set a running voice's volume, pitch and pan. }
 procedure ChangeVoiceParams(Channel, Vol : Byte; Freq : LongInt;
                             Panning : Byte);
 begin

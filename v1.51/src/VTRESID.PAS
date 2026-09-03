@@ -109,7 +109,7 @@ var
   [re] 1d3c:0000. Like the timer chain in the program itself. ExitHandler reads
   the two words at +1 and +3 straight back out of the instruction.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d3c:0000 +6 }
+{ [re] @asm 000 1d3c:0000 +6 }
 procedure OldInt2F; assembler;
 asm
   DB   0EAh              { 1d3c:0000  JMP FAR seg:ofs                        }
@@ -149,7 +149,7 @@ end;
       else chain to the old handler;
 
   -------------------------------------------------------------------------- }
-{ @asm 000 1d3c:0006 +41 }
+{ [re] @asm 000 1d3c:0006 +41 }
 procedure Handler; assembler;
 asm
   STI                    { 1d3c:0006  DOS multiplex handlers run enabled     }
@@ -193,7 +193,7 @@ end;
 
   [re] 1d3c:002f. The operand bytes are +1 and +3.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d3c:002f +89 }
+{ [re] @asm 000 1d3c:002f +89 }
 procedure ExitHandler; far;
 begin
   ExitProc := SavedExit;                          { 1d3c:0032, 1d3c:0039 }
@@ -239,7 +239,7 @@ end;
   which goes straight to the INT 2Fh call. And 1d3c:0137 copies [BP-$100] --
   the parameter's own slot -- into `SelfName`, so the assignment is
   `SelfName := Name` with nothing in between. }
-{ @asm 000 1d3c:0088 }
+{ [re] @asm 000 1d3c:0088 }
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;       { [BP-$101] }

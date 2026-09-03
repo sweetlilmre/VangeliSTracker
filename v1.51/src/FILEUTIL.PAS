@@ -93,7 +93,7 @@ implementation
   original's compiler was TP6: three divergent regions to none, with no change
   to the source at all. See docs/CONTINUATION.md.
   -------------------------------------------------------------------------- }
-{ @asm 000 115a:0000 }
+{ [re] @asm 000 115a:0000 }
 procedure AddBar2Path(var Path : PathStr);
 begin
   { [re] IT IS A CASE, NOT AN IF-CHAIN. The binary loads the character into AL

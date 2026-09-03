@@ -42,7 +42,7 @@
   step, `+$1d` the byte handed to the kernel, `+$1e` and `+$20` the loop, 34
   bytes in total. That is why it is adopted here and `TSong`'s was not: this one
   is CONFIRMED by the binary, field by field, and 1.39b's `TSong` demonstrably
-  did not fit.}
+  did not fit. }
 unit PlayMod;
 
 { $G+ for the 286 instructions, as everywhere else in this tree. }
@@ -74,7 +74,7 @@ uses
   mixer gets, and it is shaped so the kernel can run without a single decision
   it does not have to make.
 
-  THE POSITION IS 48 BITS: a segment, an offset, and a FRACTION. Playing a
+  THE POSITION IS 48 BITS: a SEGMENT, an offset, and a FRACTION. Playing a
   sample at any pitch other than its own means stepping through it by a
   non-whole amount per output sample, so the position has to carry a fraction
   and the step is a 16.16 fixed-point number added to it every sample. That one
@@ -82,10 +82,10 @@ uses
 
   THE SAMPLE IS DESCRIBED THREE TIMES, and that is a real-mode problem showing
   through. A sample longer than 64K cannot be addressed as one block, so it is
-  split in two parts, each with its own segment, offset and limit -- and the
+  split in two parts, each with its own SEGMENT, offset and limit -- and the
   third triple is whichever part is CURRENTLY being played, copied into place
   so the kernel only ever reads one. Swapping parts is a few stores when the
-  first runs out, instead of a test in the inner loop.}
+  first runs out, instead of a test in the inner loop. }
 type
   PModRawChan = ^TModRawChan;
   TModRawChan = record
@@ -93,7 +93,7 @@ type
 
     SplPosFrac : Word;          { +$01  position, fraction                   }
     SplPosInt  : Word;          { +$03  position, offset                     }
-    SplPosSeg  : Word;          { +$05  position, segment                    }
+    SplPosSeg  : Word;          { +$05  position, SEGMENT                    }
 
     SplOfs     : Word;          { +$07  the sample part being played         }
     SplSeg     : Word;          { +$09                                       }
@@ -124,7 +124,7 @@ type
   belong to actually reaches the listener.
 
   THAT DELAY IS THE WHOLE REASON THE RING EXISTS. Without it a demo would cut
-  its visuals a buffer early, which at these buffer sizes is plainly visible.}
+  its visuals a buffer early, which at these buffer sizes is plainly visible. }
 const
   { HOW MANY VOICES THE PLAYER WILL MIX. Not a format limit -- a four-channel
     MOD and a sixteen-channel S3M both fit -- but a cost limit: every extra
@@ -133,14 +133,14 @@ const
     THREE DIFFERENT WIDTHS LIVE IN THIS BUILD AT ONCE, and they are not the
     same number by accident. The player mixes sixteen; the published row
     describes thirty-two, because publishing costs almost nothing and a wider
-    row outlives this player's limits.}
+    row outlives this player's limits. }
   MaxChannels = 16;
 
 type
   { A NAMED type on purpose: Turbo Pascal will only assign one array to another
     when both are the SAME named type, and two places in this unit copy a whole
     set of channel volumes in one statement. Declared anonymously they would
-    have to be `Move` calls instead.}
+    have to be `Move` calls instead. }
   TVolumes = array[1..MaxChannels] of Byte;
 
   PRingEntry = ^TRingEntry;
@@ -158,7 +158,7 @@ type
 
 
   { The buffer's data is declared as an untyped Pointer and used as an array of
-    16-bit samples; this is the type that makes the second view legal.}
+    16-bit samples; this is the type that makes the second view legal. }
   PWordArray = ^TWordArray;
   TWordArray = array[0..0] of Word;
 
@@ -193,13 +193,13 @@ type
   ONE ENTRY IS ONE `TriggerVoice` CALL, ALREADY PACKED. Everything the driver
   needs -- volume, frequency, pan, and the three addresses that define the
   sample and its loop -- sits in one 18-byte slot, so flushing a row is
-  reading the fields back out in order and calling. No decisions at flush time.}
+  reading the fields back out in order and calling. No decisions at flush time. }
 type
   { `Freq` IS 32 BITS BECAUSE THAT IS WHAT THE DRIVER TAKES. Storing it any
     narrower means widening it again at every flush, and the flush runs under
     an interrupt; carrying the driver's own width costs two bytes a slot and
     nothing else. It also gives the flush a free emptiness test -- a slot with
-    no frequency in it is a slot with nothing to do.}
+    no frequency in it is a slot with nothing to do. }
   TGusEvent = record
     Vol    : Byte;              { +$00                                       }
     Freq   : LongInt;           { +$01  a Word in 1.31b                      }
@@ -212,7 +212,7 @@ const
   { How many GUS voices a queued row can describe. It happens to equal
     `MaxChannels`, and it is declared separately anyway: one is what this player
     will mix and the other is what that card can be told, and nothing requires
-    them to stay equal.}
+    them to stay equal. }
   GusVoices = 16;
 
 type
@@ -227,7 +227,7 @@ const
   { THE PUBLISHED ROW IS TWICE AS WIDE AS THE PLAYER. Publishing costs a table
     entry; mixing costs a pass over every sample. So the row that goes out to
     the display and the demo describes thirty-two channels even though this
-    player will only ever sound sixteen -- the ring outlives the limit.}
+    player will only ever sound sixteen -- the ring outlives the limit. }
   WideChans = 32;
 
 
@@ -235,11 +235,11 @@ const
   { ONE BUFFER, WHERE THE RELEASE USES THREE. More buffers mean more latency
     between a note being mixed and being heard, and this player is driving a
     demo: everything on screen is cut to the music, so the delay is visible as
-    well as audible. One buffer is the tightest the hardware allows.}
+    well as audible. One buffer is the tightest the hardware allows. }
   NumBuffers  = 1;
 
 { **THE CHANNEL FLAGS, AND FOUR OF THE SEVEN EXIST ONLY BECAUSE OF 64K.** A
-  real-mode segment addresses 65,536 bytes and a sample may be longer, so a long
+  real-mode SEGMENT addresses 65,536 bytes and a sample may be longer, so a long
   sample is held in two blocks and every position in it needs to say which block
   it means. That is what rcfLongSample, rcfPlaying2nd, rcfLongLoopLen and
   rcfLongLoopEnd are between them: one says the sample is split at all, one says
@@ -264,7 +264,7 @@ const
   THE ORDER OF THESE LINES IS THE MEMORY LAYOUT, which is why they are one
   block and not six scattered ones. Turbo Pascal lays a unit's typed constants
   down in declaration order, so moving a declaration moves an address --
-  something that does not show up until the program is linked.}
+  something that does not show up until the program is linked. }
 const
   PlayingSong      : PSong         = nil;      { the module, or nil            }
   LoopMod          : Boolean       = True;     { nothing reads it              }
@@ -342,7 +342,7 @@ const
   { Set when this row started a sample. A 9xx sample offset can only be applied
     to a sample that is actually starting, and the command runs AFTER the note
     is set up -- so the note's half leaves this behind for the command's half to
-    find.}
+    find. }
   NewSample        : Boolean       = False;
 
   { **`FirstTick`, AND THE RELEASE NEVER READS IT EITHER.** This was the only non-zero
@@ -387,7 +387,7 @@ const
   { ONE VARIABLE, TWO UNRELATED JOBS -- a tempo span first, then a channel
     index -- because the first use is finished before the second begins. This
     unit does that in three places, and it is the original's habit rather than
-    an accident, which is why the name here claims nothing about either role.}
+    an accident, which is why the name here claims nothing about either role. }
   TmpVal           : Word          = 0;
   UnusedIdx        : Word          = 0;        { never read; see above          }
 
@@ -406,7 +406,7 @@ const
 
   THEY ARE IN ADDRESS ORDER FOR THE SAME REASON THE CONSTANTS ARE. Declaration
   order is layout, and layout is not something a reader can guess back from the
-  code.}
+  code. }
 var
   { **THE THIRD LITERAL EIGHT IN THIS FILE, AND THE LAYOUT IS WHAT FOUND IT.**
     1.39b declares this `ARRAY[1..MaxChannels] OF WORD` and so does the original;
@@ -428,22 +428,22 @@ var
 { NEGOTIATE AN OUTPUT RATE. The caller ASKS for a rate; the card answers with
   what it can actually do, the buffers are sized for that, and the DMA is
   programmed. It can also be called again mid-song, which is why it exists as a
-  routine rather than as part of starting playback.}
+  routine rather than as part of starting playback. }
 procedure ChangeSamplingRate(Hz : Word); far;
 { RELEASE ONE ROW OF QUEUED GUS COMMANDS. Called from the GUS driver's
   interrupt handler, once per buffer, which is what ties the queue to the sound
-  actually being heard rather than to the sequencer's position.}
+  actually being heard rather than to the sequencer's position. }
 procedure FlushEventRow; far;
 
 procedure ProcessTickEntry; far;
 
 { Stop playing and hand the buffers back. Also called from inside PlayStart's
   own failure path, which is why it has to work on a player that never fully
-  started.}
+  started. }
 procedure PlayStop; far;
 
 { Start playing a module: take the requested range, set up the channels, size
-  and claim the buffers, and hand the first of them to the card.}
+  and claim the buffers, and hand the first of them to the card. }
 procedure PlayStart(var Song : TSong); far;
 
 implementation
@@ -468,12 +468,12 @@ type
   { ASK A DEVICE WHAT RATE IT CAN ACTUALLY DO. The player names a rate it would
     like; the driver answers with the nearest one its hardware can produce, and
     that answer is what the buffers are sized for. Every card gives a different
-    answer, which is why this is a call into the driver rather than a table.}
+    answer, which is why this is a call into the driver rather than a table. }
   TGetFreqProc = function(Hz : Word) : Word;
 
   { WHAT RUNS ON EVERY TICK. A client can install its own; the player calls it
     once per tick with the song and a flag saying whether this tick begins a new
-    row, which is the distinction almost every caller cares about.}
+    row, which is the distinction almost every caller cares about. }
   TTickProc = procedure(var Song : TSong; Note : Boolean);
 
 { ...and the rest, private but in the same run -- see the note above. }
@@ -504,7 +504,7 @@ var
   { WHERE IN THE SONG EACH PUBLISHED ROW CAME FROM -- the row number and the
     order position, one byte each. They ride the ring alongside the row so that
     a reader picking up a row a quarter of a second later still knows which
-    moment of the music it belongs to.}
+    moment of the music it belongs to. }
   WideNoteRing     : array[0..RingRows - 1] of Byte;
   WideSeqRing    : array[0..RingRows - 1] of Byte;
   EventRing       : array[0..RingRows - 1] of TGusEventRow;
@@ -536,7 +536,7 @@ var
 
   ONE KERNEL DOES TWO JOBS. A silent channel still has to advance its position
   and still has to leave the output untouched, so rather than a second routine
-  there is a `Silent` flag. The release later split it in two.}
+  there is a `Silent` flag. The release later split it in two. }
 {$L PLAYMOD.OBJ}
 function DumpInstrument(var Src; var Dest; Volume : Byte; Step : LongInt;
                         SrcLimit, Max, ChanAdd : Word;
@@ -580,7 +580,7 @@ end;
   ended, or it was never active -- the remainder is passed through the kernel
   with a volume of zero, so the position advances and the output is left
   untouched. That is cheaper than a special case, and it keeps every channel's
-  position honest whether it is sounding or not.}
+  position honest whether it is sounding or not. }
 procedure UnCanal(var Raw : TModRawChan; var Buf : Pointer);
 begin
   Rest := MuestrasPerTick;
@@ -629,7 +629,7 @@ end;
 
   THE ROW IS CLEARED AS IT IS RELEASED, which is what makes the ring
   self-maintaining: a slot is empty by the time the producer comes round to it
-  again, so nothing has to track which slots are stale.}
+  again, so nothing has to track which slots are stale. }
 procedure AdvanceEventRow;
 begin
   { a hand-written CLD, and it has to be hand-written: Turbo Pascal
@@ -749,7 +749,7 @@ end;
 
   THE PARAMETERS ARE DELIBERATELY NOT NAMED AFTER THE FIELDS. Inside a `with`,
   an unqualified name binds to the record's field first, so `Vol := Vol` would
-  quietly assign a field to itself.}
+  quietly assign a field to itself. }
 procedure SetEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte;
                    AStart, ALoop, AEnd : LongInt);
 begin
@@ -779,7 +779,7 @@ end;
   updates a voice without knowing or caring what its volume currently is.
 
   THE PAN IS THE EXCEPTION: it is written unconditionally on the merge path,
-  with no sentinel test at all, so a caller cannot decline to set it.}
+  with no sentinel test at all, so a caller cannot decline to set it. }
 procedure PostEvent(Voice, AVol : Byte; AFreq : LongInt; APan : Byte);
 begin
   with EventRing[RingSlot, Voice] do
@@ -810,7 +810,7 @@ end;
   A SLOT IS EITHER A NEW NOTE OR AN ADJUSTMENT, and the loop addresses are what
   tell them apart: a command carrying a sample end starts a voice from
   scratch, one without it only changes the pitch, volume and pan of a voice
-  already running. Two different driver calls, chosen per slot.}
+  already running. Two different driver calls, chosen per slot. }
 procedure FlushEventRow;
 begin
   asm
@@ -839,10 +839,10 @@ end;
   bytes at the right rate.
 
   MOST OF IT IS THE 64K PROBLEM. A sample may be longer than a real-mode
-  segment can address, so it arrives as two blocks, and this routine works out
+  SEGMENT can address, so it arrives as two blocks, and this routine works out
   which block holds the start, which holds the loop point, which holds the loop
   end, and sets the flags that tell the mixer. Those four questions are why the
-  raw channel has three sets of segment/offset/limit and why four of its seven
+  raw channel has three sets of SEGMENT/offset/limit and why four of its seven
   flags exist at all.
 
   THE 9xx SAMPLE OFFSET ARRIVES HERE. The effect engine cannot move a sample
@@ -855,7 +855,7 @@ end;
   record. Same decision, two entirely different outputs.
 
   Both are correct at run time, because `RawChannels` is in DGROUP and the
-  segment the caller pushed IS DS -- but Turbo Pascal's code generator emits
+  SEGMENT the caller pushed IS DS -- but Turbo Pascal's code generator emits
   only the far form for a `var` parameter. The tell that settles it is `21 C0`
   at 03f7: `AND AX,AX` in the `r/m,reg` direction, which the INLINE ASSEMBLER
   emits and the code generator does not (it tests with `OR`, as `08 C0` at
@@ -904,7 +904,7 @@ begin
       LES     SI, Desc
       MOV     AX, ES:[SI+$12]        { 03e0  the sample data pointer, offset   }
       MOV     [DI+$0d], AX           { 03e4  -> Raw.SplOfs1                    }
-      MOV     AX, ES:[SI+$14]        { 03e7  ... and segment                    }
+      MOV     AX, ES:[SI+$14]        { 03e7  ... and SEGMENT                    }
       MOV     [DI+$0f], AX           { 03eb  -> Raw.SplSeg1                     }
 
       MOV     BYTE PTR NewFlags, rcfActiveChannel
@@ -1096,7 +1096,7 @@ begin
     repeats.
 
     THE PAN COMES FROM THE SONG rather than from a table in the player, so a
-    module that specifies its own channel positions gets them.}
+    module that specifies its own channel positions gets them. }
   if UsingGUS then
     if (Raw.Flags and rcfDoesLoop) <> 0 then
       SetEvent(Chan - 1, $FF, -1, PlayingSong^.ChannelPan[Chan],
@@ -1120,7 +1120,7 @@ end;
 MyMove. A hand-written Move, and the 1.39b release has it
   INSTRUCTION FOR INSTRUCTION: `LIB/PLAYMOD.PAS` line 701 declares
   `PROCEDURE MyMove(VAR Src, Dest; Bytes: WORD); ASSEMBLER` with exactly this
-  body, down to the label names. The closest pairing found in this segment, and
+  body, down to the label names. The closest pairing found in this SEGMENT, and
   the source below is the release's with our address comments added.
 
   WHY IT EXISTS. Word moves are twice the speed of byte moves on an 8086 but
@@ -1276,7 +1276,7 @@ begin
 
     { `Pattern := Song.GetPatternSeq(SeqPlaying)`, a far call into
       14b9, which is src/SONGUNIT.PAS. THAT UNIT WAS A STUB WHEN THIS WAS
-      WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its segment --
+      WRITTEN AND IS COMPLETE NOW -- it compiles and reproduces its SEGMENT --
       but the note stands for a different reason than it did: the call site
       is real: the arguments, their order and the far linkage are read off these
       bytes, and the target is a pending fixup exactly as the linker would leave
@@ -1378,7 +1378,7 @@ begin
         which channels did something on this row. A CHANGE OF INSTRUMENT counts
         and a change of pitch does not -- a channel sliding through a
         portamento is not "hit", but one that switches to a different sample
-        is.}
+        is. }
       if (NewNote.Instrument <> 0) and
          (CurCanal^.Note.Instrument <> NewNote.Instrument) then
         WideHit[WideSlot, ChanIdx] := 1;
@@ -1445,7 +1445,7 @@ begin
         sample-offset command `StartSampleOffs` has set `SOffs` and `SOffsVal` by
         now; re-issuing the sample with the offset is what makes the effect audible.
         `NewSample` is what stops it firing on a row that did not start a sample at
-        all -- the offset would then apply to a note already part-way through.}
+        all -- the offset would then apply to a note already part-way through. }
       if NewSample and CurCanal^.SOffs then
         SetNewSample(ChanIdx, RawChannels[ChanIdx],
                      CurCanal^.Instrument,
@@ -1454,7 +1454,7 @@ begin
       NoteProcessed^.Tempo := CurSpeed;
 
       { Publish this channel's cue into the ring, to be released a buffer later
-        when the sound it belongs to is actually heard.}
+        when the sound it belongs to is actually heard. }
       NoteRing[EventSlot, ChanIdx - 1].Pending :=
         CurCanal^.RingPending;
       NoteRing[EventSlot, ChanIdx - 1].Sem :=
@@ -1727,7 +1727,7 @@ begin
     end;
 
     { and act on it. `PUSH CS / CALL near` is how Turbo Pascal
-      calls a FAR routine that lives in the same segment, which is what
+      calls a FAR routine that lives in the same SEGMENT, which is what
       ChangeSamplingRate is. }
     ChangeSamplingRate(DesiredHz)
   end;
@@ -1823,7 +1823,7 @@ begin
       a fixed point by a semitone ratio, and S3M modules carry arbitrary
       pitches -- so a period can be anything at all, including zero. Dividing
       by that would fault outright, and the note is inaudible long before the
-      bounds are reached anyway.}
+      bounds are reached anyway. }
     if CanalPtr^.RealPeriod < $1F then
       CanalPtr^.RealPeriod := $1F
     else if CanalPtr^.RealPeriod > $1FFF then
@@ -1901,7 +1901,7 @@ begin
 
       FROM THE BEGINNING, EVEN AFTER A 9xx. A retrigger and a sample offset on
       the same row do not compose; the retrigger wins and the sample restarts
-      at zero.}
+      at zero. }
     if CanalPtr^.DoRetrig then
       if CanalPtr^.Instrument <> nil then
         SetNewSample(TmpVal, RawPtr^,
@@ -1921,7 +1921,7 @@ begin
     { ON A GRAVIS, TELL THE CARD instead of mixing. A channel that is allowed
       to sound gets its volume and a pitch worked out from the period; a muted
       one gets volume zero and the "leave the pitch alone" sentinel, so muting
-      does not disturb where the note is.}
+      does not disturb where the note is. }
     if UsingGUS then
       if Permisos[TmpVal] then
         PostEvent(TmpVal - 1, RawPtr^.Volume,
@@ -1995,7 +1995,7 @@ end;
   A BUFFER IS EITHER THE MIXER'S OR THE CARD'S, NEVER BOTH. The flag that says
   which is set by the mixer when it finishes filling and cleared when the card
   is done, and it is the only handshake between them -- no locks, and none
-  needed, because each side only ever moves the flag one way.}
+  needed, because each side only ever moves the flag one way. }
 function IdleGiver : PSampleBuffer; far;
 begin
   IdleGiver := nil
@@ -2027,7 +2027,7 @@ end;
   EVERY RANGE VALUE HAS A FALLBACK, so a caller may specify all of it, some of
   it or none. An unset length means the whole song; an unset start means the
   beginning. A start beyond the end is the one case that cannot be rescued, and
-  it gives up.}
+  it gives up. }
 procedure PlayStart(var Song : TSong);
 var
   i, j : Word;
@@ -2314,7 +2314,7 @@ var
   i : Word;                       { and the whole of `ENTER 2,0`       }
 begin
   { A DEBUGGING LINE THE AUTHOR LEFT IN. A released player prints "Stop" on
-    the console every time a module ends. Transcribed because it is there.}
+    the console every time a module ends. Transcribed because it is there. }
   WriteLn('Stop');
 
   Playing := False;
@@ -2333,7 +2333,7 @@ THE UNIT'S INITIALISATION SECTION, not a procedure.
 
   `PUSH BP / MOV BP,SP` rather than `ENTER`, no parameters, `RETF` with no count,
   and Turbo Pascal emits a unit's `BEGIN ... END.` block as the last Pascal code
-  in the segment -- which this is, with only the object module's kernel at 1600
+  in the SEGMENT -- which this is, with only the object module's kernel at 1600
   after it. The same shape was mistaken for an exported `Register` procedure in
   DEVGUS once, and cost that unit 26 bytes of code the original has not got.
 

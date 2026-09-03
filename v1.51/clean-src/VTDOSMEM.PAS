@@ -20,7 +20,7 @@
   a crowded low 640 KB can be the difference between a module fitting and
   not. The old state is always restored, so DemoVT does not leave the DOS
   memory chain reconfigured behind it -- which would affect whatever it
-  shells out to, and it shells out to every part of the demo.}
+  shells out to, and it shells out to every part of the demo. }
 
 {$X+}   { function results may be discarded -- UMBLink is called for its
           side effect when the old state is being put back }
@@ -64,7 +64,7 @@ ask DOS for Size bytes, settle for less rather than fail.
 
   ON FAILURE the out pointer is set to nil and the result is zero. On success
   the offset is always zero -- these are whole paragraphs, so the pointer is
-  a bare segment.}
+  a bare SEGMENT. }
 function DOSAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
   Paras : Word;
@@ -83,7 +83,7 @@ begin
     MOV  Paras, AX
   @@Got:
     LES  DI, P             { the ADDRESS of the caller's ptr    }
-    MOV  ES:[DI+2], AX     { the segment, or 0                  }
+    MOV  ES:[DI+2], AX     { the SEGMENT, or 0                  }
     XOR  AX, AX
     MOV  ES:[DI], AX       { the offset is always zero          }
   end;
@@ -94,10 +94,10 @@ end;
 give a block back.
 
   IT IS ASSEMBLER BECAUSE INT 21h $49 WANTS THE BLOCK'S SEGMENT IN ES, and
-  Pascal has no way to load a segment register.
+  Pascal has no way to load a SEGMENT register.
 
   IT CLEARS THE CALLER'S POINTER BEFORE THE DOS CALL, not after, so a free that
-  fails still leaves the caller holding nil rather than a stale segment that
+  fails still leaves the caller holding nil rather than a stale SEGMENT that
   looks usable. The carry flag is discarded either way, which makes that
   ordering the only thing standing between a failed free and a dangling
   pointer.
@@ -110,7 +110,7 @@ give a block back.
 procedure DOSFree(var P : Pointer); assembler;
 asm
   LES  DI, P             { the ADDRESS of the caller's pointer  }
-  MOV  AX, ES:[DI+2]     { keep the segment                     }
+  MOV  AX, ES:[DI+2]     { keep the SEGMENT                     }
   XOR  BX, BX
   MOV  ES:[DI+2], BX     { P := nil, before the call            }
   MOV  ES:[DI], BX
@@ -163,7 +163,7 @@ end;
   reconfigured would change how THEY allocate.
 
   The result is saved before the link state is put back, so the restore cannot
-  disturb it.}
+  disturb it. }
 function UMBAllocate(var P : Pointer; Size : LongInt) : LongInt;
 var
   Old : Byte;
@@ -178,7 +178,7 @@ end;
 
   THE LINK STATE MUST MATCH THE ONE THE BLOCK WAS ALLOCATED UNDER, which is why
   freeing needs the same dance as allocating rather than being a bare $49: a
-  UMB freed with the chain unlinked is not returned to the pool it came from.}
+  UMB freed with the chain unlinked is not returned to the pool it came from. }
 procedure UMBFree(var P : Pointer);
 var
   Old : Byte;

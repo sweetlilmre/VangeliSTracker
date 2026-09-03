@@ -67,7 +67,7 @@
   slot -- the pair share a frame size because they share a shape.
 
   THIRD, THE FAR CALLS COUNT THE ARITHMETIC. Two System helpers appear five times each
-  and nowhere else in the segment:
+  and nowhere else in the SEGMENT:
 
   **FIVE DIVS AND FIVE MULS, TERM FOR TERM, IS NOT A COINCIDENCE OF SIZE.** It says
   Desample's and Resample's expressions are the release's without a single one added or
@@ -229,7 +229,7 @@ type
   AN INSTRUMENT IS A SAMPLE PLUS A LOOP. `Len`, `Reps` and `Repl` are LongInt because a
   sample can exceed 64K, and `Data`/`Xtra` is how a sample longer than 65,520 bytes is
   held: the first 65,520 in one block and the rest in a second. `MaxSample` is 65,520
-  rather than 65,536 because a Turbo Pascal heap block cannot be a whole segment.
+  rather than 65,536 because a Turbo Pascal heap block cannot be a whole SEGMENT.
   --------------------------------------------------------------------------- }
 const
   MaxSample      = 65520;
@@ -354,7 +354,7 @@ type
 
   `MaxChannels` IS 8 HERE AND 32 IN THE RELEASE. The release takes it from
   `SoundDevices.MaxChannels`; 1.31's value is 8, measured in `12ba` three separate ways
-  (see PLAYMOD.PAS). **It reaches no instruction in this segment** -- TPattern.Init and
+  (see PLAYMOD.PAS). **It reaches no instruction in this SEGMENT** -- TPattern.Init and
   FreeContents both compute their block size from `Chans` and `Patt^.NChans`, and nothing
   here takes SizeOf(TPatternRec) -- so the figure is documentation, not a measurement.
 
@@ -431,7 +431,7 @@ begin
 end;
 
 
-{ Release everything the instrument owns, then let TObject finish.}
+{ Release everything the instrument owns, then let TObject finish. }
 destructor TInstrument.Done;
 begin
   GUSAddr := 0;
@@ -442,7 +442,7 @@ end;
 
 
 { ---------------------------------------------------------------------------
-FreeContents, and its three `HFreeMem` calls are the segment's first three
+FreeContents, and its three `HFreeMem` calls are the SEGMENT's first three
   `[DI+0c]` sites, at `00ca`, `010e` and `0123`.
 
   `IF NOT UsingGUS` GUARDS THE SAMPLE BUT NOT THE RECORD. When the Gravis holds the
@@ -592,9 +592,9 @@ Desample. Halve a sample's rate in place, then give the freed half back.
 
   THE POINTER ARITHMETIC IS THE FIDDLY PART. `p` is walked to the first byte past the
   halved sample, then normalised so the offset is small enough to subtract from
-  `Data`'s -- the `SHR 4` folds the offset into the segment and `AND $8` keeps what is
-  left. `SizeFree` is then the gap in bytes, computed segment-part and offset-part
-  separately because a LongInt subtraction of two far pointers is not what is wanted.}
+  `Data`'s -- the `SHR 4` folds the offset into the SEGMENT and `AND $8` keeps what is
+  left. `SizeFree` is then the gap in bytes, computed SEGMENT-part and offset-part
+  separately because a LongInt subtraction of two far pointers is not what is wanted. }
 procedure TInstrument.Desample;
 var
   w        : Word;
@@ -646,7 +646,7 @@ Resample. The opposite trade: spend memory to make a very short looped
   release's arithmetic, transcribed as found: the second pass' `p^[w + Repl*3]` reaches
   `Reps + Repl*4 - 1`, which is `Repl` bytes past the block. It survives because Turbo
   Pascal's heap rounds an allocation up to eight bytes and because `Repl` is small in every
-  instrument that gets here -- but it is a real overrun and it is not being quietly fixed.}
+  instrument that gets here -- but it is a real overrun and it is not being quietly fixed. }
 procedure TInstrument.Resample;
 var
   w        : Word;
@@ -731,7 +731,7 @@ SetFullTrack. Take 256 full notes and compress them into the two short
 
   `ENTER $606` IS THE ROUTINE'S FINGERPRINT: `MNote` 1026 + `MComm` 514 + `i` 2 = 1542.
   It builds both arrays at full size on the stack and then allocates blocks to fit --
-  1.5K of frame, which is why the segment's largest routine is this one.
+  1.5K of frame, which is why the SEGMENT's largest routine is this one.
 
   **THE TWO PASSES ARE INDEPENDENT AND THAT IS THE POINT.** A note with no effect advances
   `MNote` and leaves `MComm` alone, so the command array can start much later and end much
@@ -744,7 +744,7 @@ SetFullTrack. Take 256 full notes and compress them into the two short
   blanks free too.
 
   `FreeContents` BETWEEN THE BUILD AND THE ALLOCATE is what makes this safe to call on a
-  track that already has contents; the two `Move`s at `0a83` and `0aaf` are the segment's
+  track that already has contents; the two `Move`s at `0a83` and `0aaf` are the SEGMENT's
   second and third.
   --------------------------------------------------------------------------- }
 procedure TTrack.SetFullTrack(var Track : TFullTrack);

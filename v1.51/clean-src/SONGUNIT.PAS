@@ -1,7 +1,7 @@
 { ===========================================================================
   DemoVT v1.51 -- (C) 1992-94 VangeliSTeam (JCAB).
 
-  Segment 14b9 -- THE MODULE OBJECT. **COMPLETE: 2,224 of 2,224 bytes.**
+  SEGMENT 153a -- THE MODULE OBJECT. **COMPLETE: 2,224 of 2,224 bytes.**
   Sixteen routines, 198 pending fixups, no real difference anywhere.
 
   This unit used to hold no code at all: it was the shared layout, declared once
@@ -9,12 +9,12 @@
   code segments index by absolute offset -- 154d and 164b while loading, 165a
   and 14b9 while building it, 12ba while playing. See docs/06-transcription.md,
   "one DGROUP, many units". It still is that, and it is now also the unit that
-  owns segment 14b9.
+  owns SEGMENT 153a.
 
   THE NAME CLASH IS WHY IT IS THIS FILE AND NOT `VTSONG.PAS`. The tree carried
   two files here and their names were crossed: `VTSONG.PAS` was a five-routine
-  STUB standing in for segment 14b9, while this file carried the release's unit
-  name and the record. The segment's counterpart in the release IS
+  STUB standing in for SEGMENT 153a, while this file carried the release's unit
+  name and the record. The SEGMENT's counterpart in the release IS
   `LIB/SONGUNIT.PAS` -- one unit holding TSong and its twenty-one methods -- so
   the stub was folded in here and deleted. This file was already imported by
   PLAYMOD, UNKLOADE and VTCFG, three byte-exact units whose `uses` clauses would
@@ -138,7 +138,7 @@ type
 
   { NEW IN v1.51. Thirty-two per-channel panning positions, one byte each --
     see `TSong.ChannelPan` for how the size and the offset were measured, and
-    `DefaultChannelPan` for what the values are.}
+    `DefaultChannelPan` for what the values are. }
   TChannelPan = array[1..32] of Byte;
 
   PSong = ^TSong;
@@ -225,7 +225,7 @@ type
       no longer holds -- it was waiting on exactly this routine. }
 
     { ------------------------------------------------------------------------
-      THE SIXTEEN ROUTINES OF SEGMENT 14b9, IN ADDRESS ORDER.
+      THE SIXTEEN ROUTINES OF SEGMENT 153a, IN ADDRESS ORDER.
 
       Turbo Pascal lays a unit's routines out in SOURCE order, so this list must
       stay in address order or everything below the first misplacement shifts.
@@ -271,7 +271,7 @@ type
   it was declared in VTGLOBAL as a plain `var`. Both halves of that were wrong: the
   address is inside this unit's block, which runs $03c0..$03cb unbroken up to
   ModLoader's, and a `var` puts it in the other DGROUP region entirely so none of its
-  four bytes existed. A typed constant holding 0 is what the image has.}
+  four bytes existed. A typed constant holding 0 is what the image has. }
 const
   ModOffset : LongInt = 0;
 
@@ -428,7 +428,7 @@ implementation
   which are two independent arguments arriving at the same clause.
 
   The link argument: TP6 lays segments out in reverse DFS post-order over the `uses`
-  graph, so the original's segment addresses read backwards ARE its finish order, and
+  graph, so the original's SEGMENT addresses read backwards ARE its finish order, and
   between HEAPS and SONGUNIT that order is GUS, SongElements, VTNotes, UnkLoader,
   AsciiZ, ModLoader, Filters. VTNotes has to be reached before UnkLoader and Filters
   after ModLoader, and this unit is the only one positioned to do either -- everything
@@ -439,7 +439,7 @@ implementation
   StrConst, AsciiZ, Filters`. Take out the six loaders 1.31 has not got (see `Load`,
   which tests `<= 2`) and `StrConst`, and rename `SongUtils` to the name this tree uses
   for `1650` -- and what is left IS the clause below, in that order. Nothing was fitted:
-  the order was derived from the segment addresses first and the release checked after.
+  the order was derived from the SEGMENT addresses first and the release checked after.
 
   A `uses` entry that references nothing is not unusual here -- VTCMD carried a
   `DevGUS` doing exactly that, and the link order is what found it. Costs no bytes:
@@ -449,7 +449,7 @@ uses
   { S3MLoader BEFORE StmLoader, AND THE SEGMENT ORDER IS WHY. Turbo Pascal's
     link order is reverse DFS post-order over the uses graph with clauses taken
     in declaration order, so the unit named LATER in a clause finishes later and
-    lands EARLIER in the segment map. The original has 15d0 (STM) below 1664
+    lands EARLIER in the SEGMENT map. The original has 15d0 (STM) below 1664
     (S3M), so StmLoader has to be named second. Written the other way round the
     two segments swap, which `segpair --pair` reports as OUT OF ORDER and which
     moves every DGROUP block below them. }
@@ -467,9 +467,9 @@ const
   NumLoaders = 4;
 
   { **THE TWO ENTRIES ARE `NIL` AND THE REAL ONES ARE NAMED IN THIS COMMENT.**
-    They are `UnkLoader.LoadJMFileFormat` (segment 164b, the 'JMPLAY'
+    They are `UnkLoader.LoadJMFileFormat` (SEGMENT 1839, the 'JMPLAY'
     recogniser, transcribed and byte-exact) and `ModLoader.LoadModFileFormat`
-    (segment 154d, the ProTracker loader, a declared stub in MODLOADE.PAS).
+    (SEGMENT 173d, the ProTracker loader, a declared stub in MODLOADE.PAS).
     Both are named here because both are known, not guessed: 164b and 154d are
     the only two loader segments in the program's whole map, and 1.31 keeps
     exactly the FIRST and LAST of the release's eight-entry list.
@@ -521,7 +521,7 @@ begin
 end;
 
 { Throw the module away and put the object back to its empty state, so the
-  same TSong can load the next file.}
+  same TSong can load the next file. }
 destructor TSong.Done;
 begin
   Free;
@@ -529,7 +529,7 @@ begin
 end;
 
 { RETF 8, ENTER 0806,0 -- Header (2048), i (2), Pos (4), in the
-  release's declaration order laid out downward from BP.}
+  release's declaration order laid out downward from BP. }
 procedure TSong.Load(var St : TStream);
 var
   Header : TSongHeader;
@@ -575,7 +575,7 @@ end;
   FOUR OFFSETS ARE CONFIRMED A SECOND TIME HERE. 0197 passes `Self+$16` and
   `Self+$1f` straight to `FSplit` as its NameStr and ExtStr, which is what those
   two fields are; 01c6 stores HNewStr's result into `+$12`, which is FileDir;
-  and 01ec's `PUSH 0004` is `FileExt := '.MOD'` against a String[4].}
+  and 01ec's `PUSH 0004` is `FileExt := '.MOD'` against a String[4]. }
 procedure TSong.LoadFName(FName : PathStr);
 var
   St         : TDosStream;
@@ -638,7 +638,7 @@ begin
 end;
 
 { RETF 6, ENTER 000c,0 -- result, Instrument, j, and the FOR limit.
-  The release's body verbatim. Three things in it are worth reading off:}
+  The release's body verbatim. Three things in it are worth reading off: }
 function TSong.GetInstrument(i : Word) : PInstrument;
 var
   Instrument : PInstrument;
@@ -795,7 +795,7 @@ end;
 
   `[DI+04]` IS `TObject.Done`, the FIRST virtual slot -- a TP VMT holds the
   positive and negative size words at +$00 and +$02 and the first virtual method
-  at +$04 -- so three calls to it are three collections being destroyed.}
+  at +$04 -- so three calls to it are three collections being destroyed. }
 procedure TSong.Free;
 var
   i : Word;                      { the frame's two bytes; never read }

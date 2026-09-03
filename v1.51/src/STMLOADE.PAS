@@ -234,7 +234,7 @@ type
   `+ $24` at 15d0:0288 -- an ordinal past the end of the enumeration, which
   compiles only because the tree builds with range checking off.
   --------------------------------------------------------------------------- }
-{ @asm 000 15d0:0000 +987 }
+{ [re] @asm 000 15d0:0000 +987 }
 procedure ProcessPatterns(var Song : TSong; var St : TStream; Num : Word);
 var
   Patt      : TStmFilePattern;
@@ -405,7 +405,7 @@ end;
   finetune table; STM has no finetune, so the numerator is $2100 for every
   instrument and the C2 rate carries the pitch in DAdj.
   --------------------------------------------------------------------------- }
-{ @asm 000 15d0:03db +422 }
+{ [re] @asm 000 15d0:03db +422 }
 procedure ProcessInstruments(var Song : TSong; var St : TStream;
                              var Stm : TStmFile);
 var
@@ -519,7 +519,7 @@ end;
   $FFF0 bytes cannot be read in one call on a 16-bit stream, so it is taken in
   two: $FFF0 into the first block and the remainder into a second allocation.
   --------------------------------------------------------------------------- }
-{ @asm 000 15d0:0581 +483 }
+{ [re] @asm 000 15d0:0581 +483 }
 procedure LoadSamples(var Song : TSong; var St : TStream);
 var
   { THE ORDER IS THE MEASUREMENT, and the whole $28 frame is accounted for.
@@ -659,7 +659,7 @@ end;
   temporaries are the compiler's and must NOT be declared. Declaring them is
   the mistake UNKLOADE.PAS records costing forty bytes.
   --------------------------------------------------------------------------- }
-{ @asm 000 15d0:0764 }
+{ [re] @asm 000 15d0:0764 }
 procedure LoadSTMFileFormat(var Song : TSong; var St : TStream;
                             var Header : TSongHeader);
 const

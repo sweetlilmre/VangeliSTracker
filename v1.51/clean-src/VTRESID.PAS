@@ -24,7 +24,7 @@
 
   INSTALLING TWICE IS REFUSED. Install runs the handshake itself before
   hooking anything, and if a DemoVT is already there it prints that copy's
-  name and stops. Two players on one timer would fight over the sound card.}
+  name and stops. Two players on one timer would fight over the sound card. }
 
 unit VTResid;
 
@@ -43,7 +43,7 @@ const
 
   { The refusal message, in Spanish: "watch out, the <name> is resident!!".
     Written with character codes so this file stays seven-bit -- #173 is the
-    inverted exclamation mark and #162 an o-acute, both CP437.}
+    inverted exclamation mark and #162 an o-acute, both CP437. }
   Already = #13#10'    ' + #173#173 + 'Ojo, que est' + #160 + ' el ';
   Resident = ' residente!!';
 
@@ -73,17 +73,17 @@ var
 
   THE INSTRUCTION IS ITS OWN STORAGE. This is a five-byte JMP FAR, and the
   four bytes of its operand ARE where the displaced vector is kept: Install
-  writes the old segment and offset into the instruction, and from then on
+  writes the old SEGMENT and offset into the instruction, and from then on
   jumping here jumps there. No variable holds the old vector, and the handler
   chains with one three-byte jump rather than an indirect call through memory.
 
   It is assembled pointing at itself, so an unpatched stub is an infinite loop
-  -- which is safe only because Install always patches it before hooking.}
+  -- which is safe only because Install always patches it before hooking. }
 procedure OldInt2F; assembler;
 asm
   DB   0EAh              { JMP FAR seg:ofs                        }
   DW   OFFSET OldInt2F   { patched with the old INT 2Fh offset     }
-  DW   SEG OldInt2F      { patched with the old INT 2Fh segment    }
+  DW   SEG OldInt2F      { patched with the old INT 2Fh SEGMENT    }
 end;
 
 { --------------------------------------------------------------------------
@@ -125,10 +125,10 @@ asm
   CMP  CX, ReqCX         { 'ac'                                   }
   JNZ  @@NotUs           { all three must match                   }
   XOR  AX, AX            { AX := 0 says "yes, and it is me"       }
-  XOR  BX, MaskBX        { -> $3F17                               }
-  XOR  CX, MaskCX        { -> $1343                               }
+  XOR  BX, MaskBX
+  XOR  CX, MaskCX
   MOV  DI, SEG @DATA     { the binary has MOV DI,1CAAh -- an
-                                      absolute segment, not ours to copy     }
+                                      absolute SEGMENT, not ours to copy     }
   MOV  ES, DI            { ES:DI will point at SelfName          }
   MOV  DI, OFFSET SelfName  { the binary has 432Ch. The four bytes
                               BELOW this are CtrlBlock, which is why a client
@@ -149,14 +149,14 @@ end;
   usual hazard with unhooking -- if another program hooked INT 2Fh after this
   one and is still resident, this overwrites ITS handler and the machine is
   left with a dangling chain. Nothing here checks; DemoVT expects to be the
-  last thing installed and the first thing removed.}
+  last thing installed and the first thing removed. }
 procedure ExitHandler; far;
 begin
   ExitProc := SavedExit;
   asm
     LES  DI, Stub
     MOV  AX, ES:[DI+1]     { the displaced offset                 }
-    MOV  DX, ES:[DI+3]     { and segment                          }
+    MOV  DX, ES:[DI+3]     { and SEGMENT                          }
     MOV  SI, 0             { [re] MOV, not XOR -- the original
                              loads an immediate zero, and BASM emits what it
                              is told }
@@ -164,7 +164,7 @@ begin
     MOV  ES:[0BCh], AX     { $2F * 4 -- the offset half           }
     MOV  SI, 0             { ES is reloaded rather than kept       }
     MOV  ES, SI
-    MOV  ES:[0BEh], DX     { and the segment half                  }
+    MOV  ES:[0BEh], DX     { and the SEGMENT half                  }
   end;
 end;
 
@@ -177,7 +177,7 @@ end;
   sound card would fight, so this is a refusal rather than a warning.
 
   AFTER THIS RETURNS the program is findable: any process that knows the
-  password can reach `Block` through `ES:[DI-4]`.}
+  password can reach `Block` through `ES:[DI-4]`. }
 procedure Install(Name : String; Block : Pointer);
 var
   Found : Boolean;
@@ -227,7 +227,7 @@ begin
     MOV  AX, ES:[0BCh]     { read the old INT 2Fh offset          }
     MOV  SI, 0
     MOV  ES, SI
-    MOV  DX, ES:[0BEh]     { and its segment                      }
+    MOV  DX, ES:[0BEh]     { and its SEGMENT                      }
     LES  DI, Stub          { the JMP FAR that will chain to it    }
     MOV  ES:[DI+1], AX     { patch it INTO the instruction        }
     MOV  ES:[DI+3], DX

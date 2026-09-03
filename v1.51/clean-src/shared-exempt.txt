@@ -1,0 +1,16 @@
+# Assembler duplicated between units that cannot become one text.
+#
+# EMPTY, and now measured against a real population: shared_asm.py reports
+# 4 routine(s) with assembler written out in a unit and 0 duplicate(s).
+#
+# THE EARLIER ZERO WAS HOLLOW and this file said "measured empty" anyway. The
+# check's own body-finder compared whole lines against "asm" and "end;" while
+# reading a CRLF source, so no line ever matched, the population was 0, and a
+# gate over nothing passed. A zero from an empty population prints exactly what
+# a clean tree prints -- absence-reads-as-zero -- and the only tell was that
+# this tree holds 70 assembler routines.
+#
+# One `UNIT.Routine` per line. Before adding one, DIFF THE TWO TEXTS: four
+# entries in the sibling corpus each carried a reason that was false, and the
+# declarations they claimed differed were the same line character for
+# character. See kit/wiki/observations/exemption-that-cannot-fail/.

@@ -372,7 +372,7 @@ asm
                 MOV     DX,[DSPReadPort]
 end;
 
-{ RETF 2.}
+{ RETF 2. }
 function SbReadByte(t : Word) : Byte; assembler;
 asm
                 MOV     AX,t
@@ -483,7 +483,7 @@ end;
   **`SbRegDone` IS ABSENT ENTIRELY.** The release puts it immediately after this
   routine. 0297 is this one's RETF, 0298..029b is four bytes of literal, and
   029c is SbGetDSPVersion's ENTER -- there is no room for it, and nothing in the
-  segment calls it. }
+  SEGMENT calls it. }
 procedure SbRegInit;
 begin
   if not SbRegDetect then Exit;
@@ -524,7 +524,7 @@ end;
 
 { Read the card's copyright string, which is how its model is identified: an
   original, a Pro and a 16 answer differently, and there is no other way to
-  ask. The string comes back one byte per DSP read until a NUL.}
+  ask. The string comes back one byte per DSP read until a NUL. }
 procedure SbGetCopyrightString;
 var
   t : Word;
@@ -695,7 +695,7 @@ begin
   Sb16Inited := True
 end;
 
-{ RETF 4.  The last routine in the segment; 076a..0770 is padding.
+{ RETF 4.  The last routine in the SEGMENT; 076a..0770 is padding.
   `Sb16Done` is absent, as `SbProDone` is. }
 procedure Sb16StartSample(Len : Word; Cont : Boolean);
 begin

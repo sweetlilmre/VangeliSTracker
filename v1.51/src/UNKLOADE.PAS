@@ -39,13 +39,13 @@
 
   [re] 1839 IN THIS IMAGE, NOT 164b, and DS:$04b6 not DS:$040e. Charted in
   Ghidra rather than inferred: `ENTER $200,0` (C8 00 02 00) occurs exactly
+  TWICE in this image and one of them is 1839:0000, which is where this
   unit's single routine sits. The 76 bytes there are this routine statement
   for statement -- two temporaries at BP-$100 and BP-$200, two helper calls
   each pushing a literal 6, the string compare, a store of 6 or 0, RETF $0C
+  -- and it carries `MOV DI,04b6`, which is 'JMPLAY' re-based. 'JMPLAY'
   itself is at 1e92:04b6, so DGROUP is 1e92 here.
   [re] ADDRESS MAP
-  TWICE in this image and one of them is 1839:0000, which is where this
-  -- and it carries `MOV DI,04b6`, which is 'JMPLAY' re-based. 'JMPLAY'
     LoadJMFileFormat  1839:0000     ModJMIdString  DS:$04b6, six raw bytes
   =========================================================================== }
 
@@ -109,7 +109,7 @@ const
   discrepancy this unit used to carry. So the faithful transcription is the
   direct comparison, and it is also the short one.
   -------------------------------------------------------------------------- }
-{ @asm 000 1839:0000 }
+{ [re] @asm 000 1839:0000 }
 procedure LoadJMFileFormat(var Song : TSong; var St : TStream;
                            var Header : TSongHeader);
 var

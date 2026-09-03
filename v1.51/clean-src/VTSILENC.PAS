@@ -64,7 +64,7 @@ const
   { DMA IS **TRUE** ON A DRIVER THAT PLAYS NOTHING, which looks wrong and is
     not. The mixer gates its work on `IsDmaDevice AND (TickSnapshot = Ticks)`,
     so a device that only paces the tick wants that gate active. Claiming DMA
-    is how it gets it.}
+    is how it gets it. }
   Driver : TSoundDevice = ( DevID : 'Silence'; DMA : True );
 
 
@@ -190,7 +190,7 @@ slot +$1a, the probe. Returns 1, unconditionally.
   IT IS ALSO NEVER ASKED, in the normal path. A driver is chosen by NAME out
   of the config file and by registration order, not by probing -- the selector
   looks up the named driver and probes only that one. 'Silence' is reached by
-  being the last thing registered, not by passing a test.}
+  being the last thing registered, not by passing a test. }
 function Probe : Boolean; far;
 begin
   Probe := True;
@@ -234,8 +234,8 @@ begin
   OldVec := SetIRQVector(ComIrq, @IrqHandler);
   EnableIRQ(ComIrq);
 
-  SavedMCR := Port[ComPort + 4];                  { $3FC }
-  SavedLCR := Port[ComPort + 3];                  { $3FB }
+  SavedMCR := Port[ComPort + 4];
+  SavedLCR := Port[ComPort + 3];
 
   Port[ComPort + 4] := 8;                         { OUT2 -- gate the IRQ }
   Port[ComPort + 3] := $83;                       { DLAB + 8N1 }
@@ -243,11 +243,11 @@ begin
   SavedDiv := Port[ComPort]
               + (Port[ComPort + 1] shl 8);
 
-  Port[ComPort]     := Lo(Divisor);               { $60 }
+  Port[ComPort]     := Lo(Divisor);
   Port[ComPort + 1] := Hi(Divisor);               { $00 -> 1200 baud }
   Port[ComPort + 3] := $03;                       { 8N1, DLAB off }
 
-  SavedIER := Port[ComPort + 1];                  { $3F9 }
+  SavedIER := Port[ComPort + 1];
   Port[ComPort + 1] := 0;
   Port[ComPort + 1] := 2;                         { transmit empty }
 end;
@@ -267,7 +267,7 @@ end;
 { --------------------------------------------------------------------------
   Change the sample rate, and poll the device: BOTH DO NOTHING. A driver that
   plays no sound has no rate to change, and its polling is the core's shared
-  one rather than anything here. The slots exist because the record has them.}
+  one rather than anything here. The slots exist because the record has them. }
 procedure ChgHz(W : Word); far;
 begin
 end;
@@ -312,7 +312,7 @@ begin
 end;
 
 { --------------------------------------------------------------------------
-fill in the record and hand it to the player core.}
+fill in the record and hand it to the player core. }
 begin
   Driver.Name            := @DevName;
   Driver.Autodetect      := @Probe;

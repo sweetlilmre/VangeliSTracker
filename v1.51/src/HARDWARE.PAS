@@ -164,7 +164,7 @@ const
   one of those ALSO has to clear IRQ 2 on the first -- that is the cascade
   line the second controller is wired to, and a masked IRQ 2 makes the whole
   upper eight silent. }
-{ @asm 000 1d0c:0000 +68 }
+{ [re] @asm 000 1d0c:0000 +68 }
 procedure EnableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then                                 { 1d0c:0003 }
@@ -185,7 +185,7 @@ end;
   one too. The asymmetry is deliberate.
   -------------------------------------------------------------------------- }
 { Pascal, for the same reason as EnableIRQ above. }
-{ @asm 000 1d0c:0044 +58 }
+{ [re] @asm 000 1d0c:0044 +58 }
 procedure DisableIRQ(IRQ : Word);
 begin
   if IRQ < 8 then                                 { 1d0c:0047 }
@@ -208,7 +208,7 @@ end;
 { Pascal. Note the second arm is an AND of two comparisons, not a nested if:
   an IRQ on the slave is only really open if the CASCADE is open too, and a
   masked IRQ 2 silences the whole upper eight. }
-{ @asm 000 1d0c:007e +89 }
+{ [re] @asm 000 1d0c:007e +89 }
 function IRQState(IRQ : Word) : Boolean;
 begin
   if IRQ < 8 then                                 { 1d0c:0081 }
@@ -230,7 +230,7 @@ end;
   Returning the displaced vector is what makes an install/uninstall pair
   possible without a separate save call.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:00d7 +81 }
+{ [re] @asm 000 1d0c:00d7 +81 }
 function SetIRQVector(IRQ : Word; Vec : Pointer) : Pointer;
 var
   { [re] FOUR UNUSED BYTES AGAIN. ENTER $0a,0 reserves ten; `p` is at [BP-8]
@@ -278,7 +278,7 @@ end;
   byte-pointer flip-flop, set the mode, then write address and count as
   low-then-high byte pairs to the same port, and unmask last.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:0128 +74 }
+{ [re] @asm 000 1d0c:0128 +74 }
 procedure DMA16Set; assembler;
 asm
   AND  AH, 3             { 1d0c:0128  DMA 4..7 -> 0..3 on this controller   }
@@ -331,7 +331,7 @@ end;
   tightly: address at channel*2 and count at channel*2 + 1, rather than the
   second controller's stride of four.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:0172 +54 }
+{ [re] @asm 000 1d0c:0172 +54 }
 procedure DMA8Set; assembler;
 asm
   MOV  AL, AH            { 1d0c:0172                                        }
@@ -371,7 +371,7 @@ end;
   Channel in AH. Two instructions and an OUT; the whole of stopping a
   transfer.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:01a8 +10 }
+{ [re] @asm 000 1d0c:01a8 +10 }
 procedure DMA16Reset; assembler;
 asm
   AND  AH, 3             { 1d0c:01a8                                        }
@@ -380,7 +380,7 @@ asm
   OUT  0D4h, AL          { 1d0c:01af                                        }
 end;
 
-{ @asm 000 1d0c:01b2 +7 }
+{ [re] @asm 000 1d0c:01b2 +7 }
 procedure DMA8Reset; assembler;
 asm
   MOV  AL, AH            { 1d0c:01b2                                        }
@@ -395,7 +395,7 @@ end;
   HAND ASSEMBLER, verbatim. Clear the flip-flop, then two reads from the
   count port give low byte then high byte.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:01b9 +28 }
+{ [re] @asm 000 1d0c:01b9 +28 }
 procedure GetDMA16Count; assembler;
 asm
   AND  AH, 3             { 1d0c:01b9                                        }
@@ -436,7 +436,7 @@ end;
   Reporting a refusal rather than a plausible-looking wrong number is the
   part worth copying. $FFFF is not a valid count here.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:01d5 +56 }
+{ [re] @asm 000 1d0c:01d5 +56 }
 procedure GetDMA8Count; assembler;
 asm
   XOR  AL, AL            { 1d0c:01d5                                        }
@@ -489,7 +489,7 @@ end;
 
   The same channel guard as the two routines below -- see the block there for
   why 2 and 4 are refused. }
-{ @asm 000 1d0c:020d +21 }
+{ [re] @asm 000 1d0c:020d +21 }
 procedure GetDMACountAsm; far; assembler;
 asm
   CMP  AH, 2             { 1d0c:020d  the floppy                            }
@@ -529,7 +529,7 @@ end;
   hardware that may be configured any way at all, and a wrong jumper setting
   should cost the sound rather than the machine.
   =========================================================================== }
-{ @asm 000 1d0c:0222 +21 }
+{ [re] @asm 000 1d0c:0222 +21 }
 procedure DMASetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1d0c:0222  the floppy controller's channel        }
@@ -545,7 +545,7 @@ asm
 end;
 
 { The same guard as DMASetAsm above, for the same two reasons. }
-{ @asm 000 1d0c:0237 +21 }
+{ [re] @asm 000 1d0c:0237 +21 }
 procedure DMAResetAsm; far; assembler;
 asm
   CMP  AH, 2             { 1d0c:0237                                        }
@@ -566,7 +566,7 @@ end;
   HAND ASSEMBLER, verbatim: each one is nothing but moving parameters into
   the registers the kernels expect, and a far call.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:024c +27 }
+{ [re] @asm 000 1d0c:024c +27 }
 procedure DMARawSet(Channel, Mode, Page : Byte; Offs, Size : Word); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1d0c:024f  [BP+0Eh]                         }
@@ -577,7 +577,7 @@ asm
   CALL DMASetAsm              { 1d0c:025e                                   }
 end;
 
-{ @asm 000 1d0c:0267 +15 }
+{ [re] @asm 000 1d0c:0267 +15 }
 function GetDMACount(Channel : Byte) : Word; assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1d0c:026a                                   }
@@ -618,7 +618,7 @@ end;
   Flagged rather than fixed. Resolving it properly needs the callers in 12ba
   and 19a0, which have not been transcribed.
   -------------------------------------------------------------------------- }
-{ @asm 000 1d0c:0276 +122 }
+{ [re] @asm 000 1d0c:0276 +122 }
 procedure DMASet(Channel, Mode : Word; Buf : Pointer; Size : Word);
 var
   Segm : Word;           { [BP-2] }
@@ -659,7 +659,7 @@ begin
   DMARawSet(Channel, Mode, Segm shr 12, Offs, Size);  { 1d0c:02e9 }
 end;
 
-{ @asm 000 1d0c:02f0 }
+{ [re] @asm 000 1d0c:02f0 }
 procedure DMAReset(Channel : Byte); assembler;
 asm
   MOV  AH, BYTE PTR Channel   { 1d0c:02f3                                   }

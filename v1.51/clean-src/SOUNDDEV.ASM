@@ -18,8 +18,6 @@
 ;     the DSP writers      talking to a Sound Blaster
 ;     the output selectors mono or stereo, 8-bit or 16-bit
 ;
-;
-;
 ;     instruction   original       TASM 4.1   TP6 inline asm
 ;     AND AL,AL     22 C0 @1014    22 C0      20 C0
 ;     XOR AL,AL     32 C0 @102e    32 C0      30 C0
@@ -28,7 +26,6 @@
 ;
 ; while GetPlayPos, which stays in SOUNDDEV.PAS, has TP's 29 C3 for SUB BX,AX.
 ; Two assemblers, two regions. See docs/06-transcription.md.
-;
 ;
 
                 MODEL   TPASCAL
@@ -93,7 +90,6 @@ StackSize       EQU     1000
 ; pointer and returns RETF.
 ; ==========================================================================
 ;
-;
                 DB      0
                 PUBLIC  SharedPoll
 ; ===========================================================================
@@ -107,7 +103,7 @@ StackSize       EQU     1000
 ; shape this routine:
 ;
 ;   1. It borrows whatever registers the interrupted code was using, so it saves
-;      all of them -- PUSHA plus the two segment registers -- and not just the
+;      all of them -- PUSHA plus the two SEGMENT registers -- and not just the
 ;      ones it happens to touch.
 ;   2. It cannot assume DS. The interrupted code had its own, so DS is loaded
 ;      from SEG @DATA before any variable is read.
@@ -115,7 +111,7 @@ StackSize       EQU     1000
 ;      for, and why the guard cannot live in DGROUP.
 ;
 ; THE GUARD IS IN THE CODE SEGMENT, WHICH IS THE POINT OF IT. It is read and
-; set at 1010 and 101a, before SS and DS are trusted -- CS is the only segment
+; set at 1010 and 101a, before SS and DS are trusted -- CS is the only SEGMENT
 ; register an interrupt can rely on, because the processor set it. A guard in
 ; DGROUP would need DS to already be right, which is the thing being
 ; established.
@@ -123,8 +119,8 @@ StackSize       EQU     1000
 SharedPoll:
         PUSHA                             ; 1008  every general register: this
                                           ;       runs on borrowed time
-        PUSH    ES                        ; 1009
-        PUSH    DS                        ; 100a
+        PUSH    ES
+        PUSH    DS
         MOV     AX,SEG @DATA              ; 100b  the original: MOV AX,1caa
         MOV     DS,AX                     ; 100e  DS is ours from here on
 
@@ -147,8 +143,8 @@ SharedPoll:
 ; neither routine may nest inside the other: both save into SavedSS/SavedSP, and
 ; a second save would overwrite the first.
         MOV     [SavedSS],SS              ; 101f  save the caller's stack
-        MOV     [SavedSP],SP              ; 1023
-        MOV     AX,DS                     ; 1027
+        MOV     [SavedSP],SP
+        MOV     AX,DS
         MOV     SS,AX                     ; 1029  ours is in DGROUP
         MOV     SP,OFFSET DevStack + StackSize ; 102b  its top
 
@@ -164,7 +160,7 @@ SharedPoll:
 ; already switched off before v1.51 dropped it.
         MOV     [DeviceIdling],AL         ; 1030  clear before the work
 
-        CALL    @@Prepare                 ; 1033
+        CALL    @@Prepare
         CALL    DWORD PTR [PeriodicProc]  ; 1036  the installed callback
 
 ; **THE ORDER OF THESE TWO MATTERS AND THE PROCESSOR HELPS.** Writing SS leaves
@@ -184,13 +180,13 @@ SharedPoll:
 ; everything below is common to both paths.
 @@Out:
         POP     DS                        ; 1047  in reverse order of the pushes
-        POP     ES                        ; 1048
-        POPA                              ; 1049
+        POP     ES
+        POPA
         RETF                              ; 104a  far: the caller reached this
                                           ;       through a pointer, not a name
 @@Guard:
         DB      0                         ; 104b  THE GUARD, and it lives in the
-                                          ;       CODE segment on purpose -- see
+                                          ;       CODE SEGMENT on purpose -- see
                                           ;       the routine header
         DB      0C3h                      ; 104c  a trailing byte with no
                                           ;       instruction reaching it,
@@ -274,10 +270,10 @@ SelectOutput:
     DW OFFSET SbSplTimeout
 @@Wait3:
     DB 4Bh                   ; 106e  DEC  BX
-    JZ      @@Send3          ; 106f
+    JZ      @@Send3
     DB 0ECh                  ; 1071  IN   AL,DX
     DB 0A8h, 80h             ; 1072  TEST AL,80h
-    JNZ     @@Wait3          ; 1074
+    JNZ     @@Wait3
 @@Send3:
     DB 8Ah, 0C4h             ; 1076  MOV  AL,AH
     DB 0EEh                  ; 1078  OUT  DX,AL -- the sample
@@ -297,12 +293,11 @@ SelectOutput:
     DB 0C8h, 00h, 00h, 00h   ; 1087  ENTER 0,0 -- by hand
     DB 0B8h                  ; 108b  MOV  AX,imm16 ...
     DW OFFSET SetGains + 0636h    ;     ... 0d7c, the mono loop
-    JMP     @@Install        ; 108e
+    JMP     @@Install
 
 ; Mono or stereo, by the first argument. The DMA path, where the card is fed a
 ; buffer and can therefore afford stereo; the entry above is the non-DMA path,
 ; fed sample by sample from the timer, and a non-DMA device is always mono.
-;
 ;
                 PUBLIC  DevInitSbDMA
 ; ===========================================================================
@@ -330,10 +325,10 @@ DevInitSbDMA:
                              ;       emit its own and the bytes must match
     DB 8Ah, 46h, 08h         ; 1094  MOV  AL,[BP+8] -- the first argument
     DB 22h, 0C0h             ; 1097  AND  AL,AL
-    JNZ     @@Stereo         ; 1099
+    JNZ     @@Stereo
     DB 0B8h                  ; 109b  MOV  AX,imm16 ...
     DW OFFSET SetGains + 0636h    ;     ... 0d7c, mono
-    JMP     @@Install        ; 109e
+    JMP     @@Install
 @@Stereo:
     DB 0B8h                  ; 10a0  MOV  AX,imm16 ...
     DW OFFSET SetGains + 06B6h    ;     ... 0dfc, stereo
@@ -352,7 +347,7 @@ DevInitSbDMA:
     DW OFFSET OutSlot0
     DB 0B8h                  ; 10ae  MOV  AX,imm16 ...
     DW OFFSET @@Prim1             ;     ... 104d
-    DB 0A3h                  ; 10b1
+    DB 0A3h
     DW OFFSET OutSlot1
     DB 0B8h                  ; 10b4  MOV  AX,imm16 ...
     DW OFFSET @@Prim3             ;     ... 1063
@@ -362,7 +357,7 @@ DevInitSbDMA:
     DW OFFSET @@Prim4             ;     ... 107c
     DB 0A3h                  ; 10bd  MOV  [OutSlot3],AX
     DW OFFSET OutSlot3
-    LEAVE                    ; 10c0
+    LEAVE
     RETF    4                ; 10c1  and THIS is why the module exists
 
                 END

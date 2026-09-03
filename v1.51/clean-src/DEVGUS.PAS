@@ -55,7 +55,7 @@ const
   { **THE FIRST OF THE FIVE IS AN ALIGNMENT PAD, AND 1.31b SAYS SO.** Its own
     DevGus declares `Busy : Byte = 0` and comments it "the re-entrancy guard;
     pad at $005f" -- one byte of guard, then one byte of padding, then an even
-    address. The same pair is here: `Busy` at $001A and a pad at $001B.}
+    address. The same pair is here: `Busy` at $001A and a pad at $001B. }
   Pad001B  : Byte    = 0;   { alignment, as 1.31b's $005f is    }
 
   { **FOUR BYTES v1.51 HAS AND 1.31b DOES NOT.** This note used to say 1.31b
@@ -72,7 +72,7 @@ const
     Five bytes that version does not have.
 
     So these are v1.51's own and only a reader in THIS image can name them.
-    Nothing in the segment touches them. }
+    Nothing in the SEGMENT touches them. }
   Fill001C : LongInt = 0;
 
   PollBusy : Byte    = 0;
@@ -156,7 +156,7 @@ begin
       saves registers PUSHA, ES, DS -- it          nothing: the compiler's
                       borrowed them                own prologue covers it
       loads DS        MOV AX,SEG @DATA             not needed; DS is right
-      guard           Busy, in the CODE segment    PollBusy, in DGROUP -- DS
+      guard           Busy, in the CODE SEGMENT    PollBusy, in DGROUP -- DS
                       because DS is not trusted    is already trusted here
                       yet
       stack           SoundDevices.DevStack        SoundDevices.PollStack
@@ -191,7 +191,7 @@ begin
     below is why nothing could find it: SP is loaded with the address of `SavedSS`,
     the variable ABOVE the block, and the stack then grows down through it. The
     block's own address appears in no instruction anywhere in the image. }
-  MOV  SS, DX         { ours lives in the data segment        }
+  MOV  SS, DX         { ours lives in the data SEGMENT        }
   MOV  SP, OFFSET SoundDevices.SavedSS  { the top of PollStack }
   CALL DWORD PTR SoundDevices.PeriodicProc
   MOV  SS, SoundDevices.SavedSS
@@ -328,7 +328,7 @@ fill in the record and hand it to the player core.
 
   The name at +$00 is not written here: 'GUS' is already sitting in DGROUP as
   initialised data, so the reconstruction gives it as a typed constant in the
-  initialisation below rather than assigning it.}
+  initialisation below rather than assigning it. }
 begin
   DevData.Name            := @DevName;
   DevData.Autodetect      := @DevDetect;

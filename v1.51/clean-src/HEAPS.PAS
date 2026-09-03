@@ -4,10 +4,10 @@
   THE MEMORY POOL: where a module's samples and patterns actually live.
 
   WHY NOT JUST USE THE TURBO PASCAL HEAP. Because a sample is bigger than a
-  segment. Pascal's own heap hands out pointers within 64K, and a single
+  SEGMENT. Pascal's own heap hands out pointers within 64K, and a single
   instrument in a module can exceed that -- so this pool deals in FLAT
   addresses, treating everything DOS gave back as one linear space and doing
-  its own arithmetic across segment boundaries. That is what LinealPtr and its
+  its own arithmetic across SEGMENT boundaries. That is what LinealPtr and its
   two companions are for, and why they exist at all.
 
   IT IS AN OBJECT WITH VIRTUAL METHODS, which is unusual for 1993 Pascal and
@@ -31,7 +31,7 @@
   `TObject` IS DECLARED HERE rather than imported, and that is deliberate: it needs to
   be a fieldless object with one virtual method and nothing else, which is all the VMT
   geometry requires, and declaring it locally keeps this unit off whichever Turbo
-  Vision the TP6 install happens to have. Segment 1891 IS Borland's `Objects` and is
+  Vision the TP6 install happens to have. SEGMENT 1a79 IS Borland's `Objects` and is
   not in scope to reconstruct.
   =========================================================================== }
 
@@ -55,7 +55,7 @@ type
 
     AND USING IT MATTERS FOR MORE THAN TIDINESS. A locally declared `TObject` needs
     its two method BODIES compiled somewhere, and "somewhere" is this unit's code
-    segment -- bytes that in the original live in segment 1891, Borland's `Objects`.
+    SEGMENT -- bytes that in the original live in SEGMENT 1a79, Borland's `Objects`.
     Those phantom bodies would displace everything after them. Importing the real
     unit puts them where they belong and makes the VMT layout authoritative rather
     than reconstructed.
@@ -130,7 +130,7 @@ type
     the first virtual THeapColl adds, so it lands there -- but only if THeap has
     exactly THIRTEEN virtuals, running Done, HGetMem, HFreeMem, HMemAvail, HMaxAvail,
     HTotalAvail, TransferToSystem, TransferFromSystem, BeginOperation, EndOperation,
-    InHeap, HNewStr, HDisposeStr. Drop the string pair and AddHeap would be at +$30.}
+    InHeap, HNewStr, HDisposeStr. Drop the string pair and AddHeap would be at +$30. }
   PHeapColl = ^THeapColl;
   THeapColl = object(THeap)
     HeapColl : TCollection;
@@ -186,19 +186,19 @@ implementation
 THE THREE POINTER HELPERS, and all three are one-liners
   that cost thirty to fifty bytes each because 8086 pointer arithmetic is 32-bit.
 
-  A far pointer is a segment and an offset, and the same byte can be addressed many
-  ways. NORMALISING one means moving as much as possible into the segment, so that the
+  A far pointer is a SEGMENT and an offset, and the same byte can be addressed many
+  ways. NORMALISING one means moving as much as possible into the SEGMENT, so that the
   offset is always 0..15 -- which is what makes two pointers to the same byte compare
   equal, and what lets a heap span more than 64K without the offset ever wrapping.
 
       IncPtr(P, L)     P advanced by L bytes, renormalised
       NormalizePtr(P)  P renormalised in place
-      LinealPtr(P)     P as a single 20-bit linear address}
+      LinealPtr(P)     P as a single 20-bit linear address }
 { ===========================================================================
   **THE THREE POINTER HELPERS, AND WHY REAL MODE NEEDS THEM AT ALL.**
 
-  A far pointer here is two 16-bit halves, a segment and an offset, and the
-  address it means is `segment * 16 + offset`. That multiplication is the source
+  A far pointer here is two 16-bit halves, a SEGMENT and an offset, and the
+  address it means is `SEGMENT * 16 + offset`. That multiplication is the source
   of every awkwardness below, because it means THE SAME ADDRESS HAS 4,096
   DIFFERENT REPRESENTATIONS: $1000:$0010 and $1001:$0000 are the same byte.
 
@@ -211,12 +211,12 @@ THE THREE POINTER HELPERS, and all three are one-liners
   is here.
 
   **Offsets overflow at 64K.** Adding to the offset alone works until it passes
-  $FFFF and then wraps to the start of the same segment -- a pointer that walks
+  $FFFF and then wraps to the start of the same SEGMENT -- a pointer that walks
   backwards. `IncPtr` adds the whole amount and carries the excess into the
-  segment, sixteen bytes at a time, which is what `shr 4` and `and 15` are doing.
+  SEGMENT, sixteen bytes at a time, which is what `shr 4` and `and 15` are doing.
 
   `NormalizePtr` is `IncPtr` with a zero increment: it moves as much as possible
-  out of the offset and into the segment, leaving an offset of 0..15. Doing that
+  out of the offset and into the SEGMENT, leaving an offset of 0..15. Doing that
   before a comparison, or before handing a pointer to something that will add to
   it, buys the largest possible margin before the next overflow.
 
@@ -225,7 +225,7 @@ THE THREE POINTER HELPERS, and all three are one-liners
   that and nothing is fetched from the address.
   =========================================================================== }
 
-{ Advance a pointer by L bytes, carrying any overflow into the segment so the
+{ Advance a pointer by L bytes, carrying any overflow into the SEGMENT so the
   result is correct past a 64K boundary. }
 function IncPtr(P : Pointer; L : LongInt) : Pointer;
 begin
@@ -239,7 +239,7 @@ begin
   NormalizePtr := Ptr(Seg(P^) + (Ofs(P^) shr 4), Ofs(P^) and 15)
 end;
 
-{ The 20-bit address as a single number: segment * 16 + offset. The only form in
+{ The 20-bit address as a single number: SEGMENT * 16 + offset. The only form in
   which two pointers may be compared or subtracted. }
 function LinealPtr(P : Pointer) : LongInt;
 begin
@@ -326,7 +326,7 @@ end;
 
 { ==========================================================================
   EVERYTHING BELOW IS STILL A STUB, and they are in the RELEASE'S FILE ORDER, which
-  the addresses confirm as far as they have been checked:}
+  the addresses confirm as far as they have been checked: }
 
 { --------------------------------------------------------------------------
 THeap.Init. Build a heap inside a caller-supplied buffer.
@@ -383,7 +383,7 @@ THeap.HGetMem and HFreeMem, and the pair around them.
 
   EVERY ONE OF THE FIVE MEMORY OPERATIONS IS WRAPPED IN BeginOperation/EndOperation,
   and the call counts prove it before a byte is read: `CALLF [DI+24]` appears FIVE
-  times in the segment and `CALLF [DI+28]` five times, which are exactly the five
+  times in the SEGMENT and `CALLF [DI+28]` five times, which are exactly the five
   release methods that use them -- HGetMem, HFreeMem, HMemAvail, HMaxAvail and
   HTotalAvail.
 
@@ -395,7 +395,7 @@ THeap.HGetMem and HFreeMem, and the pair around them.
 
   AND THE DIAGNOSTIC IS GONE. The release's HFreeMem writes
   `WriteLn('Bad FreeMem: ', HexPtr(Buf))` on a pointer outside the heap. **There is not
-  one printable string anywhere in segment 17cf**, so 1.31 drops the message and keeps
+  one printable string anywhere in SEGMENT 19b7**, so 1.31 drops the message and keeps
   the guard -- which is what a player with no console would do.
   -------------------------------------------------------------------------- }
 procedure THeap.HGetMem(var Buf : Pointer; Size : Word);
@@ -444,7 +444,7 @@ end;
 the four-pointer swap, in both directions, and the guard around it.
 
   THE CALL COUNTS CONFIRM `EndOperation`'s TWO BRANCHES. TransferFromSystem is called
-  FOUR times in the segment and TransferToSystem TWICE, and the release accounts for
+  FOUR times in the SEGMENT and TransferToSystem TWICE, and the release accounts for
   exactly that: BeginOperation calls one of each, EndOperation calls
   TransferFromSystem in BOTH of its branches plus Heap.TransferToSystem in one, and
   ChangeSystemHeap calls Heap.TransferFromSystem. 1+2+1 = 4 and 1+1 = 2. Written with
@@ -584,13 +584,13 @@ end;
 
 
 { --------------------------------------------------------------------------
-THeapColl.Done, and the NESTED PROCEDURE is why the segment has more
+THeapColl.Done, and the NESTED PROCEDURE is why the SEGMENT has more
   frames than the release has routines.
 
   `if Seg(H^) <> Seg(Heap)` IS THE GUARD THAT SAVES THE SYSTEM HEAP. `Heap` is a
   static variable, not a `New`-allocated object, so disposing it would hand the RTL a
   pointer it never allocated. Comparing SEGMENTS rather than full addresses is enough
-  because a static object and a heap-allocated one cannot share a segment here.
+  because a static object and a heap-allocated one cannot share a SEGMENT here.
 
   AND IT DELETES WHILE IT ITERATES, which is normally a bug and is safe here only
   because Borland's `ForEach` walks the item array by index from the end -- so removing
@@ -612,7 +612,7 @@ end;
 
 { Two one-liners, and they are the two virtuals THeapColl ADDS -- so they sit at
   VMT +$38 and +$3c, one and two slots past THeap's last. `CALLF [DI+38]` appearing
-  three times in this segment is what fixed THeap's method list at thirteen. }
+  three times in this SEGMENT is what fixed THeap's method list at thirteen. }
 procedure THeapColl.AddHeap(H : PHeap);
 begin
   HeapColl.Insert(H)
@@ -773,7 +773,7 @@ the two unit-level initialisers, which is where the heaps get wired
 
   `DoneHeapVariables` REMOVES `Heap` BEFORE CALLING `Done`, which is the other half of
   the guard in THeapColl.Done's closure: that closure refuses to dispose anything whose
-  segment matches `Heap`'s, and taking it out of the collection first means the check
+  SEGMENT matches `Heap`'s, and taking it out of the collection first means the check
   never has to fire. Belt and braces, and the belt is here.
   -------------------------------------------------------------------------- }
 procedure InitHeapVariables;
@@ -786,13 +786,13 @@ end;
 { `DoneHeapVariables` IS ABSENT FROM 1.31, and a MISSING CALL is what proved it. The
   release's version is `FullHeap.RemoveHeap(@Heap); FullHeap.Done; TempHeap.Done` --
   and `RemoveHeap` is virtual at VMT +$3c, so calling it emits `CALLF [DI+3c]`.
-  **There is no `CALLF [DI+3c]` anywhere in segment 17cf.** The original's 0a93 begins
+  **There is no `CALLF [DI+3c]` anywhere in SEGMENT 19b7.** The original's 0a93 begins
   `MOV AX,[0c48] / MOV DX,[0c4a]`, which is `InitialHeapEnd := HeapEnd` -- the
   initialisation block, sitting immediately after InitHeapVariables with nothing
   between.
 
   So a player that runs until the machine is switched off never tears its heaps down,
-  which is the third routine this segment turns out not to have. `THeapColl.RemoveHeap`
+  which is the third routine this SEGMENT turns out not to have. `THeapColl.RemoveHeap`
   still exists and is still declared virtual: its slot is what puts `AddHeap` at +$38,
   and the two are declared as a pair. It simply has no caller. }
 

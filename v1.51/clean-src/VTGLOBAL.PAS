@@ -12,7 +12,7 @@
   THEY ARE TYPED CONSTANTS, WHICH IS HOW 1993 PASCAL GAVE A GLOBAL A DEFAULT.
   Each declaration below carries the value the program starts with, so the list
   doubles as the settings' documentation: DevID starts as the Sound Blaster,
-  the volume starts at 127 of 255, fading is permitted, the banner prints.}
+  the volume starts at 127 of 255, fading is permitted, the banner prints. }
 unit VTGlobal;
 
 interface
@@ -32,7 +32,7 @@ const
 
   { The rate used when a shelled-out program plays, three quarters of the
     player's own 16000. Lower because the shell is not the thing being
-    listened to.}
+    listened to. }
   ShellHz           : Word          = 12000;
 
   FadeIncr          : Word          = 256;
@@ -40,13 +40,13 @@ const
 
   { Where in the module to start, where to loop back to, and how much of the
     sequence to play. All three default to zero, meaning "the whole thing from
-    the beginning".}
+    the beginning". }
   VT1stPattern      : Word          = 0;
   VTRepStart        : Word          = 0;
   VTSongLen         : Word          = 0;
 
   { The command line handed to the shelled-out program. 127 characters, which
-    is DOS's own limit for a command tail.}
+    is DOS's own limit for a command tail. }
   ShellParam        : String[127]   = '';
 
   StringsFName      : PathStr       = 'VT_Esp.Lng';
@@ -54,7 +54,7 @@ const
 
   { Suppress the four-line startup banner. Set by the `nb` switch, and the
     player also sets it itself after printing once, so the banner appears at
-    most once however many times that path is taken.}
+    most once however many times that path is taken. }
   NoBanner          : Boolean       = False;
 
 

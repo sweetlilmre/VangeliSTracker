@@ -22,7 +22,7 @@
   happened anywhere else in this project**; the closest was `MyMove` in 12ba, one
   routine. So the release's root-directory sources can be trusted the way `LIB/`'s
   are, and the two absent keys were PREDICTED from the string table before a single
-  instruction was read.}
+  instruction was read. }
 unit VTCfg;
 
 interface
@@ -34,7 +34,7 @@ uses
     unit writes from the `LowQuality` key. It was reaching a duplicate declared in
     SongUnit; two bytes of that unit's variables, and removing them is what put
     VTNOTES' `NoteOf` back on $25c6. Already reached through SongUnit, so it cannot
-    move a segment. }
+    move a SEGMENT. }
 
 { read and interpret a file as a configuration file. }
 procedure ReadConfiguration(FName : PathStr); far;
@@ -71,9 +71,9 @@ var
   address is a linker fixup, so this cannot change a byte of
   either unit and the byte comparison cannot see it either way -- which is exactly
   what makes it dangerous, and exactly why it is written down. Move each one when its
-  segment lands.
+  SEGMENT lands.
   -------------------------------------------------------------------------- }
-  { Segment 193a, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
+  { SEGMENT 1b22, the release's `LIB/DEVSB.PAS` -- the SB Pro mixer. }
 
   { The release's `LIB/DEVDAC.PAS`. NO SEGMENT IN DEMOVT HAS BEEN IDENTIFIED AS THE
     DAC driver, and these three sit immediately after SoundDevices' $0bf0, so they
@@ -88,7 +88,7 @@ var
     line that this unit writes from the config file, and a private declaration cannot be
     shared. The release has always kept them in its own `VTGLOBAL.PAS`; ours now does
     too. `SbPort`, `SbIrq`, `SbDMAChan` and `SbHiSpeed` went to `SOUNDBLA.PAS`, a
-    declared stub for segment `19a0`, for the same reason.
+    declared stub for SEGMENT `19a0`, for the same reason.
 
     This unit still verifies IDENTICAL after losing those declarations, which is the
     expected result and worth stating: a DGROUP reference is a linker fixup, so where a
@@ -181,7 +181,7 @@ end;
 { --------------------------------------------------------------------------
 GetString. Take everything after the `=` on the current line and
   return it as a string, honouring quotes and stripping comments. 786 bytes, the
-  largest routine in the segment, and almost all of it is Pascal string handling.
+  largest routine in the SEGMENT, and almost all of it is Pascal string handling.
 
   THE QUOTE HANDLING IS THE HALF THAT LOOKS ODD AND IS RIGHT. Inside quotes a doubled
   quote means one literal quote, so the loop appends up to the closing quote, appends
@@ -339,7 +339,7 @@ GetNum. Read a number, and it accepts two forms.
 
       i := LP(Ptr((i AND $F0000) SHR 4, i AND $FFFF))^
 
-  splits that number into a segment and an offset and reads four bytes from there.
+  splits that number into a SEGMENT and an offset and reads four bytes from there.
   So a configuration file can set a value to whatever is in memory at a given
   address. In a tracker that is a debugging hook; in a demo player shipped inside
   another program it is a way for the host to hand values in. Either way it is the
@@ -521,7 +521,7 @@ DoSectGeneric. Read lines until the next `[` and hand each one to the
 
   THE HANDLER ARRIVES AS AN OFFSET, NOT A POINTER, and that is why the `asm` block
   exists. `Ptr(Seg(DoSectGeneric), Offs)` rebuilds a full address by borrowing this
-  routine's OWN segment -- which is sound because all seven handlers are in this unit
+  routine's OWN SEGMENT -- which is sound because all seven handlers are in this unit
   -- and then `CALL [DoSect]` calls through it. Pascal has procedural variables and
   the release does not use one here; a `Word` in the table is two bytes instead of
   four, and Seg(self) is free.
@@ -555,7 +555,7 @@ end;
 
 { --------------------------------------------------------------------------
   THE SECTION TABLE. Seven entries, each an OFFSET and a name, and the ORDER IS NOT
-  THE ROUTINES' ORDER: the handlers sit in the segment as SB, GUS, SBPro, DAC,
+  THE ROUTINES' ORDER: the handlers sit in the SEGMENT as SB, GUS, SBPro, DAC,
   PlayMod, Misc, Screen, and the table lists PlayMod before DAC. The release has both
   orders the same way round, which is one more small confirmation that this is the
   same source rather than a rewrite.
@@ -667,11 +667,11 @@ THE UNIT'S INITIALISATION SECTION, and it reads up to four files.
   second, and the later read overwrites the earlier. **That is why `PSYCHO.EXE`
   passing `@neurosis.cfg` works**: it is the same mechanism, and the map records this
   as the second rename-sensitive check in the program after the `'inconexi'` one in
-  segment 1000. Rename the executable and it reads a different configuration.
+  SEGMENT 1000. Rename the executable and it reads a different configuration.
 
   THE RELEASE HAS THIS BLOCK TOO, and an earlier version of this header said it did
   not. That was wrong and it was wrong for an avoidable reason: the claim came from
-  the segment map's description of what the init does, not from reading the bottom of
+  the SEGMENT map's description of what the init does, not from reading the bottom of
   `VTCFG.PAS`, which has the same block and the same three literals. **Read the file
   before saying what is not in it.**
   ========================================================================== }

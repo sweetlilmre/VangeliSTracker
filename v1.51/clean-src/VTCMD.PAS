@@ -32,7 +32,7 @@
       'nx' -> 06d3  PUSH BP, near RET, no parameters   NEW
       'nb' -> 05b2  PUSH BP, near RET, no parameters   NEW
 
-  THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM:}
+  THE FAR AND NEAR CALL COUNTS AGREE WITH THE RELEASE'S `DoAllMODs` TERM FOR TERM: }
 unit VTCmd;
 
 interface
@@ -72,7 +72,7 @@ type
   { TWO DESCENDANTS, NOT ONE, and the split is what makes `116e`'s two empty overrides
     unreachable. `TVTCmdSwitch` overrides InterpretSwitch and adds four virtuals of its
     own; `TVTCmd` then overrides InterpretNoSwitch. Between them every slot the base
-    left empty is filled by a routine in THIS segment. }
+    left empty is filled by a routine in THIS SEGMENT. }
   TVTCmdSwitch =
     object(TCmdLineInterpreter)
       procedure CmdInitShell     (Shell : String);        virtual;  { VMT +$2c }
@@ -99,7 +99,7 @@ var
     TSortedCollection exactly; its method table has three more entries than
     TCollection's and shares its first two, which is what a descendant looks like.
     Declaring this one a TStringCollection recovers all 48 bytes and the block then
-    matches. **A VMT is measurable data, and it names a type that no call site could.**}
+    matches. **A VMT is measurable data, and it names a type that no call site could.** }
   SongColl : TStringCollection; { the playlist, in the order given }
 
 procedure SetVTFreq;
@@ -124,7 +124,7 @@ uses
 
   They are separate from the switch handlers because the same choices arrive
   from two directions -- the command line and the config file -- and both have
-  to end up doing the same thing.}
+  to end up doing the same thing. }
 
 { --------------------------------------------------------------------------
 SetVTDevice, and THREE STATEMENTS OF THE RELEASE'S ARE ABSENT. Fifty-four
@@ -183,8 +183,8 @@ DoAllMODs. Find every module matching a pattern, across a list of
   because the `GOTO` leaves immediately afterwards.
 
   `Exts[0]` AND `Dirs[0]` ARE ASSIGNED TO, so both arrays are typed constants and live in
-  DGROUP rather than the code segment. That is why 3,296 bytes contain no `'.MOD'` and no
-  `'.669'` -- the strings are initialised data, and the only text in the segment is the
+  DGROUP rather than the code SEGMENT. That is why 3,296 bytes contain no `'.MOD'` and no
+  `'.669'` -- the strings are initialised data, and the only text in the SEGMENT is the
   switch table.
 
   `'.123'` AT `Exts[0]` IS A PLACEHOLDER that is always overwritten before use: the
@@ -199,7 +199,7 @@ const
     **THE RELEASE USES A WILDCARD WHERE 1.31 SPELLS BOTH OUT.** 1.39b has `'.S?M'`, one
     entry covering ScreamTracker 2 and 3; 1.31 lists `.S2M` and `.S3M` separately. It also
     has `.STM` where the release has `.STX`. So the release traded two entries for one and
-    changed a third -- and 1.31 is the earlier, longer form.}
+    changed a third -- and 1.31 is the earlier, longer form. }
   NumExts = 7;
   Exts : array[0..NumExts] of ExtStr =
     (
@@ -395,7 +395,7 @@ begin
   begin
     SbPort  := i;
     GUSPort := i;
-    { Set the serial port the silence driver clocks from.}
+    { Set the serial port the silence driver clocks from. }
     ComPort := i;
   end;
 end;
@@ -453,7 +453,7 @@ end;
       c6 06 e8 09 01     MOV byte [09e8],1
       c9 c3              LEAVE / RET
 
-  It is the `nb` switch, and `1000` is what names it: that segment tests `[09e8]` and
+  It is the `nb` switch, and `1000` is what names it: that SEGMENT tests `[09e8]` and
   skips a four-line banner when it is set. See the declaration of `NoBanner`. }
 procedure CmdNoBanner;
 begin
@@ -538,7 +538,7 @@ end;
 
 
 { the `nx` switch, and the same three instructions as CmdNoBanner but
-  writing `[0bc6]`. **Nothing in any segment reads that byte**, so there is no behaviour
+  writing `[0bc6]`. **Nothing in any SEGMENT reads that byte**, so there is no behaviour
   to name the routine after; a switch that was wired up and left unfinished. Named for
   the switch, like every other handler in this file -- which is the honest answer when
   the only thing demonstrable about a routine is the token that reaches it. }
@@ -645,7 +645,7 @@ CmdInitShell. `sh` names a program to run, and everything after it on the
   **`Copy(Line, Idx, 255)` IS THE POINT OF THE WHOLE THING.** `Line` and `Idx` are
   `TCmdLineInterpreter`'s fields -- the raw line and the tokeniser's cursor -- so this
   takes the untokenised remainder verbatim, quotes and switches and all. It is the only
-  place in either segment that reaches past `GetToken` into the cursor itself.
+  place in either SEGMENT that reaches past `GetToken` into the cursor itself.
 
   `ENTER $204` IS 516 AND IT ACCOUNTS FOR THE UNUSED LOCALS: 256 for the `Shell` value
   parameter, 256 for the `Copy` result temporary, and 4 for `i` and `r`. **A pair of

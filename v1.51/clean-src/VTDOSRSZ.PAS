@@ -17,7 +17,7 @@
   so a caller names the address it wants the block to reach and does not have
   to know where the program starts. That is why the parameter is a pointer:
   the caller passes the end of its own heap and the arithmetic here turns that
-  into a length.}
+  into a length. }
 
 { This unit is held to 8086 instructions. $G- forbids the 80286 forms Turbo
   Pascal would otherwise emit, and it must stay LOCAL to this unit -- most of
@@ -61,7 +61,7 @@ implementation
       Intr($21, Regs)
 
   **A PARAMETER LIST CAN BE WRONG IN A WAY ONLY A CALLER IN ANOTHER SEGMENT
-  REVEALS**, and no amount of verifying THIS unit would ever have found it.}
+  REVEALS**, and no amount of verifying THIS unit would ever have found it. }
 procedure SetMemTop(P : Pointer); assembler;
 asm
   MOV  BX, WORD PTR P    { Ofs(P)                    }
@@ -69,9 +69,9 @@ asm
   MOV  CL, 4             { 8086: no shift by immediate > 1       }
   SHR  BX, CL            { bytes -> paragraphs                   }
   ADD  BX, WORD PTR P+2  { Seg(P), giving the top    }
-  MOV  AX, PrefixSeg     { the program's own PSP segment         }
+  MOV  AX, PrefixSeg     { the program's own PSP SEGMENT         }
   SUB  BX, AX            { absolute top -> a length in paragraphs}
-  MOV  ES, AX            { $4A wants the block's own segment     }
+  MOV  ES, AX            { $4A wants the block's own SEGMENT     }
   MOV  AH, 4Ah           { DOS: resize memory block              }
   INT  21h               { carry ignored -- see above            }
 end;

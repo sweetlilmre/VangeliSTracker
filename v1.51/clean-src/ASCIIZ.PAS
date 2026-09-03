@@ -17,7 +17,7 @@
   **THE RELEASE SAYS "MAXIMUM" AND THE CODE MEANS "EXACTLY".** A shorter source
   is padded out with spaces rather than left short, so the result is always `l`
   characters. That matters to a caller laying out a column: the width is a
-  guarantee, not a ceiling.}
+  guarantee, not a ceiling. }
 
 unit AsciiZ;
 
@@ -45,7 +45,7 @@ implementation
   THE RESULT IS BUILT IN PLACE. `StrAsciiZ[i + 1] := ...` indexes the function's
   own result: inside the body a function identifier denotes the result variable
   and can be subscripted like any other string. No local is used and no copy is
-  made at the end.}
+  made at the end. }
 function StrAsciiZ(var s; l : Word) : String;
 var
   z : array[0..65520] of Char absolute s;

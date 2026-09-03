@@ -21,7 +21,7 @@
   decision: `Path[0]` is then the length byte itself, which is zero and matches
   none of the three. It is harmless -- an empty directory becomes '\', the
   root, which is where a bare file name would have been looked for anyway --
-  but a caller passing '' and expecting '' back will not get it.}
+  but a caller passing '' and expecting '' back will not get it. }
 
 unit FileUtil;
 

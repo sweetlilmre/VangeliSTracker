@@ -115,7 +115,7 @@ function  DMASBMixName : TDevID; far;   begin end;
 function  DMASBMix2Name : TDevID; far;  begin end;
 
 { NEAR -- it ends in `RET`, not `RETF`, so it is an
-  implementation-only helper and nothing outside the segment reaches it.
+  implementation-only helper and nothing outside the SEGMENT reaches it.
 
   It copies three port numbers out of this card's hardware unit into the
   PLAYER CORE's copies, which is how 1a17 drives the DSP without knowing which

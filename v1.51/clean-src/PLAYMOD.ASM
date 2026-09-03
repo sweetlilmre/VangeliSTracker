@@ -23,20 +23,15 @@
 ; silent channel does not need a branch in the caller; DumpInstrument is the
 ; Pascal-callable entry that sets the registers up and picks one.
 ;
-;
-;
 ;       2E 89 16 E3 14     MOV WORD PTR CS:[14E3],DX
 ;
-; a store into the code segment, patching an immediate inside this same module.
+; a store into the code SEGMENT, patching an immediate inside this same module.
 ; No Pascal statement produces that. 1.39b builds the same code the same way,
 ; from LIB/PLAYMOD.ASM under a $L, and this file is its 1.31 counterpart.
 ;
-;
-;
-; Same instruction, same segment, two different encodings, because two different
+; Same instruction, same SEGMENT, two different encodings, because two different
 ; tools emitted them. Likewise AND CH,CH is 22 ED here and SUB AX,CX is 2B C1,
 ; both the forms Turbo Pascal's own inline assembler does not choose.
-;
 ;
 ;
 ; THE NOPs ARE THE ORIGINAL ASSEMBLER'S PADDING, NOT DEAD CODE.
@@ -114,7 +109,6 @@
 ;          `(Step SHR 8) AND 0FFFFh` in one instruction. The same trick is at
 ;          16c9. It is only expressible in assembler, and it is a second reason
 ;          this run was never Pascal.
-;
 ;
 
                 MODEL   TPASCAL
@@ -248,7 +242,7 @@ DumpRaw:
 ;     [1.39b] "The loop. Entered with: DL = volume, BL = fractional part of the
 ;              increment, BP = integer part of the increment, BH = fractional
 ;              part of the position within the sample, SI = integer part of the
-;              position within the sample, ES = segment of the buffer, DI =
+;              position within the sample, ES = SEGMENT of the buffer, DI =
 ;              offset within the buffer, CX = number of samples to produce."
 ;
 ; **THE REGISTERS MOVED AND THE SHAPE DID NOT.** v1.51 keeps the volume in CL
@@ -265,7 +259,7 @@ DumpRaw:
 ; construction. The release's carry and loop-wrap notes describe a routine v1.51
 ; does not have, and they are left out rather than placed where they would read
 ; as true.
-DumpLoop:                                       ; 14d8
+DumpLoop:
                 REPT    8
                 MOV     AL,[SI]                 ; [1.39b] read the sample for
                                                 ;   this position
@@ -282,7 +276,7 @@ DumpLoop:                                       ; 14d8
                                                 ;   fraction into it
                 ENDM
 
-                DEC     CH                      ; 1550
+                DEC     CH
                 JNZ     DumpLoop                ; 1552  backwards: no padding
                 RET                             ; 1554  NEAR -- an internal call
 
@@ -308,7 +302,7 @@ DumpLoop:                                       ; 14d8
 ; per sample instead of fifteen.
 ;
 ; DS IS OVERWRITTEN AND THAT IS SAFE HERE. `PUSH ES / POP DS` below points DS at
-; the buffer, because with no source to read the segment is wanted only for
+; the buffer, because with no source to read the SEGMENT is wanted only for
 ; `ADC SI,DX` to carry into. DumpRaw could not do this.
 ; ============================================================================
                 PUBLIC  EmptyRaw
@@ -334,13 +328,13 @@ EmptyRaw:
                 MOV     WORD PTR CS:[EmptyLoop+EmptyPatchOfs+EmptyLoopSize*6],DX
                 MOV     WORD PTR CS:[EmptyLoop+EmptyPatchOfs+EmptyLoopSize*7],DX
 
-                MOV     DL,CH                   ; 157d
-                XOR     DH,DH                   ; 157f
+                MOV     DL,CH
+                XOR     DH,DH
 
-; 1581 -- DS := ES. Nothing is read from the source here, so the segment is only
+; 1581 -- DS := ES. Nothing is read from the source here, so the SEGMENT is only
 ; wanted for the `ADC SI,DX` to carry into, and the caller's DS is not needed.
-                PUSH    ES                      ; 1581
-                POP     DS                      ; 1582
+                PUSH    ES
+                POP     DS
 
 ; The same part-way entry as DumpRaw -- see the worked example there. Only two
 ; things differ, and both are the original's own inconsistency rather than a
@@ -357,13 +351,13 @@ EmptyRaw:
                                                 ;       in encoding and no
                                                 ;       difference in effect
                 JZ      SHORT EmptyLoop         ; 1590  SHORT: no JUMPS padding
-                NEG     AL                      ; 1592
-                AND     AL,7                    ; 1594
-                MOV     AH,EmptyLoopSize        ; 1596
+                NEG     AL
+                AND     AL,7
+                MOV     AH,EmptyLoopSize
                 NOP                             ; 1598  JUMPS padding
-                NOP                             ; 1599
-                MUL     AH                      ; 159a
-                ADD     AX,OFFSET EmptyLoop     ; 159c
+                NOP
+                MUL     AH
+                ADD     AX,OFFSET EmptyLoop
 
 ; **A COMPUTED JUMP WRITTEN AS A RETURN.** `PUSH AX / RET` goes wherever AX
 ; says, exactly as `JMP AX` would -- RET pops an address and jumps to it, and it
@@ -382,7 +376,7 @@ EmptyRaw:
                 XOR     AX,AX                   ; 15a0  ...frees AX for the zero
                 RET                             ; 15a2  "return" INTO the body
 
-EmptyLoop:                                      ; 15a3
+EmptyLoop:
                 REPT    8
                 MOV     WORD PTR ES:[DI],AX     ; [1.39b] store the zero in the
                                                 ;   buffer
@@ -391,15 +385,14 @@ EmptyLoop:                                      ; 15a3
                 ADC     SI,DX
                 ENDM
 
-                DEC     CH                      ; 15fb
+                DEC     CH
                 JNZ     EmptyLoop               ; 15fd  backwards: no padding
-                RET                             ; 15ff
+                RET
 
 
 ; --------------------------------------------------------------------------
 ; DumpInstrument -- the only entry Pascal calls: set the registers up from the
 ; stack frame, pick a kernel, run it.
-;
 ;
 ;   FUNCTION DumpInstrument(VAR Src; VAR Dest; Volume : Byte; Step : LongInt;
 ;                           SrcLimit, Max, ChanAdd : Word;
@@ -442,10 +435,10 @@ DumpInstrument:
                 AND     CH,CH                   ; 160a  a silent call reads no
                                                 ;       source, so no boundary
                                                 ;       can be crossed
-                JNZ     @@long                  ; 160c
+                JNZ     @@long
                 NOP                             ; 160e  JUMPS padding
-                NOP                             ; 160f
-                NOP                             ; 1610
+                NOP
+                NOP
 
                 MOV     CX,[BP+0Eh]             ; 1611  Step, high word
                 OR      CX,[BP+0Ch]             ; 1614  OR'd with the low word:
@@ -454,46 +447,46 @@ DumpInstrument:
                                                 ;       afterwards either way
                 JZ      @@long                  ; 1617  a zero step never moves,
                                                 ;       so it never runs out
-                NOP                             ; 1619
-                NOP                             ; 161a
-                NOP                             ; 161b
+                NOP
+                NOP
+                NOP
 
 ; 161c..1624 -- Max * (Step SHR 8), taken 16 bits at a time. The displacement
 ; 0Dh straddles Step's bytes 1 and 2; see the header.
                 MOV     AX,[BP+08h]             ; 161c  Max
-                MUL     WORD PTR [BP+0Dh]       ; 161f
+                MUL     WORD PTR [BP+0Dh]
                 AND     DH,DH                   ; 1622  overflowed 24 bits?
-                JNZ     @@long                  ; 1624
-                NOP                             ; 1626
-                NOP                             ; 1627
-                NOP                             ; 1628
+                JNZ     @@long
+                NOP
+                NOP
+                NOP
 
 ; 1629..163d -- fold in the low byte of the step and compare the total advance
 ; with the boundary.
-                MOV     AL,AH                   ; 1629
-                MOV     AH,DL                   ; 162b
-                PUSH    AX                      ; 162d
+                MOV     AL,AH
+                MOV     AH,DL
+                PUSH    AX
                 MOV     AL,[BP+0Ch]             ; 162e  Step, low byte
-                XOR     AH,AH                   ; 1631
+                XOR     AH,AH
                 MUL     WORD PTR [BP+08h]       ; 1633  * Max
-                POP     AX                      ; 1636
-                ADD     AX,DX                   ; 1637
+                POP     AX
+                ADD     AX,DX
                 CMP     AX,[BP+0Ah]             ; 1639  SrcLimit
-                JNC     @@short                 ; 163c
-                NOP                             ; 163e
-                NOP                             ; 163f
-                NOP                             ; 1640
+                JNC     @@short
+                NOP
+                NOP
+                NOP
 
 ; 1641..1660 -- the whole of Max fits. Load the kernels' register contract and
 ; hand over. `PUSH AX / POP BP` at 164a and 167e is how the fractional part of
 ; the source position gets into BP, which is where the kernels keep it -- so BP
 ; stops being a frame pointer for the duration of the call.
 @@long:
-                PUSH    DS                      ; 1641
-                PUSH    BP                      ; 1642
+                PUSH    DS
+                PUSH    BP
                 LDS     SI,ES:[DI+02h]           ; 1643  Src, integer part
                 MOV     AX,ES:[DI]              ; 1647  Src, fraction
-                PUSH    AX                      ; 164a
+                PUSH    AX
                 LES     DI,[BP+12h]             ; 164b  Dest
                 LES     DI,ES:[DI]              ; 164e  ... dereferenced
                 MOV     CL,[BP+10h]             ; 1651  Volume
@@ -504,153 +497,153 @@ DumpInstrument:
 
 ; 1660..167d -- and choose the kernel. Silence for no volume, for a zero step,
 ; or because the caller asked.
-                AND     CL,CL                   ; 1660
-                JZ      @@empty                 ; 1662
-                NOP                             ; 1664
-                NOP                             ; 1665
-                NOP                             ; 1666
-                AND     CH,CH                   ; 1667
-                JNZ     @@chksilent             ; 1669
-                NOP                             ; 166b
-                NOP                             ; 166c
-                NOP                             ; 166d
-                AND     DX,DX                   ; 166e
-                JZ      @@empty                 ; 1670
-                NOP                             ; 1672
-                NOP                             ; 1673
-                NOP                             ; 1674
+                AND     CL,CL
+                JZ      @@empty
+                NOP
+                NOP
+                NOP
+                AND     CH,CH
+                JNZ     @@chksilent
+                NOP
+                NOP
+                NOP
+                AND     DX,DX
+                JZ      @@empty
+                NOP
+                NOP
+                NOP
 @@chksilent:
                 CMP     BYTE PTR [BP+04h],0     ; 1675  Silent
-                JNZ     @@empty                 ; 1679
-                NOP                             ; 167b
-                NOP                             ; 167c
-                NOP                             ; 167d
+                JNZ     @@empty
+                NOP
+                NOP
+                NOP
 
                 POP     BP                      ; 167e  the source fraction
-                CALL    DumpRaw                 ; 167f
-                JMP     @@stored                ; 1682
+                CALL    DumpRaw
+                JMP     @@stored
                 NOP                             ; 1684  JUMPS padding
 @@empty:
-                POP     BP                      ; 1685
-                CALL    EmptyRaw                ; 1686
+                POP     BP
+                CALL    EmptyRaw
 
 ; 1689..16a2 -- write the advanced positions back through both VAR parameters and
 ; report that nothing is still owed.
 @@stored:
                 MOV     DX,BP                   ; 1689  the new fraction
-                POP     BP                      ; 168b
-                POP     DS                      ; 168c
-                LES     BX,[BP+16h]             ; 168d
-                MOV     WORD PTR ES:[BX],DX     ; 1690
-                MOV     WORD PTR ES:[BX+02h],SI ; 1693
-                LES     BX,[BP+12h]             ; 1697
-                MOV     WORD PTR ES:[BX],DI     ; 169a
-                XOR     AX,AX                   ; 169d
-                LEAVE                           ; 169f
-                RET     22                      ; 16a0
+                POP     BP
+                POP     DS
+                LES     BX,[BP+16h]
+                MOV     WORD PTR ES:[BX],DX
+                MOV     WORD PTR ES:[BX+02h],SI
+                LES     BX,[BP+12h]
+                MOV     WORD PTR ES:[BX],DI
+                XOR     AX,AX
+                LEAVE
+                RET     22
 
 ; 16a3..16c8 -- Max would run past the boundary, so work out how many samples
 ; there is room for: (SrcLimit - Src) DIV Step, in 8.8 fixed point.
 @@short:
                 MOV     DX,[BP+0Ah]             ; 16a3  SrcLimit
-                AND     DX,DX                   ; 16a6
-                JZ      @@nomues                ; 16a8
-                NOP                             ; 16aa
-                NOP                             ; 16ab
-                NOP                             ; 16ac
+                AND     DX,DX
+                JZ      @@nomues
+                NOP
+                NOP
+                NOP
 
 ; 16ad..16b8 -- SrcLimit minus the source position, borrowing by hand: the
 ; subtraction is done on one byte and DX is decremented only if it borrowed.
-                XOR     AL,AL                   ; 16ad
-                SUB     AL,ES:[DI+01h]          ; 16af
-                JZ      @@noborrow              ; 16b3
-                NOP                             ; 16b5
-                NOP                             ; 16b6
-                NOP                             ; 16b7
-                DEC     DX                      ; 16b8
+                XOR     AL,AL
+                SUB     AL,ES:[DI+01h]
+                JZ      @@noborrow
+                NOP
+                NOP
+                NOP
+                DEC     DX
 @@noborrow:
                 MOV     AH,DL                   ; 16b9  DX:AX right by eight
-                MOV     DL,DH                   ; 16bb
-                XOR     DH,DH                   ; 16bd
-                JMP     @@divide                ; 16bf
+                MOV     DL,DH
+                XOR     DH,DH
+                JMP     @@divide
                 NOP                             ; 16c1  JUMPS padding
 
 ; 16c2..16c8 -- there is room for nothing at all. Every sample is still owed.
 @@nomues:
                 MOV     AX,[BP+08h]             ; 16c2  Max
-                LEAVE                           ; 16c5
-                RET     22                      ; 16c6
+                LEAVE
+                RET     22
 
 ; 16c9..16f7 -- divide by the step, which is itself reassembled SHR 4 from the
 ; same straddling displacement trick. Two DIVs because the dividend is 32 bits
 ; and the quotient will not fit in one.
 @@divide:
-                MOV     CX,[BP+0Dh]             ; 16c9
-                SHL     CX,4                    ; 16cc
-                MOV     BL,[BP+0Ch]             ; 16cf
-                SHR     BL,4                    ; 16d2
-                OR      CL,BL                   ; 16d5
-                DIV     CX                      ; 16d7
-                SHL     AX,4                    ; 16d9
-                PUSH    AX                      ; 16dc
-                MOV     AL,DL                   ; 16dd
-                SHL     AL,4                    ; 16df
-                SHR     DX,4                    ; 16e2
-                MOV     AH,DL                   ; 16e5
-                MOV     DL,DH                   ; 16e7
-                XOR     DH,DH                   ; 16e9
-                DIV     CX                      ; 16eb
-                POP     CX                      ; 16ed
-                ADD     AX,CX                   ; 16ee
+                MOV     CX,[BP+0Dh]
+                SHL     CX,4
+                MOV     BL,[BP+0Ch]
+                SHR     BL,4
+                OR      CL,BL
+                DIV     CX
+                SHL     AX,4
+                PUSH    AX
+                MOV     AL,DL
+                SHL     AL,4
+                SHR     DX,4
+                MOV     AH,DL
+                MOV     DL,DH
+                XOR     DH,DH
+                DIV     CX
+                POP     CX
+                ADD     AX,CX
 
 ; 16f0..16f7 -- round up on any remainder: a partial sample still needs its slot.
-                AND     DX,DX                   ; 16f0
-                JZ      @@rounded               ; 16f2
-                NOP                             ; 16f4
-                NOP                             ; 16f5
-                NOP                             ; 16f6
-                INC     AX                      ; 16f7
+                AND     DX,DX
+                JZ      @@rounded
+                NOP
+                NOP
+                NOP
+                INC     AX
 @@rounded:
-                AND     AX,AX                   ; 16f8
+                AND     AX,AX
                 JZ      @@nomues                ; 16fa  backwards: no padding
-                CMP     AX,[BP+08h]             ; 16fc
-                JC      @@clamped               ; 16ff
-                NOP                             ; 1701
-                NOP                             ; 1702
-                NOP                             ; 1703
+                CMP     AX,[BP+08h]
+                JC      @@clamped
+                NOP
+                NOP
+                NOP
                 MOV     AX,[BP+08h]             ; 1704  clamp to Max
 @@clamped:
 
 ; 1707..1745 -- the same hand-over as @@long, but the count is on the stack so
 ; that what was NOT produced can be returned. Only DumpRaw is reachable here:
 ; every silent case left through @@long at 160c.
-                PUSH    AX                      ; 1707
-                PUSH    DS                      ; 1708
-                PUSH    BP                      ; 1709
-                LDS     SI,ES:[DI+02h]           ; 170a
-                MOV     BX,ES:[DI]              ; 170e
-                PUSH    BX                      ; 1711
-                LES     DI,[BP+12h]             ; 1712
-                LES     DI,ES:[DI]              ; 1715
-                MOV     CL,[BP+10h]             ; 1718
-                MOV     CH,[BP+0Eh]             ; 171b
-                MOV     DX,[BP+0Ch]             ; 171e
-                MOV     BX,[BP+06h]             ; 1721
-                POP     BP                      ; 1724
-                CALL    DumpRaw                 ; 1725
+                PUSH    AX
+                PUSH    DS
+                PUSH    BP
+                LDS     SI,ES:[DI+02h]
+                MOV     BX,ES:[DI]
+                PUSH    BX
+                LES     DI,[BP+12h]
+                LES     DI,ES:[DI]
+                MOV     CL,[BP+10h]
+                MOV     CH,[BP+0Eh]
+                MOV     DX,[BP+0Ch]
+                MOV     BX,[BP+06h]
+                POP     BP
+                CALL    DumpRaw
 
-                MOV     DX,BP                   ; 1728
-                POP     BP                      ; 172a
-                POP     DS                      ; 172b
-                LES     BX,[BP+16h]             ; 172c
-                MOV     WORD PTR ES:[BX],DX     ; 172f
-                MOV     WORD PTR ES:[BX+02h],SI ; 1732
-                LES     BX,[BP+12h]             ; 1736
-                MOV     WORD PTR ES:[BX],DI     ; 1739
+                MOV     DX,BP
+                POP     BP
+                POP     DS
+                LES     BX,[BP+16h]
+                MOV     WORD PTR ES:[BX],DX
+                MOV     WORD PTR ES:[BX+02h],SI
+                LES     BX,[BP+12h]
+                MOV     WORD PTR ES:[BX],DI
                 POP     CX                      ; 173c  what was produced
-                MOV     AX,[BP+08h]             ; 173d
+                MOV     AX,[BP+08h]
                 SUB     AX,CX                   ; 1740  ... so this is what is owed
-                LEAVE                           ; 1742
-                RET     22                      ; 1743
+                LEAVE
+                RET     22
 
                 END

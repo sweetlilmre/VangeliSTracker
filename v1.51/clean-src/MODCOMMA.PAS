@@ -42,7 +42,7 @@
   player because the Bxx and Dxx commands WRITE them -- a jump command changes
   where the song goes next. The player `uses` this unit, so this unit cannot
   reach back into the player; the variables have to sit on this side of the
-  dependency.}
+  dependency. }
 
 unit ModCommands;
 
@@ -79,7 +79,7 @@ type
 
     THE FIELD ORDER IS NOT NEGOTIABLE. Assembler routines in this unit and in
     the mixer reach fields by fixed offset from SI, so inserting a field would
-    silently move every field below it.}
+    silently move every field below it. }
   PCanal = ^TCanal;
   TCanal = record
     { WHAT IS PLAYING. The note exactly as the pattern gave it, the instrument
@@ -199,7 +199,7 @@ type
   THE PLAY RANGE IS KEPT TWICE, and the pair is a handshake. `Req*` is what a
   caller has ASKED for; `Range*`/`MySongLen` is what the player is currently
   working through. Starting playback copies one set to the other, so a request
-  can be lodged at any time without disturbing a song mid-row.}
+  can be lodged at any time without disturbing a song mid-row. }
 const
   MyLoopMod          : Boolean = False;  { repeat the song at its end?         }
   PermitFilterChange : Boolean = False;  { may E0x touch the hardware filter?  }
@@ -249,7 +249,7 @@ const
   table, added the semitones, and read the new period back out -- which only
   works when the channel is sitting exactly on a table entry. Finetuned MOD
   notes are not, and S3M pitches are not remotely; this player loads both.
-  Arithmetic works everywhere a lookup only worked on the twelve-tone grid.}
+  Arithmetic works everywhere a lookup only worked on the twelve-tone grid. }
   SemitoneScale : array[0..15] of Word =
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
@@ -266,7 +266,7 @@ procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote); f
   IT TAKES ITS ARGUMENTS IN REGISTERS, so it cannot be called from Pascal: SI
   points at the channel and BX holds the command number DOUBLED, ready to index
   the jump table. The declaration carries no parameters and the caller sets the
-  registers up by hand.}
+  registers up by hand. }
 procedure CommandTick; far;
 
 implementation
@@ -283,11 +283,11 @@ implementation
   second `FilterIsOn` in scope wherever the player is compiled, and Pascal
   would quietly resolve those references to the player's -- a shadowing bug no
   byte comparison could ever see. `PermitFilterChange` gates the whole thing:
-  a module that fiddles with the filter can be told to leave it alone.}
+  a module that fiddles with the filter can be told to leave it alone. }
 
 
 { Forward: the two portamento Start routines fall back on the fine variants,
-  which are declared a long way below.}
+  which are declared a long way below. }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal;
                            var N : TFullNote); forward;
 procedure StartFinePortaDown(var Song : TSong; var Can : TCanal;
@@ -296,7 +296,7 @@ procedure StartFinePortaDown(var Song : TSong; var Can : TCanal;
 { Forward: the combined commands (5xy tone-portamento-plus-volume-slide, 6xy
   vibrato-plus-volume-slide) do their own half and then JUMP straight into this
   one rather than duplicating it. A jump, not a call, because the volume slide
-  is the last thing either of them does.}
+  is the last thing either of them does. }
 procedure TickVolSlide; forward;
 
 
@@ -314,7 +314,7 @@ procedure TickVolSlide; forward;
   above for why. The period is shifted up by fourteen bits first because the
   table is written in that fixed point; the shift and the divide together are a
   fractional multiply, and 32 bits is enough that no precision is lost on any
-  period the format can express.}
+  period the format can express. }
 procedure StartArpeggio(var Song : TSong; var Can : TCanal; var N : TFullNote);
 var
   { Both LongInt: `Scaled` needs the width for the fixed point, and `Period`
@@ -330,7 +330,7 @@ begin
     Period := Can.Note.Period;
 
   { Into the table's fixed point: 1 shl 14 is 16384, which is the table's
-    entry for "no semitones at all".}
+    entry for "no semitones at all". }
   Scaled := Period shl 14;
 
   Can.Arp0 := Period;
@@ -338,7 +338,7 @@ begin
   { The two nibbles are the two intervals: high nibble first, low nibble
     second. They are read from the CHANNEL's copy of the note, not from the note
     passed in -- so an arpeggio survives a row that carries no command of its
-    own, which is what makes the effect continue across a held note.}
+    own, which is what makes the effect continue across a held note. }
   Can.Arp1 := Scaled div SemitoneScale[Can.Note.Parameter shr 4];
   Can.Arp2 := Scaled div SemitoneScale[Can.Note.Parameter and $0F]
 end;
@@ -385,7 +385,7 @@ arpeggio, per tick. Frameless, and that is the release's shape
 
   `@@Fin` IS THE EPILOGUE, and it is EMPTY on purpose. A tick routine leaves by
   jumping to a label at the very end of its body, where the compiler's own `RET`
-  is waiting. Writing a `RET` there instead would emit two.}
+  is waiting. Writing a `RET` there instead would emit two. }
 { **ARPEGGIO IS A CHORD FAKED BY ONE VOICE.** [1.39b] "Rotate through three
   notes rapidly." A channel can play one pitch at a time, so it plays three in
   turn -- one per tick, fifty times a second -- and the ear hears a chord rather
@@ -500,7 +500,7 @@ command 3, NOTE PORTAMENTO. Slide towards a target period rather
 
   AND AGAIN THERE IS NO SCALING. The release reads `BYTE((can.PeriodIncr) SHR 2)`
   and writes `INTEGER(WORD(n.Parameter) SHL 2)`; 1.31 has neither shift. That is
-  the second routine in this segment to show it -- see the unit header. 1.39b moved
+  the second routine in this SEGMENT to show it -- see the unit header. 1.39b moved
   the whole unit to quarter-period units and 1.31 works in whole periods.
   -------------------------------------------------------------------------- }
 procedure StartNPortamento(var Song : TSong; var Can : TCanal; var N : TFullNote);
@@ -532,7 +532,7 @@ note portamento, per tick. Step towards the target and stop when
   it is reached, in either direction.
 
   IT IS THE RELEASE'S BODY INSTRUCTION FOR INSTRUCTION, which is the closest
-  pairing in this segment so far.
+  pairing in this SEGMENT so far.
 
   THE TWO `TEST reg,80h` ARE THE SIGN CHECKS, and they are why this is assembler
   rather than Pascal: `TEST AH,80h` asks whether the step is negative and
@@ -626,12 +626,12 @@ vibrato, per tick. The release's body instruction for instruction,
   THE SIGN COMES FROM THE POSITION'S TOP BIT, not from the table: `TEST DL,80h /
   NEG AX` at 033c mirrors the whole waveform into the second half of its cycle, so
   the table only ever needs to hold a half-cycle. That is why the 32 entries run
-  0..255..24 and never go negative.}
+  0..255..24 and never go negative. }
 procedure TickVibrato; assembler;
 const
   { HALF A SINE, IN 32 STEPS, 0..255. Only half is stored: the position's top
     bit decides whether the value is added or subtracted, so the second half of
-    the cycle is the first half negated and never needs its own entries.}
+    the cycle is the first half negated and never needs its own entries. }
   VibTabla : array[0..31] of Byte = (
       0,  24,  49,  74,  97, 120, 141, 161,
     180, 197, 212, 224, 235, 244, 250, 253,
@@ -687,7 +687,7 @@ end;
 
   THE TRAILING `RET` IS THE COMPILER'S AND IS UNREACHABLE. An `assembler`
   procedure always gets its epilogue, even after an unconditional `JMP` out of
-  the body; writing a `RET` in the source would emit a second.}
+  the body; writing a `RET` in the source would emit a second. }
 procedure TickT_VSlide; assembler;
 asm
         CALL    TickNPortamento
@@ -712,7 +712,7 @@ THREE DO-NOTHING TICK ROUTINES, one byte each.
   AND `StartSampleOffs` IS ABSENT HERE, which is independently supported: it sets
   `can.SOffs` and `can.SOffsVal` at +$27 and +$28, and 1.31's TCanal is 38 bytes
   and stops at +$25. So 1.31 has no sample-offset support and the three empties sit
-  next to each other.}
+  next to each other. }
 procedure TickTremolo; assembler;
 asm
 end;
@@ -735,7 +735,7 @@ end;
   IT ONLY LEAVES A REQUEST. The note it applies to has not been started yet, so
   there is no sample pointer here to move; the mixer applies the offset when it
   starts the note. A zero parameter means "keep whatever was set last time",
-  the same convention the slides use.}
+  the same convention the slides use. }
 procedure StartSampleOffs(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   if N.Parameter <> 0 then
@@ -940,7 +940,7 @@ end;
 
 
 { E0x has nothing to do between rows: the filter is switched at the row and
-  stays switched. Empty on purpose -- see the note below the E-series.}
+  stays switched. Empty on purpose -- see the note below the E-series. }
 procedure TickSetFilter; assembler;
 asm
 end;
@@ -961,7 +961,7 @@ end;
   that was -- so each of the four checks the flag and, if the note belongs to
   the other kind, REWRITES the command byte and hands it over. Coarse with a
   zero parameter and the fine flag set goes fine; fine with a zero parameter
-  and the flag clear goes coarse.}
+  and the flag clear goes coarse. }
 procedure StartFinePortaUp(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   if N.Parameter <> 0 then
@@ -1001,7 +1001,7 @@ end;
   EIGHT DO-NOTHING TICK ROUTINES IN A ROW. All eight commands below do their
   whole job at the row and have nothing left to do between rows -- see the note
   after them for why an empty body is the right implementation and not a
-  missing one.}
+  missing one. }
 procedure TickFPortUpDown; assembler;
 asm
 end;
@@ -1170,7 +1170,7 @@ FIVE MORE DO-NOTHING TICKS, one byte each, and this time the
   Which is suggestive and still not proof -- five empty bodies in a row match five
   other empty bodies in a row whatever the order. Address names until the dispatch
   table at 063f says otherwise. That is now SIXTEEN one-byte routines in this
-  segment waiting on that one table.
+  SEGMENT waiting on that one table.
   -------------------------------------------------------------------------- }
 procedure TickNoteCut; assembler;
 asm
@@ -1219,11 +1219,11 @@ end;
   rather than a flag on the ordinary one.
 
   THE PITCH ARITHMETIC IS THE ORDINARY ARPEGGIO'S, unchanged. Only the nibble
-  order and the tick cycle differ, and the cycle lives in the Tick half.}
+  order and the tick cycle differ, and the cycle lives in the Tick half. }
 procedure StartOktArp(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
   { The same sixteen values as `SemitoneScale`, declared again inside this
-    procedure. The original carries two copies and so does this.}
+    procedure. The original carries two copies and so does this. }
   OktScale : array[0..15] of Word =
     (16384, 17358, 18390, 19483, 20642, 21869, 23170, 24548,
      26007, 27554, 29193, 30928, 32768, 34715, 36781, 38967);
@@ -1303,12 +1303,12 @@ end;
 
   THE COUNTING IS NOT DONE HERE. This routine masks the parameter down to the
   tick count and hands off to the plain retrigger, which already knows how to
-  count ticks and raise the flag. Only the volume behaviour is new.}
+  count ticks and raise the flag. Only the volume behaviour is new. }
 procedure StartS3mRetrigNote(var Song : TSong; var Can : TCanal; var N : TFullNote);
 const
   { The two behaviours, one table each, indexed by the x nibble. A zero in
     `RetMult` means "this x is an addend, not a factor" -- which is why the
-    multiplier table is the one consulted first.}
+    multiplier table is the one consulted first. }
   RetMult : array[0..15] of Byte     = ( 0,  0,  0,  0,  0,   0, $0C, $08,
                                          0,  0,  0,  0,  0,   0, $18, $20);
   RetAdd  : array[0..15] of ShortInt = ( 0, -1, -2, -4, -8, -16,   0,   0,
@@ -1391,7 +1391,7 @@ end;
   spare command, two bytes of channel state.
 
   THE STORE IS UNCONDITIONAL, INCLUDING A ZERO PARAMETER. A cue of zero is
-  still a cue; it is a label the demo chooses the meaning of, not a quantity.}
+  still a cue; it is a label the demo chooses the meaning of, not a quantity. }
 procedure StartRingEvent(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   Can.RingSem := N.Parameter;
@@ -1406,14 +1406,14 @@ end;
   still needs an entry.
 
   IT HOLDS OFFSETS, NOT PROCEDURE POINTERS. Everything in this unit is in one
-  segment, so a 16-bit offset is enough and the call is near. Two bytes per
-  command instead of four, and no segment fixup for the linker to resolve.
+  SEGMENT, so a 16-bit offset is enough and the call is near. Two bytes per
+  command instead of four, and no SEGMENT fixup for the linker to resolve.
 
   SEVERAL COMMANDS SHARE A TICK, and the sharing is the interesting part: the
   fine portamentos both point at one routine, the fine volume slides at
   another, and every command whose work is done entirely at the row points at
   the do-nothing tick. Sharing is what keeps seventeen of this unit's routines
-  down to a single `RET` each.}
+  down to a single `RET` each. }
 const
   TickCommOfs : array[mcNone..mcLast] of Word = (
     Ofs(TickNone),          { 0 00  no command                            }
@@ -1470,7 +1470,7 @@ const
 
     { A slot that can never be reached: `mcLast` is a count rather than a
       command, and the guard rejects it. It exists only because the array is
-      declared `mcNone..mcLast` and Pascal sizes it from the bounds.}
+      declared `mcNone..mcLast` and Pascal sizes it from the bounds. }
     Ofs(TickNone)           { 36    mcLast -- unreachable, as it was in 1.31b }
   );
 
@@ -1490,7 +1490,7 @@ const
 
   IT ALSO CLEARS `DoRetrig` ON THE WAY THROUGH, which is what makes that flag
   mean "a retrigger fired on THIS tick": whoever raised it gets exactly one
-  tick to be seen before the next dispatch clears it again.}
+  tick to be seen before the next dispatch clears it again. }
 procedure CommandTick; assembler;
 asm
         CMP     BX,mcLast * 2            { 087a  $48; 1.31b's mcLast made it $46 }
@@ -1527,7 +1527,7 @@ end;
   THE NEW NOTE'S PERIOD IS TAKEN LAST, AND NOT FOR A NOTE PORTAMENTO -- that
   command's whole point is to slide from where the channel already is towards
   the new note rather than jump to it. The exception is the reason the
-  assignment is guarded at all.}
+  assignment is guarded at all. }
 procedure CommandStart(var Song : TSong; var Can : TCanal; var N : TFullNote);
 begin
   { an effect that displaced the period has ended; put it back. }

@@ -32,7 +32,7 @@
   THE STATE LIVES IN BX ACROSS THE WHOLE RUN and is handed back to the caller,
   so a buffer can be filtered in pieces without a click at the joins. A caller
   that forgets to pass the previous return value back in gets a discontinuity
-  at every boundary.}
+  at every boundary. }
 
 {$G+}   { SAR with an immediate count other than 1 is a 186 instruction }
 
@@ -43,7 +43,7 @@ interface
 type
   { Which kernel to run, or none. The ORDER IS DELIBERATE and is relied on
     below: the values run from no filtering through steepest to gentlest, and
-    a four-value enum occupies one byte.}
+    a four-value enum occupies one byte. }
   TFilterMethod = (fmNone,    { no filtering                   }
                    fm7_8,     { PI*7/8 cut-off -- the steepest }
                    fm3_4,     { PI*3/4                         }
@@ -80,7 +80,7 @@ implementation
         Buf^[K] := (State + X) div 2;
         State   := X;
         Inc(K, Stride)
-      end}
+      end }
 procedure Filter1_2Word; assembler;
 asm
 @@Next:
@@ -195,9 +195,9 @@ asm
   MOV  CX, Len         { how many samples; the kernels LOOP on CX }
   JCXZ @@Done          { nothing to do -- and BX is already the answer }
   MOV  AL, Method      { the selector, one byte                 }
-  CMP  AL, fm1_2       { gentlest first: it sits first in the segment }
+  CMP  AL, fm1_2       { gentlest first: it sits first in the SEGMENT }
   JNZ  @@Try2
-  CALL Filter1_2Word   { NEAR -- all four routines share one segment }
+  CALL Filter1_2Word   { NEAR -- all four routines share one SEGMENT }
   JMP  @@Done
 @@Try2:
   CMP  AL, fm3_4
