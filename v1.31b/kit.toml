@@ -81,11 +81,11 @@ first_para = 0x1000
 "000" = "ref/vt1.31b.bin"
 
 [encaudit]
-# Where to look for text I/O that leaves the encoding to the locale. The kit's
-# check refused outright without this -- `kit.toml does not answer` -- so it was
-# not running here at all, in a repository whose whole subject is DOS files that
-# must be written as ascii. The kit's own tiers are listed because nothing else
-# scans them: v1.51 is its own root and audits only its sources, so the kit's
-# coverage lives here.
-dirs = ["src", ".", "../kit/tools", "../kit/tools/substrate",
-        "../kit/tools/pascal", "../kit/tools/wikitools"]
+# Where to look for text I/O that leaves the encoding to the locale. TWO
+# ENTRIES, not six: the kit's subfolders were listed by hand because encaudit
+# globbed a directory flat and never entered them. It recurses now.
+#
+# `.` is this version's own Python; `../kit/tools` is the kit THIS consumer
+# pins, audited here rather than trusting a sibling to have done it -- two
+# consumers can pin different commits.
+dirs = [".", "../kit/tools"]

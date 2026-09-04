@@ -83,4 +83,11 @@ packed = "../DEMOVT15/DEMOVT.EXE"
 "000" = "ref/vt1.51.bin"
 
 [encaudit]
-dirs = ["src"]
+# Where to look for text I/O that leaves the encoding to the locale. TWO
+# ENTRIES, not six: the kit's subfolders were listed by hand because encaudit
+# globbed a directory flat and never entered them. It recurses now.
+#
+# `.` is this version's own Python; `../kit/tools` is the kit THIS consumer
+# pins, audited here rather than trusting a sibling to have done it -- two
+# consumers can pin different commits.
+dirs = [".", "../kit/tools"]
