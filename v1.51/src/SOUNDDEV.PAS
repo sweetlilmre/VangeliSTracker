@@ -505,7 +505,7 @@ var
 
   So the four bytes are not a Pascal limitation to be lived with; they are the
   residue of transcribing an assembler module as inline asm. Closing them means
-  moving 0746..10c3 into a real `.ASM`, assembling it with TASM (`C:\TASM\BIN`
+  moving 0746..10c3 into a real `.ASM`, assembling it with TASM (`C:\TASM410\BIN`
   in the image) and linking it with $L -- see docs/06-transcription.md.
 
   CLOSED, and each one had been recorded here as unfixable:

@@ -152,7 +152,7 @@ That got **eleven of twelve** files exactly. **Being clever is measurably wrong*
 `MAKE.BAT` gives the pipeline as `tpc` -> `tdstrip` -> `lzexe`, and the packed file is the
 only thing not yet compared.
 
-* **`TDSTRIP.EXE` IS AVAILABLE** -- `C:\TASM\BIN\TDSTRIP.EXE` in the DOSBox HDD image --
+* **`TDSTRIP.EXE` IS AVAILABLE** -- `C:\TASM410\BIN\TDSTRIP.EXE` in the DOSBox HDD image --
   and it looks like a no-op here: our EXE is 58,176 bytes, which is 3,120 of header plus
   55,056 of load image and nothing after it, so there is no debug information to strip.
   Worth running once to confirm rather than assuming.
@@ -664,7 +664,7 @@ Two traps they taught, both of which cost a wrong answer first:
 * **A block must END where the next routine's LITERALS begin, not at its `ENTER`.** Turbo Pascal emits a routine's literals immediately before its code. Getting this wrong reads as a handful of real differences — it did in `154d` and again in `19a0`.
 * **The search WINDOW is part of the measurement.** It has to cover the accumulated shortfall of every placeholder above the block, which for a half-written unit is most of the segment. Too narrow does not fail loudly; it returns the best shift it could reach and a plausible-looking difference count.
 
-`C:\TASM\BIN\TASM.EXE` (Turbo Assembler 4.1) is in the image and **the build drives it**: any `v1.31b/src/*.ASM` is assembled before the Pascal and its `.OBJ` left for a `{$L}` to find. `1a17` and `12ba` both link one. See the TASM module in `06-transcription.md`.
+`C:\TASM410\BIN\TASM.EXE` (Turbo Assembler 4.1) is in the image and **the build drives it**: any `v1.31b/src/*.ASM` is assembled before the Pascal and its `.OBJ` left for a `{$L}` to find. `1a17` and `12ba` both link one. See the TASM module in `06-transcription.md`.
 
 **`--keep` SUPPRESSES BOTH ERASURES AND EXISTS FOR ONE EXPERIMENT.** The `.TPU`s are deleted twice — once by `build.py` in Python and once by the generated `BUILD.BAT`'s own `del *.TPU` — and the first fix for this missed the second. The wipe is normally the point: a stale `.TPU` has produced a confidently wrong claim here twice. **Anything measured under `--keep` is suspect until a clean build agrees.**
 
@@ -849,7 +849,7 @@ and the single entry that chooses between them. It took the same two instruments
 one, `asmcheck.py`, because neither `verify.py` nor `blocks.py` can measure an
 assembled module honestly.
 
-**`1a17` IS DONE, and it took an assembler.** `0746..10c3` was never compiled from Pascal: it is an external TASM module, as the 1.39b release still builds this same unit. It is now `v1.31b/src/SOUNDDEV.ASM`, assembled by `C:\TASM\BIN\TASM.EXE` and linked with `{$L SOUNDDEV.OBJ}`, and **all 2,430 of its bytes agree with the original** — every remaining difference is a relocation the assembler recorded, checked field by field. The four "structural" bytes are gone. Full write-up in `06-transcription.md`.
+**`1a17` IS DONE, and it took an assembler.** `0746..10c3` was never compiled from Pascal: it is an external TASM module, as the 1.39b release still builds this same unit. It is now `v1.31b/src/SOUNDDEV.ASM`, assembled by `C:\TASM410\BIN\TASM.EXE` and linked with `{$L SOUNDDEV.OBJ}`, and **all 2,430 of its bytes agree with the original** — every remaining difference is a relocation the assembler recorded, checked field by field. The four "structural" bytes are gone. Full write-up in `06-transcription.md`.
 
 **`1723` CLOSED, and it was not finished after all.** It had been written up here as "3 regions, ALL PARKED -- nothing to fix from source". All three were in `ProbeUltrasound` and all three were ours; the compiler probe found them in one build. See "The compiler probe".
 
@@ -2671,7 +2671,7 @@ The independent measurement from the release points the same way: the author's `
 build is byte-identical to the unpacked original, and link order has been solved so `1a17`
 really is segment `1a17`. What is left is the two post-processors.
 
-* **`TDSTRIP.EXE` is in the image**, at `C:\TASM\BIN\TDSTRIP.EXE`, and looks like a
+* **`TDSTRIP.EXE` is in the image**, at `C:\TASM410\BIN\TDSTRIP.EXE`, and looks like a
   no-op: our EXE is 58,176 bytes = 3,120 of header + 55,056 of load image with nothing
   after it, so there is no debug information to strip. **That is arithmetic, not a run** —
   worth confirming with one invocation.

@@ -640,7 +640,7 @@ of `DB 22h, 0C0h`-style byte encodings and the rest of the unit has none. Every
 one of them is TASM output being spelled out because TP's inline assembler will
 not produce it.
 
-(Measured, not assumed: `C:\TASM\BIN\TASM.EXE` is Turbo Assembler 4.1 and
+(Measured, not assumed: `C:\TASM410\BIN\TASM.EXE` is Turbo Assembler 4.1 and
 assembles a six-instruction `IDEAL`/`MODEL TPascal` probe to those bytes. It is
 a 1996 build and certainly not the original's TASM, so treat it the way TP6 is
 treated -- close on the encodings it explains, open on anything it does not.)
@@ -675,7 +675,7 @@ All four were measured with throwaway units, not assumed:
    Note the third: TASM turns a `CALL` of a far external in the same module into
    `PUSH CS / CALL near`, so a site that needs `9A` wants `CALL FAR PTR`.
 
-`build.py` now assembles any `v1.31b/src/*.ASM` with `C:\TASM\BIN\TASM.EXE /la
+`build.py` now assembles any `v1.31b/src/*.ASM` with `C:\TASM410\BIN\TASM.EXE /la
 /m2` before running TPC, and leaves the listing in `build/` — the listing is the
 fastest way to see what byte a line assembled to.
 
