@@ -5,7 +5,7 @@
 ; GetPlayPos's asm block is TP's. This file is what settled that. Assemble it
 ; with the image's own TASM and read the listing:
 ;
-;     C:\TASM\BIN\TASM.EXE /la /m2 ENCODING.ASM
+;     C:\TASM410\BIN\TASM.EXE /la /m2 ENCODING.ASM
 ;
 ; measured with TASM 4.1, against the original's bytes:
 ;
