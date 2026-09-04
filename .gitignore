@@ -34,3 +34,8 @@ kit.local.toml
 # The Ghidra project for the v1.51 image. A working artefact with locks and a
 # per-machine repository inside it; the FINDINGS belong in docs/, not here.
 /v1.51/ghidra/
+
+# asmgen's scratch folder. `[assembler].workdir` names it and defaults to
+# this; the tool's docstring says to ignore whatever you name, because it
+# is created beside the config -- a repository root -- on every run.
+asmwork/
