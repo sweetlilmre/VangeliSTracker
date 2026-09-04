@@ -16,6 +16,12 @@ timeout = 180
 lint    = "kit/tools/pascal/paslint.py"
 
 [compiler]
+# No `binpath` here: the kit derives the DOS bin directory from
+# `toolchain.<entry>` in kit.local.toml, which is where a machine path
+# belongs -- and where a rename actually gets corrected. The copies that
+# used to sit in this file were left behind by the TP6/TP600 rename and
+# went stale, harmlessly for the build (every invocation BUILD.BAT writes
+# is fully qualified) and not at all harmlessly at the interactive prompt.
 # TURBO PASCAL 6 IS THE DEFAULT, and that is a RESULT rather than a preference.
 # The standing suspicion that the original was not built with TP7 was tested
 # the moment a TP6 install appeared beside it, and TP6 won: 116a went from
@@ -24,9 +30,8 @@ lint    = "kit/tools/pascal/paslint.py"
 default = "tp6"
 
 [compiler.tp6]
-# TP6's install is flat -- TPC.EXE sits in C:\\TP6 rather than a BIN
+# TP6's install is flat -- TPC.EXE sits in C:\\TP600 rather than a BIN
 # subdirectory -- and its own TPC.CFG beside it carries the unit path.
-binpath = "C:\\TP6"
 dialect = "tp6"
 switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q /GD"
 
@@ -35,12 +40,10 @@ switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X
 # 69,214 of 23-Oct-1990. A different TP6 patch level is one of the three
 # candidate explanations for the divergences that survive both compilers, so
 # it is worth being able to build with.
-binpath = "C:\\TP61"
 dialect = "tp6"
 switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
 
 [compiler.tp7]
-binpath = "C:\\TP\\BIN"
 switches = "/$A+ /$B- /$D+ /$E+ /$F- /$G+ /$I- /$L+ /$N+ /$O- /$R- /$S- /$V- /$X+ /Q"
 
 # The switches the original was actually built with, taken verbatim from
