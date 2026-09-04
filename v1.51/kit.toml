@@ -47,6 +47,12 @@ includes = "src"
 # excuses anything.
 exempt = "src/shared-exempt.txt"
 
+# This tree is [re]-tagged and reports 0 untagged apparatus comments, so
+# tagcheck.py gates on it in the session list. Tag as you WRITE: more than
+# half the apparatus carries no mechanical tell, so the check cannot find
+# what you did not mark.
+tagged   = true
+
 [target]
 # The paragraph the disassembly calls the start of the load image. The same
 # 0x1000 the v1.31b notes use, so an address is comparable between the two

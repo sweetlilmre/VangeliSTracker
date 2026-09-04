@@ -731,7 +731,7 @@ SetGains:
 ;     bytes. So the filter state is not in DGROUP and not in a register
 ;     across calls -- it is the constant the next call will load, which
 ;     costs no memory reference to read. Same instinct as the shared poll's
-;     guard byte at CS:$104b, for speed rather than for hiding.
+;     guard byte, for speed rather than for hiding.
 ;
 ;     THE CLAMP READS BACKWARDS. The fast path is CMP / JNB / RET: one
 ;     comparison and a one-byte jump over the return for the overwhelmingly
@@ -1547,8 +1547,8 @@ SetGains:
 ;
 ;     @@Guard0fbf is the IMMEDIATE of the MOV AL at 0fbe, and 0fc6 writes
 ;     over it. The fourth place this unit keeps state inside the instruction
-;     stream, after the poll's guard at CS:$104b, the filter chains' four
-;     sample immediates, and @@Flag0e74.
+;     stream, after the poll's guard, the filter chains' four sample
+;     immediates, and @@Flag0e74.
 ;
 ;     It has to be a guard: the callback is a music interpreter that can run
 ;     for a while, and the timer will fire again inside it.
