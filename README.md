@@ -1,6 +1,6 @@
 # VangeliSTracker — byte-exact reconstructions of DemoVT v1.31b and v1.51
 
-**DemoVT** — "VangeliSTracker's version for demos", © 1992-94 VangeliSTeam (JCAB) — is the ProTracker player that the demo *Psycho Neurosis* ships as `NEUROSIS.008` and shells out to over INT 2Fh, and that shipped again a year later as the public `DEMOVT.EXE`. This repository reconstructs **both** releases: Turbo Pascal 6.0 source that compiles to **the same bytes** as the shipped builds.
+**DemoVT** — "VangeliSTracker's version for demos", © 1992-94 VangeliSTeam (JCAB) — is the ProTracker player that the demo [*Psycho Neurosis*](https://github.com/sweetlilmre/PsychoNeurosis) ships as `NEUROSIS.008` and shells out to over INT 2Fh, and that shipped again a year later as the public `DEMOVT.EXE`. This repository reconstructs **both** releases: Turbo Pascal 6.0 source that compiles to **the same bytes** as the shipped builds.
 
 Not "equivalent", not "same size". The same bytes.
 
