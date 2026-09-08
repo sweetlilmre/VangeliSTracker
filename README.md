@@ -1,35 +1,63 @@
-# VangeliSTracker — a byte-exact reconstruction of DemoVT v1.31b
+# VangeliSTracker — byte-exact reconstructions of DemoVT v1.31b and v1.51
 
-**DemoVT v1.31 (beta)** — "VangeliSTracker's version for demos", © 1992-93 VangeliSTeam (JCAB) — is the ProTracker player that the demo *Psycho Neurosis* ships as `NEUROSIS.008` and shells out to over INT 2Fh. This repository reconstructs it: Turbo Pascal 6.0 source that compiles to **the same bytes** as the shipped build.
+**DemoVT** — "VangeliSTracker's version for demos", © 1992-94 VangeliSTeam (JCAB) — is the ProTracker player that the demo *Psycho Neurosis* ships as `NEUROSIS.008` and shells out to over INT 2Fh, and that shipped again a year later as the public `DEMOVT.EXE`. This repository reconstructs **both** releases: Turbo Pascal 6.0 source that compiles to **the same bytes** as the shipped builds.
 
 Not "equivalent", not "same size". The same bytes.
 
+Massive shout out to [JCAB](https://www.jcabs-rumblings.com/) and VangeliSTeam for this and to JCAB personally for agreeing to let me release this reconstruction out into the world
+
+— EzE / Asphyxia (sweetlilmre)
+
 ## Where it stands
 
-The 55,056-byte load image is **byte-identical** to the original's. All 31 segments are transcribed, the segment order is the original's, both halves of DGROUP are laid out correctly, and all 27 linked code segments match.
+**Both reconstructions are finished, and both reproduce the shipped file byte for byte — the packed file, not just the load image.**
 
-**And so is the packed file, as of 28 August 2026.** `kit/tools/substrate/lzpack.py` is LZEXE 0.91's packer — a port of `LZCOMP` from Fabrice Bellard's own [MIT-licensed source](https://bellard.org/lzexe/) — so the chain runs end to end with nothing left over: Pascal source → TPC 6.0 → `VTMAIN.EXE` → packed → **`NEUROSIS.008` itself, all 31,711 bytes, same MD5.** 31,335 of those bytes are computed here; the other 376 are LZEXE's own decompressor stub and the header fields around it, copied verbatim. The script is explicit about which is which, and `--selftest` re-compresses every LZEXE 0.91 file it is pointed at: **twelve of twelve reproduce token for token**, across three unrelated authors.
+| | v1.31b (beta, 1993) | v1.51 (released, Apr 1994) |
+|---|---|---|
+| what shipped | `NEUROSIS.008`, **31,711 bytes** | `DEMOVT15/DEMOVT.EXE`, **36,008 bytes** |
+| load image | 55,056 bytes | 63,040 bytes |
+| segments | 31 | 33 |
+| units | 27 | 28 |
+| linked image | **0 differing bytes** | **0 differing bytes** |
+| packed file | **byte-identical, same MD5** | **byte-identical, all 36,008 bytes** |
+
+The chain runs end to end with nothing left over: Pascal source → TPC 6.0 → `VTMAIN.EXE` → packed → the shipped file itself. `kit/tools/substrate/lzpack.py` is LZEXE 0.91's packer — a port of `LZCOMP` from Fabrice Bellard's own [MIT-licensed source](https://bellard.org/lzexe/) — so the packing step is computed here rather than copied. On v1.51, 35,632 of the 36,008 bytes are computed; the other 376 are LZEXE's own decompressor stub and the header fields around it, copied verbatim. The script is explicit about which is which, and `--selftest` re-compresses every LZEXE 0.91 file it is pointed at: **twelve of twelve reproduce token for token**, across three unrelated authors.
+
+### v1.51, and what it added
+
+v1.51 is v1.31b plus S3M support, so the work was in the difference rather than in the whole. Sixteen units have no real change at all — every byte that moves is a shift. The additions that mattered:
+
+* **Two entirely new segments**, both song loaders: `STMLOADE` (Scream Tracker 2 `.STM`) and `S3MLOADE` (`.S3M`), inserted into the `SongLoaders` table between the `JMPLAY` recogniser and the MOD loader.
+* **`TSong` grew 32 bytes** — a `ChannelPan : TChannelPan` field at `+$29`, defaulted from an L-R-R-L constant tiled across 32 channels, and the S3M loader is what reads it.
+* New `/port:` and `/irq:` switches, more MOD commands, a rewritten `VTSILENC`, MODs with more than 64 different patterns, and CallMusic no longer a no-op under GUS.
+
+v1.51 also carries `clean-src/` — a **documented** source tree derived from `src/`, with the reverse-engineering apparatus stripped and explanation left in its place. It is regenerated rather than hand-edited, and it compiles to the same bytes as the tree it comes from; that equality is the check it exists to keep true.
 
 ## Read this first
 
-**[`v1.31b/docs/CONTINUATION.md`](v1.31b/docs/CONTINUATION.md)** is the whole handover in one file: how to build, how to measure, what is done, what is left, and the mistakes worth not repeating. Start there, then `06-transcription.md`. `00-map.md` is the authority on the binary's layout.
+Each reconstruction has its own handover, and they are deliberately separate documents — every number, address and layout fact in one is wrong in the other.
+
+* **[`v1.31b/docs/CONTINUATION.md`](v1.31b/docs/CONTINUATION.md)** — the whole v1.31b handover in one file: how to build, how to measure, what is done, and the mistakes worth not repeating. Then `06-transcription.md`; `00-map.md` is the authority on the binary's layout.
+* **[`v1.51/docs/CONTINUATION.md`](v1.51/docs/CONTINUATION.md)** — the v1.51 handover, alongside `07-s3m-format.md`, `08-release-comments.md` and `09-documentation-transform.md`.
 
 ## Layout
 
 | | |
 |---|---|
-| `v1.31b/` | the reconstruction, and **its own host root** — `kit.toml`, `build.toml`, `src/`, `docs/`, and the per-target configs the kit's scripts read (`units.toml`, `link.toml`, `linked.toml`, `objmodules.toml`, `blocks/*.toml`) |
+| `v1.31b/` | the first reconstruction, and **its own host root** — `kit.toml`, `build.toml`, `src/`, `docs/`, and the per-target configs the kit's scripts read (`units.toml`, `link.toml`, `linked.toml`, `objmodules.toml`, `blocks/*.toml`) |
 | `v1.31b/ref/` | the measurement target: the original, unpacked — see [its README](v1.31b/ref/README.md) |
+| `v1.51/` | the second reconstruction — DemoVT v1.51, April 1994. Its own host root in the same shape, plus `clean-src/`, `status.toml` and `probe/` |
+| `v1.51/ref/` | `vt1.51.bin` — `DEMOVT.EXE` unpacked: a 3,408-byte header and the 63,040-byte load image |
+| `DEMOVT15/` | the v1.51 release as distributed, and the packed `DEMOVT.EXE` the reconstruction is measured against |
 | `v1.39b/` | the VangeliSTracker 1.39b source release, the reference source |
-| `kit/` | the re-kit submodule: every build and measurement script, the Pascal linter, the LZEXE unpacker, the generated DOSBox config. **`tools/` is empty now** — all four moved here |
-| `v1.31b/build/` | DOSBox scratch. Untracked; regenerated by `build.py` |
-| `v1.51/` | the second reconstruction — DemoVT v1.51, April 1994, the released version. Its own host root in the same shape; see [its CONTINUATION](v1.51/docs/CONTINUATION.md) |
+| `kit/` | the re-kit submodule: every build and measurement script, the Pascal linter, the LZEXE unpacker and packer, the generated DOSBox config. **`tools/` is empty now** — all four moved here |
+| `*/build/` | DOSBox scratch. Untracked; regenerated by `build.py` |
 
 ## Building and measuring
 
-Run everything **from `v1.31b/`** — it is that reconstruction's host root, and `kit/tools/project.py` walks up from the working directory to find `kit.toml`. The repository root holds no `kit.toml`: it is a container for the two reconstructions and the kit. (`v1.51/` is the same shape; its commands are in its own CONTINUATION.) A DOSBox-X install with Turbo Pascal 6.0 and TASM does the actual compiling. The DOSBox config is **generated** into the staging directory now, so there is nothing committed to keep in step with it; the machine paths come from the untracked `kit.local.toml`.
+Run everything **from the reconstruction's own directory** — each is a host root, and `kit/tools/project.py` walks up from the working directory to find `kit.toml`. The repository root holds no `kit.toml`: it is a container for the two reconstructions and the kit. A DOSBox-X install with Turbo Pascal 6.0 and TASM does the actual compiling. The DOSBox config is **generated** into the staging directory, so there is nothing committed to keep in step with it; the machine paths come from the untracked `kit.local.toml`.
 
-    $K = "../kit/tools"        # from v1.31b/, the kit is one level up
+    $K = "../kit/tools"        # from v1.31b/ or v1.51/, the kit is one level up
 
     python $K/pascal/build.py build.toml --sw=/GS         compile and link
     python $K/pascal/build.py build.toml --compiler tp7   ...with TP7 instead
@@ -37,6 +65,7 @@ Run everything **from `v1.31b/`** — it is that reconstruction's host root, and
     python $K/pascal/units.py units.toml            per-unit, against the reference image
     python $K/pascal/units.py units.toml --detail   ...WITH the divergent-region diagnostics
     python $K/pascal/objcheck.py objmodules.toml    the hand-written .ASM modules
+    python $K/pascal/linkbytes.py link.toml         the linked image, byte for byte
     python $K/pascal/linkcmp.py linked.toml         every linked code segment
     python $K/pascal/blockcmp.py blocks/1000.toml   the program segment, block by block
     python $K/pascal/linkorder.py link.toml         segment order vs the original's
@@ -44,15 +73,20 @@ Run everything **from `v1.31b/`** — it is that reconstruction's host root, and
     python $K/pascal/dgroup.py link.toml            the initialised data layout
     python $K/pascal/coverage.py link.toml units.toml   how much is accounted for
 
-    python $K/substrate/lzpack.py build/VTMAIN.EXE <NEUROSIS.008>     pack, and compare
+    python $K/substrate/lzpack.py build/VTMAIN.EXE <packed original>       pack, and compare
     python $K/substrate/lzpack.py --selftest ../DEMOVT15 ../v1.39b <...>   12 of 12 exact
-    python $K/substrate/lzpack.py --tokens FILE                       dump a token stream
+    python $K/substrate/lzpack.py --tokens FILE                            dump a token stream
 
-`lzpack.py` takes the **packed** original as its second argument — it is the comparison target *and* the source of LZEXE's decompressor stub. It is not tracked here; only the unpacked image is.
+`lzpack.py` takes the **packed** original as its second argument — it is the comparison target *and* the source of LZEXE's decompressor stub. For v1.51 that is `../DEMOVT15/DEMOVT.EXE`, which is tracked here; v1.31b's `NEUROSIS.008` is not, and only its unpacked image is.
+
+v1.51 adds two of its own, for the documented tree and for the byte-identity claim:
+
+    python $K/pascal/build.py cleanbuild.toml   compile clean-src/ -- same bytes, or it is broken
+    python $K/pascal/artefact.py status.toml    re-measure the R7 claim against a fresh build
 
 **EVERY MEASUREMENT SCRIPT IS THE KIT'S NOW, and none of them lives under `v1.31b/`.** They were archived under the `archive/pre-kit-scripts` tag in two waves — [psycho #36](https://github.com/sweetlilmre/PsychoNeurosis/issues/36) took `build.py`, `asmcheck.py`, `linkcmp.py`, `blocks.py`, the four `blockXXXX.py` and `progcmp.py`; [psycho #50](https://github.com/sweetlilmre/PsychoNeurosis/issues/50) took `verify.py`, `omf.py`, `linkorder.py`, `mapcmp.py`, `dgroup.py`, `coverage.py` and `census.py` — each only once its kit successor had been measured to reproduce it. `verify.py` had been kept twice for its divergent-region diagnostics; those are `units.py --detail` and `--all` now. Renames: `verify.py`→`units.py`, `asmcheck.py`→`objcheck.py`, `census.py`→`survey.py`, `probe.py`→`codegen.py`, `progcmp.py`→`progseg.py`+`blockcmp.py`.
 
-Two scripts stay beside the sources rather than moving into the kit, and they are a pair — they compare the reconstruction against the **1.39b release**, which is this project's reference source rather than its measurement target:
+Two scripts stay beside the v1.31b sources rather than moving into the kit, and they are a pair — they compare the reconstruction against the **1.39b release**, which is this project's reference source rather than its measurement target:
 
     python relbuild.py    compile the v1.39b/ release with TP 7.01 -> build/vt
     python relmatch.py    which release unit each 1.31 segment pairs with, MEASURED
@@ -63,4 +97,4 @@ On Windows, pass switch arguments like `--sw=/GS` from **PowerShell**, not Git B
 
 ## Provenance
 
-`v1.39b/` and the reference image are third-party work by VangeliSTeam (JCAB), included here for reference and comparison. Everything under `v1.31b/` other than `ref/` is the reconstruction.
+`DEMOVT15/`, `v1.39b/` and both reference images are third-party work by VangeliSTeam (JCAB), included here for reference and comparison. Everything under `v1.31b/` and `v1.51/` other than their `ref/` directories is the reconstruction.
