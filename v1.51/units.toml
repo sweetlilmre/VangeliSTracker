@@ -5,9 +5,15 @@
 # padding -- so a unit may legitimately compile SHORTER and only the overlap is
 # compared.
 #
-# THE RTL UNITS AND THE TWO NEW SEGMENTS ARE ABSENT, for opposite reasons: DOS,
-# OBJECTS and SYSTEM are not ours to rebuild, and LOADER1/LOADER2 have no source
-# file yet. An absent row is not a pass -- see docs/CONTINUATION.md.
+# THE RTL UNITS ARE ABSENT because DOS, OBJECTS and SYSTEM are not ours to
+# rebuild. Nothing else is: the two new segments this file once listed as
+# having no source are STMLOADE and S3MLOADE below, transcribed and byte-exact
+# since 28 Aug 2026. An absent row is still not a pass -- see
+# docs/CONTINUATION.md.
+#
+# The PROGRAM segment has no row either, and that is the file's shape rather
+# than a gap: units.py measures units. VTMAIN is measured by linkbytes.py and
+# blocks/1000.toml.
 
 sources  = "src"
 rewrites = ["tp6_far"]
